@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "learn-cg-api",
+  "version": "0.0.1",
+  "dependencies": [
+    "assimp",
+    "directxtk",
+    {
+      "name": "imgui",
+      "features": [ "win32-binding", "dx12-binding", "docking-experimental" ]
+    },
+    "directx-headers"
+  ]
+}
