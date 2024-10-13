@@ -142,7 +142,6 @@
     <ClCompile Include="Source\Core\Level.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
-    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
   <ItemGroup>
