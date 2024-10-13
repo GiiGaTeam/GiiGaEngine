@@ -13,9 +13,13 @@ namespace GiiGa
     export class Level
     {
     public:
-        std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
+        const std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
         {
             return game_objects_;
+        }
+        void AddGameObject(std::shared_ptr<GameObject> game_object)
+        {
+            game_objects_.push_back(game_object);
         }
     private:
         std::string name_;

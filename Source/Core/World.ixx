@@ -27,7 +27,7 @@ namespace GiiGa
             GetInstance()->levels_.push_back(level);
         }
 
-        static std::shared_ptr<GameObject> Spawn(std::shared_ptr<Level> level = nullptr)
+        static std::shared_ptr<GameObject> CreateObject(std::shared_ptr<Level> level = nullptr)
         {
             auto obj = std::make_shared<GameObject>();
 
@@ -35,7 +35,7 @@ namespace GiiGa
 
             if (level)
             {
-                level->GetGameObjects().push_back(obj);
+                level->AddGameObject(obj);
             }
 
             return obj;

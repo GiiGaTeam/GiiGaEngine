@@ -13,7 +13,7 @@ export int main()
 {
     GiiGa::Game game_loop;
     
-    auto obj = GiiGa::World::Spawn();
+    auto obj = GiiGa::World::CreateObject();
             
     obj->CreateComponent<GiiGa::ConsoleComponent>();
     
