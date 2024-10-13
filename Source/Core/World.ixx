@@ -20,7 +20,10 @@ namespace GiiGa
             else return instance_ = std::make_unique<World>();
         }
 
-        static std::vector<std::shared_ptr<GameObject>>& GetGameObjects() { return GetInstance()->game_objects_; }
+        const static std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
+        {
+            return GetInstance()->game_objects_;
+        }
 
         static void AddLevel(Level&& level)
         {
