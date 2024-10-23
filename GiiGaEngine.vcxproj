@@ -136,6 +136,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />
+    <ClCompile Include="Source\Core\EditorEngine.ixx" />
     <ClCompile Include="Source\Core\Engine.ixx" />
     <ClCompile Include="Source\Core\Game.ixx" />
     <ClCompile Include="Source\Core\GameEngine.ixx" />
