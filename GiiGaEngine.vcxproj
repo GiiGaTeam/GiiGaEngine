@@ -136,10 +136,13 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />
+    <ClCompile Include="Source\Core\Engine.ixx" />
     <ClCompile Include="Source\Core\Game.ixx" />
+    <ClCompile Include="Source\Core\GameEngine.ixx" />
     <ClCompile Include="Source\Core\GameObject.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
     <ClCompile Include="Source\main.ixx" />
