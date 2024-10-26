@@ -20,6 +20,8 @@ private:
 
 public:
     virtual void Run() = 0;
+
+    virtual ~Engine() = default;
 };
 
 }
