@@ -145,6 +145,7 @@
     <ClCompile Include="Source\Core\Level.ixx" />
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
+    <ClCompile Include="Source\Core\Uuid.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
