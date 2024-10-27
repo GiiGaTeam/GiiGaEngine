@@ -189,6 +189,17 @@ public:
         SDL_Event event;
         ProcessedEvents return_event;
 
+        /* int numJoysticks;
+        numJoysticks = SDL_NumJoysticks();
+
+        if (!SDL_IsGameController(0))
+        {
+            printf("Error: joystick 0 is not a game controller\n");
+            printf("Exit\n");
+        }
+
+        SDL_GameControllerOpen(0);*/
+
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
@@ -241,6 +252,28 @@ public:
                 case SDL_CONTROLLERBUTTONUP: 
                     ChangeButtonState(SDLControllerButtonToButton((SDL_GameControllerButton)event.cbutton.button), false); 
                     break;
+                case SDL_CONTROLLERAXISMOTION:
+                    if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+                    {
+                        if (abs(event.caxis.value) < dead_zone_) continue;
+                        std::get<0>(left_gamepad_trigger_) = event.caxis.value / 32767.0f;    
+                    }
+                    else if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+                    {
+                        if (abs(event.caxis.value) < dead_zone_) continue;
+                        std::get<1>(left_gamepad_trigger_) = event.caxis.value / 32767.0f;                          
+                    }
+                    else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
+                    {
+                        if (abs(event.caxis.value) < dead_zone_) continue;
+                        std::get<0>(right_gamepad_trigger_) = event.caxis.value / 32767.0f;  
+                    }
+                    else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+                    {
+                        if (abs(event.caxis.value) < dead_zone_) continue;
+                        std::get<1>(right_gamepad_trigger_) = event.caxis.value / 32767.0f; 
+                    }
+                    break;
             }
         }
 
@@ -263,7 +296,8 @@ public:
     }
 
     static bool IsKeyPressed(Button button)
-    { return IsKeyHeld(button) || IsKeyDown(button);
+    { 
+        return IsKeyHeld(button) || IsKeyDown(button);
     }
 
     static float Get1DAxis(Button positive, Button negative)
@@ -277,6 +311,20 @@ public:
         float y = Get1DAxis(positiveY, negativeY);
 
         return std::make_tuple(x, y);
+    }
+
+    static std::tuple<float, float> Get2DAxis(Button gamepadTrigger) { 
+        if (gamepadTrigger == Button::GamepadButtonLeftStick)
+        {
+            return left_gamepad_trigger_;
+        }
+        
+        if (gamepadTrigger == Button::GamepadButtonRightStick)
+        {
+            return right_gamepad_trigger_;
+        }
+
+        return std::make_tuple(0.0f, 0.0f);
     }
 
     static MousePosition GetMousePosition()
@@ -380,10 +428,16 @@ private:
         mouse_wheel_ = MouseWheel(0.0f, 0.0f);
     }
 
-    static inline MouseWheel mouse_wheel_;
     static inline std::unordered_map<Button, ButtonState> button_states_;
+
+    static inline MouseWheel mouse_wheel_;
     static inline MouseDelta mouse_delta_;
     static inline MousePosition mouse_position_;
+
+    static inline float dead_zone_ = 8000.0;
+
+    static inline std::tuple<float, float> left_gamepad_trigger_;
+    static inline std::tuple<float, float> right_gamepad_trigger_;
 };
 
 void InitializeScancodeMap()

@@ -14,7 +14,7 @@ export class WindowManager
 public:
     static std::shared_ptr<Window> CreateWindow(WindowSettings& window_settings)
     {
-        if (SDL_Init(SDL_INIT_VIDEO) < 0)
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
         {
             throw std::exception(SDL_GetError());
         }
