@@ -30,15 +30,15 @@ public:
                 if (game_object->tick_type == TickType::Default)
                     game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
             }
-            if (Input::IsKeyDown(Button::MouseLeft))
+            if (Input::IsKeyDown(MouseButton::MouseLeft))
             {
                 std::cout << "Button Down" << std::endl;
             }
-            else if (Input::IsKeyHeld(Button::MouseLeft))
+            else if (Input::IsKeyHeld(MouseButton::MouseLeft))
             {
                 std::cout << "Button Held" << std::endl;
             }
-            else if (Input::IsKeyUp(Button::MouseLeft))
+            else if (Input::IsKeyUp(MouseButton::MouseLeft))
             {
                 std::cout << "Button Released" << std::endl;
             }

@@ -14,7 +14,7 @@ import Window;
 
 namespace GiiGa
 {
-export enum class Button
+export enum class KeyCode
 {
     Unknown,
 
@@ -123,33 +123,58 @@ export enum class Button
     KeyPrintScreen,
     KeyScrollLock,
     KeyPause,
+};
 
+export enum class GamepadCode
+{
+    Unknown,
+    ButtonA,
+    ButtonB,
+    ButtonX,
+    ButtonY,
+    ButtonBack,
+    ButtonGuide,
+    ButtonStart,
+    ButtonLeftStick,
+    ButtonRightStick,
+    ButtonLeftShoulder,
+    ButtonRightShoulder,
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
+};
+
+export enum class MouseButton
+{
+    Unknown,
     MouseLeft,
     MouseRight,
     MouseMiddle,
-
-    GamepadButtonA,
-    GamepadButtonB,
-    GamepadButtonX,
-    GamepadButtonY,
-    GamepadButtonBack,
-    GamepadButtonGuide,
-    GamepadButtonStart,
-    GamepadButtonLeftStick,
-    GamepadButtonRightStick,
-    GamepadButtonLeftShoulder,
-    GamepadButtonRightShoulder,
-    GamepadDPadUp,
-    GamepadDPadDown,
-    GamepadDPadLeft,
-    GamepadDPadRight,
 };
 
-static std::array<Button, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
+static std::array<KeyCode, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
 void InitializeScancodeMap();
 
 export class Input
 {
+private:
+    struct ButtonState
+    {
+        bool is_held = false;
+        bool pressed = false;
+        bool released = false;
+    };
+
+    
+    struct GamepadInfo
+    {
+        SDL_GameController* controller = nullptr;
+        std::tuple<float, float> left_trigger_axis;
+        std::tuple<float, float> right_trigger_axis;
+        std::unordered_map<GamepadCode, ButtonState> button_states;
+    };
+
 public:
     struct ProcessedEvents
     {
@@ -170,7 +195,7 @@ public:
         float dy;
     };
 
-     struct MouseWheel
+    struct MouseWheel
     {
         float x;
         float y;
@@ -180,6 +205,14 @@ public:
     {
         ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow());
         InitializeScancodeMap();
+
+        for (int i = 0; i < SDL_NumJoysticks(); ++i)
+        {
+            if (SDL_IsGameController(i))
+            {
+                AddController(i);
+            }
+        }
     }
 
     static ProcessedEvents ProcessEvents()
@@ -189,16 +222,6 @@ public:
         SDL_Event event;
         ProcessedEvents return_event;
 
-        /* int numJoysticks;
-        numJoysticks = SDL_NumJoysticks();
-
-        if (!SDL_IsGameController(0))
-        {
-            printf("Error: joystick 0 is not a game controller\n");
-            printf("Exit\n");
-        }
-
-        SDL_GameControllerOpen(0);*/
 
         while (SDL_PollEvent(&event))
         {
@@ -247,32 +270,41 @@ public:
                     ChangeButtonState(SDLButtonToButton(event.button.button), false); 
                     break;
                 case SDL_CONTROLLERBUTTONDOWN: 
-                    ChangeButtonState(SDLControllerButtonToButton((SDL_GameControllerButton)event.cbutton.button), true); 
+                    ChangeButtonState(event.cdevice.which, SDLControllerButtonToButton((SDL_GameControllerButton)event.cbutton.button), true); 
                     break;
                 case SDL_CONTROLLERBUTTONUP: 
-                    ChangeButtonState(SDLControllerButtonToButton((SDL_GameControllerButton)event.cbutton.button), false); 
+                    ChangeButtonState(event.cdevice.which, SDLControllerButtonToButton((SDL_GameControllerButton)event.cbutton.button), false); 
                     break;
                 case SDL_CONTROLLERAXISMOTION:
+                {
+                    auto& gamepad = gamepads_[event.cdevice.which];
                     if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
                     {
                         if (abs(event.caxis.value) < dead_zone_) continue;
-                        std::get<0>(left_gamepad_trigger_) = event.caxis.value / 32767.0f;    
+                        std::get<0>(gamepad.left_trigger_axis) = event.caxis.value / 32767.0f;
                     }
                     else if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
                     {
                         if (abs(event.caxis.value) < dead_zone_) continue;
-                        std::get<1>(left_gamepad_trigger_) = event.caxis.value / 32767.0f;                          
+                        std::get<1>(gamepad.left_trigger_axis) = event.caxis.value / 32767.0f;
                     }
                     else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
                     {
                         if (abs(event.caxis.value) < dead_zone_) continue;
-                        std::get<0>(right_gamepad_trigger_) = event.caxis.value / 32767.0f;  
+                        std::get<0>(gamepad.right_trigger_axis) = event.caxis.value / 32767.0f;
                     }
                     else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
                     {
                         if (abs(event.caxis.value) < dead_zone_) continue;
-                        std::get<1>(right_gamepad_trigger_) = event.caxis.value / 32767.0f; 
+                        std::get<1>(gamepad.right_trigger_axis) = event.caxis.value / 32767.0f;
                     }
+                    break;
+                }
+                case SDL_CONTROLLERDEVICEADDED: 
+                    AddController(event.cdevice.which);
+                    break;
+                case SDL_CONTROLLERDEVICEREMOVED: 
+                    RemoveController(event.cdevice.which);
                     break;
             }
         }
@@ -280,32 +312,76 @@ public:
         return return_event;
     }
 
-    static bool IsKeyHeld(Button button) { 
-        auto it = button_states_.find(button);
-        return it != button_states_.end() && it->second.is_held;
+    static bool IsKeyHeld(KeyCode button) { 
+        auto it = keyboard_states_.find(button);
+        return it != keyboard_states_.end() && it->second.is_held;
     }
 
-    static bool IsKeyDown(Button button) { 
-        auto it = button_states_.find(button);
-        return it != button_states_.end() && it->second.pressed;
+    static bool IsKeyDown(KeyCode button) { 
+        auto it = keyboard_states_.find(button);
+        return it != keyboard_states_.end() && it->second.pressed;
     }
 
-    static bool IsKeyUp(Button button) { 
-        auto it = button_states_.find(button);
-        return it != button_states_.end() && it->second.released;
+    static bool IsKeyUp(KeyCode button) { 
+        auto it = keyboard_states_.find(button);
+        return it != keyboard_states_.end() && it->second.released;
     }
 
-    static bool IsKeyPressed(Button button)
+    static bool IsKeyPressed(KeyCode button)
     { 
         return IsKeyHeld(button) || IsKeyDown(button);
     }
 
-    static float Get1DAxis(Button positive, Button negative)
+    static bool IsKeyHeld(MouseButton button)
+    {
+        auto it = mouse_buttons_states_.find(button);
+        return it != mouse_buttons_states_.end() && it->second.is_held;
+    }
+
+    static bool IsKeyDown(MouseButton button)
+    {
+        auto it = mouse_buttons_states_.find(button);
+        return it != mouse_buttons_states_.end() && it->second.pressed;
+    }
+
+    static bool IsKeyUp(MouseButton button)
+    {
+        auto it = mouse_buttons_states_.find(button);
+        return it != mouse_buttons_states_.end() && it->second.released;
+    }
+
+    static bool IsKeyPressed(MouseButton button) { 
+        return IsKeyHeld(button) || IsKeyDown(button); 
+    }
+
+    static bool IsKeyHeld(int32_t index, GamepadCode button)
+    {
+        auto it = gamepads_[index].button_states.find(button);
+        return it != gamepads_[index].button_states.end() && it->second.is_held;
+    }
+
+    static bool IsKeyDown(int32_t index, GamepadCode button)
+    {
+        auto it = gamepads_[index].button_states.find(button);
+        return it != gamepads_[index].button_states.end() && it->second.pressed;
+    }
+
+    static bool IsKeyUp(int32_t index, GamepadCode button)
+    {
+        auto it = gamepads_[index].button_states.find(button);
+        return it != gamepads_[index].button_states.end() && it->second.released;
+    }
+
+    static bool IsKeyPressed(int32_t index, GamepadCode button) {
+        return IsKeyHeld(index, button) || IsKeyDown(index, button); 
+    }
+
+    static float Get1DAxis(KeyCode positive, KeyCode negative)
     {
         return (IsKeyHeld(positive) ? 1.0f : 0.0f) - (IsKeyHeld(negative) ? 1.0f : 0.0f);
     }
 
-    static std::tuple<float, float> Get2DAxis(Button positiveX, Button negativeX, Button positiveY, Button negativeY)
+    static std::tuple<float, float> Get2DAxis(KeyCode positiveX, KeyCode negativeX, KeyCode positiveY, KeyCode negativeY)
     {
         float x = Get1DAxis(positiveX, negativeX);
         float y = Get1DAxis(positiveY, negativeY);
@@ -313,16 +389,17 @@ public:
         return std::make_tuple(x, y);
     }
 
-    static std::tuple<float, float> Get2DAxis(Button gamepadTrigger) { 
-        if (gamepadTrigger == Button::GamepadButtonLeftStick)
+    static std::tuple<float, float> Get2DAxis(int32_t index, GamepadCode button)
+    { 
+        if (button == GamepadCode::ButtonLeftStick)
         {
-            return left_gamepad_trigger_;
-        }
-        
-        if (gamepadTrigger == Button::GamepadButtonRightStick)
+            return gamepads_[index].left_trigger_axis;
+        }  
+
+        if (button == GamepadCode::ButtonRightStick)
         {
-            return right_gamepad_trigger_;
-        }
+            return gamepads_[index].right_trigger_axis;
+        }  
 
         return std::make_tuple(0.0f, 0.0f);
     }
@@ -342,62 +419,83 @@ public:
         return mouse_wheel_; 
     }
 
-private:
-    struct ButtonState
+    ~Input()
     {
-        bool is_held = false;
-        bool pressed = false;
-        bool released = false;
-    };
+        for (auto& [id, info] : gamepads_)
+        {
+            if (info.controller)
+            {
+                SDL_GameControllerClose(info.controller);
+            }
+        }
+    }
 
-    static Button SDLButtonToButton(Uint8 sdl_button)
+private:
+
+    static MouseButton SDLButtonToButton(Uint8 sdl_button)
     {
         switch (sdl_button)
         {
-            case SDL_BUTTON_LEFT: return Button::MouseLeft;
-            case SDL_BUTTON_RIGHT: return Button::MouseRight;
-            case SDL_BUTTON_MIDDLE: return Button::MouseMiddle;
-            default: return Button::Unknown;
+            case SDL_BUTTON_LEFT: return MouseButton::MouseLeft;
+            case SDL_BUTTON_RIGHT: return MouseButton::MouseRight;
+            case SDL_BUTTON_MIDDLE: return MouseButton::MouseMiddle;
+            default: return MouseButton::Unknown;
         }
     }
     
     
-    static Button SDLScancodeToButton(SDL_Scancode scancode)
+    static KeyCode SDLScancodeToButton(SDL_Scancode scancode)
     {
         if (scancode >= 0 && scancode < SDL_NUM_SCANCODES)
         {
             return SCANCODE_TO_BUTTON_MAP[scancode];
         }
-        return Button::Unknown;
+        return KeyCode::Unknown;
     }
 
-    static Button SDLControllerButtonToButton(SDL_GameControllerButton button)
+    static GamepadCode SDLControllerButtonToButton(SDL_GameControllerButton button)
     {
         switch (button)
         {
-            case SDL_CONTROLLER_BUTTON_A: return Button::GamepadButtonA;
-            case SDL_CONTROLLER_BUTTON_B: return Button::GamepadButtonB;
-            case SDL_CONTROLLER_BUTTON_X: return Button::GamepadButtonX;
-            case SDL_CONTROLLER_BUTTON_Y: return Button::GamepadButtonY;
-            case SDL_CONTROLLER_BUTTON_BACK: return Button::GamepadButtonBack;
-            case SDL_CONTROLLER_BUTTON_GUIDE: return Button::GamepadButtonGuide;
-            case SDL_CONTROLLER_BUTTON_START: return Button::GamepadButtonStart;
-            case SDL_CONTROLLER_BUTTON_LEFTSTICK: return Button::GamepadButtonLeftStick;
-            case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return Button::GamepadButtonRightStick;
-            case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return Button::GamepadButtonLeftShoulder;
-            case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return Button::GamepadButtonRightShoulder;
-            case SDL_CONTROLLER_BUTTON_DPAD_UP: return Button::GamepadDPadUp;
-            case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return Button::GamepadDPadDown;
-            case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return Button::GamepadDPadLeft;
-            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return Button::GamepadDPadRight;
-            default: return Button::Unknown;
+            case SDL_CONTROLLER_BUTTON_A: return GamepadCode::ButtonA;
+            case SDL_CONTROLLER_BUTTON_B: return GamepadCode::ButtonB;
+            case SDL_CONTROLLER_BUTTON_X: return GamepadCode::ButtonX;
+            case SDL_CONTROLLER_BUTTON_Y: return GamepadCode::ButtonY;
+            case SDL_CONTROLLER_BUTTON_BACK: return GamepadCode::ButtonBack;
+            case SDL_CONTROLLER_BUTTON_GUIDE: return GamepadCode::ButtonGuide;
+            case SDL_CONTROLLER_BUTTON_START: return GamepadCode::ButtonStart;
+            case SDL_CONTROLLER_BUTTON_LEFTSTICK: return GamepadCode::ButtonLeftStick;
+            case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return GamepadCode::ButtonRightStick;
+            case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return GamepadCode::ButtonLeftShoulder;
+            case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return GamepadCode::ButtonRightShoulder;
+            case SDL_CONTROLLER_BUTTON_DPAD_UP: return GamepadCode::DPadUp;
+            case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return GamepadCode::DPadDown;
+            case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return GamepadCode::DPadLeft;
+            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return GamepadCode::DPadRight;
+            default: return GamepadCode::Unknown;
         }
     }
 
-    static void ChangeButtonState(Button button, bool pressed)
+    static void ChangeButtonState(KeyCode button, bool pressed)
     {
-        auto& state = button_states_[button];
+        auto& state = keyboard_states_[button];
+        ChangeButtonState(state, pressed);
+    }
 
+    static void ChangeButtonState(MouseButton button, bool pressed)
+    {
+        auto& state = mouse_buttons_states_[button];
+        ChangeButtonState(state, pressed);
+    }
+
+    static void ChangeButtonState(int32_t index, GamepadCode button, bool pressed)
+    {
+        auto& state = gamepads_[index].button_states[button];
+        ChangeButtonState(state, pressed);
+    }
+
+    static void ChangeButtonState(ButtonState& state, bool pressed)
+    {
         if (pressed)
         {
             if (!state.is_held)
@@ -416,19 +514,61 @@ private:
         }
     }
 
+    static void AddController(int gamepad_idx)
+    {
+         if (SDL_IsGameController(gamepad_idx))
+         {
+             SDL_GameController* controller = SDL_GameControllerOpen(gamepad_idx);
+             if (controller)
+             {
+                 int joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+                 gamepads_[joystick_id] = GamepadInfo{controller};
+             }
+         }
+    }
+
+    static void RemoveController(int gamepad_idx)
+    {
+        auto it = gamepads_.find(gamepad_idx);
+        if (it != gamepads_.end())
+        {
+            SDL_GameControllerClose(it->second.controller);
+            gamepads_.erase(it);
+        }
+    }
+
     static void ResetState()
     {
-        for (auto& [button, state] : button_states_)
+        for (auto& [button, state] : keyboard_states_)
         {
             state.pressed = false;
             state.released = false;
+        }
+
+        for (auto& [button, state] : mouse_buttons_states_)
+        {
+            state.pressed = false;
+            state.released = false;
+        }
+
+        for (auto& [idx, gamepad] : gamepads_)
+        {
+            gamepad.left_trigger_axis = std::make_tuple(0.0f, 0.0f);
+            gamepad.right_trigger_axis = std::make_tuple(0.0f, 0.0f);
+
+            for (auto& [button, state] : gamepad.button_states)
+            {
+                state.pressed = false;
+                state.released = false;
+            }
         }
 
         mouse_delta_ = MouseDelta(0.0f, 0.0f);
         mouse_wheel_ = MouseWheel(0.0f, 0.0f);
     }
 
-    static inline std::unordered_map<Button, ButtonState> button_states_;
+    static inline std::unordered_map<KeyCode, ButtonState> keyboard_states_;
+    static inline std::unordered_map<MouseButton, ButtonState> mouse_buttons_states_;
 
     static inline MouseWheel mouse_wheel_;
     static inline MouseDelta mouse_delta_;
@@ -436,64 +576,63 @@ private:
 
     static inline float dead_zone_ = 8000.0;
 
-    static inline std::tuple<float, float> left_gamepad_trigger_;
-    static inline std::tuple<float, float> right_gamepad_trigger_;
+    static inline std::unordered_map<int, GamepadInfo> gamepads_;
 };
 
 void InitializeScancodeMap()
 {
-    SCANCODE_TO_BUTTON_MAP.fill(Button::Unknown);
+    SCANCODE_TO_BUTTON_MAP.fill(KeyCode::Unknown);
 
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_A] = Button::KeyA;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_B] = Button::KeyB;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_C] = Button::KeyC;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_D] = Button::KeyD;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_E] = Button::KeyE;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F] = Button::KeyF;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_G] = Button::KeyG;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_H] = Button::KeyH;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_I] = Button::KeyI;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_J] = Button::KeyJ;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_K] = Button::KeyK;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_L] = Button::KeyL;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_M] = Button::KeyM;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_N] = Button::KeyN;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_O] = Button::KeyO;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_P] = Button::KeyP;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Q] = Button::KeyQ;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_R] = Button::KeyR;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_S] = Button::KeyS;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_T] = Button::KeyT;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_U] = Button::KeyU;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_V] = Button::KeyV;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_W] = Button::KeyW;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_X] = Button::KeyX;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Y] = Button::KeyY;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Z] = Button::KeyZ;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_A] = KeyCode::KeyA;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_B] = KeyCode::KeyB;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_C] = KeyCode::KeyC;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_D] = KeyCode::KeyD;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_E] = KeyCode::KeyE;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F] = KeyCode::KeyF;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_G] = KeyCode::KeyG;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_H] = KeyCode::KeyH;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_I] = KeyCode::KeyI;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_J] = KeyCode::KeyJ;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_K] = KeyCode::KeyK;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_L] = KeyCode::KeyL;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_M] = KeyCode::KeyM;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_N] = KeyCode::KeyN;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_O] = KeyCode::KeyO;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_P] = KeyCode::KeyP;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Q] = KeyCode::KeyQ;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_R] = KeyCode::KeyR;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_S] = KeyCode::KeyS;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_T] = KeyCode::KeyT;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_U] = KeyCode::KeyU;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_V] = KeyCode::KeyV;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_W] = KeyCode::KeyW;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_X] = KeyCode::KeyX;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Y] = KeyCode::KeyY;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_Z] = KeyCode::KeyZ;
 
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_1] = Button::Key1;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_2] = Button::Key2;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_3] = Button::Key3;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_4] = Button::Key4;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_5] = Button::Key5;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_6] = Button::Key6;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_7] = Button::Key7;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_8] = Button::Key8;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_9] = Button::Key9;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_0] = Button::Key0;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_1] = KeyCode::Key1;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_2] = KeyCode::Key2;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_3] = KeyCode::Key3;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_4] = KeyCode::Key4;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_5] = KeyCode::Key5;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_6] = KeyCode::Key6;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_7] = KeyCode::Key7;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_8] = KeyCode::Key8;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_9] = KeyCode::Key9;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_0] = KeyCode::Key0;
 
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F1] = Button::KeyF1;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F2] = Button::KeyF2;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F3] = Button::KeyF3;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F4] = Button::KeyF4;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F5] = Button::KeyF5;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F6] = Button::KeyF6;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F7] = Button::KeyF7;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F8] = Button::KeyF8;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F9] = Button::KeyF9;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F10] = Button::KeyF10;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F11] = Button::KeyF11;
-    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F12] = Button::KeyF12;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F1] = KeyCode::KeyF1;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F2] = KeyCode::KeyF2;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F3] = KeyCode::KeyF3;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F4] = KeyCode::KeyF4;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F5] = KeyCode::KeyF5;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F6] = KeyCode::KeyF6;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F7] = KeyCode::KeyF7;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F8] = KeyCode::KeyF8;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F9] = KeyCode::KeyF9;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F10] = KeyCode::KeyF10;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F11] = KeyCode::KeyF11;
+    SCANCODE_TO_BUTTON_MAP[SDL_SCANCODE_F12] = KeyCode::KeyF12;
 }
 
 }
