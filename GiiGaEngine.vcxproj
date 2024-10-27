@@ -147,6 +147,9 @@
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
     <ClCompile Include="Source\Core\Variant.ixx" />
+    <ClCompile Include="Source\Core\Window.ixx" />
+    <ClCompile Include="Source\Core\WindowManager.ixx" />
+    <ClCompile Include="Source\Core\WindowSettings.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
