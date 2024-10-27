@@ -19,7 +19,11 @@ public:
         , settings_(settings) 
     {}
 
-    HWND GetHandle() { 
+    SDL_Window* GetSdlWindow() const {
+        return window_;
+    }
+
+    HWND GetHandle() const { 
         SDL_SysWMinfo wmInfo;
         SDL_VERSION(&wmInfo.version);
 
