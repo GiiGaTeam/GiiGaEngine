@@ -1,5 +1,6 @@
 module;
 
+#include <imgui.h>
 #include<string>
 #include<iostream>
 
@@ -10,19 +11,22 @@ import GameLoop;
 import ConsoleComponent;
 import WindowManager;
 import WindowSettings;
+import Input;
 
 export int main()
 {
     GiiGa::Game game_loop;
     
-    auto obj = GiiGa::World::CreateObject();
+    //auto obj = GiiGa::World::CreateObject();
 
-    obj->CreateComponent<GiiGa::ConsoleComponent>();
+    //obj->CreateComponent<GiiGa::ConsoleComponent>();
     
     auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
     auto window = GiiGa::WindowManager::CreateWindow(settings);
 
-    //game_loop.Run();
+    GiiGa::Input::Init(window);
+    
+    game_loop.Run();
 
     return 0;
 }
