@@ -8,6 +8,8 @@ export module Main;
 import World;
 import GameLoop;
 import ConsoleComponent;
+import WindowManager;
+import WindowSettings;
 
 export int main()
 {
@@ -17,7 +19,10 @@ export int main()
 
     obj->CreateComponent<GiiGa::ConsoleComponent>();
     
-    game_loop.Run();
+    auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
+    auto window = GiiGa::WindowManager::CreateWindow(settings);
+
+    //game_loop.Run();
 
     return 0;
 }
