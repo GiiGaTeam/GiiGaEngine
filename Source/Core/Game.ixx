@@ -44,7 +44,7 @@ public:
             }
             else
             {
-                std::cout << Input::GetMouseDelta().dx << " " << Input::GetMouseDelta().dy << std::endl;
+                std::cout << Input::GetMouseWhell().x << " " << Input::GetMouseWhell().y << std::endl;
             }
         }
     }

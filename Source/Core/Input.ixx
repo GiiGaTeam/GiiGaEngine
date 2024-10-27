@@ -170,6 +170,12 @@ public:
         float dy;
     };
 
+     struct MouseWheel
+    {
+        float x;
+        float y;
+    };
+
     static void Init(std::shared_ptr<Window> window)
     {
         ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow());
@@ -220,6 +226,9 @@ public:
 
                     break;
                 } 
+                case SDL_MOUSEWHEEL: 
+                    mouse_wheel_ = MouseWheel(event.wheel.x, event.wheel.y);
+                    break;
                 case SDL_MOUSEBUTTONDOWN: 
                     ChangeButtonState(SDLButtonToButton(event.button.button), true); 
                     break;
@@ -278,6 +287,11 @@ public:
     static MouseDelta GetMouseDelta() 
     { 
         return mouse_delta_; 
+    }
+
+    static MouseWheel GetMouseWhell() 
+    {
+        return mouse_wheel_; 
     }
 
 private:
@@ -363,8 +377,10 @@ private:
         }
 
         mouse_delta_ = MouseDelta(0.0f, 0.0f);
+        mouse_wheel_ = MouseWheel(0.0f, 0.0f);
     }
 
+    static inline MouseWheel mouse_wheel_;
     static inline std::unordered_map<Button, ButtonState> button_states_;
     static inline MouseDelta mouse_delta_;
     static inline MousePosition mouse_position_;
