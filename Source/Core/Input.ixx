@@ -40,6 +40,12 @@ public:
         Uint32 close_window_id = 0;
     };
 
+    struct MousePosition
+    {
+        Sint32 x;
+        Sint32 y;
+    };
+
     static void Init(std::shared_ptr<Window> window)
     {
         ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow());
@@ -66,6 +72,10 @@ public:
             {
                 HandleSDLKeyboard(event.key);
             }
+            if(event.type == SDL_MOUSEMOTION)
+            {
+                mouse_position = MousePosition(event.motion.x, event.motion.y);
+            }
         }
         return return_event;
     }
@@ -90,6 +100,11 @@ public:
         float y = Get1DAxis(positiveY, negativeY);
 
         return std::make_tuple(x, y);
+    }
+
+    static MousePosition GetMousePosition()
+    {
+        return mouse_position;
     }
 
 private:
@@ -179,5 +194,6 @@ private:
     }
 
     static inline std::unordered_map<SDL_Keycode, ButtonInfo> button_map;
+    static inline MousePosition mouse_position;
 };
 }
