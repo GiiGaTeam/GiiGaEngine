@@ -10,6 +10,7 @@
       "features": [ "win32-binding", "dx12-binding", "docking-experimental" ]
     },
     "directx-headers",
-    "stduuid"
+    "stduuid",
+    "sdl2"
   ]
 }
