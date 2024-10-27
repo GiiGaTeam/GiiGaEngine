@@ -53,34 +53,41 @@ public:
 
     static ProcessedEvents ProcessEvents()
     {
+        RefreshButtons();
+
         SDL_Event event;
         ProcessedEvents return_event;
-        RefreshButtons();
+
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
+
+            switch (event.type)
             {
-                return_event.quit = true;
-            }
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
-            {
-                return_event.close_window = true;
-                return_event.close_window_id = event.window.windowID;
-            }
-            if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
-            {
-                HandleSDLKeyboard(event.key);
-            }
-            if (event.type == SDL_MOUSEMOTION)
-            {
-                mouse_position = MousePosition(event.motion.x, event.motion.y);
-            }
-            if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
-            {
-                HandleSDLMouseButton(event.button);
+                case SDL_QUIT: 
+                    return_event.quit = true;
+                    break;
+                case SDL_WINDOWEVENT:
+                    if (event.window.event == SDL_WINDOWEVENT_CLOSE)
+                    {
+                        return_event.close_window = true;
+                        return_event.close_window_id = event.window.windowID;
+                    }
+                    break;
+                case SDL_KEYUP:
+                case SDL_KEYDOWN: 
+                    HandleSDLKeyboard(event.key);
+                    break;
+                case SDL_MOUSEMOTION: 
+                    mouse_position = MousePosition(event.motion.x, event.motion.y);
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                case SDL_MOUSEBUTTONDOWN: 
+                    HandleSDLMouseButton(event.button);
+                    break;
             }
         }
+
         return return_event;
     }
 
