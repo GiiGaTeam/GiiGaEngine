@@ -143,6 +143,12 @@
     <ClCompile Include="Source\Core\GameObject.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Render\CommandQueue.ixx" />
+    <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderData.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderSystem.ixx" />
+    <ClCompile Include="Source\Core\Render\IDrawable.ixx" />
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
