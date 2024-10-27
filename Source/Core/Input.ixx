@@ -74,6 +74,11 @@ public:
     static bool IsKeyDown(Button button) { return GetButtonState(button) == ButtonState::Pressed; }
     static bool IsKeyUp(Button button) { return GetButtonState(button) == ButtonState::Released; }
 
+    static bool IsKeyPressed(Button button)
+    {
+        return GetButtonState(button) == ButtonState::Pressed || GetButtonState(button) == ButtonState::Held;
+    }
+
     static float Get1DAxis(Button positive, Button negative)
     {
         return (IsKeyHeld(positive) ? 1.0f : 0.0f) - (IsKeyHeld(negative) ? 1.0f : 0.0f);
