@@ -42,6 +42,10 @@ public:
             {
                 std::cout << "Button Released" << std::endl;
             }
+            else
+            {
+                std::cout << Input::GetMousePosition().x << " " << Input::GetMousePosition().y << std::endl;
+            }
         }
     }
 

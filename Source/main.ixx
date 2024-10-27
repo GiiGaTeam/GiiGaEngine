@@ -24,6 +24,7 @@ export int main()
     auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
     auto window = GiiGa::WindowManager::CreateWindow(settings);
 
+    ImGui::CreateContext();
     GiiGa::Input::Init(window);
     
     game_loop.Run();
