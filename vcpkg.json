@@ -7,7 +7,7 @@
     "directxtk",
     {
       "name": "imgui",
-      "features": [ "win32-binding", "dx12-binding", "docking-experimental" ]
+        "features": [ "win32-binding", "dx12-binding", "docking-experimental", "sdl2-binding" ]
     },
     "directx-headers",
     "stduuid",
