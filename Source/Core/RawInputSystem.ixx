@@ -31,17 +31,33 @@ export enum class Button
 export class RawInputSystem
 {
 public:
+    struct ProcessedEvents
+    {
+        bool quit = false;
+        bool close_window = false;
+        Uint32 close_window_id = 0;
+    };
     RawInputSystem(std::shared_ptr<Window> window) { 
         ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow());
     }
-
-    void ProcessEvents() {
+    
+    static ProcessedEvents ProcessEvents() {
         SDL_Event event;
-
+        ProcessedEvents return_event;
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
+            if(event.type == SDL_QUIT)
+            {
+                return_event.quit = true;
+            }
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                return_event.close_window = true;
+                return_event.close_window_id = event.window.windowID;
+            }
         }
+        return return_event;
     }
 
     bool IsKeyHeld(Button button) const { return GetButtonState(button) == ButtonState::Held; }
