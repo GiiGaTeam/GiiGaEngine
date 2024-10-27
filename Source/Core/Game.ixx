@@ -44,7 +44,7 @@ public:
             }
             else
             {
-                std::cout << Input::GetMousePosition().x << " " << Input::GetMousePosition().y << std::endl;
+                std::cout << Input::GetMouseDelta().dx << " " << Input::GetMouseDelta().dy << std::endl;
             }
         }
     }

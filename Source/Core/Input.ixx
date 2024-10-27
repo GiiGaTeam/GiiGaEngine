@@ -146,6 +146,7 @@ export enum class Button
 };
 
 static std::array<Button, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
+void InitializeScancodeMap();
 
 export class Input
 {
@@ -163,14 +164,21 @@ public:
         Sint32 y;
     };
 
+    struct MouseDelta
+    {
+        float dx;
+        float dy;
+    };
+
     static void Init(std::shared_ptr<Window> window)
     {
         ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow());
+        InitializeScancodeMap();
     }
 
     static ProcessedEvents ProcessEvents()
     {
-        RefreshButtons();
+        ResetState();
 
         SDL_Event event;
         ProcessedEvents return_event;
@@ -197,9 +205,21 @@ public:
                 case SDL_KEYUP: 
                     ChangeButtonState(SDLScancodeToButton(event.key.keysym.scancode), false); 
                     break;
-                case SDL_MOUSEMOTION: 
+                case SDL_MOUSEMOTION:
+                {
+                    float dx = event.motion.x - mouse_position_.x;
+                    float dy = event.motion.y - mouse_position_.y;
+
+                    float len = sqrtf(dx * dx + dy * dy);
+
+                    dx /= len;
+                    dy /= len;
+
                     mouse_position_ = MousePosition(event.motion.x, event.motion.y);
+                    mouse_delta_ = MouseDelta(dx, dy);
+
                     break;
+                } 
                 case SDL_MOUSEBUTTONDOWN: 
                     ChangeButtonState(SDLButtonToButton(event.button.button), true); 
                     break;
@@ -253,6 +273,11 @@ public:
     static MousePosition GetMousePosition()
     {
         return mouse_position_;
+    }
+
+    static MouseDelta GetMouseDelta() 
+    { 
+        return mouse_delta_; 
     }
 
 private:
@@ -329,16 +354,19 @@ private:
         }
     }
 
-    static void RefreshButtons()
+    static void ResetState()
     {
         for (auto& [button, state] : button_states_)
         {
             state.pressed = false;
             state.released = false;
         }
+
+        mouse_delta_ = MouseDelta(0.0f, 0.0f);
     }
 
     static inline std::unordered_map<Button, ButtonState> button_states_;
+    static inline MouseDelta mouse_delta_;
     static inline MousePosition mouse_position_;
 };
 
