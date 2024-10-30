@@ -16,7 +16,7 @@ namespace GiiGa
     export class RenderContext final
     {
     public:
-        void Create(RenderDevice device)
+        void Create(RenderDevice device, Window window)
         {
             {
                 D3D12_COMMAND_QUEUE_DESC desc = {};

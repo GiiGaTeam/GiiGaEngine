@@ -4,6 +4,7 @@
 export module RenderSystem;
 
 import RenderSystemSettings;
+import Window;
 import RenderDevice;
 import RenderContext;
 
@@ -12,7 +13,7 @@ namespace GiiGa
     export class RenderSystem
     {
     public:
-        void Init()
+        void Init(Window window)
         {
             device_.CreateDevice();
             context_.Create(device_);
