@@ -1,19 +1,25 @@
 ﻿module;
 #include <memory>
-#include <vector>
 
 export module RenderSystem;
-import IDrawable;
+
+import RenderSystemSettings;
+import Window;
+import RenderDevice;
+import RenderContext;
 
 namespace GiiGa
 {
-
-export class RenderSystem
-{
-public:
-    std::vector<std::shared_ptr<IDrawable>> drawable_objets_;
-};
-
-static int const NUM_FRAMES_IN_FLIGHT = 3;
-
+    export class RenderSystem
+    {
+    public:
+        void Init(Window window)
+        {
+            device_.CreateDevice();
+            context_.Create(device_);
+        }
+    private:
+        RenderDevice device_;
+        RenderContext context_;
+    };
 }

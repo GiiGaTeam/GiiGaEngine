@@ -16,3 +16,4 @@ SpacesBeforeTrailingComments: 2
 AllowShortCaseLabelsOnASingleLine: true
 IndentCaseLabels: true
 AlwaysBreakTemplateDeclarations: Yes
+NamespaceIndentation: All
