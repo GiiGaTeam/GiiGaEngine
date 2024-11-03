@@ -144,9 +144,13 @@
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
     <ClCompile Include="Source\Core\Misc.ixx" />
+    <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
     <ClCompile Include="Source\Core\Variant.ixx" />
+    <ClCompile Include="Source\Core\Window.ixx" />
+    <ClCompile Include="Source\Core\WindowManager.ixx" />
+    <ClCompile Include="Source\Core\WindowSettings.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
