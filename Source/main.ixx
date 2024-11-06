@@ -12,6 +12,7 @@ import ConsoleComponent;
 import WindowManager;
 import WindowSettings;
 import Input;
+import EventSystem;
 
 export int main()
 {
@@ -26,6 +27,16 @@ export int main()
 
     ImGui::CreateContext();
     GiiGa::Input::Init(window);
+
+    EventSystem<int> test{};
+    auto id = test.Register(
+        [](int a) { 
+            std::cout << a << std::endl;
+        });
+
+    test.Invoke(5);
+    test.Unregister(id);
+    test.Invoke(1);
     
     game_loop.Run();
 
