@@ -15,11 +15,11 @@ private:
 public:
 
     template <typename U>
-    friend class EventSystem;
+    friend class EventDispatcher;
 };
 
 export template<typename T>
-class EventSystem
+class EventDispatcher
 {
 private:
     inline static int next_id_ = 0;
@@ -27,9 +27,9 @@ private:
     std::unordered_map<int, std::function<void(const T&)>> handlers_;
 
 public:
-    EventSystem() = default;
-    EventSystem(const EventSystem& other) = delete;
-    EventSystem& operator=(const EventSystem& other) = delete;
+    EventDispatcher() = default;
+    EventDispatcher(const EventDispatcher& other) = delete;
+    EventDispatcher& operator=(const EventDispatcher& other) = delete;
 
     EventHandle<T> Register(std::function<void(const T&)>&& handler) { 
         auto id = next_id_++;

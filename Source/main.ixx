@@ -28,7 +28,7 @@ export int main()
     ImGui::CreateContext();
     GiiGa::Input::Init(window);
 
-    EventSystem<int> test{};
+    EventDispatcher<int> test{};
     auto id = test.Register(
         [](int a) { 
             std::cout << a << std::endl;
