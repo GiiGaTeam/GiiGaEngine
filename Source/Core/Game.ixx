@@ -7,20 +7,25 @@ import Time;
 import World;
 import ConsoleComponent;
 import Input;
+import Window;
 
 namespace GiiGa
 {
 export class Game
 {
 public:
+    Game(std::shared_ptr<GiiGa::Window> window) : window_(window) {
+        
+    }
+
     void Run()
     {
         Time::Start();
 
         while (!quit_)
         {
-            auto event = Input::ProcessEvents();
-            if (event.quit)
+            
+            if (false)
             {
                 quit_ = true;
             }
@@ -51,5 +56,6 @@ public:
 
 private:
     bool quit_ = false;
+    std::shared_ptr<GiiGa::Window> window_;
 };
 }
