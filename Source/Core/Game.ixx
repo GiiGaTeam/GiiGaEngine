@@ -14,8 +14,9 @@ namespace GiiGa
 export class Game
 {
 public:
-    Game(std::shared_ptr<GiiGa::Window> window) : window_(window) {
-        
+    Game(std::shared_ptr<GiiGa::Window> window) : window_(window) { 
+        window->OnWindowClose.Register([this](const WindowCloseEvent& arg) { quit_ = true; });
+        window->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
     }
 
     void Run()
@@ -24,7 +25,7 @@ public:
 
         while (!quit_)
         {
-            
+            window_->ProcessEvents();
             if (false)
             {
                 quit_ = true;
@@ -49,7 +50,7 @@ public:
             }
             else
             {
-                std::cout << Input::GetMouseWhell().x << " " << Input::GetMouseWhell().y << std::endl;
+                std::cout << Input::GetMousePosition().x << " " << Input::GetMousePosition().y << std::endl;
             }
         }
     }
