@@ -26,7 +26,7 @@ public:
             SDL_WINDOWPOS_CENTERED, 
             window_settings.width, 
             window_settings.height, 
-            0 
+            SDL_WINDOW_RESIZABLE 
         );
 
         return std::make_shared<Window>(window, std::move(window_settings));

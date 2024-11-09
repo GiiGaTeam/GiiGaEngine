@@ -230,6 +230,12 @@ export struct GamepadRemovedEvent
     int device_id;
 };
 
+export struct WindowResizeEvent
+{
+    int width;
+    int height;
+};
+
 static std::array<KeyCode, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
 void InitializeScancodeMap();
 
@@ -260,11 +266,22 @@ public:
                     OnQuit.Invoke(QuitEvent{});
                     break;
                 case SDL_WINDOWEVENT:
-                    if (event.window.event == SDL_WINDOWEVENT_CLOSE)
+                    switch (event.window.event)
                     {
-                        WindowCloseEvent t{event.window.windowID};
-                        
-                        OnWindowClose.Invoke(t);
+                        case (SDL_WINDOWEVENT_CLOSE):
+                            {
+                                WindowCloseEvent t{event.window.windowID};
+
+                                OnWindowClose.Invoke(t);
+                            }
+                            break;
+                        case (SDL_WINDOWEVENT_SIZE_CHANGED):
+                            {
+                                WindowResizeEvent t{event.window.data1, event.window.data2};
+                                OnWindowResize.Invoke(t);
+                            }
+                            break;
+                        default: break;
                     }
                     break;
                 case SDL_KEYDOWN: 
@@ -386,6 +403,7 @@ public:
     EventDispatcher<GamepadAxisMotionEvent> OnGamepadAxisMotion;
     EventDispatcher<GamepadAddedEvent> OnGamepadAdded;
     EventDispatcher<GamepadRemovedEvent> OnGamepadRemoved;
+    EventDispatcher<WindowResizeEvent> OnWindowResize;
 
 private:
     SDL_Window* window_;
