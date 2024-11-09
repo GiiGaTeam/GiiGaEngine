@@ -156,6 +156,18 @@ export enum class MouseButton
     MouseMiddle,
 };
 
+export enum class GamepadAxis
+{
+    X,
+    Y
+};
+
+export enum class GamepadStick
+{
+    Left,
+    Right
+};
+
 export struct BeginProcessEvent
 {
 };
@@ -203,9 +215,9 @@ export struct GamepadButtonEvent
 export struct GamepadAxisMotionEvent
 {
     int device_id;
-    float x;
-    float y;
-    bool left;
+    float value;
+    GamepadAxis axis;
+    GamepadStick stick;
 };
 
 export struct GamepadAddedEvent
@@ -305,7 +317,30 @@ public:
                     break;
                 case SDL_CONTROLLERAXISMOTION:
                     {
-                        
+                        GamepadAxisMotionEvent t{};
+                        t.device_id = event.cdevice.which;
+                        t.value = event.caxis.value;
+                        if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+                        {
+                            t.axis = GamepadAxis::X;
+                            t.stick = GamepadStick::Left;
+                        }
+                        else if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+                        {
+                            t.axis = GamepadAxis::Y;
+                            t.stick = GamepadStick::Left;
+                        }
+                        else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
+                        {
+                            t.axis = GamepadAxis::X;
+                            t.stick = GamepadStick::Right;
+                        }
+                        else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+                        {
+                            t.axis = GamepadAxis::Y;
+                            t.stick = GamepadStick::Right;
+                        }
+                        OnGamepadAxisMotion.Invoke(t);
                     }
                     break;
                 case SDL_CONTROLLERDEVICEADDED:

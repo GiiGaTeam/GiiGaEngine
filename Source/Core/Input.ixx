@@ -104,29 +104,33 @@ public:
         });
 
         window->OnGamepadAxisMotion.Register([this](const GamepadAxisMotionEvent& e) { 
-            /*
-            auto& gamepad = gamepads_[event.cdevice.which];
-            if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+            
+            auto& gamepad = gamepads_[e.device_id];
+            auto stick = &gamepad.left_trigger_axis;
+
+            switch (e.stick)
             {
-                if (abs(event.caxis.value) < dead_zone_) continue;
-                std::get<0>(gamepad.left_trigger_axis) = event.caxis.value / 32767.0f;
+                case (GamepadStick::Left): stick = &gamepad.left_trigger_axis; break;
+                case (GamepadStick::Right): stick = &gamepad.right_trigger_axis; break;
+                default: break;
             }
-            else if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+
+            if (abs(e.value) < dead_zone_)
             {
-                if (abs(event.caxis.value) < dead_zone_) continue;
-                std::get<1>(gamepad.left_trigger_axis) = event.caxis.value / 32767.0f;
+                *stick = std::make_tuple(0.0f, 0.0f);
+                return;
             }
-            else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
+
+            auto normal_value = e.value / 32767.0f;
+
+            if (e.axis == GamepadAxis::X)
             {
-                if (abs(event.caxis.value) < dead_zone_) continue;
-                std::get<0>(gamepad.right_trigger_axis) = event.caxis.value / 32767.0f;
+                std::get<0>(*stick) = normal_value;
             }
-            else if (event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+            else
             {
-                if (abs(event.caxis.value) < dead_zone_) continue;
-                std::get<1>(gamepad.right_trigger_axis) = event.caxis.value / 32767.0f;
+                std::get<1>(*stick) = normal_value;
             }
-            */
         });
 
         window->OnGamepadAdded.Register([this](const GamepadAddedEvent& e) { 
@@ -334,9 +338,6 @@ private:
 
         for (auto& [idx, gamepad] : gamepads_)
         {
-            gamepad.left_trigger_axis = std::make_tuple(0.0f, 0.0f);
-            gamepad.right_trigger_axis = std::make_tuple(0.0f, 0.0f);
-
             for (auto& [button, state] : gamepad.button_states)
             {
                 state.pressed = false;
