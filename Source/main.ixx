@@ -12,20 +12,21 @@ import ConsoleComponent;
 import WindowManager;
 import WindowSettings;
 import Input;
+import EventSystem;
 
 export int main()
 {
-    GiiGa::Game game_loop;
+    ImGui::CreateContext();
+    auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
+    auto window = GiiGa::WindowManager::CreateWindow(settings);
+    GiiGa::Input input;
+    input.Init(window);
+
+    GiiGa::Game game_loop(window);
     
     //auto obj = GiiGa::World::CreateObject();
 
     //obj->CreateComponent<GiiGa::ConsoleComponent>();
-    
-    auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
-    auto window = GiiGa::WindowManager::CreateWindow(settings);
-
-    ImGui::CreateContext();
-    GiiGa::Input::Init(window);
     
     game_loop.Run();
 
