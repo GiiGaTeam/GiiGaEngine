@@ -11,5 +11,6 @@ namespace GiiGa
     public:
         virtual ~Component() = default;
 
+        virtual void Init()=0;
     };
 }

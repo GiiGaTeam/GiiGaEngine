@@ -135,6 +135,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
+    <ClCompile Include="Source\Components\TransformComponent.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />
     <ClCompile Include="Source\Core\EditorEngine.ixx" />
     <ClCompile Include="Source\Core\Engine.ixx" />
