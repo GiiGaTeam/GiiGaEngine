@@ -16,7 +16,6 @@ namespace GiiGa
         void Create()
         {
             device_ = std::shared_ptr<ID3D12Device>(CreateDevice(), DirectXDeleter());
-
         }
 
         std::shared_ptr<ID3D12CommandQueue> CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC& desc) const
@@ -55,6 +54,19 @@ namespace GiiGa
             return std::shared_ptr<ID3D12GraphicsCommandList>(cmdList, DirectXDeleter());
         }
 
+        std::shared_ptr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc)
+        {
+            if (!device_) return nullptr;
+            ID3D12DescriptorHeap* d3d12DescriptorHeap;
+            ThrowIfFailed(device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&d3d12DescriptorHeap)));
+            return std::shared_ptr<ID3D12DescriptorHeap>(d3d12DescriptorHeap, DirectXDeleter());
+        }
+
+        UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type)
+        {
+            return device_->GetDescriptorHandleIncrementSize(type);
+        }
+    
     private:
         std::shared_ptr<ID3D12Device> device_;
 
@@ -87,49 +99,6 @@ namespace GiiGa
 #endif
 
             return device;
-        }
-
-        // NOTE: for now we assume:
-        //      number of RTVs = NUM_BACK_BUFFERS
-        //      number of CBV_SRV_UAV = NUM_CBV_SRV_UAVs
-        void CreateHeaps()
-        {
-            // create rtv heap
-            {
-                ID3D12DescriptorHeap* desc_heap;
-                const UINT num_rtvs = RenderSystemSettings::NUM_BACK_BUFFERS;
-
-                D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-                desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-                desc.NumDescriptors = num_rtvs;
-                desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-                desc.NodeMask = 1;
-
-                ThrowIfFailed(device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&desc_heap)));
-
-                SIZE_T rtvDescriptorSize = device_->GetDescriptorHandleIncrementSize(
-                    D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-                
-                D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = desc_heap->
-                    GetCPUDescriptorHandleForHeapStart();
-
-                // todo give render context descriptor handles
-                for (UINT i = 0; i < num_rtvs; i++)
-                {
-                    g_mainRenderTargetDescriptor[i] = rtvHandle;
-                    rtvHandle.ptr += rtvDescriptorSize;
-                }
-            }
-
-            {
-                D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-                desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-                desc.NumDescriptors = 1;
-                desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-                if (g_pd3dDevice->CreateDescriptorHeap(
-                        &desc, IID_PPV_ARGS(&g_pd3dSrvDescHeap)) != S_OK)
-                    return false;
-            }
         }
     };
 }
