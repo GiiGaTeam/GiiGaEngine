@@ -147,6 +147,7 @@
     <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
     <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
     <ClCompile Include="Source\Core\Render\FrameContext.ixx" />
+    <ClCompile Include="Source\Core\Render\Interfaces\IRenderDevice.ixx" />
     <ClCompile Include="Source\Core\Render\RenderContext.ixx" />
     <ClCompile Include="Source\Core\Render\RenderData.ixx" />
     <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />

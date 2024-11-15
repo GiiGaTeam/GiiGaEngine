@@ -15,7 +15,6 @@ namespace GiiGa
     public:
         void Init(Window window)
         {
-            device_.CreateDevice();
             context_.Create(device_);
         }
     private:

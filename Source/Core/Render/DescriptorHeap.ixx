@@ -14,7 +14,7 @@ module;
 export module DescriptorHeap;
 
 import VariableSizeAllocationsManager;
-import RenderDevice;
+import IRenderDevice;
 
 // TODO:
 // free stale enqueueing
@@ -23,7 +23,7 @@ import RenderDevice;
 
 namespace GiiGa
 {
-    class DescriptorHeapAllocation;
+    export class DescriptorHeapAllocation;
     class DescriptorHeapAllocationManager;
 
     class IDescriptorAllocator
@@ -45,7 +45,7 @@ namespace GiiGa
     //                   |
     //                  m_FirstGpuHandle
     //
-    class DescriptorHeapAllocation
+    export class DescriptorHeapAllocation
     {
     public:
         // Creates null allocation
@@ -234,7 +234,7 @@ namespace GiiGa
     public:
         // Creates a new D3D12 descriptor heap
         DescriptorHeapAllocationManager(
-            RenderDevice& DeviceD3D12Impl,
+            IRenderDevice& DeviceD3D12Impl,
             IDescriptorAllocator& ParentAllocator,
             size_t ThisManagerId,
             const D3D12_DESCRIPTOR_HEAP_DESC& HeapDesc) :
@@ -257,7 +257,7 @@ namespace GiiGa
         // Uses subrange of descriptors in the existing D3D12 descriptor heap
         // that starts at offset FirstDescriptor and uses NumDescriptors descriptors
         DescriptorHeapAllocationManager(
-            RenderDevice& DeviceD3D12Impl,
+            IRenderDevice& DeviceD3D12Impl,
             IDescriptorAllocator& ParentAllocator,
             size_t ThisManagerId,
             std::shared_ptr<ID3D12DescriptorHeap> pd3d12DescriptorHeap,
@@ -384,7 +384,7 @@ namespace GiiGa
 
         void FreeAllocation(DescriptorHeapAllocation&& Allocation)
         {
-            assert(Allocation.GetAllocationManagerId() == m_ThisManagerId, "Invalid descriptor heap manager Id");
+            assert(Allocation.GetAllocationManagerId() == m_ThisManagerId); //, "Invalid descriptor heap manager Id"
 
             if (Allocation.IsNull())
                 return;
@@ -416,7 +416,7 @@ namespace GiiGa
 
     private:
         IDescriptorAllocator& m_ParentAllocator;
-        RenderDevice& m_DeviceD3D12Impl;
+        IRenderDevice& m_DeviceD3D12Impl;
 
         // External ID assigned to this descriptor allocations manager
         size_t m_ThisManagerId = static_cast<size_t>(-1);
@@ -476,12 +476,12 @@ namespace GiiGa
     // Render device contains four CPUDescriptorHeap object instances (one for each D3D12 heap type). The heaps are accessed
     // when a texture or a buffer view is created.
     //
-    class CPUDescriptorHeap final : public IDescriptorAllocator
+    export class CPUDescriptorHeap final : public IDescriptorAllocator
     {
     public:
         // Initializes the heap
         CPUDescriptorHeap(
-            RenderDevice& DeviceD3D12Impl,
+            IRenderDevice& DeviceD3D12Impl,
             uint32_t NumDescriptorsInHeap,
             D3D12_DESCRIPTOR_HEAP_TYPE Type,
             D3D12_DESCRIPTOR_HEAP_FLAGS Flags)
@@ -514,14 +514,14 @@ namespace GiiGa
 
         ~CPUDescriptorHeap() override
         {
-            assert(m_CurrentSize == 0, "Not all allocations released");
+            assert(m_CurrentSize == 0); //, "Not all allocations released"
 
-            assert(m_AvailableHeaps.size() == m_HeapPool.size(), "Not all descriptor heap pools are released");
+            assert(m_AvailableHeaps.size() == m_HeapPool.size()); //, "Not all descriptor heap pools are released"
             uint32_t TotalDescriptors = 0;
             for (auto& Heap : m_HeapPool)
             {
-                assert(Heap.GetNumAvailableDescriptors() == Heap.GetMaxDescriptors(),
-                    "Not all descriptors in the descriptor pool are released");
+                assert(Heap.GetNumAvailableDescriptors() == Heap.GetMaxDescriptors());
+                // , "Not all descriptors in the descriptor pool are released"
                 TotalDescriptors += Heap.GetMaxDescriptors();
             }
 
@@ -640,7 +640,7 @@ namespace GiiGa
             m_AvailableHeaps.insert(ManagerId);
         }
 
-        RenderDevice& m_DeviceD3D12Impl;
+        IRenderDevice& m_DeviceD3D12Impl;
 
         // Pool of descriptor heap managers
         std::mutex m_HeapPoolMutex;
@@ -695,11 +695,11 @@ namespace GiiGa
     // | m_DynamicGPUDescriptorAllocator[SAMPLER]       |
     // |________________________________________________| 
     //
-    class GPUDescriptorHeap final : public IDescriptorAllocator
+    export class GPUDescriptorHeap final : public IDescriptorAllocator
     {
     public:
         GPUDescriptorHeap(
-            RenderDevice& Device,
+            IRenderDevice& Device,
             uint32_t NumDescriptorsInHeap,
             uint32_t NumDynamicDescriptors,
             D3D12_DESCRIPTOR_HEAP_TYPE Type,
@@ -787,7 +787,7 @@ namespace GiiGa
                     if (Heap != nullptr)
                     {
                         auto MgrId = Allocation.GetAllocationManagerId();
-                        assert(MgrId == 0 || MgrId == 1, "Unexpected allocation manager ID");
+                        assert(MgrId == 0 || MgrId == 1); //, "Unexpected allocation manager ID"
 
                         if (MgrId == 0)
                         {
@@ -825,7 +825,7 @@ namespace GiiGa
 #endif
 
     protected:
-        RenderDevice& m_DeviceD3D12Impl;
+        IRenderDevice& m_DeviceD3D12Impl;
 
         const D3D12_DESCRIPTOR_HEAP_DESC m_HeapDesc;
         std::shared_ptr<ID3D12DescriptorHeap> m_pd3d12DescriptorHeap; // Must be defined after m_HeapDesc

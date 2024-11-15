@@ -5,18 +5,41 @@
 #include <unordered_map>
 
 export module RenderDevice;
+import IRenderDevice;
 import DirectXUtils;
 import RenderSystemSettings;
+import DescriptorHeap;
 
 namespace GiiGa
 {
-    export class RenderDevice
+    export class RenderDevice : IRenderDevice
     {
-    public:
-        void Create()
+        friend class RenderSystem;
+    private:
+        RenderDevice():
+            device_(std::shared_ptr<ID3D12Device>(CreateDevice(), DirectXDeleter())),
+            m_CPUDescriptorHeaps
+            {
+                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
+                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[1], D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
+                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[2], D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
+                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[3], D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE}
+            },
+            m_GPUDescriptorHeaps
+            {
+                {*this, RenderSystemSettings::GPUDescriptorHeapSize[0], RenderSystemSettings::GPUDescriptorHeapDynamicSize[0],
+                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE},
+                {*this, RenderSystemSettings::GPUDescriptorHeapSize[1], RenderSystemSettings::GPUDescriptorHeapDynamicSize[1],
+                 D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+                 D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE}
+            }
         {
-            device_ = std::shared_ptr<ID3D12Device>(CreateDevice(), DirectXDeleter());
         }
+    public:
 
         std::shared_ptr<ID3D12CommandQueue> CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC& desc) const
         {
@@ -54,7 +77,7 @@ namespace GiiGa
             return std::shared_ptr<ID3D12GraphicsCommandList>(cmdList, DirectXDeleter());
         }
 
-        std::shared_ptr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc)
+        std::shared_ptr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc) override
         {
             if (!device_) return nullptr;
             ID3D12DescriptorHeap* d3d12DescriptorHeap;
@@ -62,13 +85,16 @@ namespace GiiGa
             return std::shared_ptr<ID3D12DescriptorHeap>(d3d12DescriptorHeap, DirectXDeleter());
         }
 
-        UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type)
+        UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) override
         {
             return device_->GetDescriptorHandleIncrementSize(type);
         }
-    
+
     private:
         std::shared_ptr<ID3D12Device> device_;
+
+        CPUDescriptorHeap m_CPUDescriptorHeaps[4];
+        GPUDescriptorHeap m_GPUDescriptorHeaps[2];
 
         std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<ID3D12DescriptorHeap>> descriptor_heaps_;
 
