@@ -866,7 +866,7 @@ namespace GiiGa
     //                                        |                       |
     //                                        m_Suballocations[0]     m_Suballocations[1]
     //
-    class DynamicSuballocationsManager final : public IDescriptorAllocator
+    export class DynamicSuballocationsManager final : public IDescriptorAllocator
     {
     public:
         DynamicSuballocationsManager(GPUDescriptorHeap& ParentGPUHeap,
@@ -884,7 +884,7 @@ namespace GiiGa
 
         // clang-format off
         DynamicSuballocationsManager(const DynamicSuballocationsManager&) = delete;
-        DynamicSuballocationsManager(DynamicSuballocationsManager&&) = delete;
+        DynamicSuballocationsManager(DynamicSuballocationsManager&&) = default;
         DynamicSuballocationsManager& operator =(const DynamicSuballocationsManager&) = delete;
         DynamicSuballocationsManager& operator =(DynamicSuballocationsManager&&) = delete;
         // clang-format on

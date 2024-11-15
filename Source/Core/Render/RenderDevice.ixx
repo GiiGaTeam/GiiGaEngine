@@ -1,5 +1,6 @@
 ﻿module;
 
+#include <cassert>
 #include <d3d12.h>
 #include <memory>
 #include <unordered_map>
@@ -91,6 +92,20 @@ namespace GiiGa
         UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) override
         {
             return device_->GetDescriptorHandleIncrementSize(type);
+        }
+
+        DynamicSuballocationsManager CreateDynamicSubAllocationManager(D3D12_DESCRIPTOR_HEAP_TYPE heap_type)
+        {
+            static uint32_t allocated_descriptors[2] = {0, 0};
+
+            uint32_t alloc_size = RenderSystemSettings::GPUDescriptorHeapDynamicSize[heap_type] / RenderSystemSettings::
+                                  NUM_FRAMES_IN_FLIGHT;
+
+            assert(allocated_descriptors[heap_type] + alloc_size <= RenderSystemSettings::GPUDescriptorHeapDynamicSize[heap_type]);
+
+            allocated_descriptors[heap_type] += alloc_size;
+
+            return DynamicSuballocationsManager(m_GPUDescriptorHeaps[heap_type], alloc_size, "MB TODO");
         }
 
         ///////////////////////// BUFFERS INTERFACE /////////////////////////////////////////////////

@@ -30,7 +30,7 @@ namespace GiiGa
             {
                 frame_contexts_.reserve(RenderSystemSettings::NUM_FRAMES_IN_FLIGHT);
                 for (UINT i = 0; i < RenderSystemSettings::NUM_FRAMES_IN_FLIGHT; i++)
-                    frame_contexts_.emplace_back(device.CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT),0);
+                    frame_contexts_.emplace_back(device);
             }
 
             {

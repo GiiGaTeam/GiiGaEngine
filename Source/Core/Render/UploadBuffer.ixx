@@ -11,9 +11,14 @@ import RenderDevice;
 
 namespace GiiGa
 {
-    class UploadBuffer
+    export class UploadBuffer
     {
     public:
+        UploadBuffer(const UploadBuffer& other) = delete;
+        UploadBuffer(UploadBuffer&& other) noexcept = default;
+        UploadBuffer& operator=(const UploadBuffer& other) = delete;
+        UploadBuffer& operator=(UploadBuffer&& other) noexcept = delete;
+
         // Use to upload data to the GPU
         struct Allocation
         {
@@ -70,19 +75,12 @@ namespace GiiGa
             }
         }
 
-    protected:
-        friend class std::default_delete<UploadBuffer>;
-
         /**
          * @param pageSize The size to use to allocate new pages in GPU memory.
          */
         explicit UploadBuffer(RenderDevice& device, size_t pageSize = 2 * 1024 * 1024)
             : m_Device(device)
               , m_PageSize(pageSize)
-        {
-        }
-
-        virtual ~UploadBuffer()
         {
         }
 
