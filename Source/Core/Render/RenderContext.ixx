@@ -9,6 +9,7 @@ export module RenderContext;
 import RenderSystemSettings;
 import RenderDevice;
 import FrameContext;
+import Window;
 
 namespace GiiGa
 {
@@ -16,7 +17,7 @@ namespace GiiGa
     export class RenderContext final
     {
     public:
-        void Create(RenderDevice device, Window window)
+        void Create(RenderDevice& device)
         {
             {
                 D3D12_COMMAND_QUEUE_DESC desc = {};

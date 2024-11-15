@@ -8,6 +8,7 @@ export module SwapChain;
 
 import RenderSystemSettings;
 import DirectXUtils;
+import Window;
 
 namespace GiiGa
 {
