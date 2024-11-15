@@ -144,7 +144,23 @@
     <ClCompile Include="Source\Core\GameObject.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Render\Align.ixx" />
+    <ClCompile Include="Source\Core\Render\BufferView.ixx" />
+    <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
+    <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
+    <ClCompile Include="Source\Core\Render\FrameContext.ixx" />
+    <ClCompile Include="Source\Core\Render\GPULocalBuffer.ixx" />
+    <ClCompile Include="Source\Core\Render\Interfaces\IRenderDevice.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderContext.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderData.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderSystem.ixx" />
     <ClCompile Include="Source\Core\Misc.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
+    <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
+    <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
+    <ClCompile Include="Source\Core\Render\VariableSizeAllocationsManager.ixx" />
+    <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
@@ -153,6 +169,7 @@
     <ClCompile Include="Source\Core\WindowManager.ixx" />
     <ClCompile Include="Source\Core\WindowSettings.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
   <ItemGroup>
