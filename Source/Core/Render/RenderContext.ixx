@@ -10,6 +10,7 @@ import RenderSystemSettings;
 import RenderDevice;
 import FrameContext;
 import Window;
+import UploadBuffer;
 
 namespace GiiGa
 {
@@ -34,13 +35,35 @@ namespace GiiGa
             }
 
             {
-                graphics_command_list_ = device.CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT,frame_contexts_[0].command_allocator);
+                graphics_command_list_ = device.CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                    frame_contexts_[0].command_allocator);
             }
         }
-        
+
+        UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size)
+        {
+            FrameContext& current_frame = frame_contexts_[current_frame_index_];
+
+            UploadBuffer& upload_buffer = current_frame.CreateUploadBuffer(device_, size);
+
+            return upload_buffer.Allocate(size, 1);
+        }
+
+        void ResourceBarrier(UINT NumBarriers, const D3D12_RESOURCE_BARRIER& pBarriers)
+        {
+            graphics_command_list_->ResourceBarrier(NumBarriers, &pBarriers);
+        }
+
+        void CopyBufferRegion(ID3D12Resource* pDstBuffer, UINT64 DstOffset, ID3D12Resource* pSrcBuffer, UINT64 SrcOffset, UINT64 NumBytes)
+        {
+            graphics_command_list_->CopyBufferRegion(pDstBuffer, DstOffset, pSrcBuffer, SrcOffset, NumBytes);
+        }
+
     private:
+        RenderDevice& device_;
         std::shared_ptr<ID3D12CommandQueue> graphics_command_queue_;
         std::shared_ptr<ID3D12GraphicsCommandList> graphics_command_list_;
         std::vector<FrameContext> frame_contexts_;
+        size_t current_frame_index_ = 0;
     };
 };

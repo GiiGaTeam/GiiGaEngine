@@ -23,6 +23,7 @@ namespace GiiGa
         struct Allocation
         {
             void* CPU;
+            ID3D12Resource* resource; // todo refactor bad
             D3D12_GPU_VIRTUAL_ADDRESS GPU;
         };
 

@@ -6,6 +6,8 @@ module;
 export module GPULocalBuffer;
 
 import IRenderDevice;
+import RenderContext;
+import UploadBuffer;
 
 namespace GiiGa
 {
@@ -26,31 +28,29 @@ namespace GiiGa
                 resourceDesc, current_state_);
         }
 
-        void UpdateContents(void* data, size_t dataSize)
+        void UpdateContents(RenderContext& render_context, void* data, size_t dataSize, D3D12_RESOURCE_STATES stateAfer)
         {
-            /*
-            cpuDataMapGuard * = RenderContext::CreateUploadBuffer(dataSize)
+            UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(dataSize);
 
-            memcpy(cpuDataMapGuard, data, dataSize)
+            memcpy(allocation.CPU, data, dataSize);
 
             CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                buffer.Get(),
-                stateBefore,
+                buffer_.get(),
+                current_state_,
                 D3D12_RESOURCE_STATE_COPY_DEST
                 );
 
-            RenderContext::ResourceBarrier(1, &barrier)
+            render_context.ResourceBarrier(1, barrier);
 
-            RenderContext::CopyBufferRegion(buffer.Get(), 0, uploadBuffer.Get(), 0, dataSize)
+            render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource, 0, dataSize);
 
-            CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                buffer.Get(),
+            barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+                buffer_.get(),
                 D3D12_RESOURCE_STATE_COPY_DEST,
-                stateAfter
+                stateAfer
                 );
 
-            RenderContext::ResourceBarrier(1, &barrier)
-            */
+            render_context.ResourceBarrier(1, barrier);
         }
 
         ID3D12Resource* getRawResource()

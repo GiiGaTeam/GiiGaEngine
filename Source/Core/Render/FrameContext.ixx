@@ -36,6 +36,12 @@ namespace GiiGa
             upload_buffers[0].Reset();
         }
 
+        UploadBuffer& CreateUploadBuffer(RenderDevice& device, size_t size)
+        {
+            upload_buffers.push_back(UploadBuffer(device, size));
+            return *upload_buffers.end()--;
+        }
+
 
         std::shared_ptr<ID3D12CommandAllocator> command_allocator;
         UINT64 FenceValue = 0;
