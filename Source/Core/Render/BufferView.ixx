@@ -22,7 +22,7 @@ namespace GiiGa
 
         }
 
-        typename ViewType::DescriptorType getDescriptor()
+        D3D12_GPU_DESCRIPTOR_HANDLE getDescriptor()
         {
             descriptor_.getGPUHandle();
         }
