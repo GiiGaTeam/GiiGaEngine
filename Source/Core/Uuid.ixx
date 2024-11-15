@@ -5,7 +5,7 @@ module;
 
 export module Uuid;
 
-namespace Giiga
+namespace GiiGa
 {
 
 export class Uuid
