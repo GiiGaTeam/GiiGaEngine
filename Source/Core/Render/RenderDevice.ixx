@@ -9,12 +9,15 @@ import IRenderDevice;
 import DirectXUtils;
 import RenderSystemSettings;
 import DescriptorHeap;
+import GPULocalBuffer;
+import BufferView;
 
 namespace GiiGa
 {
     export class RenderDevice : IRenderDevice
     {
         friend class RenderSystem;
+
     private:
         RenderDevice():
             device_(std::shared_ptr<ID3D12Device>(CreateDevice(), DirectXDeleter())),
@@ -39,8 +42,8 @@ namespace GiiGa
             }
         {
         }
-    public:
 
+    public:
         std::shared_ptr<ID3D12CommandQueue> CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC& desc) const
         {
             if (!device_) return nullptr;
@@ -90,10 +93,85 @@ namespace GiiGa
             return device_->GetDescriptorHandleIncrementSize(type);
         }
 
+        ///////////////////////// BUFFERS INTERFACE /////////////////////////////////////////////////
+
+        std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags,
+            D3D12_RESOURCE_DESC pDesc,
+            D3D12_RESOURCE_STATES InitialResourceState) override
+        {
+            if (!device_) return nullptr;
+            ID3D12Resource* d3d12Resource;
+            device_->CreateCommittedResource(&pHeapProperties, HeapFlags, &pDesc, InitialResourceState, nullptr,
+                IID_PPV_ARGS(&d3d12Resource));
+            return std::shared_ptr<ID3D12Resource>(d3d12Resource, DirectXDeleter());
+        }
+
+        BufferView<Constant> CreateConstantBufferView(std::shared_ptr<GPULocalBuffer> buffer,
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+        {
+            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            device_->CreateConstantBufferView(&desc, cpuAlloc.GetCpuHandle());
+
+            device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+            DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
+
+            return BufferView<Constant>(std::move(handles));
+        }
+
+        BufferView<ShaderResource> CreateShaderResourceBufferView(std::shared_ptr<GPULocalBuffer> buffer,
+            D3D12_SHADER_RESOURCE_VIEW_DESC desc)
+        {
+            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            device_->CreateShaderResourceView(buffer->getRawResource(), &desc, cpuAlloc.GetCpuHandle());
+
+            device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+            DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
+
+            return BufferView<ShaderResource>(std::move(handles));
+        }
+
+        BufferView<UnorderedAccess> CreateUnorderedAccessView(std::shared_ptr<GPULocalBuffer> buffer,
+            std::shared_ptr<GPULocalBuffer> counterBuffer,
+            D3D12_UNORDERED_ACCESS_VIEW_DESC desc)
+        {
+            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            device_->CreateUnorderedAccessView(buffer->getRawResource(), counterBuffer->getRawResource(), &desc, cpuAlloc.GetCpuHandle());
+
+            device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+            DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
+
+            return BufferView<UnorderedAccess>(std::move(handles));
+        }
+
+        BufferView<Index> CreateIndexBufferView(std::shared_ptr<GPULocalBuffer> buffer,
+            D3D12_INDEX_BUFFER_VIEW desc)
+        {
+            desc.BufferLocation = buffer->getRawResource()->GetGPUVirtualAddress();
+
+            return BufferView<Index>(desc);
+        }
+
+        BufferView<Vertex> CreateVetexBufferView(std::shared_ptr<GPULocalBuffer> buffer,
+            D3D12_VERTEX_BUFFER_VIEW desc)
+        {
+            desc.BufferLocation = buffer->getRawResource()->GetGPUVirtualAddress();
+
+            return BufferView<Vertex>(desc);
+        }
+
     private:
         std::shared_ptr<ID3D12Device> device_;
 
-        CPUDescriptorHeap m_CPUDescriptorHeaps[4];
+        CPUDescriptorHeap m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
         GPUDescriptorHeap m_GPUDescriptorHeaps[2];
 
         std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<ID3D12DescriptorHeap>> descriptor_heaps_;

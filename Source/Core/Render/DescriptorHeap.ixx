@@ -220,6 +220,22 @@ namespace GiiGa
         uint16_t m_DescriptorSize = 0;
     };
 
+    export class DesciptorHandles
+    {
+        DescriptorHeapAllocation cpu_alloc_;
+        DescriptorHeapAllocation gpu_alloc_;
+
+    public:
+        DesciptorHandles(DescriptorHeapAllocation&& cpuAlloc, DescriptorHeapAllocation&& gpuAlloc):
+            cpu_alloc_(std::move(cpuAlloc)), gpu_alloc_(std::move(gpuAlloc))
+        {
+        }
+
+        D3D12_GPU_DESCRIPTOR_HANDLE getGPUHandle()
+        {
+            return gpu_alloc_.GetGpuHandle();
+        }
+    };
 
     // The class performs suballocations within one D3D12 descriptor heap.
     // It uses VariableSizeAllocationsManager to manage free space in the heap
