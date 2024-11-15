@@ -157,6 +157,7 @@
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
     <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
+    <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
     <ClCompile Include="Source\Core\Render\VariableSizeAllocationsManager.ixx" />
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
