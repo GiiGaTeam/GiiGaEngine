@@ -24,7 +24,7 @@ namespace GiiGa
         struct Allocation
         {
             std::span<uint8_t> CPU;
-            ID3D12Resource* resource;
+            std::shared_ptr<ID3D12Resource> resource;
             D3D12_GPU_VIRTUAL_ADDRESS GPU;
         };
 
@@ -141,7 +141,7 @@ namespace GiiGa
                 Allocation allocation;
                 allocation.CPU = m_CPUPtr.subspan(m_Offset);
                 allocation.GPU = m_GPUPtr + m_Offset;
-                allocation.resource = m_d3d12Resource.get();
+                allocation.resource = m_d3d12Resource;
                 m_Offset += alignedSize;
 
                 return allocation;

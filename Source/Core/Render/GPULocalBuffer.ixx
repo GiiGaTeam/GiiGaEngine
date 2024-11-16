@@ -42,7 +42,7 @@ namespace GiiGa
 
             render_context.ResourceBarrier(1, barrier);
 
-            render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource, 0, dataSize);
+            render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource.get(), 0, dataSize);
 
             barrier = CD3DX12_RESOURCE_BARRIER::Transition(
                 buffer_.get(),
