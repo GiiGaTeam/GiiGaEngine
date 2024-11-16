@@ -15,19 +15,24 @@ namespace GiiGa
     export class SwapChain
     {
     public:
-        void Create(const std::shared_ptr<ID3D12CommandQueue>& command_queue, const Window& window)
+        SwapChain(const std::shared_ptr<ID3D12CommandQueue>& command_queue, const Window& window)
         {
-            CreateSwapChainObject(command_queue,window);
+            CreateSwapChainObject(command_queue, window);
 
             swap_chain_->SetMaximumFrameLatency(RenderSystemSettings::NUM_BACK_BUFFERS);
 
             waitable_object_ = swap_chain_->GetFrameLatencyWaitableObject();
-            
+
+        }
+
+        HANDLE GetFrameLatencyWaitableObject()
+        {
+            return waitable_object_;
         }
 
     private:
         std::shared_ptr<IDXGISwapChain4> swap_chain_;
-        HANDLE waitable_object_;
+        HANDLE waitable_object_ = nullptr;
 
         void CreateSwapChainObject(const std::shared_ptr<ID3D12CommandQueue> command_queue, const Window& window)
         {
@@ -64,6 +69,6 @@ namespace GiiGa
             dxgiFactory->Release();
         }
 
-        
+
     };
 }

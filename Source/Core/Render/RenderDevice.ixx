@@ -17,6 +17,8 @@ namespace GiiGa
     export class RenderDevice : IRenderDevice
     {
         friend class RenderSystem;
+        //todo: temp
+        friend class RenderContext;
 
     private:
         RenderDevice():
@@ -41,6 +43,16 @@ namespace GiiGa
                  D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE}
             }
         {
+        }
+
+        std::shared_ptr<ID3D12Device> DetDevice()
+        {
+            return device_;
+        }
+
+        GPUDescriptorHeap& GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type)
+        {
+            return m_GPUDescriptorHeaps[type];
         }
 
     public:

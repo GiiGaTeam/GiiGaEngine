@@ -346,9 +346,7 @@ namespace GiiGa
         DescriptorHeapAllocationManager(const DescriptorHeapAllocationManager&) = delete;
         DescriptorHeapAllocationManager& operator =(const DescriptorHeapAllocationManager&) = delete;
         // clang-format on
-
-        ~DescriptorHeapAllocationManager();
-
+        
         // Allocates Count descriptors
         DescriptorHeapAllocation Allocate(uint32_t Count)
 
@@ -634,7 +632,7 @@ namespace GiiGa
                 }
             };
             // todo review here should be enqueueing
-            StaleAllocation{std::move(Allocation), *this}.~StaleAllocation();
+            StaleAllocation{std::move(Allocation), *this};
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
@@ -765,6 +763,12 @@ namespace GiiGa
             //    MaxDynamicSize, '/', TotalDynamicSize, " (", std::fixed, std::setprecision(2), MaxDynamicSize * 100.0 / TotalDynamicSize,
             //    "%).");
         }
+        
+        //todo: temp may be better with friend declaration
+        std::shared_ptr<ID3D12DescriptorHeap> GetDescriptorHeap()
+        {
+            return m_pd3d12DescriptorHeap;
+        }
 
         virtual DescriptorHeapAllocation Allocate(uint32_t Count) override final
         {
@@ -817,7 +821,7 @@ namespace GiiGa
                 }
             };
             // todo review here should be enqueueing
-            StaleAllocation{std::move(Allocation), *this}.~StaleAllocation();
+            StaleAllocation{std::move(Allocation), *this};
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
