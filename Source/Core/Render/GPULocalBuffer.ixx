@@ -16,15 +16,17 @@ namespace GiiGa
     export class GPULocalBuffer
     {
     public:
-        GPULocalBuffer(IRenderDevice& device, size_t bufferSize, bool allowUA = false)
+        GPULocalBuffer(IRenderDevice& device, size_t bufferSize, bool allowUA = false,
+            D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COPY_DEST):
+            size_(bufferSize)
         {
             CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
             D3D12_RESOURCE_FLAGS flags = allowUA ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 
-            CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags);
+            CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(size_, flags);
 
-            current_state_ = D3D12_RESOURCE_STATE_COPY_DEST;
+            current_state_ = initialState;
 
             buffer_ = device.CreateCommittedResource(heapProperties, D3D12_HEAP_FLAG_NONE,
                 resourceDesc, current_state_);
@@ -36,28 +38,29 @@ namespace GiiGa
 
             std::copy(data.begin(), data.end(), allocation.CPU.begin());
 
-            CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                buffer_.get(),
-                current_state_,
-                D3D12_RESOURCE_STATE_COPY_DEST
-                );
-
-            render_context.ResourceBarrier(1, barrier);
+            StateTransition(render_context, D3D12_RESOURCE_STATE_COPY_DEST);
 
             render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource.get(), 0, data.size());
 
-            barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+            StateTransition(render_context, stateAfer);
+        }
+
+        void StateTransition(RenderContext& render_context, D3D12_RESOURCE_STATES stateAfer)
+        {
+            CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
                 buffer_.get(),
-                D3D12_RESOURCE_STATE_COPY_DEST,
+                current_state_,
                 stateAfer
                 );
 
             render_context.ResourceBarrier(1, barrier);
+
+            current_state_ = stateAfer;
         }
 
-        ID3D12Resource* getRawResource()
+        std::shared_ptr<ID3D12Resource> getRawResource()
         {
-            return buffer_.get();
+            return buffer_;
         }
 
     private:
