@@ -32,7 +32,7 @@ namespace GiiGa
         {
             UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(dataSize);
 
-            memcpy(allocation.CPU, data, dataSize);
+            memcpy(allocation.CPU.data(), data, dataSize);
 
             CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
                 buffer_.get(),
