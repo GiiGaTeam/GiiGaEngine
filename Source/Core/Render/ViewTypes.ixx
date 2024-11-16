@@ -20,6 +20,14 @@ namespace GiiGa
     {
     };
 
+    export class RenderTarget
+    {
+    };
+
+    export class DepthStencil
+    {
+    };
+
     export class Vertex
     {
     };
