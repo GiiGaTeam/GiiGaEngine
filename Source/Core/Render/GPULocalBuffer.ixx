@@ -1,6 +1,8 @@
 module;
 
 #include<memory>
+#include<span>
+#include<algorithm>
 #include<directx/d3dx12.h>
 
 export module GPULocalBuffer;
@@ -28,11 +30,11 @@ namespace GiiGa
                 resourceDesc, current_state_);
         }
 
-        void UpdateContents(RenderContext& render_context, void* data, size_t dataSize, D3D12_RESOURCE_STATES stateAfer)
+        void UpdateContents(RenderContext& render_context, std::span<uint8_t> data, D3D12_RESOURCE_STATES stateAfer)
         {
-            UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(dataSize);
+            UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(data.size());
 
-            memcpy(allocation.CPU.data(), data, dataSize);
+            std::copy(data.begin(), data.end(), allocation.CPU.begin());
 
             CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
                 buffer_.get(),
@@ -42,7 +44,7 @@ namespace GiiGa
 
             render_context.ResourceBarrier(1, barrier);
 
-            render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource.get(), 0, dataSize);
+            render_context.CopyBufferRegion(buffer_.get(), 0, allocation.resource.get(), 0, data.size());
 
             barrier = CD3DX12_RESOURCE_BARRIER::Transition(
                 buffer_.get(),
