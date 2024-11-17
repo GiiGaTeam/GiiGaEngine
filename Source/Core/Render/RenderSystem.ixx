@@ -7,7 +7,6 @@ import RenderSystemSettings;
 import Window;
 import RenderDevice;
 import RenderContext;
-import SwapChain;
 import DescriptorHeap;
 
 namespace GiiGa
@@ -16,19 +15,18 @@ namespace GiiGa
     {
     public:
         RenderSystem(Window& window):
-            device_(), context_(device_), swap_chain_(context_.getGraphicsCommandQueue(), window)
+            device_(), context_(device_,window)
         {
-            context_.SetSwapChainWaitable(swap_chain_.GetFrameLatencyWaitableObject());
+            
         }
 
         void Tick()
         {
-            
+            context_.Tick();
         }
 
     private:
         RenderDevice device_;
         RenderContext context_;
-        SwapChain swap_chain_;
     };
 }

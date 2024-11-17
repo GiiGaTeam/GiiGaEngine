@@ -181,33 +181,21 @@ namespace GiiGa
         }
 
         BufferView<RenderTarget> CreateRenderTargetView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_RENDER_TARGET_VIEW_DESC& desc)
+            const D3D12_RENDER_TARGET_VIEW_DESC* desc)
         {
-            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
-            DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
-            device_->CreateRenderTargetView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
+            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV].Allocate(1);
+            device_->CreateRenderTargetView(buffer.get(), desc, cpuAlloc.GetCpuHandle());
 
-            device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
-                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-            DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
-
-            return BufferView<RenderTarget>(std::move(handles));
+            return BufferView<RenderTarget>(std::move(cpuAlloc));
         }
 
         BufferView<DepthStencil> CreateDepthStencilView(const std::shared_ptr<ID3D12Resource>& buffer,
             const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
         {
-            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
-            DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
+            DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV].Allocate(1);
             device_->CreateDepthStencilView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
 
-            device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
-                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-            DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
-
-            return BufferView<DepthStencil>(std::move(handles));
+            return BufferView<DepthStencil>(std::move(cpuAlloc));
         }
 
         BufferView<Index> CreateIndexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,

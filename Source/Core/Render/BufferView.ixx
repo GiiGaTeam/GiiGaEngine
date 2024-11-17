@@ -24,7 +24,7 @@ namespace GiiGa
 
         D3D12_GPU_DESCRIPTOR_HANDLE getDescriptor()
         {
-            descriptor_.getGPUHandle();
+            return descriptor_.getGPUHandle();
         }
     };
 
@@ -57,6 +57,41 @@ namespace GiiGa
         D3D12_VERTEX_BUFFER_VIEW getDescriptor()
         {
             return descriptor_;
+        }
+    };
+
+    //todo: generalize with consept or someth
+    export template <>
+    class BufferView<RenderTarget>
+    {
+        DescriptorHeapAllocation descriptor_;
+
+    public:
+        BufferView(DescriptorHeapAllocation&& descriptor_holder): descriptor_(std::move(descriptor_holder))
+        {
+
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE getDescriptor()
+        {
+            return descriptor_.GetCpuHandle();
+        }
+    };
+
+    export template <>
+    class BufferView<DepthStencil>
+    {
+        DescriptorHeapAllocation descriptor_;
+
+    public:
+        BufferView(DescriptorHeapAllocation&& descriptor_holder): descriptor_(std::move(descriptor_holder))
+        {
+
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE getDescriptor()
+        {
+            return descriptor_.GetCpuHandle();
         }
     };
 }

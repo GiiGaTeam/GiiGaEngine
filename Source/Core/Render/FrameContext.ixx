@@ -24,9 +24,10 @@ namespace GiiGa
             upload_buffers.emplace_back(UploadBuffer(device));
         }
 
-        void Reset()
+        void Reset(std::shared_ptr<ID3D12GraphicsCommandList>& command_list)
         {
-            command_allocator.reset();
+            command_allocator->Reset();
+            command_list->Reset(command_allocator.get(), nullptr);
 
             for (int i = 0; i < upload_buffers.size() - 1; ++i)
             {
@@ -43,8 +44,8 @@ namespace GiiGa
         }
 
 
-        std::shared_ptr<ID3D12CommandAllocator> command_allocator;
         UINT64 FenceValue = 0;
+        std::shared_ptr<ID3D12CommandAllocator> command_allocator;
 
     private:
         DynamicSuballocationsManager common_allocator_;

@@ -23,17 +23,18 @@ namespace GiiGa
     export class RenderContext final
     {
     public:
-        RenderContext(RenderDevice& device):
-            device_(device)
-        {
+        RenderContext(RenderDevice& device, Window& window):
+            device_(device),
+            graphics_command_queue_([&device]()
             {
-                D3D12_COMMAND_QUEUE_DESC desc = {};
+                D3D12_COMMAND_QUEUE_DESC desc{};
                 desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
                 desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
                 desc.NodeMask = 1;
-                graphics_command_queue_ = device_.CreateCommandQueue(desc);
-            }
-
+                return device.CreateCommandQueue(desc);
+            }()),
+            g_pSwapChain(device, graphics_command_queue_, window)
+        {
             {
                 frame_contexts_.reserve(RenderSystemSettings::NUM_FRAMES_IN_FLIGHT);
                 for (UINT i = 0; i < RenderSystemSettings::NUM_FRAMES_IN_FLIGHT; i++)
@@ -43,6 +44,7 @@ namespace GiiGa
             {
                 graphics_command_list_ = device_.CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT,
                     frame_contexts_[0].command_allocator);
+                graphics_command_list_->Close();
             }
 
             g_fence = device_.CreateFence(0, D3D12_FENCE_FLAG_NONE);
@@ -72,11 +74,6 @@ namespace GiiGa
                 DXGI_FORMAT_R8G8B8A8_UNORM, descriptor_heap.GetDescriptorHeap().get(),
                 imgui_srv_desc_heap_allocation_.GetCpuHandle(),
                 imgui_srv_desc_heap_allocation_.GetGpuHandle());
-        }
-
-        void SetSwapChainWaitable(HANDLE waitable)
-        {
-            g_hSwapChainWaitableObject = waitable;
         }
 
         UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size)
@@ -115,36 +112,43 @@ namespace GiiGa
 
             WaitForNextFrameResources();
 
-            UINT backBufferIdx = g_pSwapChain->GetCurrentBackBufferIndex();
-            current_frame->Reset();
+            g_pSwapChain.Reset();
+            current_frame->Reset(graphics_command_list_);
 
-            D3D12_RESOURCE_BARRIER barrier = {};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrier.Transition.pResource = g_mainRenderTargetResource[backBufferIdx];
-            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-            graphics_command_list_->Reset(frameCtx->CommandAllocator, nullptr);
+            D3D12_RESOURCE_BARRIER barrier = g_pSwapChain.getResourceBarrier(D3D12_RESOURCE_STATE_PRESENT,
+                D3D12_RESOURCE_STATE_RENDER_TARGET);
             graphics_command_list_->ResourceBarrier(1, &barrier);
 
             // Render Dear ImGui graphics
             const float clear_color_with_alpha[4] = {0, 0, 0, 1};
-            graphics_command_list_->ClearRenderTargetView(
-                g_mainRenderTargetDescriptor[backBufferIdx], clear_color_with_alpha, 0,
+            graphics_command_list_->ClearRenderTargetView(g_pSwapChain.getRTVDescriptorHandle(), clear_color_with_alpha, 0,
                 nullptr);
+
+            D3D12_CPU_DESCRIPTOR_HANDLE rtv = g_pSwapChain.getRTVDescriptorHandle();
+
             graphics_command_list_->OMSetRenderTargets(
-                1, &g_mainRenderTargetDescriptor[backBufferIdx], FALSE, nullptr);
-            graphics_command_list_->SetDescriptorHeaps(1,
-                device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetDescriptorHeap().get());
+                1, &rtv, FALSE, nullptr);
+
+            ID3D12DescriptorHeap* descriptorHeap = device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetDescriptorHeap().
+                                                           get();
+
+            graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
             ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), graphics_command_list_.get());
-            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+            barrier = g_pSwapChain.getResourceBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+
             graphics_command_list_->ResourceBarrier(1, &barrier);
             graphics_command_list_->Close();
 
             graphics_command_queue_->ExecuteCommandLists(
                 1, (ID3D12CommandList* const*)&graphics_command_list_);
+
+            g_pSwapChain.Present();
+
+            UINT64 fenceValue = g_fenceLastSignaledValue + 1;
+            graphics_command_queue_->Signal(g_fence.get(), fenceValue);
+            g_fenceLastSignaledValue = fenceValue;
+            current_frame->FenceValue = fenceValue;
         }
 
         void WaitForNextFrameResources()
@@ -152,7 +156,7 @@ namespace GiiGa
             UINT nextFrameIndex = g_frameIndex + 1;
             g_frameIndex = nextFrameIndex;
 
-            HANDLE waitableObjects[] = {g_hSwapChainWaitableObject, nullptr};
+            HANDLE waitableObjects[] = {g_pSwapChain.GetFrameLatencyWaitableObject(), nullptr};
             DWORD numWaitableObjects = 1;
 
             current_frame = &frame_contexts_[
@@ -171,15 +175,15 @@ namespace GiiGa
 
     private:
         RenderDevice& device_;
-        std::shared_ptr<SwapChain> g_pSwapChain;
-        DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;
         std::shared_ptr<ID3D12CommandQueue> graphics_command_queue_;
+        SwapChain g_pSwapChain;
+        DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;
         std::shared_ptr<ID3D12GraphicsCommandList> graphics_command_list_;
         std::vector<FrameContext> frame_contexts_;
         FrameContext* current_frame;
         std::shared_ptr<ID3D12Fence> g_fence;
         HANDLE g_fenceEvent;
         size_t g_frameIndex = 0;
-        HANDLE g_hSwapChainWaitableObject = nullptr;
+        UINT64 g_fenceLastSignaledValue = 0;
     };
 };
