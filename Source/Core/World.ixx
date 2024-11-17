@@ -13,6 +13,7 @@ namespace GiiGa
 {
     export class World
     {
+
     public:
         static std::unique_ptr<World>& GetInstance()
         {
@@ -30,18 +31,44 @@ namespace GiiGa
             GetInstance()->levels_.push_back(level);
         }
 
-        static std::shared_ptr<GameObject> CreateObject(std::shared_ptr<Level> level = nullptr)
+        static std::shared_ptr<GameObject> CreateGameObject(std::shared_ptr<Level> Level = nullptr)
         {
             auto obj = std::make_shared<GameObject>();
 
             GetInstance()->game_objects_.push_back(obj);
 
-            if (level)
+            if (Level)
             {
-                level->AddGameObject(obj);
+                Level->AddGameObject(obj);
             }
 
             return obj;
+        }
+
+        static bool DestroyGameObject(std::shared_ptr<GameObject> GameObject)
+        {
+            auto Iterator = GetInstance()->game_objects_.erase(
+                std::remove(GetInstance()->game_objects_.begin(), GetInstance()->game_objects_.end(), GameObject),
+                GetInstance()->game_objects_.end());
+
+            if (Iterator->get())
+            {
+                return true;
+            }
+            return false;
+        }
+
+        static std::shared_ptr<GameObject> Instantiate(GameObjectAsset Asset,
+            std::shared_ptr<GameObject> Parent,
+            std::shared_ptr<Level> Level = nullptr)
+        {
+            auto GO = CreateGameObject(Level);
+
+            GO->SetParent(Parent, false);
+            /// Setup GO
+            /// ...
+
+            return GO;
         }
 
     private:

@@ -9,6 +9,10 @@ import Component;
 
 namespace GiiGa
 {
+    export struct GameObjectAsset
+    {
+    };
+
     export class GameObject final : public ITickable
     {
     public:
@@ -32,6 +36,10 @@ namespace GiiGa
             return nullptr;
         }
 
+        void SetParent(std::shared_ptr<GameObject> Parent, bool SafeWorldTransform = true)
+        {
+        }
+        
     private:
         std::vector<std::shared_ptr<Component>> components_;
     };
