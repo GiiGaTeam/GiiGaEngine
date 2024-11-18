@@ -6,10 +6,15 @@
 
 export module TransformComponent;
 import Component;
+import EventSystem;
 
 namespace GiiGa
 {
     using namespace DirectX::SimpleMath;
+
+    struct UpdateParentEvent
+    {
+    };
 
     struct Transform
     {
@@ -115,11 +120,15 @@ namespace GiiGa
             transform_ = transform;
         }
 
-        void Tick(float dt) override;
+        void Tick(float dt) override
+        {
+            if (is_dirty_) UpdateTransformMatrix();
+        }
 
         void Init() override
         {
-
+            OnUpdateParentEvent.Register([this](const UpdateParentEvent& e) { OnUpdateParent(e); });
+            //OnUpdateParentEvent.Register(std::function<void(const UpdateParentEvent&)>(&TransformComponent::OnUpdateParent));
         }
 
         Transform GetTransform() const { return transform_; }
@@ -137,7 +146,64 @@ namespace GiiGa
 
         }
 
+        Vector3 GetLocation() const { return transform_.Location(); }
+
+        void SetLocation(const Vector3& location)
+        {
+            transform_ = Transform(location);
+            UpdateTransformMatrix();
+        }
+
+        Vector3 GetRotation() const { return transform_.Rotation(); }
+
+        void SetRotation(const Vector3& rotation)
+        {
+            transform_ = Transform(transform_.Location(), rotation);
+            UpdateTransformMatrix();
+        }
+
+        Vector3 GetScale() const { return transform_.Scale(); }
+
+        void SetScale(const Vector3& scale)
+        {
+            transform_ = Transform(transform_.Location(), transform_.Rotation(), scale);
+            UpdateTransformMatrix();
+        }
+
+        Vector3 GetWorldLocation() const { return transform_.Location(); }
+
+        void SetWorldLocation(const Vector3& location)
+        {
+        }
+
+        Vector3 GetWorldRotation() const { return transform_.Rotation(); }
+
+        void SetWorldRotation(const Vector3& rotation)
+        {
+        }
+
+        Vector3 GetWorldScale() const { return transform_.Scale(); }
+
+        void SetWorldScale(const Vector3& scale)
+        {
+        }
+
+
         std::weak_ptr<TransformComponent> GetParent() const { return parent_; }
+
+        void AttachTo(std::weak_ptr<TransformComponent> parent)
+        {
+            if (parent.expired()) return;
+            parent_ = parent;
+        }
+
+        void Detach()
+        {
+            parent_.reset();
+
+        }
+
+        EventDispatcher<UpdateParentEvent> OnUpdateParentEvent;
 
     private:
         bool is_dirty_ = false;
@@ -150,6 +216,13 @@ namespace GiiGa
         void UpdateTransformMatrix()
         {
             local_matrix_ = transform_.GetMatrix();
+            world_matrix;
+            is_dirty_ = false;
         }
+
+        void OnUpdateParent(const UpdateParentEvent& e)
+        {
+
+        };
     };
 }
