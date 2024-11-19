@@ -8,31 +8,38 @@ import DescriptorHeap;
 
 namespace GiiGa
 {
-    export class Constant
+    export struct Constant
     {
+        using ViewDesc = D3D12_CONSTANT_BUFFER_VIEW_DESC;
     };
 
-    export class ShaderResource
+    export struct ShaderResource
     {
+        using ViewDesc = D3D12_SHADER_RESOURCE_VIEW_DESC;
     };
 
-    export class UnorderedAccess
+    export struct UnorderedAccess
     {
+        using ViewDesc = D3D12_UNORDERED_ACCESS_VIEW_DESC;
     };
 
-    export class RenderTarget
+    export struct RenderTarget
     {
+        using ViewDesc = D3D12_RENDER_TARGET_VIEW_DESC;
     };
 
-    export class DepthStencil
+    export struct DepthStencil
     {
+        using ViewDesc = D3D12_DEPTH_STENCIL_VIEW_DESC;
     };
 
-    export class Vertex
+    export struct Vertex
     {
+        using ViewDesc = D3D12_VERTEX_BUFFER_VIEW;
     };
 
-    export class Index
+    export struct Index
     {
+        using ViewDesc = D3D12_INDEX_BUFFER_VIEW;
     };
 }

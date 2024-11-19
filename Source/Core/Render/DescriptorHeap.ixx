@@ -226,6 +226,13 @@ namespace GiiGa
         DescriptorHeapAllocation gpu_alloc_;
 
     public:
+        DesciptorHandles() = default;
+
+        DesciptorHandles(const DesciptorHandles& other) = delete;
+        DesciptorHandles(DesciptorHandles&& other) noexcept = default;
+        DesciptorHandles& operator=(const DesciptorHandles& other) = delete;
+        DesciptorHandles& operator=(DesciptorHandles&& other) noexcept = default;
+
         DesciptorHandles(DescriptorHeapAllocation&& cpuAlloc, DescriptorHeapAllocation&& gpuAlloc):
             cpu_alloc_(std::move(cpuAlloc)), gpu_alloc_(std::move(gpuAlloc))
         {
@@ -346,7 +353,7 @@ namespace GiiGa
         DescriptorHeapAllocationManager(const DescriptorHeapAllocationManager&) = delete;
         DescriptorHeapAllocationManager& operator =(const DescriptorHeapAllocationManager&) = delete;
         // clang-format on
-        
+
         // Allocates Count descriptors
         DescriptorHeapAllocation Allocate(uint32_t Count)
 
@@ -763,7 +770,7 @@ namespace GiiGa
             //    MaxDynamicSize, '/', TotalDynamicSize, " (", std::fixed, std::setprecision(2), MaxDynamicSize * 100.0 / TotalDynamicSize,
             //    "%).");
         }
-        
+
         //todo: temp may be better with friend declaration
         std::shared_ptr<ID3D12DescriptorHeap> GetDescriptorHeap()
         {

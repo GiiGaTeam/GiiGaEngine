@@ -2,6 +2,7 @@ module;
 
 #include <memory>
 #include <d3d12.h>
+#include <iostream>
 
 export module BufferView;
 
@@ -17,6 +18,13 @@ namespace GiiGa
         DesciptorHandles descriptor_;
 
     public:
+        BufferView() = default;
+
+        BufferView(const BufferView& other) = delete;
+        BufferView(BufferView&& other) noexcept = default;
+        BufferView& operator=(const BufferView& other) = delete;
+        BufferView& operator=(BufferView&& other) noexcept = default;
+
         BufferView(DesciptorHandles&& descriptor_holder): descriptor_(std::move(descriptor_holder))
         {
 
@@ -34,6 +42,13 @@ namespace GiiGa
         D3D12_INDEX_BUFFER_VIEW descriptor_;
 
     public:
+        BufferView() = default;
+
+        BufferView(const BufferView& other) = delete;
+        BufferView(BufferView&& other) noexcept = default;
+        BufferView& operator=(const BufferView& other) = delete;
+        BufferView& operator=(BufferView&& other) noexcept = default;
+
         BufferView(D3D12_INDEX_BUFFER_VIEW desc): descriptor_(desc)
         {
         }
@@ -50,6 +65,13 @@ namespace GiiGa
         D3D12_VERTEX_BUFFER_VIEW descriptor_;
 
     public:
+        BufferView() = default;
+
+        BufferView(const BufferView& other) = delete;
+        BufferView(BufferView&& other) noexcept = default;
+        BufferView& operator=(const BufferView& other) = delete;
+        BufferView& operator=(BufferView&& other) noexcept = default;
+
         BufferView(D3D12_VERTEX_BUFFER_VIEW desc): descriptor_(desc)
         {
         }
@@ -67,11 +89,18 @@ namespace GiiGa
         DescriptorHeapAllocation descriptor_;
 
     public:
+        BufferView() = default;
+
+        BufferView(const BufferView& other) = delete;
+        BufferView(BufferView&& other) noexcept = default;
+        BufferView& operator=(const BufferView& other) = delete;
+        BufferView& operator=(BufferView&& other) noexcept = default;
+
         BufferView(DescriptorHeapAllocation&& descriptor_holder): descriptor_(std::move(descriptor_holder))
         {
 
         }
-
+        
         D3D12_CPU_DESCRIPTOR_HANDLE getDescriptor()
         {
             return descriptor_.GetCpuHandle();
@@ -84,6 +113,13 @@ namespace GiiGa
         DescriptorHeapAllocation descriptor_;
 
     public:
+        BufferView() = default;
+
+        BufferView(const BufferView& other) = delete;
+        BufferView(BufferView&& other) noexcept = default;
+        BufferView& operator=(const BufferView& other) = delete;
+        BufferView& operator=(BufferView&& other) noexcept = default;
+
         BufferView(DescriptorHeapAllocation&& descriptor_holder): descriptor_(std::move(descriptor_holder))
         {
 

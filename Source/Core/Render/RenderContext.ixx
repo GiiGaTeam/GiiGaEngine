@@ -9,18 +9,18 @@
 
 export module RenderContext;
 
+import IRenderContext;
 import RenderSystemSettings;
 import RenderDevice;
 import FrameContext;
 import Window;
-import UploadBuffer;
 import DescriptorHeap;
 import SwapChain;
 
 namespace GiiGa
 {
 
-    export class RenderContext final
+    export class RenderContext : public IRenderContext
     {
     public:
         RenderContext(RenderDevice& device, Window& window):
@@ -33,7 +33,7 @@ namespace GiiGa
                 desc.NodeMask = 1;
                 return device.CreateCommandQueue(desc);
             }()),
-            g_pSwapChain(device, graphics_command_queue_, window)
+            swapChain_(device, graphics_command_queue_, window)
         {
             {
                 frame_contexts_.reserve(RenderSystemSettings::NUM_FRAMES_IN_FLIGHT);
@@ -47,9 +47,9 @@ namespace GiiGa
                 graphics_command_list_->Close();
             }
 
-            g_fence = device_.CreateFence(0, D3D12_FENCE_FLAG_NONE);
+            fence_ = device_.CreateFence(0, D3D12_FENCE_FLAG_NONE);
 
-            g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+            fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
             // Setup Dear ImGui context
             IMGUI_CHECKVERSION();
@@ -76,7 +76,7 @@ namespace GiiGa
                 imgui_srv_desc_heap_allocation_.GetGpuHandle());
         }
 
-        UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size)
+        UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size) override
         {
             UploadBuffer& upload_buffer = current_frame->CreateUploadBuffer(device_, size);
 
@@ -88,9 +88,10 @@ namespace GiiGa
             graphics_command_list_->ResourceBarrier(NumBarriers, &pBarriers);
         }
 
-        void CopyBufferRegion(ID3D12Resource* pDstBuffer, UINT64 DstOffset, ID3D12Resource* pSrcBuffer, UINT64 SrcOffset, UINT64 NumBytes)
+        void CopyBufferRegion(const std::shared_ptr<ID3D12Resource>& pDstBuffer, UINT64 DstOffset,
+            const std::shared_ptr<ID3D12Resource>& pSrcBuffer, UINT64 SrcOffset, UINT64 NumBytes) override
         {
-            graphics_command_list_->CopyBufferRegion(pDstBuffer, DstOffset, pSrcBuffer, SrcOffset, NumBytes);
+            graphics_command_list_->CopyBufferRegion(pDstBuffer.get(), DstOffset, pSrcBuffer.get(), SrcOffset, NumBytes);
         }
 
         std::shared_ptr<ID3D12CommandQueue> getGraphicsCommandQueue()
@@ -112,19 +113,16 @@ namespace GiiGa
 
             WaitForNextFrameResources();
 
-            g_pSwapChain.Reset();
             current_frame->Reset(graphics_command_list_);
-
-            D3D12_RESOURCE_BARRIER barrier = g_pSwapChain.getResourceBarrier(D3D12_RESOURCE_STATE_PRESENT,
-                D3D12_RESOURCE_STATE_RENDER_TARGET);
-            graphics_command_list_->ResourceBarrier(1, &barrier);
+            
+            swapChain_.Reset(*this);
 
             // Render Dear ImGui graphics
             const float clear_color_with_alpha[4] = {0, 0, 0, 1};
-            graphics_command_list_->ClearRenderTargetView(g_pSwapChain.getRTVDescriptorHandle(), clear_color_with_alpha, 0,
+            graphics_command_list_->ClearRenderTargetView(swapChain_.getRTVDescriptorHandle(), clear_color_with_alpha, 0,
                 nullptr);
 
-            D3D12_CPU_DESCRIPTOR_HANDLE rtv = g_pSwapChain.getRTVDescriptorHandle();
+            D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_.getRTVDescriptorHandle();
 
             graphics_command_list_->OMSetRenderTargets(
                 1, &rtv, FALSE, nullptr);
@@ -135,28 +133,27 @@ namespace GiiGa
             graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
             ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), graphics_command_list_.get());
 
-            barrier = g_pSwapChain.getResourceBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+            swapChain_.TransitToPresent(*this);
 
-            graphics_command_list_->ResourceBarrier(1, &barrier);
             graphics_command_list_->Close();
-
+            
             graphics_command_queue_->ExecuteCommandLists(
                 1, (ID3D12CommandList* const*)&graphics_command_list_);
 
-            g_pSwapChain.Present();
+            swapChain_.Present();
 
-            UINT64 fenceValue = g_fenceLastSignaledValue + 1;
-            graphics_command_queue_->Signal(g_fence.get(), fenceValue);
-            g_fenceLastSignaledValue = fenceValue;
+            UINT64 fenceValue = fenceLastSignaledValue_ + 1;
+            graphics_command_queue_->Signal(fence_.get(), fenceValue);
+            fenceLastSignaledValue_ = fenceValue;
             current_frame->FenceValue = fenceValue;
         }
 
         void WaitForNextFrameResources()
         {
-            UINT nextFrameIndex = g_frameIndex + 1;
-            g_frameIndex = nextFrameIndex;
+            UINT nextFrameIndex = frameIndex_ + 1;
+            frameIndex_ = nextFrameIndex;
 
-            HANDLE waitableObjects[] = {g_pSwapChain.GetFrameLatencyWaitableObject(), nullptr};
+            HANDLE waitableObjects[] = {swapChain_.GetFrameLatencyWaitableObject(), nullptr};
             DWORD numWaitableObjects = 1;
 
             current_frame = &frame_contexts_[
@@ -165,8 +162,8 @@ namespace GiiGa
             if (fenceValue != 0) // means no fence was signaled
             {
                 current_frame->FenceValue = 0;
-                g_fence->SetEventOnCompletion(fenceValue, g_fenceEvent);
-                waitableObjects[1] = g_fenceEvent;
+                fence_->SetEventOnCompletion(fenceValue, fenceEvent_);
+                waitableObjects[1] = fenceEvent_;
                 numWaitableObjects = 2;
             }
 
@@ -176,14 +173,14 @@ namespace GiiGa
     private:
         RenderDevice& device_;
         std::shared_ptr<ID3D12CommandQueue> graphics_command_queue_;
-        SwapChain g_pSwapChain;
+        SwapChain swapChain_;
         DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;
         std::shared_ptr<ID3D12GraphicsCommandList> graphics_command_list_;
         std::vector<FrameContext> frame_contexts_;
         FrameContext* current_frame;
-        std::shared_ptr<ID3D12Fence> g_fence;
-        HANDLE g_fenceEvent;
-        size_t g_frameIndex = 0;
-        UINT64 g_fenceLastSignaledValue = 0;
+        std::shared_ptr<ID3D12Fence> fence_;
+        HANDLE fenceEvent_;
+        size_t frameIndex_ = 0;
+        UINT64 fenceLastSignaledValue_ = 0;
     };
 };

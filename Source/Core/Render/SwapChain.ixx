@@ -12,6 +12,8 @@ import DirectXUtils;
 import Window;
 import RenderDevice;
 import BufferView;
+import GPULocalResource;
+import IRenderContext;
 
 namespace GiiGa
 {
@@ -22,15 +24,20 @@ namespace GiiGa
         {
             CreateSwapChainObject(command_queue, window);
 
-            render_target_resource.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
-            render_target_views_.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
+            render_targets_.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
 
             CreateRenderTarget(device);
         }
 
-        void Reset()
+        void Reset(IRenderContext& render_context)
         {
             currentBackBufferIdx = swap_chain_->GetCurrentBackBufferIndex();
+            render_targets_[currentBackBufferIdx].StateTransition(render_context, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+
+        void TransitToPresent(IRenderContext& render_context)
+        {
+            render_targets_[currentBackBufferIdx].StateTransition(render_context, D3D12_RESOURCE_STATE_PRESENT);
         }
 
         void Present()
@@ -43,30 +50,16 @@ namespace GiiGa
             return waitable_object_;
         }
 
-        D3D12_RESOURCE_BARRIER getResourceBarrier(D3D12_RESOURCE_STATES StateBefore, D3D12_RESOURCE_STATES StateAfter)
-        {
-            D3D12_RESOURCE_BARRIER barrier = {};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrier.Transition.pResource = render_target_resource[currentBackBufferIdx].get();
-            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            barrier.Transition.StateBefore = StateBefore;
-            barrier.Transition.StateAfter = StateAfter;
-
-            return barrier;
-        }
-
         D3D12_CPU_DESCRIPTOR_HANDLE getRTVDescriptorHandle()
         {
-            return render_target_views_[currentBackBufferIdx].getDescriptor();
+            return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor();
         }
 
     private:
         UINT currentBackBufferIdx = 0;
         std::shared_ptr<IDXGISwapChain4> swap_chain_;
         HANDLE waitable_object_ = nullptr;
-        std::vector<std::shared_ptr<ID3D12Resource>> render_target_resource;
-        std::vector<BufferView<RenderTarget>> render_target_views_;
+        std::vector<GPULocalResource> render_targets_;
 
         void CreateSwapChainObject(const std::shared_ptr<ID3D12CommandQueue> command_queue, const Window& window)
         {
@@ -113,8 +106,8 @@ namespace GiiGa
                 ID3D12Resource* pBackBuffer = nullptr;
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
                 auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DirectXDeleter());
-                render_target_resource.push_back(res);
-                render_target_views_.push_back(device.CreateRenderTargetView(res, nullptr));
+                render_targets_.emplace_back(device, res);
+                (--render_targets_.end())->CreateRenderTargetView(nullptr);
             }
         }
     };
