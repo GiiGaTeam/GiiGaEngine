@@ -72,6 +72,10 @@ public:
         return std::string(uuids::to_string(uuid_));
     }
 
+    size_t Hash() const { 
+        return std::hash<uuids::uuid>()(uuid_);
+    }
+
     bool operator==(const Uuid& other) const {
         return uuid_ == other.uuid_;
     }
@@ -85,7 +89,7 @@ public:
         return os;
     }
 
-   std::istream& operator>>(std::istream& is) {
+    std::istream& operator>>(std::istream& is) {
         std::array<uuids::uuid::value_type, UUID_SIZE> bytes;
         is.read(reinterpret_cast<char*>(bytes.data()), UUID_SIZE);
 
@@ -98,4 +102,15 @@ public:
     }
 };
 
+}
+
+namespace std
+{
+    template <>
+    struct hash<GiiGa::Uuid>
+    {
+        size_t operator()(const GiiGa::Uuid& id) const { 
+            return id.Hash();
+        }
+    };
 }

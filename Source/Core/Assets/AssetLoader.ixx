@@ -4,6 +4,8 @@ module;
 #include <string>
 #include <functional>
 #include <memory>
+#include <filesystem>
+#include <thread>
 
 export module AssetLoader;
 
@@ -23,16 +25,23 @@ namespace GiiGa
         std::string pattern_;
         AssetType type_;
 
-        // key - Path, value - Callback of loaded asset
-        std::unordered_map<std::string, LoadCallback> callbacks_;
-
     public:
-        std::shared_ptr<AssetBase> Load(std::string& path) { 
-            Todo<std::shared_ptr<AssetBase>>();
-        }
+        virtual std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) = 0;
+        virtual void Save(std::filesystem::path& path) = 0;
 
-        void LoadAsync(std::string& path, LoadCallback&& callback) { 
-            Todo<void>();
+        void LoadAsync(const std::filesystem::path& path, LoadCallback&& callback) { 
+             std::thread([this, path, callback = std::move(callback)]() {
+                try
+                {
+                    auto asset = Load(path);
+                    callback(asset);
+                }
+                catch (...)
+                {
+                    callback(nullptr);
+                }
+            })
+            .detach();
         }
     };
 }  // namespace GiiGa

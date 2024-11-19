@@ -11,5 +11,9 @@ namespace GiiGa
     struct AssetId
     {
         Uuid id;
+
+        bool operator==(const AssetId<T>& other) const { 
+            return id == other.id; 
+        }
     };
 }  // namespace GiiGa

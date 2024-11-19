@@ -1,6 +1,7 @@
 module;
 
 #include <vector>
+#include <filesystem>
 
 export module AssetBase;
 
@@ -14,20 +15,16 @@ namespace GiiGa
     export class AssetBase
     {
     private:
-        Uuid id_;
+        AssetHandle id_;
         std::vector<AssetHandle> dependencies_;
         std::vector<AssetHandle> related_;
 
     public:
-        void AddDependency(AssetHandle dependency) { 
-            Todo<void>();
+        AssetBase(AssetHandle uuid)
+            : id_(uuid)
+        {
         }
 
-        void RemoveDependency(AssetHandle dependency) {
-            Todo<void>();
-        }
-
-        virtual void Save() = 0;
         virtual AssetType GetType() = 0;
     };
 }  // namespace GiiGa
