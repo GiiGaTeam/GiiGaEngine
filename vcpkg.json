@@ -4,13 +4,19 @@
   "version": "0.0.1",
   "dependencies": [
     "assimp",
+    "directx-headers",
     "directxtk",
     {
       "name": "imgui",
-        "features": [ "win32-binding", "dx12-binding", "docking-experimental", "sdl2-binding" ]
+      "features": [
+        "docking-experimental",
+        "dx12-binding",
+        "sdl2-binding",
+        "win32-binding"
+      ]
     },
-    "directx-headers",
+    "sdl2",
     "stduuid",
-    "sdl2"
+    "jsoncpp"
   ]
 }

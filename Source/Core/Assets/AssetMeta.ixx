@@ -2,6 +2,8 @@ module;
 
 #include <vector>
 #include <string>
+#include <filesystem>
+#include <json/json.h>
 
 export module AssetMeta;
 
@@ -12,9 +14,19 @@ namespace GiiGa
     export struct AssetMeta
     {
         AssetHandle id;
-        std::string path;
+        std::filesystem::path path;
 
         std::vector<AssetHandle> dependencies;
         std::vector<AssetHandle> related;
+
+        Json::Value ToJson() const
+        {
+            Json::Value json;
+
+            //json["id"] = id.ToJson();
+            //json["path"] = path.string();
+
+            return json;
+        }
     };
 }  // namespace GiiGa
