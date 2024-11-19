@@ -12,7 +12,7 @@ export module GPULocalResource;
 import RenderDevice;
 import IRenderContext;
 import UploadBuffer;
-import BufferView;
+export import BufferView;
 export import DirectXUtils;
 
 namespace GiiGa
@@ -39,7 +39,7 @@ namespace GiiGa
             resource_ = device.CreateCommittedResource(heapProperties, D3D12_HEAP_FLAG_NONE, desc, current_state_);
         }
 
-        void UpdateContents(IRenderContext& render_context, std::span<uint8_t> data, D3D12_RESOURCE_STATES stateAfer)
+        void UpdateContents(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfer)
         {
             UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(data.size());
 
@@ -185,9 +185,10 @@ namespace GiiGa
             return depthStencilViews_[desc];
         }
 
-        std::shared_ptr<BufferView<Index>> CreateIndexBufferView(D3D12_INDEX_BUFFER_VIEW& desc)
+        std::shared_ptr<BufferView<Index>> CreateIndexBufferView(D3D12_INDEX_BUFFER_VIEW desc)
         {
             D3D12_INDEX_BUFFER_VIEW key = desc;
+            desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
             indexViews_.emplace(key, device_.CreateIndexBufferView(resource_, desc));
@@ -195,9 +196,10 @@ namespace GiiGa
             return indexViews_[key];
         }
 
-        std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(D3D12_VERTEX_BUFFER_VIEW& desc)
+        std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(D3D12_VERTEX_BUFFER_VIEW desc)
         {
             D3D12_VERTEX_BUFFER_VIEW key = desc;
+            desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
             vertexViews_.emplace(key, device_.CreateVetexBufferView(resource_, desc));
