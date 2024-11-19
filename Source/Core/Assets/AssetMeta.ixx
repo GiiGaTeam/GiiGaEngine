@@ -16,7 +16,5 @@ namespace GiiGa
     {
         Uuid id;
         std::string path;
-        std::vector<AssetHandle> dependencies;
-        std::vector<AssetHandle> related;
     };
 }  // namespace GiiGa
