@@ -12,7 +12,7 @@ namespace GiiGa
 {
     using namespace DirectX::SimpleMath;
 
-    struct UpdateParentEvent
+    struct UpdateTransformEvent
     {
     };
 
@@ -20,31 +20,26 @@ namespace GiiGa
     {
     public:
         Transform(Vector3 loc = Vector3::Zero, Vector3 rot = Vector3::Zero, Vector3 scale = Vector3::One)
-            : location(loc), scale(scale)
+            : location_(loc), scale_(scale)
         {
-            rotate = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
+            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
         }
 
         Transform(const Transform& transform) = default;
 
         Transform(Transform&& transform) noexcept
-            : location(transform.location), rotate(transform.rotate), scale(transform.scale)
+            : location_(transform.location_), rotate_(transform.rotate_), scale_(transform.scale_)
         {
             transform = Identity;
-        }
-
-        bool operator==(const Transform& rhs) const
-        {
-            return location == rhs.location && rotate == rhs.rotate && scale == rhs.scale;
         }
 
         Transform& operator=(const Transform& other)
         {
             if (*this == other) return *this;
             Transform temp(other);
-            std::swap(this->location, temp.location);
-            std::swap(this->rotate, temp.rotate);
-            std::swap(this->scale, temp.scale);
+            std::swap(this->location_, temp.location_);
+            std::swap(this->rotate_, temp.rotate_);
+            std::swap(this->scale_, temp.scale_);
             return *this;
         }
 
@@ -52,34 +47,39 @@ namespace GiiGa
         {
             if (*this == other) return *this;
 
-            std::swap(this->location, other.location);
-            std::swap(this->rotate, other.rotate);
-            std::swap(this->scale, other.scale);
+            std::swap(this->location_, other.location_);
+            std::swap(this->rotate_, other.rotate_);
+            std::swap(this->scale_, other.scale_);
             other = Identity;
             return *this;
         }
 
+        bool operator==(const Transform& rhs) const
+        {
+            return location_ == rhs.location_ && rotate_ == rhs.rotate_ && scale_ == rhs.scale_;
+        }
+
         Vector3 GetUp() const
         {
-            return Matrix::CreateFromQuaternion(rotate).Up();
+            return Matrix::CreateFromQuaternion(rotate_).Up();
         }
 
         Vector3 GetForward() const
         {
-            return Matrix::CreateFromQuaternion(rotate).Forward();
+            return Matrix::CreateFromQuaternion(rotate_).Forward();
         }
 
         Vector3 GetRight() const
         {
-            return Matrix::CreateFromQuaternion(rotate).Right();
+            return Matrix::CreateFromQuaternion(rotate_).Right();
         }
 
         Matrix GetMatrix() const
         {
             Matrix resMat;
-            resMat *= resMat.CreateScale(scale);
-            resMat *= Matrix::CreateFromQuaternion(rotate);
-            resMat.Translation(location);
+            resMat *= resMat.CreateScale(scale_);
+            resMat *= Matrix::CreateFromQuaternion(rotate_);
+            resMat.Translation(location_);
             return resMat;
         }
 
@@ -87,48 +87,69 @@ namespace GiiGa
         {
             Transform resTrans;
             Matrix cop = mTrans;
-            cop.Decompose(resTrans.scale, resTrans.rotate, resTrans.location);
+            cop.Decompose(resTrans.scale_, resTrans.rotate_, resTrans.location_);
             return resTrans;
         }
 
-        Vector3 Location() const { return location; }
-        Vector3 Rotation() const { return DegFromRad(rotate.ToEuler()); }
-        Vector3 Scale() const { return scale; }
+        Vector3 GetRotation() const { return DegFromRad(rotate_.ToEuler()); }
+        void SetRotation(const Vector3& rot) { rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot)); }
 
         static const Transform Identity;
 
-    private:
-        Quaternion rotate = Quaternion::Identity;
-        Vector3 location = Vector3::Zero;
-        Vector3 scale = Vector3::One;
+        Quaternion rotate_ = Quaternion::Identity;
+        Vector3 location_ = Vector3::Zero;
+        Vector3 scale_ = Vector3::One;
     };
 
     const Transform Transform::Identity = Transform();
 
-    export class TransformComponent : public Component
+    export class TransformComponent : public Component, public std::enable_shared_from_this<GameObject>
     {
+
     public:
         TransformComponent(const Vector3 location = Vector3::Zero
             , const Vector3 rotation = Vector3::Zero
-            , const Vector3 scale = Vector3::One)
+            , const Vector3 scale = Vector3::One
+            , const std::shared_ptr<TransformComponent>& parent = nullptr)
         {
             transform_ = Transform{location, rotation, scale};
+            if (parent) AttachTo(parent);
         }
 
-        TransformComponent(Transform&& transform)
+        TransformComponent(const Transform& transform, const std::shared_ptr<TransformComponent>& parent = nullptr)
         {
             transform_ = transform;
+            if (parent) AttachTo(parent);
+        }
+
+        TransformComponent(const std::weak_ptr<TransformComponent>& other)
+        {
+            transform_ = other.lock()->transform_;
+            parent_ = other.lock()->parent_;
+        }
+
+        TransformComponent* operator=(const std::weak_ptr<TransformComponent>& other)
+        {
+            if (this == other.lock().get()) return this;
+            std::weak_ptr temp(other);
+            std::swap(this->transform_, temp.lock()->transform_);
+            std::swap(this->parent_, temp.lock()->parent_);
+            return this;
+        }
+
+        bool operator==(const TransformComponent* rhs) const
+        {
+            return transform_ == rhs->transform_;
         }
 
         void Tick(float dt) override
         {
-            if (is_dirty_) UpdateTransformMatrix();
+            if (is_dirty_) UpdateTransformMatrices();
         }
 
         void Init() override
         {
-            OnUpdateParentEvent.Register([this](const UpdateParentEvent& e) { OnUpdateParent(e); });
-            //OnUpdateParentEvent.Register(std::function<void(const UpdateParentEvent&)>(&TransformComponent::OnUpdateParent));
+            AttachTo()
         }
 
         Transform GetTransform() const { return transform_; }
@@ -136,93 +157,146 @@ namespace GiiGa
         void SetTransform(const Transform& transform)
         {
             transform_ = transform;
-            UpdateTransformMatrix();
+            UpdateTransformMatrices();
         }
 
-        Transform GetWorldTransform() const { return Transform::TransformFromMatrix(world_matrix); }
-
-        void SetWorldTransform()
-        {
-
-        }
-
-        Vector3 GetLocation() const { return transform_.Location(); }
+        Vector3 GetLocation() const { return transform_.location_; }
 
         void SetLocation(const Vector3& location)
         {
-            transform_ = Transform(location);
-            UpdateTransformMatrix();
+            transform_ = std::move(Transform(location));
+            UpdateTransformMatrices();
         }
 
-        Vector3 GetRotation() const { return transform_.Rotation(); }
+        Vector3 GetRotation() const { return transform_.GetRotation(); }
 
         void SetRotation(const Vector3& rotation)
         {
-            transform_ = Transform(transform_.Location(), rotation);
-            UpdateTransformMatrix();
+            transform_.SetRotation(rotation);
+            UpdateTransformMatrices();
         }
 
-        Vector3 GetScale() const { return transform_.Scale(); }
+        Vector3 GetScale() const { return transform_.scale_; }
 
         void SetScale(const Vector3& scale)
         {
-            transform_ = Transform(transform_.Location(), transform_.Rotation(), scale);
-            UpdateTransformMatrix();
+            transform_.scale_ = scale;
+            UpdateTransformMatrices();
         }
 
-        Vector3 GetWorldLocation() const { return transform_.Location(); }
+        Transform GetWorldTransform() const { return Transform::TransformFromMatrix(world_matrix_); }
+
+        void SetWorldTransform(const auto Transform& transform)
+        {
+            world_matrix_ = transform.GetMatrix();
+            UpdateLocalTransformMatrix();
+        }
+
+        Vector3 GetWorldLocation() const
+        {
+            return Transform::TransformFromMatrix(world_matrix_).location_;
+        }
 
         void SetWorldLocation(const Vector3& location)
         {
+            Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
+            world_trans.location_ = location;
+            SetWorldTransform(world_trans);
         }
 
-        Vector3 GetWorldRotation() const { return transform_.Rotation(); }
+        Vector3 GetWorldRotation() const
+        {
+            return Transform::TransformFromMatrix(world_matrix_).GetRotation();
+        }
 
         void SetWorldRotation(const Vector3& rotation)
         {
+            Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
+            world_trans.SetRotation(rotation);
+            SetWorldTransform(world_trans);
         }
 
-        Vector3 GetWorldScale() const { return transform_.Scale(); }
+        Vector3 GetWorldScale() const
+        {
+            return Transform::TransformFromMatrix(world_matrix_).scale_;
+        }
 
         void SetWorldScale(const Vector3& scale)
         {
+            Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
+            world_trans.scale_ = scale;
+            SetWorldTransform(world_trans);
         }
-
 
         std::weak_ptr<TransformComponent> GetParent() const { return parent_; }
 
-        void AttachTo(std::weak_ptr<TransformComponent> parent)
+        void AttachTo(const std::weak_ptr<TransformComponent>& parent)
         {
             if (parent.expired()) return;
             parent_ = parent;
+            cashed_event_ = parent_.lock()->OnUpdateTransform.Register([this](const UpdateTransformEvent& e) { ParentUpdateTransform(e); });
+            UpdateTransformMatrices();
         }
 
         void Detach()
         {
+            if (parent_.expired()) return;
+            //parent_.lock()->OnUpdateTransform.Unregister(cashed_event_);
             parent_.reset();
-
+            UpdateTransformMatrices();
         }
 
-        EventDispatcher<UpdateParentEvent> OnUpdateParentEvent;
+        EventDispatcher<UpdateTransformEvent> OnUpdateTransform;
 
     private:
-        bool is_dirty_ = false;
+        bool is_dirty_ = true;
         Transform transform_;
-        Matrix world_matrix;
+        Matrix world_matrix_;
         Matrix local_matrix_;
         std::weak_ptr<TransformComponent> parent_;
+        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>(0);
 
-
-        void UpdateTransformMatrix()
+        void UpdateLocalTransformMatrix()
         {
-            local_matrix_ = transform_.GetMatrix();
-            world_matrix;
-            is_dirty_ = false;
+            Matrix world_to_local = world_matrix_.Invert() * local_matrix_;
+            local_matrix_ = world_matrix_ * world_to_local;
+            transform_ = Transform::TransformFromMatrix(local_matrix_);
+            OnUpdateTransform.Invoke(UpdateTransformEvent{});
         }
 
-        void OnUpdateParent(const UpdateParentEvent& e)
+        void UpdateTransformMatrices()
         {
+            local_matrix_ = transform_.GetMatrix();
+            if (!is_dirty_)
+            {
+                Matrix local_to_world = local_matrix_.Invert() * world_matrix_;
+                world_matrix_ = local_matrix_ * local_to_world;
+            }
+            else
+            {
+                CalcWorldTransformMatrix();
+            }
+            OnUpdateTransform.Invoke(UpdateTransformEvent{});
+        }
 
-        };
+        void CalcWorldTransformMatrix()
+        {
+            const TransformComponent* rootComp = this;
+            world_matrix_ = rootComp->local_matrix_;
+
+            const TransformComponent* parentComp = rootComp->parent_.lock().get();
+            while (parentComp)
+            {
+                world_matrix_ *= parentComp->local_matrix_;
+                rootComp = parentComp;
+                parentComp = rootComp->parent_.lock().get();
+            }
+        }
+
+        void ParentUpdateTransform(const UpdateTransformEvent& e)
+        {
+            is_dirty_ = true;
+            UpdateTransformMatrices();
+        }
     };
 }
