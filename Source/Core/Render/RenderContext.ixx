@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_sdl2.h>
+#include <span>
 
 export module RenderContext;
 
@@ -16,6 +17,7 @@ import FrameContext;
 import Window;
 import DescriptorHeap;
 import SwapChain;
+import BufferView;
 
 namespace GiiGa
 {
@@ -81,6 +83,18 @@ namespace GiiGa
             UploadBuffer& upload_buffer = current_frame->CreateUploadBuffer(device_, size);
 
             return upload_buffer.Allocate(size, 1);
+        }
+
+        std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(std::span<uint8_t> data, size_t alignment,
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+        {
+            return current_frame->AllocateDynamicConstantView(device_, data, alignment, desc);
+        }
+
+        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, size_t alignment,
+            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+        {
+            return current_frame->AllocateDynamicShaderResourceView(device_, data, alignment, desc);
         }
 
         void ResourceBarrier(UINT NumBarriers, const D3D12_RESOURCE_BARRIER& pBarriers)

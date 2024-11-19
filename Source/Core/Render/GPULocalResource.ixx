@@ -140,13 +140,14 @@ namespace GiiGa
         }
 
         ///////////////////////// CREATE VIEW /////////////////////////////////////////////////
-
-        std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc)
+        
+        std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
         {
             D3D12_CONSTANT_BUFFER_VIEW_DESC key = desc;
+            desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
-            constantViews_.emplace(key, device_.CreateConstantBufferView(resource_, desc));
+            constantViews_.emplace(key, device_.CreateConstantBufferView(desc));
 
             return constantViews_[key];
         }

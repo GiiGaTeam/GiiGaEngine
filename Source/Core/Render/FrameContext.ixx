@@ -3,12 +3,14 @@
 #include<memory>
 #include<vector>
 #include<d3d12.h>
+#include <span>
 
 export module FrameContext;
 
 import RenderDevice;
 import DescriptorHeap;
 import UploadBuffer;
+import BufferView;
 
 namespace GiiGa
 {
@@ -29,6 +31,9 @@ namespace GiiGa
             command_allocator->Reset();
             command_list->Reset(command_allocator.get(), nullptr);
 
+            common_allocator_.ReleaseAllocations(0);
+            sampler_allocator_.ReleaseAllocations(0);
+
             for (int i = 0; i < upload_buffers.size() - 1; ++i)
             {
                 upload_buffers.pop_back();
@@ -41,6 +46,33 @@ namespace GiiGa
         {
             upload_buffers.push_back(UploadBuffer(device, size));
             return *upload_buffers.end()--;
+        }
+
+        UploadBuffer::Allocation AllocateCopyDynamic(RenderDevice& device, std::span<uint8_t> data, size_t alignment)
+        {
+            UploadBuffer::Allocation res_alloc = upload_buffers[0].Allocate(data.size(), alignment);
+            std::copy(data.begin(), data.end(), res_alloc.CPU.begin());
+
+            return res_alloc;
+        }
+
+        std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(RenderDevice& device, std::span<uint8_t> data, size_t alignment,
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+        {
+            UploadBuffer::Allocation res_alloc = AllocateCopyDynamic(device, data, alignment);
+
+            DescriptorHeapAllocation desc_alloc = common_allocator_.Allocate(1);
+            desc.BufferLocation = res_alloc.GPU;
+            return device.CreateConstantBufferView(desc, std::move(desc_alloc));
+        }
+
+        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(RenderDevice& device, std::span<uint8_t> data, size_t alignment,
+            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+        {
+            UploadBuffer::Allocation res_alloc = AllocateCopyDynamic(device, data, alignment);
+
+            DescriptorHeapAllocation desc_alloc = common_allocator_.Allocate(1);
+            return device.CreateShaderResourceBufferView(res_alloc.resource, desc, std::move(desc_alloc));
         }
 
 

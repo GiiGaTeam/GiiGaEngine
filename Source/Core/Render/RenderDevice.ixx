@@ -134,8 +134,7 @@ namespace GiiGa
             return std::shared_ptr<ID3D12Resource>(d3d12Resource, DirectXDeleter());
         }
 
-        std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc)
         {
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
@@ -176,6 +175,39 @@ namespace GiiGa
                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
+
+            return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles));
+        }
+
+        std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc,
+            DescriptorHeapAllocation&& gpuAlloc)
+        {
+            device_->CreateConstantBufferView(&desc, gpuAlloc.GetCpuHandle());
+
+            DesciptorHandles handles({}, std::move(gpuAlloc));
+
+            return std::make_shared<BufferView<Constant>>(std::move(handles));
+        }
+
+        std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
+            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc,
+            DescriptorHeapAllocation&& gpuAlloc)
+        {
+            device_->CreateShaderResourceView(buffer.get(), &desc, gpuAlloc.GetCpuHandle());
+
+            DesciptorHandles handles({}, std::move(gpuAlloc));
+
+            return std::make_shared<BufferView<ShaderResource>>(std::move(handles));
+        }
+
+        std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& buffer,
+            const std::shared_ptr<ID3D12Resource>& counterBuffer,
+            const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc,
+            DescriptorHeapAllocation&& gpuAlloc)
+        {
+            device_->CreateUnorderedAccessView(buffer.get(), counterBuffer.get(), &desc, gpuAlloc.GetCpuHandle());
+
+            DesciptorHandles handles({}, std::move(gpuAlloc));
 
             return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles));
         }
