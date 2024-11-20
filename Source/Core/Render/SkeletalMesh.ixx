@@ -3,25 +3,40 @@ module;
 #include <span>
 #include <vector>
 #include<directx/d3dx12.h>
+#include <directxtk/SimpleMath.h>
 
-export module Mesh;
+export module SkeletalMesh;
 
 import RenderDevice;
 import IRenderContext;
 import GPULocalResource;
 export import VertexTypes;
 
+using namespace DirectX;
+
 namespace GiiGa
 {
-    export class Mesh
+    export class Joint
+    {
+        SimpleMath::Matrix invBindPose;
+        std::string name;
+        uint16_t parentBone;
+    };
+
+    export using Skeleton = std::vector<Joint>;
+
+    export class SkeletalMesh
     {
     public:
-        using VertexType = VertexPNTBT;
-        
-        Mesh(IRenderContext& render_context, RenderDevice& device, const std::vector<VertexType>& vertices,
-            const std::vector<Index16>& indices):
+        using VertexType = VertexBoned;
+
+        SkeletalMesh(IRenderContext& render_context, RenderDevice& device,
+            const std::vector<VertexType>& vertices,
+            const std::vector<Index16>& indices,
+            const Skeleton& skeleton):
             vertexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE)),
-            indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE))
+            indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE)),
+            skeleton_(skeleton)
         {
             const auto vertices_span = std::span{reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size() * sizeof(VertexType)};
             vertexBuffer_.UpdateContents(render_context, vertices_span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -54,5 +69,6 @@ namespace GiiGa
         UINT indexCount;
         GPULocalResource indexBuffer_;
         std::shared_ptr<BufferView<Index>> indexView_;
+        Skeleton skeleton_;
     };
 }

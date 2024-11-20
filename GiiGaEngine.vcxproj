@@ -159,6 +159,7 @@
     <ClCompile Include="Source\Core\Render\RenderSystem.ixx" />
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
+    <ClCompile Include="Source\Core\Render\SkeletalMesh.ixx" />
     <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
     <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
     <ClCompile Include="Source\Core\Render\VariableSizeAllocationsManager.ixx" />
