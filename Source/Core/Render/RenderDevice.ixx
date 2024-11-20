@@ -235,7 +235,7 @@ namespace GiiGa
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 
-            return std::make_shared<BufferView<Index>>(desc);
+            return std::make_shared<BufferView<Index>>(std::move(desc));
         }
 
         std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -243,7 +243,7 @@ namespace GiiGa
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 
-            return std::make_shared<BufferView<Vertex>>(desc);
+            return std::make_shared<BufferView<Vertex>>(std::move(desc));
         }
 
     private:

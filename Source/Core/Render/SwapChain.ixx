@@ -52,7 +52,7 @@ namespace GiiGa
 
         D3D12_CPU_DESCRIPTOR_HANDLE getRTVDescriptorHandle()
         {
-            return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor();
+            return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor().GetCpuHandle();
         }
 
     private:
