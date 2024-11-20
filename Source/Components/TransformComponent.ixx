@@ -16,6 +16,7 @@ namespace GiiGa
     {
     };
 
+#pragma region TransfromStructure
     struct Transform
     {
     public:
@@ -102,7 +103,9 @@ namespace GiiGa
     };
 
     const Transform Transform::Identity = Transform();
+#pragma endregion
 
+#pragma region TransformComopnent
     export class TransformComponent : public Component, public std::enable_shared_from_this<GameObject>
     {
 
@@ -144,12 +147,14 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            Component::Tick(dt);
             if (is_dirty_) UpdateTransformMatrices();
         }
 
         void Init() override
         {
-            AttachTo()
+            Component::Init();
+            AttachTo(parent_);
         }
 
         Transform GetTransform() const { return transform_; }
@@ -188,8 +193,12 @@ namespace GiiGa
 
         void SetWorldTransform(const auto Transform& transform)
         {
+            const auto pref_world_matrix = world_matrix_;
             world_matrix_ = transform.GetMatrix();
-            UpdateLocalTransformMatrix();
+            Matrix world_to_local = pref_world_matrix.Invert() * local_matrix_;
+            local_matrix_ = world_matrix_ * world_to_local;
+            transform_ = Transform::TransformFromMatrix(local_matrix_);
+            OnUpdateTransform.Invoke(UpdateTransformEvent{});
         }
 
         Vector3 GetWorldLocation() const
@@ -233,6 +242,7 @@ namespace GiiGa
         void AttachTo(const std::weak_ptr<TransformComponent>& parent)
         {
             if (parent.expired()) return;
+            if (!parent_.expired()) Detach();
             parent_ = parent;
             cashed_event_ = parent_.lock()->OnUpdateTransform.Register([this](const UpdateTransformEvent& e) { ParentUpdateTransform(e); });
             UpdateTransformMatrices();
@@ -241,12 +251,16 @@ namespace GiiGa
         void Detach()
         {
             if (parent_.expired()) return;
-            //parent_.lock()->OnUpdateTransform.Unregister(cashed_event_);
+            parent_.lock()->OnUpdateTransform.Unregister(cashed_event_);
             parent_.reset();
             UpdateTransformMatrices();
         }
 
         EventDispatcher<UpdateTransformEvent> OnUpdateTransform;
+
+        bool attach_translation = true;
+        bool attach_rotate = true;
+        bool attach_scale = true;
 
     private:
         bool is_dirty_ = true;
@@ -254,22 +268,15 @@ namespace GiiGa
         Matrix world_matrix_;
         Matrix local_matrix_;
         std::weak_ptr<TransformComponent> parent_;
-        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>(0);
-
-        void UpdateLocalTransformMatrix()
-        {
-            Matrix world_to_local = world_matrix_.Invert() * local_matrix_;
-            local_matrix_ = world_matrix_ * world_to_local;
-            transform_ = Transform::TransformFromMatrix(local_matrix_);
-            OnUpdateTransform.Invoke(UpdateTransformEvent{});
-        }
+        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
 
         void UpdateTransformMatrices()
         {
+            const auto pref_local_matrix = local_matrix_;
             local_matrix_ = transform_.GetMatrix();
             if (!is_dirty_)
             {
-                Matrix local_to_world = local_matrix_.Invert() * world_matrix_;
+                Matrix local_to_world = pref_local_matrix.Invert() * world_matrix_;
                 world_matrix_ = local_matrix_ * local_to_world;
             }
             else
@@ -287,7 +294,38 @@ namespace GiiGa
             const TransformComponent* parentComp = rootComp->parent_.lock().get();
             while (parentComp)
             {
-                world_matrix_ *= parentComp->local_matrix_;
+                if (rootComp->attach_translation && rootComp->attach_rotate && rootComp->attach_scale)
+                {
+                    world_matrix_ *= parentComp->local_matrix_;
+                }
+                else if (rootComp->attach_translation && rootComp->attach_rotate)
+                {
+                    world_matrix_.Translation(parentComp->local_matrix_.Translation());
+                    world_matrix_ *= world_matrix_.CreateFromYawPitchRoll(parentComp->local_matrix_.ToEuler());
+                }
+                else if (rootComp->attach_translation && rootComp->attach_scale)
+                {
+                    world_matrix_.Translation(parentComp->local_matrix_.Translation());
+                    world_matrix_ *= world_matrix_.CreateScale(parentComp->transform_.scale_);
+                }
+                else if (rootComp->attach_rotate && rootComp->attach_scale)
+                {
+                    world_matrix_ *= world_matrix_.CreateFromYawPitchRoll(parentComp->local_matrix_.ToEuler());
+                    world_matrix_ *= world_matrix_.CreateScale(parentComp->transform_.scale_);
+                }
+                else if (rootComp->attach_translation)
+                {
+                    world_matrix_.Translation(parentComp->local_matrix_.Translation());
+                }
+                else if (rootComp->attach_rotate)
+                {
+                    world_matrix_ *= world_matrix_.CreateFromYawPitchRoll(parentComp->local_matrix_.ToEuler());
+                }
+                else if (rootComp->attach_scale)
+                {
+                    world_matrix_ *= world_matrix_.CreateScale(parentComp->transform_.scale_);
+                }
+
                 rootComp = parentComp;
                 parentComp = rootComp->parent_.lock().get();
             }
@@ -299,4 +337,6 @@ namespace GiiGa
             UpdateTransformMatrices();
         }
     };
+#pragma endregion
+
 }
