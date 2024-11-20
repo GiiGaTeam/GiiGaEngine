@@ -25,6 +25,26 @@ namespace GiiGa
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
 
     public:
+        void OpenRegistryFile()
+        {
+            if (!std::filesystem::exists(registry_path_))
+            {
+                std::ofstream createFile(registry_path_);
+                if (!createFile)
+                {
+                    throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
+                }
+                createFile.close();
+            }
+
+            registry_file_.open(registry_path_, std::ios::in | std::ios::out);
+
+            if (!registry_file_)
+            {
+                throw std::runtime_error("Failed to open registry file: " + registry_path_.string());
+            }
+        }
+
         void AddDependency(AssetHandle asset, AssetHandle dependency) { 
             auto assetMetaOpt = GetAssetMeta(asset);
             auto dependencyMetaOpt = GetAssetMeta(dependency);
@@ -112,6 +132,21 @@ namespace GiiGa
                 AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
 
                 registry_map_.emplace(handle, meta);
+            }
+        }
+
+        void InitializeDatabase()
+        {
+            OpenRegistryFile();
+
+            if (registry_file_.peek() == std::ifstream::traits_type::eof())
+            {
+                registry_map_.clear();
+                SaveRegistry();
+            }
+            else
+            {
+                LoadRegistry();
             }
         }
     };
