@@ -16,7 +16,7 @@ using namespace DirectX;
 
 namespace GiiGa
 {
-    export class Joint
+    export struct Joint
     {
         SimpleMath::Matrix invBindPose;
         std::string name;
