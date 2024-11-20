@@ -123,9 +123,6 @@
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>

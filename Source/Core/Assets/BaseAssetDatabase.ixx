@@ -5,6 +5,7 @@ module;
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <json/json.h>
 
 export module BaseAssetDatabase;
 
@@ -18,7 +19,7 @@ namespace GiiGa
     {
     protected:
         std::filesystem::path registry_path_;
-        std::ofstream registry_file_;
+        std::fstream registry_file_;
 
         // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
@@ -71,6 +72,47 @@ namespace GiiGa
             }
 
             return std::nullopt; 
+        }
+
+        void SaveRegistry()
+        {
+            Json::Value root;
+
+            for (const auto& [handle, meta] : registry_map_)
+            {
+                Json::Value entry;
+                entry["id"] = handle.ToJson();
+                entry["meta"] = meta.ToJson();
+                root.append(entry);
+            }
+
+            registry_file_ << root;
+        }
+
+        void LoadRegistry()
+        {
+            Json::Value root;
+            registry_file_ >> root;
+
+            if (!root.isArray())
+            {
+                throw std::runtime_error("Invalid registry file format: expected an array of entries.");
+            }
+
+            registry_map_.clear();
+
+            for (const auto& entry : root)
+            {
+                if (!entry.isObject() || !entry.isMember("handle") || !entry.isMember("meta"))
+                {
+                    throw std::runtime_error("Invalid entry in registry file.");
+                }
+
+                AssetHandle handle = AssetHandle::FromJson(entry["handle"]);
+                AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
+
+                registry_map_.emplace(handle, meta);
+            }
         }
     };
 }  // namespace GiiGa

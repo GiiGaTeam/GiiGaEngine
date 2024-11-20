@@ -1,8 +1,8 @@
 module;
 
-export module AssetHandle;
-
 #include <json/json.h>
+
+export module AssetHandle;
 
 import Uuid;
 import AssetType;
@@ -42,7 +42,7 @@ namespace GiiGa
 
             if (!uuid)
             {
-                throw std::invalid_argument("Wrong UUID in json");
+                throw std::invalid_argument("Invalid JSON: Wrong UUID");
             }
 
             handle.id = *uuid;
