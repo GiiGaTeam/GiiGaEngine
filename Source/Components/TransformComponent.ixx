@@ -191,7 +191,7 @@ namespace GiiGa
 
         Transform GetWorldTransform() const { return Transform::TransformFromMatrix(world_matrix_); }
 
-        void SetWorldTransform(const auto Transform& transform)
+        void SetWorldTransform(const Transform& transform)
         {
             const auto pref_world_matrix = world_matrix_;
             world_matrix_ = transform.GetMatrix();
