@@ -1,5 +1,6 @@
 module;
 
+#include <regex>
 #include <unordered_map>
 #include <string>
 #include <functional>
@@ -42,6 +43,14 @@ namespace GiiGa
                 }
             })
             .detach();
+        }
+
+        bool MatchesPattern(const std::filesystem::path& path) const {
+            // TODO: cache regex
+
+            std::string filename = path.filename().string();
+            std::regex re(pattern_, std::regex::icase);
+            return std::regex_match(filename, re);
         }
     };
 }  // namespace GiiGa
