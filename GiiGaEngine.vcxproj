@@ -70,6 +70,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
@@ -143,6 +149,7 @@
     <ClCompile Include="Source\Core\Assets\AssetType.ixx" />
     <ClCompile Include="Source\Core\Assets\BaseAssetDatabase.ixx" />
     <ClCompile Include="Source\Core\Assets\EditorAssetDatabase.ixx" />
+    <ClCompile Include="Source\Core\Assets\ProjectWatcher.ixx" />
     <ClCompile Include="Source\Core\Assets\ResourceManager.ixx" />
     <ClCompile Include="Source\Core\Assets\RuntimeAssetDatabase.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />

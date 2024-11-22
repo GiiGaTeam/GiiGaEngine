@@ -153,6 +153,9 @@
     <ClCompile Include="Source\Core\Assets\EditorAssetDatabase.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Assets\ProjectWatcher.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
