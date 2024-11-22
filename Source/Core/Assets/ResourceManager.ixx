@@ -18,13 +18,12 @@ import Misc;
 
 namespace GiiGa
 {
-    export class BaseResourceManager
+    export class ResourceManager
     {
     protected:
         BaseAssetDatabase* database_;
 
         std::unordered_map<AssetHandle, std::shared_ptr<AssetBase>> loaded_assets_;
-        std::unordered_map<AssetType, std::vector<AssetLoader*>> asset_loaders_;
     public:
         template <typename T>
         std::shared_ptr<T> GetAsset(AssetId<T> id) {
@@ -66,8 +65,8 @@ namespace GiiGa
             }
 
             const AssetMeta& asset_meta = asset_meta_opt->get();
-            auto loader_it = asset_loaders_.find(asset_meta.id.type);
-            if (loader_it == asset_loaders_.end() || loader_it->second.empty())
+            auto loader_it = database_->asset_loaders_.find(asset_meta.id.type);
+            if (loader_it == database_->asset_loaders_.end() || loader_it->second.empty())
             {
                 throw std::runtime_error("No loader available for asset type: " + AssetTypeToString(asset_meta.id.type));
             }

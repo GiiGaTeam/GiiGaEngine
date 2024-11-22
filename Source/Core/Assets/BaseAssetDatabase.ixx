@@ -11,7 +11,8 @@ export module BaseAssetDatabase;
 
 import AssetHandle;
 import AssetMeta;
-import Misc;
+import AssetLoader;
+import AssetType;
 
 namespace GiiGa
 {
@@ -24,7 +25,10 @@ namespace GiiGa
         // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
 
+        std::unordered_map<AssetType, std::vector<AssetLoader*>> asset_loaders_;
     public:
+        friend class ResourceManager;
+
         void OpenRegistryFile()
         {
             if (!std::filesystem::exists(registry_path_))

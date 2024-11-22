@@ -28,7 +28,7 @@ namespace GiiGa
 
     public:
         virtual std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) = 0;
-        virtual void Save(std::filesystem::path& path) = 0;
+        virtual void Save(AssetBase& asset, std::filesystem::path& path) = 0;
 
         void LoadAsync(const std::filesystem::path& path, LoadCallback&& callback) { 
              std::thread([this, path, callback = std::move(callback)]() {

@@ -144,7 +144,13 @@
     <ClCompile Include="Source\Core\Assets\BaseAssetDatabase.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Assets\BaseResourceManager.ixx">
+    <ClCompile Include="Source\Core\Assets\ResourceManager.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Assets\RuntimeAssetDatabase.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Assets\EditorAssetDatabase.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

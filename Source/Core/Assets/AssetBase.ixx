@@ -25,6 +25,18 @@ namespace GiiGa
         {
         }
 
+        AssetHandle GetId() const {
+            return id_;
+        }
+
+        const std::vector<AssetHandle>& Dependencies() const { 
+            return dependencies_;
+        }
+
+        const std::vector<AssetHandle>& Related() const { 
+            return related_; 
+        }
+
         virtual AssetType GetType() = 0;
     };
 }  // namespace GiiGa
