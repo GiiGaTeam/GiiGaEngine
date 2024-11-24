@@ -106,7 +106,7 @@ namespace GiiGa
 #pragma endregion
 
 #pragma region TransformComopnent
-    export class TransformComponent : public Component, public std::enable_shared_from_this<GameObject>
+    export class TransformComponent : public Component
     {
 
     public:
@@ -239,9 +239,14 @@ namespace GiiGa
 
         std::weak_ptr<TransformComponent> GetParent() const { return parent_; }
 
+        Matrix GetWorldMatrix() const {return world_matrix_;} 
+        Matrix GetInverseWorldMatrix() const {return world_matrix_.Invert();} 
+        Matrix GetLocalMatrix() const {return local_matrix_;} 
+        Matrix GetInverseLocalMatrix() const {return local_matrix_.Invert();} 
+
         void AttachTo(const std::weak_ptr<TransformComponent>& parent)
         {
-            if (parent.expired()) return;
+            if (parent.expired() || parent.lock() == parent_.lock()) return;
             if (!parent_.expired()) Detach();
             parent_ = parent;
             cashed_event_ = parent_.lock()->OnUpdateTransform.Register([this](const UpdateTransformEvent& e) { ParentUpdateTransform(e); });
