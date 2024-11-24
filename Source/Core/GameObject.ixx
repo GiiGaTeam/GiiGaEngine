@@ -1,7 +1,7 @@
 module;
 
-#include<vector>
-#include<memory>
+#include <vector>
+#include <memory>
 
 export module GameObject;
 
@@ -9,7 +9,7 @@ import Component;
 
 namespace GiiGa
 {
-    export class GameObject final : public ITickable
+    export class GameObject final : public ITickable, public std::enable_shared_from_this<GameObject>
     {
     public:
         void Tick(float dt) override
@@ -25,7 +25,7 @@ namespace GiiGa
         {
             if (std::shared_ptr<T> newComp = std::make_shared<T>(args...))
             {
-                //newComp->Owner = Owner;
+                newComp->owner_ = shared_from_this();
                 components_.push_back(newComp);
                 return newComp;
             }
@@ -35,4 +35,4 @@ namespace GiiGa
     private:
         std::vector<std::shared_ptr<Component>> components_;
     };
-}
+}  // namespace GiiGa

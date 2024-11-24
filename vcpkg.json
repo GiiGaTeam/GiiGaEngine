@@ -11,6 +11,7 @@
     },
     "directx-headers",
     "stduuid",
-    "sdl2"
+    "sdl2",
+    "directxtk12"
   ]
 }
