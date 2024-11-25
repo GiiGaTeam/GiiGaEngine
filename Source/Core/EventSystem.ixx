@@ -17,6 +17,10 @@ namespace GiiGa
             : id_(id), is_valid_(true)
         {}
 
+        explicit EventHandle(int id, bool is_valid) 
+            : id_(id), is_valid_(is_valid)
+        {}
+
     public:
         static EventHandle<T> Null() {
             return EventHandle{
