@@ -12,9 +12,19 @@ namespace GiiGa
     {
     private:
         int id_;
-        explicit EventHandle(int id) : id_(id) {}
+        bool is_valid_;
+        explicit EventHandle(int id) 
+            : id_(id), is_valid_(true)
+        {}
 
     public:
+        static EventHandle<T> Null() {
+            return EventHandle{
+                0,
+                false
+            };
+        }
+
         template <typename U>
         friend class EventDispatcher;
     };
@@ -41,7 +51,14 @@ namespace GiiGa
             return EventHandle<T>(id);
         }
 
-        void Unregister(EventHandle<T> id) { handlers_.erase(id.id_); }
+        void Unregister(EventHandle<T>& id) {
+            if (!id.is_valid_) {
+                return;
+            }
+
+            id.is_valid_ = false;
+            handlers_.erase(id.id_); 
+        }
 
         void Invoke(const T& event) const
         {
