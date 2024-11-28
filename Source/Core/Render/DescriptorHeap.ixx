@@ -238,7 +238,7 @@ namespace GiiGa
         {
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE getGPUHandle()
+        D3D12_GPU_DESCRIPTOR_HANDLE getGPUHandle() const
         {
             return gpu_alloc_.GetGpuHandle();
         }
