@@ -12,12 +12,13 @@ export module AssetLoader;
 
 import AssetHandle;
 import AssetType;
-import AssetBase;
 import Uuid;
 import Misc;
 
 namespace GiiGa
 {
+    export class AssetBase;
+
     using LoadCallback = std::function<void(std::shared_ptr<AssetBase>)>;
 
     export class AssetLoader

@@ -5,6 +5,8 @@ module;
 
 export module AssetBase;
 
+import Engine;
+
 import AssetHandle;
 import AssetType; 
 import Uuid;
@@ -29,8 +31,8 @@ namespace GiiGa
 
         virtual AssetType GetType() = 0;
 
-        virtual ~AssetBase() {
-
+        virtual ~AssetBase() { 
+            Engine::Instance().ResourceManager().RemoveAsset(id_);
         }
     };
 }  // namespace GiiGa

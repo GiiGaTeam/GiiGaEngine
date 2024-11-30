@@ -5,11 +5,10 @@ module;
 #include <functional>
 #include <memory>
 
-export module BaseResourceManager;
+export module ResourceManager;
 
 import AssetHandle;
 import AssetType;
-import AssetBase;
 import BaseAssetDatabase;
 import AssetLoader;
 import Uuid;
@@ -17,12 +16,16 @@ import Misc;
 
 namespace GiiGa
 {
+    export class AssetBase;
+
     export class ResourceManager
     {
     protected:
+        friend class AssetBase;
+
         BaseAssetDatabase* database_;
 
-        std::unordered_map<AssetHandle, std::shared_ptr<AssetBase>> loaded_assets_;
+        std::unordered_map<AssetHandle, std::weak_ptr<AssetBase>> loaded_assets_;
     public:
         template <typename T>
         std::shared_ptr<T> GetAsset(AssetHandle handle) {
@@ -79,6 +82,10 @@ namespace GiiGa
             }
 
             throw std::runtime_error("Failed to load asset with handle: " + handle.id.ToString() + " of type: " + AssetTypeToString(asset_meta.id.type));
+        }
+
+        void RemoveAsset(AssetHandle handle) { 
+            loaded_assets_.erase(handle);
         }
     };
 }  // namespace GiiGa
