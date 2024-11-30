@@ -16,8 +16,6 @@ namespace GiiGa
     {
     private:
         AssetHandle id_;
-        std::vector<AssetHandle> dependencies_;
-        std::vector<AssetHandle> related_;
 
     public:
         AssetBase(AssetHandle uuid)
@@ -29,14 +27,10 @@ namespace GiiGa
             return id_;
         }
 
-        const std::vector<AssetHandle>& Dependencies() const { 
-            return dependencies_;
-        }
-
-        const std::vector<AssetHandle>& Related() const { 
-            return related_; 
-        }
-
         virtual AssetType GetType() = 0;
+
+        virtual ~AssetBase() {
+
+        }
     };
 }  // namespace GiiGa

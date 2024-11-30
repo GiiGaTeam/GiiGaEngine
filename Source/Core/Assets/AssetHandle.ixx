@@ -6,7 +6,6 @@ export module AssetHandle;
 
 import Uuid;
 import AssetType;
-import AssetId;
 
 namespace GiiGa
 {
@@ -16,11 +15,6 @@ namespace GiiGa
         AssetType type = AssetType::Unknown;
 
         AssetHandle() {}
-
-        template<typename T>
-        AssetHandle(AssetId<T> id) : id(id.id), type(T::GetType())
-        {
-        }
 
         bool operator==(const AssetHandle& other) const { 
             return type == other.type && id == other.id;

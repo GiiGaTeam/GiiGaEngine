@@ -9,7 +9,6 @@ module;
 export module EditorAssetDatabase;
 
 import BaseAssetDatabase;
-import AssetId;
 import AssetHandle;
 import AssetBase;
 import AssetMeta;
@@ -24,16 +23,13 @@ namespace GiiGa
     {
     public:
         template <IsAssetBase T>
-        AssetId<T> CreateAsset(T& asset, std::filesystem::path& path)
+        AssetHandle CreateAsset(T& asset, std::filesystem::path& path)
         {
             AssetHandle handle = asset.GetId();
-            AssetId<T> id = { handle.id };
             
             AssetMeta meta;
             meta.id = handle;
             meta.path = path;
-            meta.dependencies = asset.Dependencies();
-            meta.related = asset.Related();
 
             registry_map_.emplace(handle, std::move(meta));
 
@@ -50,10 +46,10 @@ namespace GiiGa
             AssetLoader* loader = loaderIt->second.front();
             loader->Save(asset, path);
 
-            return id;
+            return handle;
         }
 
-        AssetHandle ImportAsset(std::filesystem::path& path, std::span<AssetHandle> dependencies = {}) {
+        AssetHandle ImportAsset(std::filesystem::path& path) {
             AssetType asset_type;
             bool found_loader = false;
             for (const auto& [type, loaders] : asset_loaders_)
@@ -82,11 +78,6 @@ namespace GiiGa
             AssetMeta meta;
             meta.id = handle;
             meta.path = path;
-
-            for (const auto& dependency : dependencies)
-            {
-                meta.dependencies.push_back(dependency);
-            }
 
             registry_map_.emplace(handle, std::move(meta));
 

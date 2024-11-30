@@ -8,7 +8,6 @@ module;
 export module BaseResourceManager;
 
 import AssetHandle;
-import AssetId;
 import AssetType;
 import AssetBase;
 import BaseAssetDatabase;
@@ -26,9 +25,7 @@ namespace GiiGa
         std::unordered_map<AssetHandle, std::shared_ptr<AssetBase>> loaded_assets_;
     public:
         template <typename T>
-        std::shared_ptr<T> GetAsset(AssetId<T> id) {
-            AssetHandle handle{id};
-
+        std::shared_ptr<T> GetAsset(AssetHandle handle) {
             auto found_asset = FindAsset(handle);
 
             if (found_asset)
@@ -43,7 +40,7 @@ namespace GiiGa
                 return loaded_asset;
             }
 
-             throw std::runtime_error("Failed to load asset with handle: " + handle.ToString());
+             throw std::runtime_error("Failed to load asset with handle: " + handle.id.ToString());
         }
 
     private:
