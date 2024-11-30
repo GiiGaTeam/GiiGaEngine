@@ -17,6 +17,8 @@
     },
     "sdl2",
     "stduuid",
-    "jsoncpp"
+    "jsoncpp",
+    "sdl2",
+    "directxtk12"
   ]
 }
