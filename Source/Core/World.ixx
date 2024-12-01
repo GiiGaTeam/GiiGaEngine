@@ -1,5 +1,6 @@
 module;
 
+#include <string>
 #include <vector>
 #include <memory>
 #include <vector>
@@ -13,7 +14,14 @@ namespace GiiGa
 {
     export class World
     {
-
+    public:
+        World()
+        {
+            levels_.push_back({});
+            levels_[0].Name = "PersistentLevel";
+            levels_[0].SetIsActive(true);
+        }
+        
     public:
         static std::unique_ptr<World>& GetInstance()
         {
@@ -21,11 +29,11 @@ namespace GiiGa
             else return instance_ = std::make_unique<World>();
         }
 
-        const static std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
+        static const std::vector<Level>& GetLevels()
         {
-            return GetInstance()->game_objects_;
+            return GetInstance()->levels_;
         }
-
+        
         static void AddLevel(Level&& level)
         {
             GetInstance()->levels_.push_back(level);
@@ -35,11 +43,13 @@ namespace GiiGa
         {
             auto obj = std::make_shared<GameObject>();
 
-            GetInstance()->game_objects_.push_back(obj);
-
             if (Level)
             {
                 Level->AddGameObject(obj);
+            }
+            else
+            {
+                GetInstance()->levels_[0].AddGameObject(obj);
             }
 
             return obj;
@@ -47,33 +57,57 @@ namespace GiiGa
 
         static bool DestroyGameObject(std::shared_ptr<GameObject> GameObject)
         {
-            auto Iterator = GetInstance()->game_objects_.erase(
-                std::remove(GetInstance()->game_objects_.begin(), GetInstance()->game_objects_.end(), GameObject),
-                GetInstance()->game_objects_.end());
-
-            if (Iterator->get())
+            for (auto level : GetInstance()->levels_)
             {
-                return true;
+                if (level.DestroyGameObject(GameObject))
+                {
+                    return true;
+                }
             }
+            
             return false;
         }
 
-        static std::shared_ptr<GameObject> Instantiate(GameObjectAsset Asset,
-            std::shared_ptr<GameObject> Parent,
-            std::shared_ptr<Level> Level = nullptr)
+        static std::shared_ptr<GameObject> Instantiate(GameObject* Prefab,
+            std::shared_ptr<GameObject> Parent = nullptr,
+            Level* Level = nullptr)
         {
-            auto GO = CreateGameObject(Level);
+            auto NewGameObject = std::make_shared<GameObject>(*Prefab);
+            
+            if (Level)
+            {
+                Level->AddGameObject(NewGameObject);
+            }
+            else
+            {
+                GetInstance()->levels_[0].AddGameObject(NewGameObject);
+            }
 
-            GO->SetParent(Parent, false);
-            /// Setup GO
-            /// ...
+            if (Parent)
+            {
+                NewGameObject->SetParent(Parent, false);
+            }
+            
+            return NewGameObject;
+        }
 
-            return GO;
+        static std::shared_ptr<GameObject> Instantiate(GameObject* Prefab,
+            std::shared_ptr<GameObject> Parent = nullptr,
+            std::string LevelName)
+        {
+            for (auto level : GetInstance()->levels_)
+            {
+                if (level.Name == LevelName)
+                {
+                    return Instantiate(Prefab, Parent, &level);
+                }
+            }
+            
+            return nullptr;
         }
 
     private:
         static inline std::unique_ptr<World> instance_ = nullptr;
         std::vector<Level> levels_;
-        std::vector<std::shared_ptr<GameObject>> game_objects_;
     };
 }

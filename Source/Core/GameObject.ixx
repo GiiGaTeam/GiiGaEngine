@@ -32,6 +32,11 @@ namespace GiiGa
             return nullptr;
         }
 
+        void SetParent(std::shared_ptr<GameObject> Parent, bool SafeWorldTransfrom)
+        {
+            
+        }
+
     private:
         std::vector<std::shared_ptr<Component>> components_;
     };
