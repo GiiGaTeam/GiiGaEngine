@@ -341,6 +341,12 @@ namespace GiiGa
             is_dirty_ = true;
             UpdateTransformMatrices();
         }
+
+    public:
+        std::shared_ptr<Component> Clone() override
+        {
+            return Component::Clone();
+        }
     };
 #pragma endregion
 

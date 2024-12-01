@@ -31,10 +31,17 @@ public:
                 quit_ = true;
             }
             Time::UpdateTime();
-            for (auto&& game_object : World::GetGameObjects())
+            for (auto& level : World::GetLevels())
             {
-                if (game_object->tick_type == TickType::Default)
-                    game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
+                if (!level.GetIsActive())
+                {
+                    continue;
+                }
+                for (auto&& game_object : level.GetGameObjects())
+                {
+                    if (game_object->tick_type == TickType::Default)
+                        game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
+                }
             }
             if (Input::IsKeyDown(MouseButton::MouseLeft))
             {

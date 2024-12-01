@@ -4,6 +4,7 @@ module;
 #include <vector>
 #include <memory>
 #include <vector>
+#include <json/json.h>
 
 export module World;
 
@@ -21,7 +22,7 @@ namespace GiiGa
             levels_[0].name = "PersistentLevel";
             levels_[0].SetIsActive(true);
         }
-        
+
     public:
         static std::unique_ptr<World>& GetInstance()
         {
@@ -33,7 +34,7 @@ namespace GiiGa
         {
             return GetInstance()->levels_;
         }
-        
+
         static void AddLevel(Level&& level)
         {
             GetInstance()->levels_.push_back(level);
@@ -64,16 +65,16 @@ namespace GiiGa
                     return true;
                 }
             }
-            
+
             return false;
         }
 
         static std::shared_ptr<GameObject> Instantiate(GameObject* prefab,
-            std::shared_ptr<GameObject> parent = nullptr,
-            Level* level = nullptr)
+                                                       std::shared_ptr<GameObject> parent,
+                                                       Level* level)
         {
             auto newGameObject = prefab->Clone();
-            
+
             if (level)
             {
                 level->AddGameObject(newGameObject);
@@ -87,14 +88,18 @@ namespace GiiGa
             {
                 newGameObject->SetParent(parent, false);
             }
-            
+
             return newGameObject;
         }
 
         static std::shared_ptr<GameObject> Instantiate(GameObject* prefab,
-            std::shared_ptr<GameObject> parent = nullptr,
-            std::string levelName)
+                                                       std::shared_ptr<GameObject> parent,
+                                                       std::string levelName)
         {
+            if (levelName == "")
+            {
+                return Instantiate(prefab, nullptr, nullptr);
+            }
             for (auto level : GetInstance()->levels_)
             {
                 if (level.name == levelName)
@@ -102,8 +107,20 @@ namespace GiiGa
                     return Instantiate(prefab, parent, &level);
                 }
             }
-            
+
             return nullptr;
+        }
+
+        Json::Value ToJson()
+        {
+            Json::Value result;
+            Json::Value levelsJson;
+            for (auto& level : levels_)
+            {
+                levelsJson.append(level.ToJson());
+            }
+            result["Levels"] = levelsJson.toStyledString();
+            return result;
         }
 
     private:

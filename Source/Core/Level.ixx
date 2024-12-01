@@ -3,6 +3,7 @@ module;
 #include <string>
 #include <vector>
 #include <memory>
+#include <json/json.h>
 
 export module Level;
 
@@ -13,7 +14,7 @@ namespace GiiGa
     export class Level
     {
     public:
-        const std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
+        const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const
         {
             return gameObjects_;
         }
@@ -41,6 +42,19 @@ namespace GiiGa
         void SetIsActive(bool newActive)
         {
             isActive_ = newActive;
+        }
+
+        Json::Value ToJson()
+        {
+            Json::Value result;
+            result["Name"] = name;
+            Json::Value gameObjectsJson;
+            for (auto GO : gameObjects_)
+            {
+                gameObjectsJson.append(GO->ToJson());
+            }
+            result["GameObjects"] = gameObjectsJson.toStyledString();
+            return result;
         }
         
     public:
