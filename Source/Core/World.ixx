@@ -18,7 +18,7 @@ namespace GiiGa
         World()
         {
             levels_.push_back({});
-            levels_[0].Name = "PersistentLevel";
+            levels_[0].name = "PersistentLevel";
             levels_[0].SetIsActive(true);
         }
         
@@ -39,13 +39,13 @@ namespace GiiGa
             GetInstance()->levels_.push_back(level);
         }
 
-        static std::shared_ptr<GameObject> CreateGameObject(std::shared_ptr<Level> Level = nullptr)
+        static std::shared_ptr<GameObject> CreateGameObject(std::shared_ptr<Level> level = nullptr)
         {
             auto obj = std::make_shared<GameObject>();
 
-            if (Level)
+            if (level)
             {
-                Level->AddGameObject(obj);
+                level->AddGameObject(obj);
             }
             else
             {
@@ -55,11 +55,11 @@ namespace GiiGa
             return obj;
         }
 
-        static bool DestroyGameObject(std::shared_ptr<GameObject> GameObject)
+        static bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
         {
             for (auto level : GetInstance()->levels_)
             {
-                if (level.DestroyGameObject(GameObject))
+                if (level.DestroyGameObject(gameObject))
                 {
                     return true;
                 }
@@ -68,38 +68,38 @@ namespace GiiGa
             return false;
         }
 
-        static std::shared_ptr<GameObject> Instantiate(GameObject* Prefab,
-            std::shared_ptr<GameObject> Parent = nullptr,
-            Level* Level = nullptr)
+        static std::shared_ptr<GameObject> Instantiate(GameObject* prefab,
+            std::shared_ptr<GameObject> parent = nullptr,
+            Level* level = nullptr)
         {
-            auto NewGameObject = std::make_shared<GameObject>(*Prefab);
+            auto newGameObject = prefab->Clone();
             
-            if (Level)
+            if (level)
             {
-                Level->AddGameObject(NewGameObject);
+                level->AddGameObject(newGameObject);
             }
             else
             {
-                GetInstance()->levels_[0].AddGameObject(NewGameObject);
+                GetInstance()->levels_[0].AddGameObject(newGameObject);
             }
 
-            if (Parent)
+            if (parent)
             {
-                NewGameObject->SetParent(Parent, false);
+                newGameObject->SetParent(parent, false);
             }
             
-            return NewGameObject;
+            return newGameObject;
         }
 
-        static std::shared_ptr<GameObject> Instantiate(GameObject* Prefab,
-            std::shared_ptr<GameObject> Parent = nullptr,
-            std::string LevelName)
+        static std::shared_ptr<GameObject> Instantiate(GameObject* prefab,
+            std::shared_ptr<GameObject> parent = nullptr,
+            std::string levelName)
         {
             for (auto level : GetInstance()->levels_)
             {
-                if (level.Name == LevelName)
+                if (level.name == levelName)
                 {
-                    return Instantiate(Prefab, Parent, &level);
+                    return Instantiate(prefab, parent, &level);
                 }
             }
             

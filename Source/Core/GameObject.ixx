@@ -32,12 +32,26 @@ namespace GiiGa
             return nullptr;
         }
 
-        void SetParent(std::shared_ptr<GameObject> Parent, bool SafeWorldTransfrom)
+        void AddComponent(std::shared_ptr<Component> component)
         {
-            
+            components_.push_back(component);
+        }
+
+        void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom)
+        {
+        }
+
+        virtual std::shared_ptr<GameObject> Clone()
+        {
+            auto newGameObject = std::make_shared<GameObject>();
+            for (auto component : components_)
+            {
+                newGameObject->AddComponent(component->Clone());
+            }
+            return newGameObject;
         }
 
     private:
         std::vector<std::shared_ptr<Component>> components_;
     };
-}  // namespace GiiGa
+} // namespace GiiGa

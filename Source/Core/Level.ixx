@@ -15,19 +15,19 @@ namespace GiiGa
     public:
         const std::vector<std::shared_ptr<GameObject>>& GetGameObjects()
         {
-            return game_objects_;
+            return gameObjects_;
         }
-        void AddGameObject(std::shared_ptr<GameObject> game_object)
+        void AddGameObject(std::shared_ptr<GameObject> gameObject)
         {
-            game_objects_.push_back(game_object);
+            gameObjects_.push_back(gameObject);
         }
-        bool DestroyGameObject(std::shared_ptr<GameObject> GameObject)
+        bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
         {
-            auto Iterator = game_objects_.erase(
-                    std::remove(game_objects_.begin(), game_objects_.end(), GameObject),
-                    game_objects_.end());
+            auto iterator = gameObjects_.erase(
+                    std::remove(gameObjects_.begin(), gameObjects_.end(), gameObject),
+                    gameObjects_.end());
 
-            if (Iterator->get())
+            if (iterator->get())
             {
                 return true;
             }
@@ -35,19 +35,19 @@ namespace GiiGa
         }
         bool GetIsActive() const
         {
-            return is_active_;
+            return isActive_;
         }
         
         void SetIsActive(bool newActive)
         {
-            is_active_ = newActive;
+            isActive_ = newActive;
         }
         
     public:
-        std::string Name;
+        std::string name;
         
     private:
-        std::vector<std::shared_ptr<GameObject>> game_objects_;
-        bool is_active_ = false;
+        std::vector<std::shared_ptr<GameObject>> gameObjects_;
+        bool isActive_ = false;
     };
 }
