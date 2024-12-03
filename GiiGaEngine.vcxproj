@@ -167,6 +167,7 @@
     <ClCompile Include="Source\Core\Level.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
+    <ClCompile Include="Source\Core\Render\ObjectShaderResource.ixx" />
     <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
     <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
     <ClCompile Include="Source\Core\Render\FrameContext.ixx" />
