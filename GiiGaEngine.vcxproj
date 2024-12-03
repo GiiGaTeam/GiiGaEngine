@@ -175,6 +175,7 @@
     <ClCompile Include="Source\Core\Render\Interfaces\IRenderContext.ixx" />
     <ClCompile Include="Source\Core\Render\Interfaces\IRenderDevice.ixx" />
     <ClCompile Include="Source\Core\Render\Interfaces\RenderTypes.ixx" />
+    <ClCompile Include="Source\Core\Render\Material.ixx" />
     <ClCompile Include="Source\Core\Render\Mesh.ixx" />
     <ClCompile Include="Source\Core\Render\PerObjectData.ixx" />
     <ClCompile Include="Source\Core\Render\RenderContext.ixx" />

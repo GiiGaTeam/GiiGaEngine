@@ -65,6 +65,11 @@ namespace GiiGa
             current_state_ = stateAfer;
         }
 
+        std::shared_ptr<ID3D12Resource> GetResource()
+        {
+            return resource_;
+        }
+
         ///////////////////////// GET BY DESC /////////////////////////////////////////////////
 
         std::shared_ptr<BufferView<Constant>> GetViewByDesc(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc)
