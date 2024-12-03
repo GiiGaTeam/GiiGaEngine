@@ -15,7 +15,7 @@ import RenderContext;
 namespace GiiGa
 {
 
-    struct WVPMatrices
+    struct WorldMatrices
     {
         DirectX::XMMATRIX World;
         DirectX::XMMATRIX WorldInverse;
@@ -28,32 +28,38 @@ namespace GiiGa
         IsStatic_(IsStatic),
         Transform_(Transform)
         {
-            UINT SizeInBytes = static_cast<UINT>(sizeof(Matrix)) * 3;
+            UINT SizeInBytes = sizeof(WorldMatrices);
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
 
-            WVPMatrices WVPMatrices;
-            WVPMatrices.World = Transform_->GetWorldMatrix();
-            WVPMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
-            const auto WVPMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WVPMatrices), SizeInBytes};
+            WorldMatrices WorldMatrices;
+            WorldMatrices.World = Transform_->GetWorldMatrix();
+            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
+            const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
-            GPULocalResource ConstantBuffer_ = GPULocalResource(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-            ConstantBuffer_.UpdateContents(Context, WVPMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            ConstantBufferView_ = ConstantBuffer_.CreateConstantBufferView(desc);
+            ConstantBuffer_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+            ConstantBuffer_->UpdateContents(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            ConstantBufferView_ = ConstantBuffer_->CreateConstantBufferView(desc);
         }
 
         void UpdateGPUData(RenderContext& Context)
         {
-            if (IsStatic_) return;
+            UINT SizeInBytes = sizeof(WorldMatrices);
+                
+            WorldMatrices WorldMatrices;
+            WorldMatrices.World = Transform_->GetWorldMatrix();
+            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
+            const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
-            UINT SizeInBytes = static_cast<UINT>(sizeof(Matrix)) * 3;
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
+            if (IsStatic_)
+            {
+                ConstantBuffer_->UpdateContents(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            }
+            else
+            {
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
             
-            WVPMatrices WVPMatrices;
-            WVPMatrices.World = Transform_->GetWorldMatrix();
-            WVPMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
-            const auto WVPMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WVPMatrices), SizeInBytes};
-            
-            ConstantBufferView_ = Context.AllocateDynamicConstantView(WVPMatricesSpan, 0, desc);
+                ConstantBufferView_ = Context.AllocateDynamicConstantView(WorldMatricesSpan, 0, desc);
+            }
 
         }
 
@@ -64,6 +70,7 @@ namespace GiiGa
         
         private:
         bool IsStatic_;
+        std::unique_ptr<GPULocalResource> ConstantBuffer_;
         std::shared_ptr<TransformComponent> Transform_;
         std::shared_ptr<BufferView<Constant>> ConstantBufferView_;
     };
