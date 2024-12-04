@@ -27,9 +27,9 @@ namespace GiiGa
             Material::MaterialData data = Material_->GetMaterialData();
             const auto MaterialSpan = std::span{reinterpret_cast<uint8_t*>(&data), SizeInBytes};
             
-            ConstantBuffer_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-            ConstantBuffer_->UpdateContents(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            ConstantBufferView_ = ConstantBuffer_->CreateConstantBufferView(desc);
+            MaterialCB_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+            MaterialCB_->UpdateContents(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            MaterialCBV_ = MaterialCB_->CreateConstantBufferView(desc);
         }
 
         void UpdateGPUData(RenderContext& Context)
@@ -41,13 +41,13 @@ namespace GiiGa
             
             if (IsStatic_)
             {
-                ConstantBuffer_->UpdateContents(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                MaterialCB_->UpdateContents(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             }
             else
             {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
             
-                ConstantBufferView_ = Context.AllocateDynamicConstantView(MaterialSpan, 0, desc);
+                MaterialCBV_ = Context.AllocateDynamicConstantView(MaterialSpan, 0, desc);
             }
         }
 
@@ -63,11 +63,16 @@ namespace GiiGa
             
             return desc_vector;
         }
+
+        D3D12_GPU_DESCRIPTOR_HANDLE GetMaterialDescriptor() const
+        {
+            return MaterialCBV_->getDescriptor().getGPUHandle();
+        }
     private:
         
         bool IsStatic_;
-        std::unique_ptr<GPULocalResource> ConstantBuffer_;
+        std::unique_ptr<GPULocalResource> MaterialCB_;
         std::shared_ptr<Material> Material_;
-        std::shared_ptr<BufferView<Constant>> ConstantBufferView_;
+        std::shared_ptr<BufferView<Constant>> MaterialCBV_;
     };
 }
