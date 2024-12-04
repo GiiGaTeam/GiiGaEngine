@@ -203,68 +203,96 @@ namespace GiiGa
         }
         //=============================SETTING MATERIAL TEXTURES & PARAMETERS=============================
 
-        void SetBaseColor(std::shared_ptr<GPULocalResource> BaseColorTexture,
-            DirectX::SimpleMath::Vector3 BaseColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
+        void SetBaseColorTexture(std::shared_ptr<GPULocalResource> BaseColorTexture)
         {
             Textures_[0]->TextureResource = BaseColorTexture->GetViewFirstShaderResource();
-            AsColorTexture(Textures_[0])->Tint = BaseColorTint;
         }
 
-        void SetMetallic(std::shared_ptr<GPULocalResource> MetallicTexture, float MetallicScale = 1.0f,
+        void SetMetallicTexture(std::shared_ptr<GPULocalResource> MetallicTexture, 
             D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[1])->GenerateChannelDesc(MetallicTexture, Channel);
-            AsChannelTexture(Textures_[1])->Scale = MetallicScale;
         }
         
-        void SetSpecular(std::shared_ptr<GPULocalResource> SpecularTexture, float SpecularScale = 1.0f,
+        void SetSpecularTexture(std::shared_ptr<GPULocalResource> SpecularTexture, 
             D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[2])->GenerateChannelDesc(SpecularTexture, Channel);
-            AsChannelTexture(Textures_[2])->Scale = SpecularScale;
         }
         
-        void SetRoughness(std::shared_ptr<GPULocalResource> RoughnessTexture, float RoughnessScale = 1.0f,
+        void SetRoughnessTexture(std::shared_ptr<GPULocalResource> RoughnessTexture,
             D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[3])->GenerateChannelDesc(RoughnessTexture, Channel);
-            AsChannelTexture(Textures_[3])->Scale = RoughnessScale;
         }
 
-        void SetAnisotropy(std::shared_ptr<GPULocalResource> AnisotropyTexture, float AnisotropyScale = 1.0f,
+        void SetAnisotropyTexture(std::shared_ptr<GPULocalResource> AnisotropyTexture, 
             D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[4])->GenerateChannelDesc(AnisotropyTexture, Channel);
-            AsChannelTexture(Textures_[4])->Scale = AnisotropyScale;
         }
         
-        void SetEmissive(std::shared_ptr<GPULocalResource> EmissiveTexture,
-            DirectX::SimpleMath::Vector3 EmissiveColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
+        void SetEmissiveTexture(std::shared_ptr<GPULocalResource> EmissiveTexture)
         {
             Textures_[5]->TextureResource = EmissiveTexture->GetViewFirstShaderResource();
-            AsColorTexture(Textures_[5])->Tint = EmissiveColorTint;
         }
         
-        void SetOpacity(std::shared_ptr<GPULocalResource> OpacityTexture, float OpacityScale= 1.0f,
+        void SetOpacityTexture(std::shared_ptr<GPULocalResource> OpacityTexture, 
         D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[6])->GenerateChannelDesc(OpacityTexture, Channel);
-            AsChannelTexture(Textures_[6])->Scale = OpacityScale;
         }
         
-        void SetNormal(std::shared_ptr<GPULocalResource> NormalTexture)
+        void SetNormalTexture(std::shared_ptr<GPULocalResource> NormalTexture)
         {
             Textures_[7]->TextureResource = NormalTexture->GetViewFirstShaderResource();
         }
         
-        void SetTangent(std::shared_ptr<GPULocalResource> TangentTexture)
+        void SetTangentTexture(std::shared_ptr<GPULocalResource> TangentTexture)
         {
             Textures_[8]->TextureResource = TangentTexture->GetViewFirstShaderResource();
         }
         
-        void SetBinormal(std::shared_ptr<GPULocalResource> BinormalTexture)
+        void SetBinormalTexture(std::shared_ptr<GPULocalResource> BinormalTexture)
         {
             Textures_[9]->TextureResource = BinormalTexture->GetViewFirstShaderResource();
+        }
+
+        //=============================SETTING MATERIAL PARAMETERS=============================
+
+        void SetBaseColorTint(DirectX::SimpleMath::Vector3 BaseColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
+        {
+            AsColorTexture(Textures_[0])->Tint = BaseColorTint;
+        }
+
+        void SetMetallicScale(float MetallicScale = 1.0f)
+        {
+            AsChannelTexture(Textures_[1])->Scale = MetallicScale;
+        }
+        
+        void SetSpecularScale(float SpecularScale = 1.0f)
+        {
+            AsChannelTexture(Textures_[2])->Scale = SpecularScale;
+        }
+        
+        void SetRoughnessScale(float RoughnessScale = 1.0f)
+        {
+            AsChannelTexture(Textures_[3])->Scale = RoughnessScale;
+        }
+
+        void SetAnisotropyScale(float AnisotropyScale = 1.0f)
+        {
+            AsChannelTexture(Textures_[4])->Scale = AnisotropyScale;
+        }
+        
+        void SetEmissiveTint(DirectX::SimpleMath::Vector3 EmissiveColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
+        {
+            AsColorTexture(Textures_[5])->Tint = EmissiveColorTint;
+        }
+        
+        void SetOpacityScale(float OpacityScale= 1.0f)
+        {
+            AsChannelTexture(Textures_[6])->Scale = OpacityScale;
         }
         
         private:
