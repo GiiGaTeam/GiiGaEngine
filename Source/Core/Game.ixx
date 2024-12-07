@@ -26,39 +26,45 @@ namespace GiiGa
         {
             Time::Start();
 
-            while (!quit_)
+        while (!quit_)
+        {
+            window_->ProcessEvents();
+            if (false)
             {
-                window_->ProcessEvents();
-                render_system_.Tick();
-                /*
-                if (false)
+                quit_ = true;
+            }
+            Time::UpdateTime();
+            for (auto& level : World::GetLevels())
+            {
+                if (!level.GetIsActive())
                 {
-                    quit_ = true;
+                    continue;
                 }
-                Time::UpdateTime();
-                for (auto&& game_object : World::GetGameObjects())
+                for (auto&& game_object : level.GetGameObjects())
                 {
                     if (game_object->tick_type == TickType::Default)
                         game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
                 }
-                if (Input::IsKeyDown(MouseButton::MouseLeft))
-                {
-                    std::cout << "Button Down" << std::endl;
-                }
-                else if (Input::IsKeyHeld(MouseButton::MouseLeft))
-                {
-                    std::cout << "Button Held" << std::endl;
-                }
-                else if (Input::IsKeyUp(MouseButton::MouseLeft))
-                {
-                    std::cout << "Button Released" << std::endl;
-                }
-                else
-                {
-                    std::cout << Input::GetMousePosition().x << " " << Input::GetMousePosition().y << std::endl;
-                }*/
+            }
+            render_system_.Tick();
+            if (Input::IsKeyDown(MouseButton::MouseLeft))
+            {
+                std::cout << "Button Down" << std::endl;
+            }
+            else if (Input::IsKeyHeld(MouseButton::MouseLeft))
+            {
+                std::cout << "Button Held" << std::endl;
+            }
+            else if (Input::IsKeyUp(MouseButton::MouseLeft))
+            {
+                std::cout << "Button Released" << std::endl;
+            }
+            else
+            {
+                std::cout << Input::GetMousePosition().x << " " << Input::GetMousePosition().y << std::endl;
             }
         }
+    }
 
     private:
         bool quit_ = false;

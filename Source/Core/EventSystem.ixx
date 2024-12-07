@@ -23,10 +23,9 @@ namespace GiiGa
 
     public:
         static EventHandle<T> Null() {
-            return EventHandle{
-                0,
-                false
-            };
+            EventHandle<T> handle{0};
+            handle.is_valid_ = false;
+            return handle;
         }
 
         template <typename U>

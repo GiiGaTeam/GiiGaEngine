@@ -82,6 +82,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
@@ -155,6 +161,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
+    <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
+    <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
+    <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
+    <ClCompile Include="Source\Core\Assets\AssetMeta.ixx" />
+    <ClCompile Include="Source\Core\Assets\AssetType.ixx" />
+    <ClCompile Include="Source\Core\Assets\BaseAssetDatabase.ixx" />
+    <ClCompile Include="Source\Core\Assets\EditorAssetDatabase.ixx" />
+    <ClCompile Include="Source\Core\Assets\ProjectWatcher.ixx" />
+    <ClCompile Include="Source\Core\Assets\ResourceManager.ixx" />
+    <ClCompile Include="Source\Core\Assets\RuntimeAssetDatabase.ixx" />
     <ClCompile Include="Source\Components\TransformComponent.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />
     <ClCompile Include="Source\Core\EditorEngine.ixx" />
@@ -286,6 +302,9 @@
     <None Include=".gitignore" />
     <None Include="README.md" />
     <None Include="vcpkg.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ThirdParty\FileWatch.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Core\Utils.h" />
