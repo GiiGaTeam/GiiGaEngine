@@ -23,13 +23,13 @@ namespace GiiGa
             }
         }
 
-        void AddChild(std::unique_ptr<RenderPass> pass)
+        void AddChild(std::shared_ptr<RenderPass> pass)
         {
             children_.push_back(std::move(pass));
         }
 
     protected:
         int32_t default_filter_type_ = Static | Dynamic | Opacity | Transparency;
-        std::vector<std::unique_ptr<RenderPass>> children_;
+        std::vector<std::shared_ptr<RenderPass>> children_;
     };
 }

@@ -15,16 +15,6 @@ namespace GiiGa
 {
     export class EditorEngine : public Engine
     {
-    private:
-        virtual void Initialize(std::shared_ptr<Project> proj)
-        {
-            Engine::Initialize();
-            render_system_ = std::make_shared<EditorRenderSystem>(*window_);
-            render_system_->Initialize();
-            //todo
-            //World::LoadLevel(proj->GetDefaultLevelPath());
-        }
-
     public:
         virtual void Run(std::shared_ptr<Project> proj)
         {
@@ -54,6 +44,15 @@ namespace GiiGa
                 }
                 render_system_->Tick();
             }
+        }
+    private:
+        virtual void Initialize(std::shared_ptr<Project> proj)
+        {
+            Engine::Initialize();
+            render_system_ = std::make_shared<EditorRenderSystem>(*window_);
+            render_system_->Initialize();
+            //todo
+            //World::LoadLevel(proj->GetDefaultLevelPath());
         }
     };
 } // namespace GiiGa

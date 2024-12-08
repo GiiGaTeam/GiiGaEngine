@@ -103,6 +103,11 @@ namespace GiiGa
             graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
         }
 
+        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const float color[4])
+        {
+            graphics_command_list_->ClearRenderTargetView(rtv, color, 0, nullptr);
+        }
+
         void EndFrame()
         {
             graphics_command_list_->Close();

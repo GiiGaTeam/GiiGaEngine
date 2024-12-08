@@ -26,22 +26,34 @@ namespace GiiGa
             device_(std::shared_ptr<ID3D12Device>(CreateDevice(), DirectXDeleter())),
             m_CPUDescriptorHeaps
             {
-                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
-                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[1], D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
-                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
-                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[2], D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE},
-                {*this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[3], D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
-                 D3D12_DESCRIPTOR_HEAP_FLAG_NONE}
+                {
+                    *this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+                    D3D12_DESCRIPTOR_HEAP_FLAG_NONE
+                },
+                {
+                    *this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[1], D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+                    D3D12_DESCRIPTOR_HEAP_FLAG_NONE
+                },
+                {
+                    *this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[2], D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+                    D3D12_DESCRIPTOR_HEAP_FLAG_NONE
+                },
+                {
+                    *this, RenderSystemSettings::CPUDescriptorHeapAllocationSize[3], D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+                    D3D12_DESCRIPTOR_HEAP_FLAG_NONE
+                }
             },
             m_GPUDescriptorHeaps
             {
-                {*this, RenderSystemSettings::GPUDescriptorHeapSize[0], RenderSystemSettings::GPUDescriptorHeapDynamicSize[0],
-                 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE},
-                {*this, RenderSystemSettings::GPUDescriptorHeapSize[1], RenderSystemSettings::GPUDescriptorHeapDynamicSize[1],
-                 D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
-                 D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE}
+                {
+                    *this, RenderSystemSettings::GPUDescriptorHeapSize[0], RenderSystemSettings::GPUDescriptorHeapDynamicSize[0],
+                    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+                },
+                {
+                    *this, RenderSystemSettings::GPUDescriptorHeapSize[1], RenderSystemSettings::GPUDescriptorHeapDynamicSize[1],
+                    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+                    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+                }
             }
         {
         }
@@ -85,7 +97,7 @@ namespace GiiGa
 
         // created on only one command allocator, strange 
         std::shared_ptr<ID3D12GraphicsCommandList> CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE type,
-            const std::shared_ptr<ID3D12CommandAllocator> command_allocator)
+                                                                             const std::shared_ptr<ID3D12CommandAllocator> command_allocator)
         {
             if (!device_) return nullptr;
             ID3D12GraphicsCommandList* cmdList;
@@ -113,7 +125,7 @@ namespace GiiGa
             static uint32_t allocated_descriptors[2] = {0, 0};
 
             uint32_t alloc_size = RenderSystemSettings::GPUDescriptorHeapDynamicSize[heap_type] / RenderSystemSettings::
-                                  NUM_FRAMES_IN_FLIGHT;
+                NUM_FRAMES_IN_FLIGHT;
 
             assert(allocated_descriptors[heap_type] + alloc_size <= RenderSystemSettings::GPUDescriptorHeapDynamicSize[heap_type]);
 
@@ -124,14 +136,13 @@ namespace GiiGa
 
         ///////////////////////// BUFFERS INTERFACE /////////////////////////////////////////////////
 
-        std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags,
-            D3D12_RESOURCE_DESC pDesc,
-            D3D12_RESOURCE_STATES InitialResourceState) override
+        std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, D3D12_RESOURCE_DESC pDesc,
+                                                                D3D12_RESOURCE_STATES InitialResourceState, D3D12_CLEAR_VALUE* clearValue = nullptr) override
         {
             if (!device_) return nullptr;
             ID3D12Resource* d3d12Resource;
-            device_->CreateCommittedResource(&pHeapProperties, HeapFlags, &pDesc, InitialResourceState, nullptr,
-                IID_PPV_ARGS(&d3d12Resource));
+            device_->CreateCommittedResource(&pHeapProperties, HeapFlags, &pDesc, InitialResourceState, clearValue,
+                                             IID_PPV_ARGS(&d3d12Resource));
             return std::shared_ptr<ID3D12Resource>(d3d12Resource, DirectXDeleter());
         }
 
@@ -142,7 +153,7 @@ namespace GiiGa
             device_->CreateConstantBufferView(&desc, cpuAlloc.GetCpuHandle());
 
             device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
-                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                                           D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
@@ -150,14 +161,14 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+                                                                                   const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
         {
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             device_->CreateShaderResourceView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
 
             device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
-                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                                           D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
@@ -165,15 +176,15 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const std::shared_ptr<ID3D12Resource>& counterBuffer,
-            const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
+                                                                               const std::shared_ptr<ID3D12Resource>& counterBuffer,
+                                                                               const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
         {
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             device_->CreateUnorderedAccessView(buffer.get(), counterBuffer.get(), &desc, cpuAlloc.GetCpuHandle());
 
             device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
-                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                                           D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
@@ -181,7 +192,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc,
-            DescriptorHeapAllocation&& gpuAlloc)
+                                                                       DescriptorHeapAllocation&& gpuAlloc)
         {
             device_->CreateConstantBufferView(&desc, gpuAlloc.GetCpuHandle());
 
@@ -191,8 +202,8 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc,
-            DescriptorHeapAllocation&& gpuAlloc)
+                                                                                   const D3D12_SHADER_RESOURCE_VIEW_DESC& desc,
+                                                                                   DescriptorHeapAllocation&& gpuAlloc)
         {
             device_->CreateShaderResourceView(buffer.get(), &desc, gpuAlloc.GetCpuHandle());
 
@@ -202,9 +213,9 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const std::shared_ptr<ID3D12Resource>& counterBuffer,
-            const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc,
-            DescriptorHeapAllocation&& gpuAlloc)
+                                                                               const std::shared_ptr<ID3D12Resource>& counterBuffer,
+                                                                               const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc,
+                                                                               DescriptorHeapAllocation&& gpuAlloc)
         {
             device_->CreateUnorderedAccessView(buffer.get(), counterBuffer.get(), &desc, gpuAlloc.GetCpuHandle());
 
@@ -214,7 +225,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<RenderTarget>> CreateRenderTargetView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_RENDER_TARGET_VIEW_DESC* desc)
+                                                                         const D3D12_RENDER_TARGET_VIEW_DESC* desc)
         {
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV].Allocate(1);
             device_->CreateRenderTargetView(buffer.get(), desc, cpuAlloc.GetCpuHandle());
@@ -223,7 +234,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<DepthStencil>> CreateDepthStencilView(const std::shared_ptr<ID3D12Resource>& buffer,
-            const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
+                                                                         const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
         {
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV].Allocate(1);
             device_->CreateDepthStencilView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
@@ -232,7 +243,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<Index>> CreateIndexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
-            D3D12_INDEX_BUFFER_VIEW& desc)
+                                                                 D3D12_INDEX_BUFFER_VIEW& desc)
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 
@@ -240,7 +251,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
-            D3D12_VERTEX_BUFFER_VIEW& desc)
+                                                                  D3D12_VERTEX_BUFFER_VIEW& desc)
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 

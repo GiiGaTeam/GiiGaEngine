@@ -6,7 +6,7 @@ export module RenderSystem;
 
 import RenderSystemSettings;
 export import Window;
-import RenderDevice;
+export import RenderDevice;
 import RenderContext;
 import DescriptorHeap;
 import RenderPass;

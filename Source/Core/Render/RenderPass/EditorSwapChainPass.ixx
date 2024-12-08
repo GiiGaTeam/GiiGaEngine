@@ -22,6 +22,7 @@ namespace GiiGa
 {
     export class EditorSwapChainPass final : public RenderPass
     {
+        friend class EditorRenderSystem;
     public:
         EditorSwapChainPass(RenderDevice& device, std::shared_ptr<SwapChain> swapChain):
             swapChain_(swapChain)
@@ -59,7 +60,7 @@ namespace GiiGa
 
             for (auto viewport : viewports_)
             {
-                viewport->Execute();
+                viewport->Execute(context);
             }
             // todo: ImGui Call
             // Start the Dear ImGui frame
@@ -74,9 +75,8 @@ namespace GiiGa
 
             // Render Dear ImGui graphics
             const float clear_color_with_alpha[4] = {0, 0, 0, 1};
-            //todo: add ClearRenderTargetView
-            context.graphics_command_list_->ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), clear_color_with_alpha, 0,
-                                                                  nullptr);
+
+            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), clear_color_with_alpha);
 
             D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_->getRTVDescriptorHandle();
 
