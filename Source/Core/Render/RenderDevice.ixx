@@ -19,6 +19,7 @@ namespace GiiGa
         friend class RenderSystem;
         //todo: temp
         friend class RenderContext;
+        friend class EditorSwapChainPass;
 
     private:
         RenderDevice():

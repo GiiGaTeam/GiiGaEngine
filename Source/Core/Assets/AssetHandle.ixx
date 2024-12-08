@@ -5,7 +5,7 @@ module;
 export module AssetHandle;
 
 import Uuid;
-import AssetType;
+export import AssetType;
 
 namespace GiiGa
 {
@@ -14,9 +14,16 @@ namespace GiiGa
         Uuid id = Uuid::Null();
         AssetType type = AssetType::Unknown;
 
-        AssetHandle() {}
+        AssetHandle()
+        {
+        }
 
-        bool operator==(const AssetHandle& other) const { 
+        AssetHandle(Uuid id, AssetType type) : id(id), type(type)
+        {
+        }
+
+        bool operator==(const AssetHandle& other) const
+        {
             return type == other.type && id == other.id;
         }
 
@@ -57,4 +64,4 @@ namespace std
             return hash<GiiGa::Uuid>()(handle.id) ^ (hash<int>()(static_cast<int>(handle.type)) << 1);
         }
     };
-}  // namespace std
+} // namespace std

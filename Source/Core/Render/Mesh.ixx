@@ -6,6 +6,7 @@ module;
 
 export module Mesh;
 
+import AssetBase;
 import RenderDevice;
 import IRenderContext;
 import GPULocalResource;
@@ -13,13 +14,23 @@ export import VertexTypes;
 
 namespace GiiGa
 {
-    export class Mesh
+    export class Mesh : public AssetBase
     {
     public:
         using VertexType = VertexPNTBT;
-        
+
+        Mesh(Uuid id, IRenderContext& render_context, RenderDevice& device, const std::vector<VertexType>& vertices,
+             const std::vector<Index16>& indices):
+            AssetBase(AssetHandle{id, AssetType::Mesh}),
+            vertexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE)),
+            indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE))
+        {
+            throw std::exception();
+        }
+
         Mesh(IRenderContext& render_context, RenderDevice& device, const std::vector<VertexType>& vertices,
-            const std::vector<Index16>& indices):
+             const std::vector<Index16>& indices):
+            AssetBase(AssetHandle{Uuid::New(), AssetType::Mesh}),
             vertexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE)),
             indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE))
         {

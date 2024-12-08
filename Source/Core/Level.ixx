@@ -56,6 +56,9 @@ namespace GiiGa
             result["GameObjects"] = gameObjectsJson.toStyledString();
             return result;
         }
+
+        // todo
+        void fromJson(const Json::Value& value);
         
     public:
         std::string name;

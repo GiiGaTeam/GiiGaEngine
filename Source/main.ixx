@@ -7,7 +7,7 @@ module;
 export module Main;
 
 import World;
-import GameLoop;
+import EditorEngine;
 import ConsoleComponent;
 import WindowManager;
 import WindowSettings;
@@ -17,18 +17,12 @@ import EventSystem;
 export int main()
 {
     ImGui::CreateContext();
-    auto settings = GiiGa::WindowSettings{"GiiGa Engine", 1240, 720};
-    auto window = GiiGa::WindowManager::CreateWindow(settings);
-    GiiGa::Input input;
-    input.Init(window);
 
-    GiiGa::Game game_loop(window);
+    std::shared_ptr<GiiGa::Project> proj;
     
-    //auto obj = GiiGa::World::CreateObject();
+    GiiGa::EditorEngine engine = GiiGa::EditorEngine();
 
-    //obj->CreateComponent<GiiGa::ConsoleComponent>();
-    
-    game_loop.Run();
+    engine.Run(proj);
 
     return 0;
 }

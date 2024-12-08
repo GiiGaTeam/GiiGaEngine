@@ -106,6 +106,7 @@ namespace GiiGa
 #pragma endregion
 
 #pragma region TransformComopnent
+    // todo: add to json
     export class TransformComponent : public Component
     {
 
