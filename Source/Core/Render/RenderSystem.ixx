@@ -31,6 +31,7 @@ namespace GiiGa
 
         virtual void Tick()
         {
+            device_.DeleteStaleObjects();
             context_.StartFrame();
             root.Draw(context_);
             context_.EndFrame();

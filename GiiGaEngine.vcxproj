@@ -299,6 +299,7 @@
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
+    <ClCompile Include="Source\Core\unique_any.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
     <ClCompile Include="Source\Core\Variant.ixx" />
     <ClCompile Include="Source\Core\Window.ixx" />

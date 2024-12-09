@@ -193,7 +193,7 @@ namespace GiiGa
                 push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE);
         }
 
-        void add_custom_samplers(std::vector<D3D12_SAMPLER_DESC> sampler_descs)
+        void add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
         {
             samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
         }

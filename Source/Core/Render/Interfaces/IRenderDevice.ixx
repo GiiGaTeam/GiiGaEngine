@@ -1,9 +1,12 @@
 module;
 
 #include<memory>
+#include<any>
 #include<d3d12.h>
 
 export module IRenderDevice;
+
+export import unique_any;
 
 namespace GiiGa
 {
@@ -14,5 +17,6 @@ namespace GiiGa
         virtual UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) =0;
         virtual std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, D3D12_RESOURCE_DESC pDesc,
                                                                         D3D12_RESOURCE_STATES InitialResourceState, D3D12_CLEAR_VALUE* clearValue = nullptr) =0;
+        virtual void EnqueueToDelete(unique_any to_destroy) =0;
     };
 }
