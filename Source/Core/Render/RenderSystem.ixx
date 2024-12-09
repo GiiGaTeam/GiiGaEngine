@@ -37,6 +37,13 @@ namespace GiiGa
             swapChain_->Present();
         }
 
+        RenderDevice& GetRenderDevice() {
+            return device_;
+        }
+
+        RenderContext& GetRenderContext() {
+            return context_;
+        }
     protected:
         RenderDevice device_;
         RenderContext context_;

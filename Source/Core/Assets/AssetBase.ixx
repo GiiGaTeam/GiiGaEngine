@@ -19,6 +19,11 @@ namespace GiiGa
         AssetHandle id_;
 
     public:
+        AssetBase()
+        {
+
+        }
+
         AssetBase(AssetHandle uuid)
             : id_(uuid)
         {
@@ -26,6 +31,10 @@ namespace GiiGa
 
         AssetHandle GetId() const {
             return id_;
+        }
+
+        void SetId(AssetHandle id) {
+            id_ = id;
         }
 
         virtual AssetType GetType() = 0;

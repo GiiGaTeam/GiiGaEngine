@@ -24,7 +24,7 @@ namespace GiiGa
     export class AssetLoader
     {
     protected:
-        std::string pattern_;
+        std::regex pattern_;
         AssetType type_;
 
     public:
@@ -47,11 +47,8 @@ namespace GiiGa
         }
 
         bool MatchesPattern(const std::filesystem::path& path) const {
-            // TODO: cache regex
-
             std::string filename = path.filename().string();
-            std::regex re(pattern_, std::regex::icase);
-            return std::regex_match(filename, re);
+            return std::regex_match(filename, pattern_);
         }
     };
 }  // namespace GiiGa
