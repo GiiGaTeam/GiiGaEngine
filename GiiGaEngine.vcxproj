@@ -195,6 +195,7 @@
     <ClCompile Include="Source\Core\Render\Material.ixx" />
     <ClCompile Include="Source\Core\Render\Mesh.ixx" />
     <ClCompile Include="Source\Core\Render\PerObjectData.ixx" />
+    <ClCompile Include="Source\Core\Render\PSO.ixx" />
     <ClCompile Include="Source\Core\Render\RenderContext.ixx" />
     <ClCompile Include="Source\Core\Render\RenderData.ixx" />
     <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
@@ -282,6 +283,7 @@
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
     <ClCompile Include="Source\Core\Render\SceneVisibility.ixx" />
+    <ClCompile Include="Source\Core\Render\Shader.ixx" />
     <ClCompile Include="Source\Core\Render\SkeletalMesh.ixx" />
     <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
     <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />

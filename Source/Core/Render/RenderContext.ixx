@@ -72,7 +72,7 @@ namespace GiiGa
             imgui_srv_desc_heap_allocation_ = descriptor_heap.Allocate(1);
 
             // Setup Platform/Renderer backends
-            ImGui_ImplDX12_Init(device_.DetDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
+            ImGui_ImplDX12_Init(device_.GetDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
                 DXGI_FORMAT_R8G8B8A8_UNORM, descriptor_heap.GetDescriptorHeap().get(),
                 imgui_srv_desc_heap_allocation_.GetCpuHandle(),
                 imgui_srv_desc_heap_allocation_.GetGpuHandle());

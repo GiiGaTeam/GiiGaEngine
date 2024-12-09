@@ -45,17 +45,16 @@ namespace GiiGa
         {
         }
 
-        std::shared_ptr<ID3D12Device> DetDevice()
-        {
-            return device_;
-        }
-
         GPUDescriptorHeap& GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type)
         {
             return m_GPUDescriptorHeaps[type];
         }
 
     public:
+        std::shared_ptr<ID3D12Device> GetDevice()
+        {
+            return device_;
+        }
         std::shared_ptr<ID3D12CommandQueue> CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC& desc) const
         {
             if (!device_) return nullptr;
