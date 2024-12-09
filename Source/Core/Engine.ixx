@@ -1,46 +1,68 @@
 module;
 
+#include <memory>
+
 export module Engine;
 
 import ResourceManager;
+import Input;
+import Window;
+import RenderSystem;
+import WindowManager;
+export import Project;
 
 namespace GiiGa
 {
+    export class Engine
+    {
+    protected:
+        static inline Engine* instance_ = nullptr;
 
-export class Engine
-{
-protected:
-    static inline Engine* instance_ = nullptr;
+        bool quit_ = false;
+        std::shared_ptr<Window> window_;
+        std::shared_ptr<RenderSystem> render_system_ = nullptr;
+        std::shared_ptr<Project> project_;
+        Input input;
 
-    ResourceManager* resource_manager_ = nullptr;
+        ResourceManager* resource_manager_ = nullptr;
 
-    virtual void Initialize() { 
-        instance_ = this;
-        resource_manager_ = new GiiGa::ResourceManager();
-    }
+        virtual void Initialize()
+        {
+            instance_ = this;
+            resource_manager_ = new GiiGa::ResourceManager();
+            auto settings = WindowSettings{"GiiGa Engine", 1240, 720};
+            window_ = WindowManager::CreateWindow(settings);
 
-    /*
-    IScriptSystem scriptSystem_;
-    IAudioSystem audioSystem_;
-    IPhysicsSystem physicsSystem_;
-    IRenderSystem renderSystem_;
-    ...
-    */
+            input.Init(window_);
 
-public:
-    virtual void Run() = 0;
+            window_->OnWindowClose.Register([this](const WindowCloseEvent& arg) { quit_ = true; });
+            window_->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
+        }
 
-    static Engine& Instance() { 
-        return *instance_;
-    }
+        /*
+        IScriptSystem scriptSystem_;
+        IAudioSystem audioSystem_;
+        IPhysicsSystem physicsSystem_;
+        IRenderSystem renderSystem_;
+        ...
+        */
 
-    ResourceManager& ResourceManager() { 
-        return *resource_manager_;
-    }
+    public:
+        virtual void Run(std::shared_ptr<Project>) = 0;
 
-    virtual ~Engine() { 
-        delete resource_manager_;
-    }
-};
+        static Engine& Instance()
+        {
+            return *instance_;
+        }
 
+        ResourceManager& ResourceManager()
+        {
+            return *resource_manager_;
+        }
+
+        virtual ~Engine()
+        {
+            delete resource_manager_;
+        }
+    };
 }

@@ -21,22 +21,21 @@ namespace GiiGa
     {
     public:
         GPULocalResource(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
-            D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON)
+                         D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON)
             : device_(device)
               , resource_(resource),
               current_state_(initialState)
         {
-
         }
 
         GPULocalResource(RenderDevice& device, D3D12_RESOURCE_DESC desc,
-            D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COPY_DEST):
+                         D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COPY_DEST, D3D12_CLEAR_VALUE* clearValue = nullptr):
             device_(device),
             current_state_(initialState)
         {
             CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-            resource_ = device.CreateCommittedResource(heapProperties, D3D12_HEAP_FLAG_NONE, desc, current_state_);
+            resource_ = device.CreateCommittedResource(heapProperties, D3D12_HEAP_FLAG_NONE, desc, current_state_, clearValue);
         }
 
         void UpdateContents(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfer)
@@ -58,7 +57,7 @@ namespace GiiGa
                 resource_.get(),
                 current_state_,
                 stateAfer
-                );
+            );
 
             render_context.ResourceBarrier(1, barrier);
 
@@ -145,7 +144,7 @@ namespace GiiGa
         }
 
         ///////////////////////// CREATE VIEW /////////////////////////////////////////////////
-        
+
         std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
         {
             D3D12_CONSTANT_BUFFER_VIEW_DESC key = desc;
@@ -165,7 +164,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& counterBuffer,
-            const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
+                                                                               const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
         {
             unorderedAccessViews_.emplace(desc, device_.CreateUnorderedAccessView(resource_, counterBuffer, desc));
 
@@ -179,7 +178,7 @@ namespace GiiGa
                 temp_copy = *desc;
 
             renderTargetViews_.emplace(temp_copy, device_.CreateRenderTargetView(resource_, desc));
-            
+
             return renderTargetViews_[temp_copy];
         }
 
@@ -216,12 +215,12 @@ namespace GiiGa
         RenderDevice& device_;
         std::shared_ptr<ID3D12Resource> resource_;
         D3D12_RESOURCE_STATES current_state_;
-        std::unordered_map<D3D12_CONSTANT_BUFFER_VIEW_DESC,std::shared_ptr<BufferView<Constant>>> constantViews_;
+        std::unordered_map<D3D12_CONSTANT_BUFFER_VIEW_DESC, std::shared_ptr<BufferView<Constant>>> constantViews_;
         std::unordered_map<D3D12_SHADER_RESOURCE_VIEW_DESC, std::shared_ptr<BufferView<ShaderResource>>> shaderResourceViews_;
         std::unordered_map<D3D12_UNORDERED_ACCESS_VIEW_DESC, std::shared_ptr<BufferView<UnorderedAccess>>> unorderedAccessViews_;
         std::unordered_map<D3D12_RENDER_TARGET_VIEW_DESC, std::shared_ptr<BufferView<RenderTarget>>> renderTargetViews_;
         std::unordered_map<D3D12_DEPTH_STENCIL_VIEW_DESC, std::shared_ptr<BufferView<DepthStencil>>> depthStencilViews_;
         std::unordered_map<D3D12_INDEX_BUFFER_VIEW, std::shared_ptr<BufferView<Index>>> indexViews_;
-        std::unordered_map<D3D12_VERTEX_BUFFER_VIEW,std::shared_ptr< BufferView<Vertex>>> vertexViews_;
+        std::unordered_map<D3D12_VERTEX_BUFFER_VIEW, std::shared_ptr<BufferView<Vertex>>> vertexViews_;
     };
 }

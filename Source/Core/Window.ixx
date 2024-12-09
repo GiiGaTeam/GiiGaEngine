@@ -9,7 +9,7 @@ module;
 
 export module Window;
 
-import WindowSettings;
+export import WindowSettings;
 import EventSystem;
 
 class WindowManager;

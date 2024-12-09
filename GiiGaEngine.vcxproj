@@ -162,6 +162,8 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
+    <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
@@ -177,13 +179,15 @@
     <ClCompile Include="Source\Core\EditorEngine.ixx" />
     <ClCompile Include="Source\Core\Engine.ixx" />
     <ClCompile Include="Source\Core\EventSystem.ixx" />
-    <ClCompile Include="Source\Core\Game.ixx" />
     <ClCompile Include="Source\Core\GameEngine.ixx" />
     <ClCompile Include="Source\Core\GameObject.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
+    <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx" />
+    <ClCompile Include="Source\Core\Render\EditorViewport.ixx" />
     <ClCompile Include="Source\Core\Render\ObjectShaderResource.ixx" />
     <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
     <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
@@ -201,6 +205,7 @@
     <ClCompile Include="Source\Core\Render\RenderData.ixx" />
     <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
     <ClCompile Include="Source\Core\Render\RenderGraph.ixx" />
+    <ClCompile Include="Source\Core\Render\RenderPass\EditorSwapChainPass.ixx" />
     <ClCompile Include="Source\Core\Render\RenderPass\GBufferPass.ixx" />
     <ClCompile Include="Source\Core\Render\RenderPass\GLightPass.ixx" />
     <ClCompile Include="Source\Core\Render\RenderPass\RenderPass.ixx">
@@ -290,6 +295,7 @@
     <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
     <ClCompile Include="Source\Core\Render\VariableSizeAllocationsManager.ixx" />
     <ClCompile Include="Source\Core\Render\VertexTypes.ixx" />
+    <ClCompile Include="Source\Core\Render\Viewport.ixx" />
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />

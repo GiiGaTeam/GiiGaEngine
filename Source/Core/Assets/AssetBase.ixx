@@ -7,9 +7,8 @@ export module AssetBase;
 
 import Engine;
 
-import AssetHandle;
-import AssetType; 
-import Uuid;
+export import AssetHandle;
+export import Uuid;
 import Misc;
 
 namespace GiiGa

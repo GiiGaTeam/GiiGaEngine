@@ -17,7 +17,8 @@ namespace GiiGa
         Scene,
         Prefab,
         Behaviour,
-        Audio
+        Audio,
+        Material,
     };
 
     export std::string AssetTypeToString(AssetType type)
