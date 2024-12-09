@@ -388,7 +388,8 @@ public:
         return wmInfo.info.win.window;
     }
 
-    ~Window() { 
+    ~Window() {
+        ImGui_ImplSDL2_Shutdown();
         SDL_DestroyWindow(window_);
     }
 

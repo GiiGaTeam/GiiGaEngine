@@ -5,6 +5,7 @@
 #include <memory>
 #include <unordered_map>
 #include <any>
+#include <iostream>
 
 export module RenderDevice;
 
@@ -26,6 +27,7 @@ namespace GiiGa
 
     private:
         RenderDevice():
+            IRenderDevice(RenderSystemSettings::NUM_BACK_BUFFERS),
             device_(std::shared_ptr<ID3D12Device>{CreateDevice(), DXDeleter{}}),
             m_CPUDescriptorHeaps
             {
@@ -57,8 +59,7 @@ namespace GiiGa
                     D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
                     D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
                 }
-            },
-            delete_queue(RenderSystemSettings::NUM_BACK_BUFFERS)
+            }
         {
         }
 
@@ -68,31 +69,17 @@ namespace GiiGa
         }
 
     public:
+        ~RenderDevice() override
+        {
+            for (auto&& vec : delete_queue)
+            {
+                vec.clear();
+            }
+        }
+
         std::shared_ptr<ID3D12Device> GetDevice()
         {
             return device_;
-        }
-
-        ///////////////////////// Safe Delete INTERFACE /////////////////////////////////////////////////
-
-        void EnqueueToDelete(unique_any to_destroy) override
-        {
-            delete_queue.back().push_back(std::move(to_destroy));
-        }
-
-        void DeleteStaleObjects()
-        {
-            std::vector<unique_any> front = std::move(delete_queue.front());
-            delete_queue.pop_front();
-
-            // todo: may be just clear is enough
-            for (auto&& el : front)
-            {
-                el.reset();
-            }
-            front.clear();
-
-            delete_queue.push_back(std::move(front));
         }
 
         ///////////////////////// Create INTERFACE /////////////////////////////////////////////////
@@ -103,7 +90,7 @@ namespace GiiGa
 
             ID3D12CommandQueue* d3d12CommandQueue;
             device_->CreateCommandQueue(&desc, IID_PPV_ARGS(&d3d12CommandQueue));
-            return std::shared_ptr<ID3D12CommandQueue>(d3d12CommandQueue, DXDelayedDeleter(*this));
+            return std::shared_ptr<ID3D12CommandQueue>(d3d12CommandQueue, DXDeleter());
         }
 
         std::shared_ptr<ID3D12Fence> CreateFence(uint64_t fence_value, D3D12_FENCE_FLAGS flags)
@@ -112,7 +99,7 @@ namespace GiiGa
 
             ID3D12Fence* fence;
             device_->CreateFence(fence_value, flags, IID_PPV_ARGS(&fence));
-            return std::shared_ptr<ID3D12Fence>(fence, DXDelayedDeleter(*this));
+            return std::shared_ptr<ID3D12Fence>(fence, DXDeleter());
         }
 
         std::shared_ptr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type)
@@ -120,7 +107,7 @@ namespace GiiGa
             if (!device_) return nullptr;
             ID3D12CommandAllocator* cmdAlloc;
             device_->CreateCommandAllocator(type,IID_PPV_ARGS(&cmdAlloc));
-            return std::shared_ptr<ID3D12CommandAllocator>(cmdAlloc, DXDelayedDeleter(*this));
+            return std::shared_ptr<ID3D12CommandAllocator>(cmdAlloc, DXDeleter());
         }
 
         // created on only one command allocator, strange 
@@ -130,7 +117,7 @@ namespace GiiGa
             if (!device_) return nullptr;
             ID3D12GraphicsCommandList* cmdList;
             device_->CreateCommandList(0, type, command_allocator.get(), nullptr,IID_PPV_ARGS(&cmdList));
-            return std::shared_ptr<ID3D12GraphicsCommandList>(cmdList, DXDelayedDeleter(*this));
+            return std::shared_ptr<ID3D12GraphicsCommandList>(cmdList, DXDeleter());
         }
 
         ///////////////////////// HEAPS INTERFACE /////////////////////////////////////////////////
@@ -140,7 +127,7 @@ namespace GiiGa
             if (!device_) return nullptr;
             ID3D12DescriptorHeap* d3d12DescriptorHeap;
             ThrowIfFailed(device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&d3d12DescriptorHeap)));
-            return std::shared_ptr<ID3D12DescriptorHeap>(d3d12DescriptorHeap, DXDelayedDeleter(*this));
+            return std::shared_ptr<ID3D12DescriptorHeap>(d3d12DescriptorHeap, DXDeleter());
         }
 
         UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) override
@@ -293,8 +280,6 @@ namespace GiiGa
         GPUDescriptorHeap m_GPUDescriptorHeaps[2];
 
         std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE, std::shared_ptr<ID3D12DescriptorHeap>> descriptor_heaps_;
-
-        std::list<std::vector<unique_any>> delete_queue;
 
         ID3D12Device* CreateDevice()
         {

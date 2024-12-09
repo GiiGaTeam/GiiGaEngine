@@ -1,7 +1,9 @@
 ﻿module;
 
 #include<exception>
+#include<iostream>
 #include <d3d12.h>
+#include<string>
 
 export module DirectXUtils;
 
@@ -509,6 +511,16 @@ export bool operator==(const D3D12_VERTEX_BUFFER_VIEW& lhs, const D3D12_VERTEX_B
 
 namespace GiiGa
 {
+
+    export struct DXDeleter
+    {
+        void operator()(IUnknown* surface)
+        {
+            //std::cout << "DXDeleter\n";
+            if (surface) surface->Release();
+        }
+    };
+    
     export class DXDelayedDeleter
     {
     public:
@@ -517,22 +529,27 @@ namespace GiiGa
         {
         }
 
-        void operator()(IUnknown* surface)
+        void operator()(IUnknown* resource)
         {
-            device_.EnqueueToDelete(unique_any(surface));
+            //std::cout << "DXDelayedDeleter\n";
+            //ID3D12Object* d3d12Object = nullptr;
+            //HRESULT hr = resource->QueryInterface(IID_PPV_ARGS(&d3d12Object));
+            //if (SUCCEEDED(hr))
+            //{
+            //    wchar_t name[128] = {};
+            //    UINT size = sizeof(name);
+            //    d3d12Object->GetPrivateData(WKPDID_D3DDebugObjectNameW, &size, name);
+            //    std::wcout << name << "\n";
+            //    d3d12Object->Release();
+            //}
+            device_.EnqueueToDelete(unique_any(std::unique_ptr<IUnknown, DXDeleter>(std::move(resource))));
         }
 
     private:
         IRenderDevice& device_;
     };
 
-    export struct DXDeleter
-    {
-        void operator()(IUnknown* surface)
-        {
-            if (surface) surface->Release();
-        }
-    };
+
 
     export inline void ThrowIfFailed(HRESULT hr)
     {

@@ -9,9 +9,9 @@ import ShadowPass;
 import EditorSwapChainPass;
 import EditorViewport;
 
-namespace GiiGa 
+namespace GiiGa
 {
-    export class EditorRenderSystem : public RenderSystem 
+    export class EditorRenderSystem : public RenderSystem
     {
     public:
         explicit EditorRenderSystem(Window& window)
@@ -22,14 +22,16 @@ namespace GiiGa
         void Initialize() override
         {
             //RenderSystem::Initialize();
-            
+
             root.AddChild(std::make_shared<ShadowPass>());
-            editorSwapChainPass_ = std::make_shared<EditorSwapChainPass>(device_, swapChain_);
-            root.AddChild(editorSwapChainPass_);
-            
-            editorSwapChainPass_->viewports_.push_back(std::make_shared<EditorViewport>(device_));
+            std::shared_ptr<EditorSwapChainPass> tempEditorSCP = std::make_shared<EditorSwapChainPass>(device_, swapChain_);
+            editorSwapChainPass_ = tempEditorSCP;
+            root.AddChild(tempEditorSCP);
+
+            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_));
         }
+
     private:
-        std::shared_ptr<EditorSwapChainPass> editorSwapChainPass_;
+        std::weak_ptr<EditorSwapChainPass> editorSwapChainPass_;
     };
 }

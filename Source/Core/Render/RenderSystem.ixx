@@ -17,7 +17,10 @@ namespace GiiGa
     export class RenderSystem
     {
     public:
-        virtual ~RenderSystem() = default;
+        virtual ~RenderSystem()
+        {
+            context_.ContextIdle();
+        }
 
         RenderSystem(Window& window):
             device_(),

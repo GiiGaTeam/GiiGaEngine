@@ -90,7 +90,7 @@ namespace GiiGa
                                                 &swapChain1);
             swapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain));
 
-            swap_chain_ = std::shared_ptr<IDXGISwapChain4>(pSwapChain, DXDelayedDeleter{device});
+            swap_chain_ = std::shared_ptr<IDXGISwapChain4>(pSwapChain, DXDeleter{});
 
             swapChain1->Release();
             dxgiFactory->Release();
@@ -105,7 +105,8 @@ namespace GiiGa
             {
                 ID3D12Resource* pBackBuffer = nullptr;
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDelayedDeleter{device});
+                pBackBuffer->SetName(L"SWAboba");
+                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{});//DXDelayedDeleter{device}
                 render_targets_.emplace_back(device, res);
                 (--render_targets_.end())->CreateRenderTargetView(nullptr);
             }
