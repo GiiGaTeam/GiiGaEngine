@@ -1,6 +1,8 @@
 ﻿module;
 
+#include <functional>
 #include <memory>
+#include <iostream>
 
 export module RenderSystem;
 
@@ -28,6 +30,7 @@ namespace GiiGa
             swapChain_(std::make_shared<SwapChain>(device_, context_.getGraphicsCommandQueue(), window))
         {
             context_.SetFrameLatencyWaitableObject(swapChain_->GetFrameLatencyWaitableObject());
+            window.OnWindowResize.Register(std::bind(&RenderSystem::ResizeSwapChain, this, std::placeholders::_1));
         }
 
         virtual void Initialize() = 0;
@@ -39,6 +42,12 @@ namespace GiiGa
             root.Draw(context_);
             context_.EndFrame();
             swapChain_->Present();
+        }
+
+        void ResizeSwapChain(const WindowResizeEvent& event)
+        {
+            context_.ContextIdle();
+            swapChain_->Resize(device_, event.width, event.height);
         }
 
     protected:

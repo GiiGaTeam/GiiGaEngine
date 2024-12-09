@@ -55,6 +55,13 @@ namespace GiiGa
             return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor().GetCpuHandle();
         }
 
+        void Resize(RenderDevice& device, int width, int height)
+        {
+            render_targets_.clear();
+            swap_chain_->ResizeBuffers(RenderSystemSettings::NUM_BACK_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
+            CreateRenderTarget(device);
+        }
+
     private:
         UINT currentBackBufferIdx = 0;
         std::shared_ptr<IDXGISwapChain4> swap_chain_;
@@ -105,8 +112,7 @@ namespace GiiGa
             {
                 ID3D12Resource* pBackBuffer = nullptr;
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-                pBackBuffer->SetName(L"SWAboba");
-                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{});//DXDelayedDeleter{device}
+                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{}); //DXDelayedDeleter{device}
                 render_targets_.emplace_back(device, res);
                 (--render_targets_.end())->CreateRenderTargetView(nullptr);
             }
