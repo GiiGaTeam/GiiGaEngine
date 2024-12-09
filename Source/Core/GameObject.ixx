@@ -2,6 +2,7 @@ module;
 
 #include <vector>
 #include <memory>
+#include <typeindex>
 #include <json/json.h>
 
 export module GameObject;
@@ -51,6 +52,11 @@ namespace GiiGa
                 newGameObject->AddComponent(component->Clone());
             }
             return newGameObject;
+        }
+
+        std::vector<std::shared_ptr<Component>> GetComponents()
+        {
+            return components_;
         }
 
         Uuid GetUuid() const
