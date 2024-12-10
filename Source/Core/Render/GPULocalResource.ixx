@@ -212,6 +212,10 @@ namespace GiiGa
             return vertexViews_[key];
         }
 
+        AssetType GetType() override {
+            return AssetType::Texture2D;
+        }
+
     private:
         RenderDevice& device_;
         std::shared_ptr<ID3D12Resource> resource_;
