@@ -109,12 +109,11 @@ namespace GiiGa
     // todo: add to json
     export class TransformComponent : public Component
     {
-
     public:
         TransformComponent(const Vector3 location = Vector3::Zero
-            , const Vector3 rotation = Vector3::Zero
-            , const Vector3 scale = Vector3::One
-            , const std::shared_ptr<TransformComponent>& parent = nullptr)
+                           , const Vector3 rotation = Vector3::Zero
+                           , const Vector3 scale = Vector3::One
+                           , const std::shared_ptr<TransformComponent>& parent = nullptr)
         {
             transform_ = Transform{location, rotation, scale};
             if (parent) AttachTo(parent);
@@ -170,8 +169,14 @@ namespace GiiGa
 
         void SetLocation(const Vector3& location)
         {
-            transform_ = std::move(Transform(location));
+            transform_.location_ = location;
             UpdateTransformMatrices();
+        }
+
+        void AddLocation(const Vector3& location)
+        {
+            const auto new_location = GetLocation() + location;
+            SetLocation(new_location);
         }
 
         Vector3 GetRotation() const { return transform_.GetRotation(); }
@@ -182,12 +187,30 @@ namespace GiiGa
             UpdateTransformMatrices();
         }
 
+        void SetRotation(const Quaternion& rotation)
+        {
+            transform_.rotate_ = rotation;
+            UpdateTransformMatrices();
+        }
+
+        void AddRotation(const Vector3& rotation)
+        {
+            const auto new_quat = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            SetRotation(new_quat);
+        }
+
         Vector3 GetScale() const { return transform_.scale_; }
 
         void SetScale(const Vector3& scale)
         {
             transform_.scale_ = scale;
             UpdateTransformMatrices();
+        }
+
+        void AddScale(const Vector3& scale)
+        {
+            const auto new_scale = GetScale() + scale;
+            SetScale(new_scale);
         }
 
         Transform GetWorldTransform() const { return Transform::TransformFromMatrix(world_matrix_); }
@@ -214,6 +237,12 @@ namespace GiiGa
             SetWorldTransform(world_trans);
         }
 
+        void AddWorldLocation(const Vector3& location)
+        {
+            const auto new_location = GetWorldLocation() + location;
+            SetWorldLocation(new_location);
+        }
+
         Vector3 GetWorldRotation() const
         {
             return Transform::TransformFromMatrix(world_matrix_).GetRotation();
@@ -224,6 +253,20 @@ namespace GiiGa
             Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
             world_trans.SetRotation(rotation);
             SetWorldTransform(world_trans);
+        }
+
+        void SetWorldRotation(const Quaternion& rotation)
+        {
+            Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
+            world_trans.rotate_ = rotation;
+            SetWorldTransform(world_trans);
+        }
+
+        void AddWorldRotation(const Vector3& rotation)
+        {
+            const auto world_trans = Transform::TransformFromMatrix(world_matrix_);
+            const auto new_quat = world_trans.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            SetWorldRotation(new_quat);
         }
 
         Vector3 GetWorldScale() const
@@ -238,12 +281,18 @@ namespace GiiGa
             SetWorldTransform(world_trans);
         }
 
+        void AddWorldScale(const Vector3& scale)
+        {
+            const auto new_scale = GetScale() + scale;
+            SetWorldScale(new_scale);
+        }
+
         std::weak_ptr<TransformComponent> GetParent() const { return parent_; }
 
-        Matrix GetWorldMatrix() const {return world_matrix_;} 
-        Matrix GetInverseWorldMatrix() const {return world_matrix_.Invert();} 
-        Matrix GetLocalMatrix() const {return local_matrix_;} 
-        Matrix GetInverseLocalMatrix() const {return local_matrix_.Invert();} 
+        Matrix GetWorldMatrix() const { return world_matrix_; }
+        Matrix GetInverseWorldMatrix() const { return world_matrix_.Invert(); }
+        Matrix GetLocalMatrix() const { return local_matrix_; }
+        Matrix GetInverseLocalMatrix() const { return local_matrix_.Invert(); }
 
         void AttachTo(const std::weak_ptr<TransformComponent>& parent)
         {
@@ -288,6 +337,7 @@ namespace GiiGa
             else
             {
                 CalcWorldTransformMatrix();
+                is_dirty_ = false;
             }
             OnUpdateTransform.Invoke(UpdateTransformEvent{});
         }
@@ -350,5 +400,4 @@ namespace GiiGa
         }
     };
 #pragma endregion
-
 }
