@@ -28,9 +28,20 @@ namespace GiiGa
         {
             if (std::shared_ptr<T> newComp = std::make_shared<T>(args...))
             {
-                newComp->owner_ = shared_from_this();
+                newComp->SetOwner(shared_from_this());
                 components_.push_back(newComp);
                 return newComp;
+            }
+            return nullptr;
+        }
+
+        template <typename T>
+        std::shared_ptr<T> GetComponent()
+        {
+            for (auto&& component : components_)
+            {
+                if (std::shared_ptr<T> comp = std::dynamic_pointer_cast<T>(component))
+                    return comp;
             }
             return nullptr;
         }
@@ -64,7 +75,7 @@ namespace GiiGa
             // TO DO
             Uuid::Null();
         }
-        
+
         Json::Value ToJson()
         {
             Json::Value result;
@@ -81,7 +92,7 @@ namespace GiiGa
 
             return result;
         }
-        
+
     private:
         std::vector<std::shared_ptr<Component>> components_;
     };

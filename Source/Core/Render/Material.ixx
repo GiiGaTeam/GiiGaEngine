@@ -63,7 +63,7 @@ namespace GiiGa
          */
         struct SimpleTexture
         {
-            std::shared_ptr<GPULocalResource> Texture;
+            std::shared_ptr<TextureAsset> Texture;
             std::shared_ptr<BufferView<ShaderResource>> TextureResource;
             //bool IsDirty = false;
             virtual ~SimpleTexture() = default;
@@ -77,7 +77,7 @@ namespace GiiGa
         {
             float Scale = 1.0f;
 
-            void GenerateChannelDesc(std::shared_ptr<GPULocalResource> GPUResource, D3D12_SHADER_COMPONENT_MAPPING NewChannel)
+            void GenerateChannelDesc(std::shared_ptr<TextureAsset> GPUResource, D3D12_SHADER_COMPONENT_MAPPING NewChannel)
             {
                 D3D12_SHADER_RESOURCE_VIEW_DESC desc =
                     D3D12_SHADER_RESOURCE_VIEW_DESC(GPUResource->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, NewChannel);
@@ -150,57 +150,57 @@ namespace GiiGa
 
         //=============================SETTING MATERIAL TEXTURES & PARAMETERS=============================
 
-        void SetBaseColorTexture(std::shared_ptr<GPULocalResource> BaseColorTexture)
+        void SetBaseColorTexture(std::shared_ptr<TextureAsset> BaseColorTexture)
         {
             Textures_[0]->TextureResource = BaseColorTexture->GetViewFirstShaderResource();
         }
 
-        void SetMetallicTexture(std::shared_ptr<GPULocalResource> MetallicTexture,
+        void SetMetallicTexture(std::shared_ptr<TextureAsset> MetallicTexture,
                                 D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[1])->GenerateChannelDesc(MetallicTexture, Channel);
         }
 
-        void SetSpecularTexture(std::shared_ptr<GPULocalResource> SpecularTexture,
+        void SetSpecularTexture(std::shared_ptr<TextureAsset> SpecularTexture,
                                 D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[2])->GenerateChannelDesc(SpecularTexture, Channel);
         }
 
-        void SetRoughnessTexture(std::shared_ptr<GPULocalResource> RoughnessTexture,
+        void SetRoughnessTexture(std::shared_ptr<TextureAsset> RoughnessTexture,
                                  D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[3])->GenerateChannelDesc(RoughnessTexture, Channel);
         }
 
-        void SetAnisotropyTexture(std::shared_ptr<GPULocalResource> AnisotropyTexture,
+        void SetAnisotropyTexture(std::shared_ptr<TextureAsset> AnisotropyTexture,
                                   D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[4])->GenerateChannelDesc(AnisotropyTexture, Channel);
         }
 
-        void SetEmissiveTexture(std::shared_ptr<GPULocalResource> EmissiveTexture)
+        void SetEmissiveTexture(std::shared_ptr<TextureAsset> EmissiveTexture)
         {
             Textures_[5]->TextureResource = EmissiveTexture->GetViewFirstShaderResource();
         }
 
-        void SetOpacityTexture(std::shared_ptr<GPULocalResource> OpacityTexture,
+        void SetOpacityTexture(std::shared_ptr<TextureAsset> OpacityTexture,
                                D3D12_SHADER_COMPONENT_MAPPING Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
             AsChannelTexture(Textures_[6])->GenerateChannelDesc(OpacityTexture, Channel);
         }
 
-        void SetNormalTexture(std::shared_ptr<GPULocalResource> NormalTexture)
+        void SetNormalTexture(std::shared_ptr<TextureAsset> NormalTexture)
         {
             Textures_[7]->TextureResource = NormalTexture->GetViewFirstShaderResource();
         }
 
-        void SetTangentTexture(std::shared_ptr<GPULocalResource> TangentTexture)
+        void SetTangentTexture(std::shared_ptr<TextureAsset> TangentTexture)
         {
             Textures_[8]->TextureResource = TangentTexture->GetViewFirstShaderResource();
         }
 
-        void SetBinormalTexture(std::shared_ptr<GPULocalResource> BinormalTexture)
+        void SetBinormalTexture(std::shared_ptr<TextureAsset> BinormalTexture)
         {
             Textures_[9]->TextureResource = BinormalTexture->GetViewFirstShaderResource();
         }

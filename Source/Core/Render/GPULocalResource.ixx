@@ -18,7 +18,7 @@ export import DirectXUtils;
 
 namespace GiiGa
 {
-    export class GPULocalResource : public AssetBase
+    export class GPULocalResource
     {
     public:
         GPULocalResource(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
@@ -212,10 +212,6 @@ namespace GiiGa
             return vertexViews_[key];
         }
 
-        AssetType GetType() override {
-            return AssetType::Texture2D;
-        }
-
     private:
         RenderDevice& device_;
         std::shared_ptr<ID3D12Resource> resource_;
@@ -227,5 +223,19 @@ namespace GiiGa
         std::unordered_map<D3D12_DEPTH_STENCIL_VIEW_DESC, std::shared_ptr<BufferView<DepthStencil>>> depthStencilViews_;
         std::unordered_map<D3D12_INDEX_BUFFER_VIEW, std::shared_ptr<BufferView<Index>>> indexViews_;
         std::unordered_map<D3D12_VERTEX_BUFFER_VIEW, std::shared_ptr<BufferView<Vertex>>> vertexViews_;
+    };
+
+    export class TextureAsset : public GPULocalResource, public AssetBase
+    {
+        TextureAsset(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
+                D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON)
+            : GPULocalResource(device, resource, initialState)
+        {
+        }
+
+        AssetType GetType() override
+        {
+            return AssetType::Texture2D;
+        }
     };
 }

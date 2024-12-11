@@ -2,9 +2,10 @@
 
 #include "directxtk12/SimpleMath.h"
 #include <memory>
-#include "Core/Utils.h"
 
 export module TransformComponent;
+
+import MathUtils;
 import Component;
 import EventSystem;
 
@@ -12,12 +13,12 @@ namespace GiiGa
 {
     using namespace DirectX::SimpleMath;
 
-    struct UpdateTransformEvent
+    export struct UpdateTransformEvent
     {
     };
 
 #pragma region TransfromStructure
-    struct Transform
+    export struct Transform
     {
     public:
         Transform(Vector3 loc = Vector3::Zero, Vector3 rot = Vector3::Zero, Vector3 scale = Vector3::One)
