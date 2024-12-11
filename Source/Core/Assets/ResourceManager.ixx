@@ -11,12 +11,12 @@ import AssetHandle;
 import AssetType;
 import BaseAssetDatabase;
 import AssetLoader;
+import AssetBase;
 import Uuid;
 import Misc;
 
 namespace GiiGa
 {
-    export class AssetBase;
 
     export class ResourceManager
     {
@@ -75,8 +75,11 @@ namespace GiiGa
             {
                 if (loader->MatchesPattern(asset_meta.path))
                 {
-                    auto asset = loader->Load<T>(asset_meta.path);
+                    auto asset = loader->Load(asset_meta.path);
                     loaded_assets_[handle] = asset;
+                    asset->OnDestroy.Register([this](const auto& handle) {
+                        RemoveAsset(handle);
+                    });
                     return std::dynamic_pointer_cast<T>(asset);
                 }
             }

@@ -273,6 +273,10 @@ namespace GiiGa
             return std::make_shared<BufferView<Vertex>>(std::move(desc));
         }
 
+        std::shared_ptr<ID3D12Device> GetDxDevice() {
+            return device_;
+        }
+
     private:
         std::shared_ptr<ID3D12Device> device_;
 

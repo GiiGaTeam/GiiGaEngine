@@ -5,11 +5,10 @@ module;
 
 export module AssetBase;
 
-import Engine;
-
 export import AssetHandle;
 export import Uuid;
 import Misc;
+import EventSystem;
 
 namespace GiiGa
 {
@@ -19,6 +18,11 @@ namespace GiiGa
         AssetHandle id_;
 
     public:
+        AssetBase()
+        {
+
+        }
+
         AssetBase(AssetHandle uuid)
             : id_(uuid)
         {
@@ -28,10 +32,16 @@ namespace GiiGa
             return id_;
         }
 
+        void SetId(AssetHandle id) {
+            id_ = id;
+        }
+
         virtual AssetType GetType() = 0;
 
+        EventDispatcher<AssetHandle> OnDestroy;
+
         virtual ~AssetBase() { 
-            Engine::Instance().ResourceManager().RemoveAsset(id_);
+            OnDestroy.Invoke(id_);
         }
     };
 }  // namespace GiiGa

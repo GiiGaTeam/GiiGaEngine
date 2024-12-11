@@ -9,6 +9,7 @@ module;
 
 export module GPULocalResource;
 
+import AssetBase;
 import RenderDevice;
 import IRenderContext;
 import UploadBuffer;
@@ -17,7 +18,7 @@ export import DirectXUtils;
 
 namespace GiiGa
 {
-    export class GPULocalResource
+    export class GPULocalResource : public AssetBase
     {
     public:
         GPULocalResource(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
@@ -209,6 +210,10 @@ namespace GiiGa
             vertexViews_.emplace(key, device_.CreateVetexBufferView(resource_, desc));
 
             return vertexViews_[key];
+        }
+
+        AssetType GetType() override {
+            return AssetType::Texture2D;
         }
 
     private:

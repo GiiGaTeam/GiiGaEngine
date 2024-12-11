@@ -43,13 +43,19 @@ namespace GiiGa
             context_.EndFrame();
             swapChain_->Present();
         }
+        RenderDevice& GetRenderDevice() {
+            return device_;
+        }
+
+        RenderContext& GetRenderContext() {
+            return context_;
+        }
 
         void ResizeSwapChain(const WindowResizeEvent& event)
         {
             context_.ContextIdle();
             swapChain_->Resize(device_, event.width, event.height);
         }
-
     protected:
         RenderDevice device_;
         RenderContext context_;

@@ -60,6 +60,12 @@ namespace GiiGa
             return *resource_manager_;
         }
 
+        std::shared_ptr<RenderSystem> RenderSystem()
+        {
+            return render_system_;
+        }
+
+
         virtual ~Engine()
         {
             delete resource_manager_;
