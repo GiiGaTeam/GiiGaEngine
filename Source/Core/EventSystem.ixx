@@ -45,6 +45,18 @@ namespace GiiGa
         EventDispatcher(const EventDispatcher& other) = delete;
         EventDispatcher& operator=(const EventDispatcher& other) = delete;
 
+        EventDispatcher(EventDispatcher&& other) noexcept
+            : handlers_(std::move(other.handlers_)) {}
+
+        EventDispatcher& operator=(EventDispatcher&& other) noexcept
+        {
+            if (this != &other)
+            {
+                handlers_ = std::move(other.handlers_);
+            }
+            return *this;
+        }
+
         EventHandle<T> Register(std::function<void(const T&)>&& handler)
         {
             auto id = next_id_++;
