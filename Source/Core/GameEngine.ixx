@@ -15,16 +15,16 @@ namespace GiiGa
     export class GameEngine : public Engine
     {
     private:
-        virtual void Initialize()
+        virtual void Initialize(std::shared_ptr<Project> proj)
         {
-            Engine::Initialize();
+            Engine::Initialize(proj);
             //render_system_ = std::make_shared<RenderSystem>(*window_);
         }
 
     public:
         virtual void Run(std::shared_ptr<Project> proj)
         {
-            Initialize();
+            Initialize(proj);
             
             Time::Start();
 

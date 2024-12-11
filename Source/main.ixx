@@ -1,8 +1,9 @@
 module;
 
 #include <imgui.h>
-#include<string>
-#include<iostream>
+#include <string>
+#include <iostream>
+#include <filesystem>
 
 export module Main;
 
@@ -14,15 +15,31 @@ import WindowSettings;
 import Input;
 import EventSystem;
 
-export int main()
+export int main(int argc, char* argv[])
 {
-    ImGui::CreateContext();
+    try
+    {
+        std::filesystem::path project_path;
+        if (argc > 1)
+        {
+            project_path = argv[1];
+        }
 
-    std::shared_ptr<GiiGa::Project> proj;
-    
-    GiiGa::EditorEngine engine = GiiGa::EditorEngine();
+        auto project = GiiGa::Project::CreateOrOpen(project_path);
 
-    engine.Run(proj);
+        ImGui::CreateContext();
+
+        GiiGa::EditorEngine engine = GiiGa::EditorEngine();
+
+        engine.Run(project);
+
+        return 0;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
 
     return 0;
 }

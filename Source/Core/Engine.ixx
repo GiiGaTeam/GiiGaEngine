@@ -26,7 +26,7 @@ namespace GiiGa
 
         ResourceManager* resource_manager_ = nullptr;
 
-        virtual void Initialize()
+        virtual void Initialize(std::shared_ptr<Project> proj)
         {
             instance_ = this;
             resource_manager_ = new GiiGa::ResourceManager();
@@ -48,7 +48,7 @@ namespace GiiGa
         */
 
     public:
-        virtual void Run(std::shared_ptr<Project>) = 0;
+        virtual void Run(std::shared_ptr<Project> proj) = 0;
 
         static Engine& Instance()
         {
