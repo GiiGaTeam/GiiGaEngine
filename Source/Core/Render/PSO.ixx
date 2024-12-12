@@ -11,7 +11,7 @@ export module PSO;
 
 import RenderDevice;
 import Material;
-import Shader;
+import ShaderManager;
 import DirectXUtils;
 
 namespace GiiGa

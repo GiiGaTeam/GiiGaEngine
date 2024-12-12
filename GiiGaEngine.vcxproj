@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
@@ -290,7 +291,7 @@
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
     <ClCompile Include="Source\Core\Render\SceneVisibility.ixx" />
-    <ClCompile Include="Source\Core\Render\Shader.ixx" />
+    <ClCompile Include="Source\Core\Render\ShaderManager.ixx" />
     <ClCompile Include="Source\Core\Render\SkeletalMesh.ixx" />
     <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
     <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
