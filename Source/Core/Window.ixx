@@ -247,7 +247,8 @@ public:
         , settings_(settings) 
     { 
         InitializeScancodeMap();
-
+        // todo: spit window to EditorW and GameW
+        ImGui::CreateContext();
         ImGui_ImplSDL2_InitForD3D(window);
     }
 
@@ -390,6 +391,7 @@ public:
 
     ~Window() {
         ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
         SDL_DestroyWindow(window_);
     }
 

@@ -227,6 +227,7 @@ namespace GiiGa
 
     export class TextureAsset : public GPULocalResource, public AssetBase
     {
+    public:
         TextureAsset(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
                 D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON)
             : GPULocalResource(device, resource, initialState)

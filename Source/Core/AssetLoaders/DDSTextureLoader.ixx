@@ -21,6 +21,8 @@ namespace GiiGa
     protected:
 
     public:
+        virtual ~DDSAssetLoader() = default;
+
         DDSAssetLoader() {
             pattern_ = R"((.+)\.dds)";
             type_ = AssetType::Texture2D;
@@ -36,7 +38,7 @@ namespace GiiGa
             DirectX::ResourceUploadBatch upload_batch(device.get());
             upload_batch.Begin();
 
-            std::shared_ptr<ID3D12Resource> texture = nullptr;
+            std::shared_ptr<ID3D12Resource> texture(nullptr, DXDelayedDeleter{rs->GetRenderDevice()});
             auto texture_ptr = texture.get();
 
             HRESULT hr = DirectX::CreateDDSTextureFromFile(
@@ -52,7 +54,7 @@ namespace GiiGa
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 
-            return std::make_shared<GPULocalResource>(rs->GetRenderDevice(), texture);
+            return std::make_shared<TextureAsset>(rs->GetRenderDevice(), texture);
         }
 
         void Save(AssetBase& asset, std::filesystem::path& path) override

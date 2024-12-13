@@ -30,15 +30,11 @@ export int main(int argc, char* argv[])
         }
 
         auto project = GiiGa::Project::CreateOrOpen(project_path);
-
-        ImGui::CreateContext();
-
+        
         GiiGa::EditorEngine engine = GiiGa::EditorEngine();
 
         engine.Run(project);
-
-        ImGui::DestroyContext();
-
+        
         return 0;
     }
     catch (const std::exception& e)
