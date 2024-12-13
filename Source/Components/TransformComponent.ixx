@@ -2,12 +2,14 @@
 
 #include "directxtk12/SimpleMath.h"
 #include <memory>
+#include <json/json.h>
 
 export module TransformComponent;
 
 import MathUtils;
 import Component;
 import EventSystem;
+import Misc;
 
 namespace GiiGa
 {
@@ -132,6 +134,15 @@ namespace GiiGa
             parent_ = other.lock()->parent_;
         }
 
+        TransformComponent(const Json::Value& json)
+        {
+            // todo: ugly review
+            transform_ = Transform(
+                {json["Location"]["x"].asFloat(), json["Location"]["y"].asFloat(), json["Location"]["z"].asFloat()},
+                {json["Rotation"]["x"].asFloat(), json["Rotation"]["y"].asFloat(), json["Rotation"]["z"].asFloat()},
+                {json["Scale"]["x"].asFloat(), json["Scale"]["y"].asFloat(), json["Scale"]["z"].asFloat()});
+        }
+
         TransformComponent* operator=(const std::weak_ptr<TransformComponent>& other)
         {
             if (this == other.lock().get()) return this;
@@ -144,6 +155,11 @@ namespace GiiGa
         bool operator==(const TransformComponent* rhs) const
         {
             return transform_ == rhs->transform_;
+        }
+
+        void Restore(const Json::Value&) override
+        {
+            Todo();
         }
 
         void Tick(float dt) override
@@ -397,6 +413,7 @@ namespace GiiGa
     public:
         std::shared_ptr<Component> Clone() override
         {
+            Todo();
             return Component::Clone();
         }
     };

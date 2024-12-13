@@ -8,7 +8,7 @@ module;
 
 export module World;
 
-import Level;
+export import Level;
 export import GameObject;
 
 namespace GiiGa
@@ -18,9 +18,6 @@ namespace GiiGa
     public:
         World()
         {
-            levels_.push_back({});
-            levels_[0].name = "PersistentLevel";
-            levels_[0].SetIsActive(true);
         }
 
     public:
@@ -35,8 +32,9 @@ namespace GiiGa
             return GetInstance()->levels_;
         }
 
-        static void AddLevel(Level&& level)
+        static void AddLevel(Level&& level, bool setIsActive = true)
         {
+            level.SetIsActive(setIsActive);
             GetInstance()->levels_.push_back(level);
         }
 
@@ -46,11 +44,11 @@ namespace GiiGa
 
             if (level)
             {
-                level->AddGameObject(obj);
+                level->AddRootGameObject(obj);
             }
             else
             {
-                GetInstance()->levels_[0].AddGameObject(obj);
+                GetInstance()->levels_[0].AddRootGameObject(obj);
             }
 
             return obj;
@@ -77,11 +75,11 @@ namespace GiiGa
 
             if (level)
             {
-                level->AddGameObject(newGameObject);
+                level->AddRootGameObject(newGameObject);
             }
             else
             {
-                GetInstance()->levels_[0].AddGameObject(newGameObject);
+                GetInstance()->levels_[0].AddRootGameObject(newGameObject);
             }
 
             if (parent)

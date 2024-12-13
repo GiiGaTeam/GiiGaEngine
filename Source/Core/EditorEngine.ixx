@@ -1,6 +1,9 @@
 module;
 
+#include <filesystem>
 #include <memory>
+#include <json/reader.h>
+#include <fstream>
 
 export module EditorEngine;
 
@@ -51,7 +54,9 @@ namespace GiiGa
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
             //todo
-            //World::LoadLevel(proj->GetDefaultLevelPath());
+            auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
+            
+            World::AddLevel(Level::FromAbsolutePath(level_path));
         }
     };
 } // namespace GiiGa

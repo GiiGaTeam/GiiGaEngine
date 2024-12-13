@@ -6,13 +6,13 @@ module;
 
 export module StaticMeshComponent;
 
+import GameObject;
 import Engine;
 import Component;
 import Mesh;
 import Material;
 import IRenderable;
 import SceneVisibility;
-import GameObject;
 import TransformComponent;
 import EventSystem;
 

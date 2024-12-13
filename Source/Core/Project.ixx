@@ -129,7 +129,7 @@ namespace GiiGa
             project_file << Json::writeString(writer_builder, project_settings_);
         }
 
-        const std::string& GetDefaultLevelPath() const {
+        const std::filesystem::path& GetDefaultLevelPath() const {
             return default_level_path_;
         };
 

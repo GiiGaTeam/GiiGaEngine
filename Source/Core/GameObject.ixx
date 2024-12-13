@@ -7,19 +7,44 @@ module;
 
 export module GameObject;
 
-import Component;
+import IGameObject;
+import IComponent;
+import ITickable;
 import Uuid;
 
 namespace GiiGa
 {
-    export class GameObject final : public ITickable, public std::enable_shared_from_this<GameObject>
+    export class GameObject final : public ITickable, public IGameObject
     {
     public:
+        GameObject() = default;
         void Tick(float dt) override
         {
             for (auto&& component : components_)
             {
                 component->Tick(dt);
+            }
+        }
+
+        GameObject(Json::Value json)
+        {
+            name_ = json["name"].asString();
+            
+            for (auto&& comp_js : json["Components"])
+            {
+                //if (comp_js["Type"].asString() == typeid(TransformComponent).name())
+                //{
+                //    AddComponent(std::make_shared<TransformComponent>(comp_js["Properties"]));
+                //}
+                //else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
+                //{
+                //    AddComponent(std::make_shared<ConsoleComponent>(comp_js["Properties"]));
+                //}
+            }
+
+            for (auto&& kid_js: json["Children"])
+            {
+                children_.push_back(std::make_shared<GameObject>(kid_js));
             }
         }
 
@@ -46,8 +71,9 @@ namespace GiiGa
             return nullptr;
         }
 
-        void AddComponent(std::shared_ptr<Component> component)
+        void AddComponent(std::shared_ptr<IComponent> component)
         {
+            component->SetOwner(shared_from_this());
             components_.push_back(component);
         }
 
@@ -65,15 +91,19 @@ namespace GiiGa
             return newGameObject;
         }
 
-        std::vector<std::shared_ptr<Component>> GetComponents()
+        const std::vector<std::shared_ptr<IComponent>>& GetComponents() const
         {
             return components_;
         }
 
+        const std::vector<std::shared_ptr<GameObject>>& GetChildren() const
+        {
+            return children_;
+        }
+
         Uuid GetUuid() const
         {
-            // TO DO
-            Uuid::Null();
+            return uuid_;
         }
 
         Json::Value ToJson()
@@ -85,7 +115,7 @@ namespace GiiGa
             {
                 Json::Value componentJson;
                 componentJson["component"] = typeid(component).name();
-                componentJson.append(component->ToJSon().toStyledString());
+                componentJson.append(component->ToJson().toStyledString());
                 componentsResult.append(componentJson);
             }
             result["Components"] = componentsResult.toStyledString();
@@ -94,6 +124,10 @@ namespace GiiGa
         }
 
     private:
-        std::vector<std::shared_ptr<Component>> components_;
+        Uuid uuid_ = Uuid::Null();
+        std::string name_;
+        std::vector<std::shared_ptr<IComponent>> components_;
+        std::vector<std::shared_ptr<GameObject>> children_;
+        //std::weak_ptr<Level> level_;
     };
 } // namespace GiiGa

@@ -1,15 +1,18 @@
 module;
 
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <memory>
 #include <typeindex>
 #include <json/json.h>
+#include <fstream>
 
 export module Level;
 
 import GameObject;
 import Component;
+import Misc;
 
 namespace GiiGa
 {
@@ -17,26 +20,50 @@ namespace GiiGa
     {
     
     public:
+
+        Level(const Json::Value& level_root)
+        {
+            SetIsActive(false);
+            
+            auto level_settings = level_root["LevelSettings"];
+            name = level_settings["Name"].asString();
+            SetIsActive(false);
+
+            auto root_level_go = level_settings["GameObjects"];
+            for (auto&& gameobject_js : root_level_go)
+            {
+                AddRootGameObject(std::make_shared<GameObject>(gameobject_js));
+            }
+        }
+        
         const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const
         {
-            return gameObjects_;
+            return root_game_objects_;
         }
-        void AddGameObject(std::shared_ptr<GameObject> gameObject)
+        void AddRootGameObject(std::shared_ptr<GameObject> gameObject)
         {
-            gameObjects_.push_back(gameObject);
+            root_game_objects_.push_back(gameObject);
             for (const auto& component_ : gameObject->GetComponents())
             {
                 componentsInLevel_.AddComponent(component_);
             }
+
+            for (const auto& kid : gameObject->GetChildren())
+            {
+                for (const auto&& kid_comp : kid->getComponents())
+                    componentsInLevel_.AddComponent(kid_comp);
+            }
         }
+        
         bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
         {
+            Todo();// review
             for (const auto& component_ : gameObject->GetComponents())
                 componentsInLevel_.removeComponent(component_);
             
-            auto iterator = gameObjects_.erase(
-                    std::remove(gameObjects_.begin(), gameObjects_.end(), gameObject),
-                    gameObjects_.end());
+            auto iterator = root_game_objects_.erase(
+                    std::remove(root_game_objects_.begin(), root_game_objects_.end(), gameObject),
+                    root_game_objects_.end());
 
             if (iterator->get())
             {
@@ -65,7 +92,7 @@ namespace GiiGa
             Json::Value result;
             result["Name"] = name;
             Json::Value gameObjectsJson;
-            for (auto GO : gameObjects_)
+            for (auto GO : root_game_objects_)
             {
                 gameObjectsJson.append(GO->ToJson());
             }
@@ -73,14 +100,36 @@ namespace GiiGa
             return result;
         }
 
-        // todo
-        void fromJson(const Json::Value& value);
+        static Level FromAbsolutePath(const std::filesystem::path& level_path)
+        {
+            if (!std::filesystem::exists(level_path))
+            {
+                throw std::runtime_error("Project file 'project.giga' not found in: " + level_path.string());
+            }
+
+            std::ifstream level_file(level_path);
+            if (!level_file.is_open())
+            {
+                throw std::runtime_error("Failed to open project file: " + level_path.string());
+            }
+            
+            Json::CharReaderBuilder reader_builder;
+            Json::Value level_json;
+            std::string errs;
+            
+            if (!Json::parseFromStream(reader_builder, level_file, &level_json, &errs))
+            {
+                throw std::runtime_error("Failed to parse project file: " + errs);
+            }
+
+            return Level(level_json);
+        }
         
     public:
         std::string name;
         
     private:
-        std::vector<std::shared_ptr<GameObject>> gameObjects_;
+        std::vector<std::shared_ptr<GameObject>> root_game_objects_;
         bool isActive_ = false;
         
         class 

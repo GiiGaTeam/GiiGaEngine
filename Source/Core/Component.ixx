@@ -6,6 +6,7 @@ module;
 export module Component;
 
 export import ITickable;
+import IComponent;
 import Uuid;
 
 
@@ -13,19 +14,21 @@ namespace GiiGa
 {
     export class GameObject;
 
-    export class Component : public ITickable, public std::enable_shared_from_this<Component>
+    export class Component : public ITickable, public IComponent
     {
     public:
         virtual ~Component() = default;
 
         virtual void Init() = 0;
 
-        virtual std::shared_ptr<Component> Clone() = 0;
+        virtual std::shared_ptr<IComponent> Clone() = 0;
 
         virtual void SetOwner(std::shared_ptr<GameObject> go)
         {
             owner_ = go;
         }
+
+        virtual void Restore(const ::Json::Value&)=0;
 
         Uuid GetUuid() const
         {
