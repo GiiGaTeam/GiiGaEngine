@@ -45,13 +45,13 @@ namespace GiiGa
             root_game_objects_.push_back(gameObject);
             for (const auto& component_ : gameObject->GetComponents())
             {
-                componentsInLevel_.AddComponent(component_);
+                componentsInLevel_.AddComponent(std::dynamic_pointer_cast<Component>(component_));
             }
 
             for (const auto& kid : gameObject->GetChildren())
             {
-                for (const auto&& kid_comp : kid->getComponents())
-                    componentsInLevel_.AddComponent(kid_comp);
+                for (const auto& kid_comp : kid->GetComponents())
+                    componentsInLevel_.AddComponent(std::dynamic_pointer_cast<Component>(kid_comp));
             }
         }
         
@@ -59,7 +59,7 @@ namespace GiiGa
         {
             Todo();// review
             for (const auto& component_ : gameObject->GetComponents())
-                componentsInLevel_.removeComponent(component_);
+                componentsInLevel_.removeComponent(std::dynamic_pointer_cast<Component>(component_));
             
             auto iterator = root_game_objects_.erase(
                     std::remove(root_game_objects_.begin(), root_game_objects_.end(), gameObject),

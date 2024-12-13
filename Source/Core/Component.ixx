@@ -12,9 +12,7 @@ import Uuid;
 
 namespace GiiGa
 {
-    export class GameObject;
-
-    export class Component : public ITickable, public IComponent
+    export class Component : public IComponent
     {
     public:
         virtual ~Component() = default;
@@ -23,7 +21,7 @@ namespace GiiGa
 
         virtual std::shared_ptr<IComponent> Clone() = 0;
 
-        virtual void SetOwner(std::shared_ptr<GameObject> go)
+        virtual void SetOwner(std::shared_ptr<IGameObject> go) override
         {
             owner_ = go;
         }
@@ -36,7 +34,7 @@ namespace GiiGa
             Uuid::Null();
         }
 
-        virtual Json::Value ToJSon() const
+        virtual Json::Value ToJson() override
         {
             Json::Value result;
             //result["Owner"] = ;
@@ -44,7 +42,8 @@ namespace GiiGa
             return result;
         }
 
+        
     protected:
-        std::weak_ptr<GameObject> owner_;
+        std::weak_ptr<IGameObject> owner_;
     };
 } // namespace GiiGa

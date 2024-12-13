@@ -28,7 +28,7 @@ namespace GiiGa
         {
             
         }
-        std::shared_ptr<Component> Clone() override
+        std::shared_ptr<IComponent> Clone() override
         {
             return std::make_shared<ConsoleComponent>(*this);
         }

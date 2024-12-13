@@ -6,7 +6,6 @@ module;
 
 export module StaticMeshComponent;
 
-import GameObject;
 import Engine;
 import Component;
 import Mesh;
@@ -15,6 +14,8 @@ import IRenderable;
 import SceneVisibility;
 import TransformComponent;
 import EventSystem;
+import GameObject;
+import Misc;
 
 
 namespace GiiGa
@@ -27,17 +28,21 @@ namespace GiiGa
         {
         }
 
-        void SetOwner(std::shared_ptr<GameObject> go) override
+        void SetOwner(std::shared_ptr<IGameObject> go) override
         {
-            if (go != nullptr)
-                owner_.lock()->GetComponent<TransformComponent>()->OnUpdateTransform.Unregister(cashed_event_);
+            auto go_go = std::dynamic_pointer_cast<GameObject>(go);
+            auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
+            
+            if (go_go != nullptr)
+                std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetComponent<TransformComponent>()->OnUpdateTransform.Unregister(cashed_event_);
 
-            Component::SetOwner(go);
+            Component::SetOwner(go_go);
 
-            cashed_event_ = go->GetComponent<TransformComponent>()->OnUpdateTransform.Register(
+            cashed_event_ = go_go->GetComponent<TransformComponent>()->OnUpdateTransform.Register(
                 [this](const UpdateTransformEvent& e)
                 {
-                    Transform trans = owner_.lock()->GetComponent<TransformComponent>()->GetWorldTransform();
+                    auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
+                    Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
@@ -48,10 +53,13 @@ namespace GiiGa
 
         void Tick(float dt) override;
         void Init() override;
-        ::std::shared_ptr<Component> Clone() override;
+        ::std::shared_ptr<IComponent> Clone() override
+        {
+            Todo();
+        }
 
         // todo
-        Json::Value ToJSon() const override
+        Json::Value ToJson() override
         {
             //mesh_->GetId();
             //material_->GetId();

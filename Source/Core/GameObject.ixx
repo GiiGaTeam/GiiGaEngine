@@ -7,14 +7,14 @@ module;
 
 export module GameObject;
 
-import IGameObject;
+export import IGameObject;
 import IComponent;
 import ITickable;
 import Uuid;
 
 namespace GiiGa
 {
-    export class GameObject final : public ITickable, public IGameObject
+    export class GameObject final : public IGameObject
     {
     public:
         GameObject() = default;
@@ -71,7 +71,7 @@ namespace GiiGa
             return nullptr;
         }
 
-        void AddComponent(std::shared_ptr<IComponent> component)
+        void AddComponent(std::shared_ptr<IComponent> component)override
         {
             component->SetOwner(shared_from_this());
             components_.push_back(component);
@@ -122,6 +122,7 @@ namespace GiiGa
 
             return result;
         }
+
 
     private:
         Uuid uuid_ = Uuid::Null();

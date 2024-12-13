@@ -411,7 +411,7 @@ namespace GiiGa
         }
 
     public:
-        std::shared_ptr<Component> Clone() override
+        std::shared_ptr<IComponent> Clone() override
         {
             Todo();
             return Component::Clone();

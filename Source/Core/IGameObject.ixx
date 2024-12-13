@@ -8,17 +8,17 @@ module;
 export module IGameObject;
 
 import Uuid;
+import ITickable;
 
-export class IComponent;
 
 namespace GiiGa
 {
-    export struct IGameObject : public std::enable_shared_from_this<IGameObject>
+    export class IComponent;
+    
+    export struct IGameObject :  public ITickable, public std::enable_shared_from_this<IGameObject>
     {
         virtual ~IGameObject() = default;
-
-        virtual void OnUpdate() =0;
-
-        virtual void AddComponent(const std::shared_ptr<IComponent>& newComp) =0;
+        
+        virtual void AddComponent(std::shared_ptr<IComponent> newComp) =0;
     };
 }
