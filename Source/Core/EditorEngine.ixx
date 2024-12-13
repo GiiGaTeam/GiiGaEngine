@@ -10,7 +10,6 @@ import Misc;
 import EditorRenderSystem;
 import World;
 
-
 namespace GiiGa
 {
     export class EditorEngine : public Engine
@@ -46,9 +45,9 @@ namespace GiiGa
             }
         }
     private:
-        virtual void Initialize(std::shared_ptr<Project> proj)
+        void Initialize(std::shared_ptr<Project> proj) override
         {
-            Engine::Initialize();
+            Engine::Initialize(proj);
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
             //todo

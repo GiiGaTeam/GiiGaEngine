@@ -164,6 +164,7 @@
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\DDSTextureLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
@@ -314,6 +315,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="README.md" />
+    <None Include="TemplateProject\project.giga" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
