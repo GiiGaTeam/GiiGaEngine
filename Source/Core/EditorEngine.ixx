@@ -63,8 +63,11 @@ namespace GiiGa
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 
-            asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
-            asset_database_->InitializeDatabase();
+            auto database = std::make_shared<EditorAssetDatabase>(proj);
+            asset_database_ = database;
+
+            database->InitializeDatabase();
+            database->StartProjectWatcher();
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
         }

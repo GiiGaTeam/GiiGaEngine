@@ -5,6 +5,7 @@ module;
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <json/json.h>
 
 export module BaseAssetDatabase;
@@ -36,10 +37,13 @@ namespace GiiGa
         {}
 
         std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle) { 
+            std::cout << "[DEBUG] Request for asset: " << handle.id.ToString() << std::endl;
+
             auto it = registry_map_.find(handle);
 
             if (it != registry_map_.end())
             {
+                std::cout << "[DEBUG] Found asset: " << handle.id.ToString() << std::endl;
                 return std::ref(it->second);
             }
 
@@ -48,6 +52,8 @@ namespace GiiGa
 
         void SaveRegistry()
         {
+            std::cout << "[DEBUG] Saving registry" << std::endl;
+
             Json::Value root;
 
             for (const auto& [handle, meta] : registry_map_)
@@ -82,6 +88,8 @@ namespace GiiGa
 
         void LoadRegistry()
         {
+            std::cout << "[DEBUG] Load registry" << std::endl;
+
             Json::Value root;
             registry_file_ >> root;
 
@@ -108,6 +116,8 @@ namespace GiiGa
 
         void OpenRegistryFile()
         {
+            std::cout << "[DEBUG] Opening or creating registry file" << std::endl;
+
             registry_file_.open(registry_path_, std::ios::in | std::ios::out);
 
             if (!registry_file_)

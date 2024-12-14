@@ -35,6 +35,10 @@ namespace GiiGa
             })
             , BaseAssetDatabase(proj->GetProjectPath())
         {
+            
+        }
+
+        void StartProjectWatcher() {
             project_watcher_.OnFileAdded.Register([this](const auto& path) {
                 std::cout << "[DEBUG] Register new file: " << path << std::endl;
 
@@ -58,7 +62,7 @@ namespace GiiGa
                 });
 
             project_watcher_.OnFileRenamed.Register([this](const auto& pair) {
-                auto[f, s] = pair;
+                auto [f, s] = pair;
                 std::cout << "[DEBUG] File was renamed from " << f << " to " << s << std::endl;
                 UpdateAssetPath(f, s);
 
