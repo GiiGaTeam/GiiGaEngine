@@ -44,6 +44,8 @@ namespace GiiGa
                 }
                 render_system_->Tick();
             }
+
+            asset_database_->SaveRegistry();
         }
 
         static EditorEngine& Instance()
@@ -62,6 +64,7 @@ namespace GiiGa
             render_system_->Initialize();
 
             asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
+            asset_database_->InitializeDatabase();
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
         }

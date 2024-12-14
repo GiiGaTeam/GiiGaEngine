@@ -18,6 +18,8 @@ namespace GiiGa
 {
     export class BaseAssetDatabase
     {
+    private:
+        static inline const char* registry_name = "database.json";
     protected:
         std::filesystem::path registry_path_;
         std::fstream registry_file_;
@@ -29,25 +31,9 @@ namespace GiiGa
     public:
         friend class ResourceManager;
 
-        void OpenRegistryFile()
-        {
-            if (!std::filesystem::exists(registry_path_))
-            {
-                std::ofstream createFile(registry_path_);
-                if (!createFile)
-                {
-                    throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
-                }
-                createFile.close();
-            }
-
-            registry_file_.open(registry_path_, std::ios::in | std::ios::out);
-
-            if (!registry_file_)
-            {
-                throw std::runtime_error("Failed to open registry file: " + registry_path_.string());
-            }
-        }
+        BaseAssetDatabase(const std::filesystem::path& registry_path)
+            : registry_path_(registry_path / registry_name)
+        {}
 
         std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle) { 
             auto it = registry_map_.find(handle);
@@ -73,6 +59,25 @@ namespace GiiGa
             }
 
             registry_file_ << root;
+        }
+
+        void InitializeDatabase()
+        {
+            OpenRegistryFile();
+
+            if (registry_file_.peek() == std::ifstream::traits_type::eof())
+            {
+                registry_map_.clear();
+                SaveRegistry();
+            }
+            else
+            {
+                LoadRegistry();
+            }
+        }
+    private:
+        virtual void _MakeVirtual() {
+
         }
 
         void LoadRegistry()
@@ -101,23 +106,21 @@ namespace GiiGa
             }
         }
 
-        void InitializeDatabase()
+        void OpenRegistryFile()
         {
-            OpenRegistryFile();
+            registry_file_.open(registry_path_, std::ios::in | std::ios::out);
 
-            if (registry_file_.peek() == std::ifstream::traits_type::eof())
+            if (!registry_file_)
             {
-                registry_map_.clear();
-                SaveRegistry();
-            }
-            else
-            {
-                LoadRegistry();
-            }
-        }
+                std::ofstream createFile(registry_path_);
+                if (!createFile)
+                {
+                    throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
+                }
+                createFile.close();
 
-        virtual void _MakeVirtual() {
-
+                registry_file_.open(registry_path_, std::ios::in | std::ios::out);
+            }
         }
     };
 }  // namespace GiiGa

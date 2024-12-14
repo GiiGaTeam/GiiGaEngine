@@ -32,7 +32,7 @@ namespace GiiGa
         void StartWatch() { 
             for (const auto& dir : dirs_to_watch_)
             {
-                std::cout << "Starting watch " << dir << std::endl;
+                std::cout << "[DEBUG] Starting watch " << dir << std::endl;
                 watchers_.emplace_back(std::make_unique<filewatch::FileWatch<std::string>>(dir,
                     [this](const std::string& path, const filewatch::Event change_type)
                     {

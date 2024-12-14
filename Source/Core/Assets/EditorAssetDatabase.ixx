@@ -33,20 +33,28 @@ namespace GiiGa
             : project_watcher_(std::vector<std::string>{ 
                 (proj->GetProjectPath() / "Assets").string()
             })
+            , BaseAssetDatabase(proj->GetProjectPath())
         {
             project_watcher_.OnFileAdded.Register([this](const auto& path) {
-                std::cout << "Added file " << path;
+                std::cout << "[DEBUG] Register new file: " << path << std::endl;
+                ImportAsset(path);
+
                 });
 
             project_watcher_.OnFileModified.Register([this](const auto& path) {
-
+                std::cout << "[DEBUG] File was modified: " << path << std::endl;
                 });
 
             project_watcher_.OnFileRemoved.Register([this](const auto& path) {
+                std::cout << "[DEBUG] File removed modified: " << path << std::endl;
+                RemoveAsset(path);
 
                 });
 
-            project_watcher_.OnFileRenamed.Register([this](const auto pair) {
+            project_watcher_.OnFileRenamed.Register([this](const auto& pair) {
+                auto[f, s] = pair;
+                std::cout << "[DEBUG] File was renamed from " << f << " to " << s << std::endl;
+                UpdateAssetPath(f, s);
 
                 });
 
@@ -80,7 +88,7 @@ namespace GiiGa
             return handle;
         }
 
-        AssetHandle ImportAsset(std::filesystem::path& path) {
+        AssetHandle ImportAsset(const std::filesystem::path& path) {
             AssetType asset_type;
             bool found_loader = false;
             for (const auto& [type, loaders] : asset_loaders_)
@@ -115,7 +123,7 @@ namespace GiiGa
             return handle;
         }
 
-        void RemoveAsset(std::filesystem::path& path) {
+        void RemoveAsset(const std::filesystem::path& path) {
             auto it = std::find_if(registry_map_.begin(), registry_map_.end(), 
                 [&path](const auto& pair) { 
                     return pair.second.path == path; 
@@ -127,7 +135,7 @@ namespace GiiGa
             }
         }
 
-        void UpdateAssetPath(std::filesystem::path& old_path, std::filesystem::path&& new_path){
+        void UpdateAssetPath(const std::filesystem::path& old_path, const std::filesystem::path& new_path){
             auto it = std::find_if(registry_map_.begin(), registry_map_.end(), 
                 [&old_path](const auto& pair) { 
                     return pair.second.path == old_path; 
