@@ -37,7 +37,13 @@ namespace GiiGa
         {
             project_watcher_.OnFileAdded.Register([this](const auto& path) {
                 std::cout << "[DEBUG] Register new file: " << path << std::endl;
-                ImportAsset(path);
+
+                try {
+                    ImportAsset(path);
+                }
+                catch (std::runtime_error& err) {
+                    std::cout << "[WARN] Failed to add new file: " << err.what() << std::endl;
+                }
 
                 });
 
