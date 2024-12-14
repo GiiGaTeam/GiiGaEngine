@@ -17,7 +17,7 @@ namespace GiiGa
         virtual ~MaterialLoader() = default;
 
         // todo
-        ::std::shared_ptr<AssetBase> Load(const ::std::filesystem::path& path) override
+        ::std::shared_ptr<AssetBase> Load(AssetHandle handle, const ::std::filesystem::path& path) override
         {
             //json = json.parse(path);
 

@@ -28,14 +28,14 @@ namespace GiiGa
         AssetType type_;
 
     public:
-        virtual std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) = 0;
+        virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(AssetBase& asset, std::filesystem::path& path) = 0;
 
-        void LoadAsync(const std::filesystem::path& path, LoadCallback&& callback) { 
-             std::thread([this, path, callback = std::move(callback)]() {
+        void LoadAsync(AssetHandle handle, const std::filesystem::path& path, LoadCallback&& callback) {
+             std::thread([this, handle, path, callback = std::move(callback)]() {
                 try
                 {
-                    auto asset = Load(path);
+                    auto asset = Load(handle, path);
                     callback(asset);
                 }
                 catch (...)

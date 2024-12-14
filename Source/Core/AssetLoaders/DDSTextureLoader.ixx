@@ -11,7 +11,7 @@ export module DDSAssetLoader;
 
 import AssetLoader;
 import AssetType;
-import GPULocalResource;
+import TextureAsset;
 import Engine;
 
 namespace GiiGa
@@ -26,7 +26,7 @@ namespace GiiGa
             type_ = AssetType::Texture2D;
         }
 
-        std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) override {
+        std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) override {
             if (!std::filesystem::exists(path))
                 throw std::runtime_error("File does not exist: " + path.string());
 
@@ -52,7 +52,7 @@ namespace GiiGa
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 
-            return std::make_shared<GPULocalResource>(rs->GetRenderDevice(), texture);
+            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture);
         }
 
         void Save(AssetBase& asset, std::filesystem::path& path) override

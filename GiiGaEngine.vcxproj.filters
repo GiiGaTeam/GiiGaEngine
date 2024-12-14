@@ -165,9 +165,6 @@
     <ClCompile Include="Source\Core\Render\FrameContext.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Render\GPULocalBuffer.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\Render\Interfaces\IRenderDevice.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -268,6 +265,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\AssetLoaders\DDSTextureLoader.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\TextureAsset.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

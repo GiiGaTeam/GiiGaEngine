@@ -50,10 +50,6 @@ namespace GiiGa
             return id_;
         }
 
-        void SetId(AssetHandle id) {
-            id_ = id;
-        }
-
         virtual AssetType GetType() = 0;
 
         EventDispatcher<AssetHandle> OnDestroy;
