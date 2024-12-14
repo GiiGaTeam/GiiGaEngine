@@ -115,5 +115,9 @@ namespace GiiGa
                 LoadRegistry();
             }
         }
+
+        virtual void _MakeVirtual() {
+
+        }
     };
 }  // namespace GiiGa

@@ -6,6 +6,8 @@ module;
 #include <stdexcept>
 #include <type_traits>
 
+#include <iostream>
+
 export module EditorAssetDatabase;
 
 import BaseAssetDatabase;
@@ -13,6 +15,8 @@ import AssetHandle;
 import AssetBase;
 import AssetMeta;
 import AssetLoader;
+import ProjectWatcher;
+import Project;
 
 namespace GiiGa
 {
@@ -21,7 +25,34 @@ namespace GiiGa
 
     export class EditorAssetDatabase : public BaseAssetDatabase
     {
+    private:
+        ProjectWatcher project_watcher_;
+
     public:
+        EditorAssetDatabase(std::shared_ptr<Project> proj) 
+            : project_watcher_(std::vector<std::string>{ 
+                (proj->GetProjectPath() / "Assets").string()
+            })
+        {
+            project_watcher_.OnFileAdded.Register([this](const auto& path) {
+                std::cout << "Added file " << path;
+                });
+
+            project_watcher_.OnFileModified.Register([this](const auto& path) {
+
+                });
+
+            project_watcher_.OnFileRemoved.Register([this](const auto& path) {
+
+                });
+
+            project_watcher_.OnFileRenamed.Register([this](const auto pair) {
+
+                });
+
+            project_watcher_.StartWatch();
+        }
+
         template <IsAssetBase T>
         AssetHandle CreateAsset(T& asset, std::filesystem::path& path)
         {

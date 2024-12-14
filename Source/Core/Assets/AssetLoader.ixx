@@ -28,6 +28,10 @@ namespace GiiGa
         AssetType type_;
 
     public:
+        virtual void Preprocess(AssetHandle handle, const std::filesystem::path& path) {
+
+        }
+
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(AssetBase& asset, std::filesystem::path& path) = 0;
 

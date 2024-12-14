@@ -4,6 +4,8 @@ module;
 #include <filesystem>
 #include <string>
 
+#include <iostream>
+
 export module ProjectWatcher;
 
 import EventSystem;
@@ -18,6 +20,10 @@ namespace GiiGa
 
         std::optional<std::filesystem::path> old_rename_path_;
     public:
+        ProjectWatcher(std::vector<std::string>&& dirs_to_watch) 
+            : dirs_to_watch_(dirs_to_watch)
+        {}
+
         EventDispatcher<std::filesystem::path> OnFileAdded;
         EventDispatcher<std::filesystem::path> OnFileRemoved;
         EventDispatcher<std::filesystem::path> OnFileModified;
@@ -26,6 +32,7 @@ namespace GiiGa
         void StartWatch() { 
             for (const auto& dir : dirs_to_watch_)
             {
+                std::cout << "Starting watch " << dir << std::endl;
                 watchers_.emplace_back(std::make_unique<filewatch::FileWatch<std::string>>(dir,
                     [this](const std::string& path, const filewatch::Event change_type)
                     {

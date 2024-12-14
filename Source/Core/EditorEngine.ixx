@@ -8,6 +8,7 @@ export import Engine;
 import Time;
 import Misc;
 import EditorRenderSystem;
+import EditorAssetDatabase;
 import World;
 
 namespace GiiGa
@@ -44,12 +45,23 @@ namespace GiiGa
                 render_system_->Tick();
             }
         }
+
+        static EditorEngine& Instance()
+        {
+            return *dynamic_cast<EditorEngine*>(instance_);
+        }
+
+        std::shared_ptr<EditorAssetDatabase> EditorDatabase() {
+            return std::dynamic_pointer_cast<EditorAssetDatabase>(asset_database_);
+        }
     private:
         void Initialize(std::shared_ptr<Project> proj) override
         {
             Engine::Initialize(proj);
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
+
+            asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
         }
