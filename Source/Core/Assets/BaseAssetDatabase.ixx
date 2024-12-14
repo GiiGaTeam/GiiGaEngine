@@ -17,6 +17,9 @@ import AssetType;
 
 namespace GiiGa
 {
+    template <typename T>
+    concept IsAssetLoader = std::is_base_of_v<AssetLoader, T>;
+
     export class BaseAssetDatabase
     {
     private:
@@ -28,7 +31,7 @@ namespace GiiGa
         // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
 
-        std::unordered_map<AssetType, std::vector<AssetLoader*>> asset_loaders_;
+        std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
     public:
         friend class ResourceManager;
 
@@ -54,7 +57,7 @@ namespace GiiGa
         {
             std::cout << "[DEBUG] Saving registry" << std::endl;
 
-            Json::Value root;
+            Json::Value root(Json::objectValue);
 
             for (const auto& [handle, meta] : registry_map_)
             {
@@ -80,6 +83,16 @@ namespace GiiGa
             {
                 LoadRegistry();
             }
+        }
+
+        template <IsAssetLoader T>
+        void RegisterLoader()
+        {
+            auto loader_ptr = std::make_shared<T>();
+
+            std::cout << "[DEBUG] Registered loader: " << loader_ptr->GetName() << std::endl;
+
+            asset_loaders_[loader_ptr->Type()].emplace_back(std::move(loader_ptr));
         }
     private:
         virtual void _MakeVirtual() {

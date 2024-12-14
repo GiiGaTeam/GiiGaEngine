@@ -54,5 +54,13 @@ namespace GiiGa
             std::string filename = path.filename().string();
             return std::regex_match(filename, pattern_);
         }
+
+        AssetType Type() const {
+            return type_;
+        }
+
+        virtual const char* GetName() {
+            return "Unnamed";
+        }
     };
 }  // namespace GiiGa

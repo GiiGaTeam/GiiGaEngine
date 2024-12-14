@@ -59,5 +59,9 @@ namespace GiiGa
         {
             throw std::runtime_error("Saving DDS textures is not supported.");
         }
+
+        const char* GetName() override {
+            return "DDS Texture Loader";
+        }
     };
 }

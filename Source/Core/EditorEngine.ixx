@@ -11,6 +11,8 @@ import EditorRenderSystem;
 import EditorAssetDatabase;
 import World;
 
+import DDSAssetLoader;
+
 namespace GiiGa
 {
     export class EditorEngine : public Engine
@@ -68,6 +70,8 @@ namespace GiiGa
 
             database->InitializeDatabase();
             database->StartProjectWatcher();
+            
+            database->RegisterLoader<DDSAssetLoader>();
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
         }
