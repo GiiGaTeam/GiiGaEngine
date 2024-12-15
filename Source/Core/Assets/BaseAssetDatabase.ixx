@@ -26,7 +26,6 @@ namespace GiiGa
         static inline const char* registry_name = "database.json";
     protected:
         std::filesystem::path registry_path_;
-        std::fstream registry_file_;
 
         // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
@@ -67,22 +66,15 @@ namespace GiiGa
                 root.append(entry);
             }
 
-            registry_file_ << root;
+            Json::StreamWriterBuilder writer_builder;
+            std::ofstream registry_file_(registry_path_);
+            registry_file_ << Json::writeString(writer_builder, root);
         }
 
         void InitializeDatabase()
         {
             OpenRegistryFile();
-
-            if (registry_file_.peek() == std::ifstream::traits_type::eof())
-            {
-                registry_map_.clear();
-                SaveRegistry();
-            }
-            else
-            {
-                LoadRegistry();
-            }
+            LoadRegistry();
         }
 
         template <IsAssetLoader T>
@@ -101,10 +93,17 @@ namespace GiiGa
 
         void LoadRegistry()
         {
-            std::cout << "[DEBUG] Load registry" << std::endl;
+            std::cout << "[DEBUG] Load registry " << registry_path_ << std::endl;
 
             Json::Value root;
-            registry_file_ >> root;
+            Json::CharReaderBuilder reader_builder;
+            std::string errs;
+
+            std::ifstream registry_file_(registry_path_);
+            if (!Json::parseFromStream(reader_builder, registry_file_, &root, &errs))
+            {
+                throw std::runtime_error("Failed to parse project file: " + errs);
+            }
 
             if (!root.isArray())
             {
@@ -115,12 +114,12 @@ namespace GiiGa
 
             for (const auto& entry : root)
             {
-                if (!entry.isObject() || !entry.isMember("handle") || !entry.isMember("meta"))
+                if (!entry.isObject() || !entry.isMember("id") || !entry.isMember("meta"))
                 {
                     throw std::runtime_error("Invalid entry in registry file.");
                 }
 
-                AssetHandle handle = AssetHandle::FromJson(entry["handle"]);
+                AssetHandle handle = AssetHandle::FromJson(entry["id"]);
                 AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
 
                 registry_map_.emplace(handle, meta);
@@ -129,20 +128,24 @@ namespace GiiGa
 
         void OpenRegistryFile()
         {
-            std::cout << "[DEBUG] Opening or creating registry file" << std::endl;
+            std::cout << "[DEBUG] Opening or creating registry file " << registry_path_ << std::endl;
 
-            registry_file_.open(registry_path_, std::ios::in | std::ios::out);
-
-            if (!registry_file_)
+            if (!std::filesystem::exists(registry_path_))
             {
-                std::ofstream createFile(registry_path_);
-                if (!createFile)
+                std::ofstream registry_file_(registry_path_);
+                if (!registry_file_)
                 {
                     throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
                 }
-                createFile.close();
 
-                registry_file_.open(registry_path_, std::ios::in | std::ios::out);
+                std::cout << "[DEBUG] Saving registry" << std::endl;
+
+                Json::Value root(Json::arrayValue);
+
+                Json::StreamWriterBuilder writer_builder;
+                registry_file_ << Json::writeString(writer_builder, root);
+
+                registry_file_.close();
             }
         }
     };
