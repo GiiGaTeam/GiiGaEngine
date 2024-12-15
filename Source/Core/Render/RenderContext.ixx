@@ -1,5 +1,6 @@
 ﻿module;
 
+#include <complex.h>
 #include<memory>
 #include<vector>
 #include <d3d12.h>
@@ -121,6 +122,15 @@ namespace GiiGa
             current_frame->FenceValue = fenceValue;
         }
 
+        void ContextIdle()
+        {
+            //current_frame = frame_contexts_.begin() + ++frameIndex_ % RenderSystemSettings::NUM_FRAMES_IN_FLIGHT;
+
+            graphics_command_queue_->Signal(fence_.get(), fenceLastSignaledValue_ + 1);
+            fence_->SetEventOnCompletion(current_frame->FenceValue + 1, fenceEvent_);
+            WaitForSingleObject(fenceEvent_, INFINITE);
+        }
+
         void WaitForNextFrameResources()
         {
             UINT nextFrameIndex = frameIndex_ + 1;
@@ -129,8 +139,7 @@ namespace GiiGa
             HANDLE waitableObjects[] = {frameLatencyWaitableObject_, nullptr};
             DWORD numWaitableObjects = 1;
 
-            current_frame = &frame_contexts_[
-                nextFrameIndex % RenderSystemSettings::NUM_FRAMES_IN_FLIGHT];
+            current_frame = frame_contexts_.begin() + nextFrameIndex % RenderSystemSettings::NUM_FRAMES_IN_FLIGHT;
             UINT64 fenceValue = current_frame->FenceValue;
             if (fenceValue != 0) // means no fence was signaled
             {
@@ -148,7 +157,7 @@ namespace GiiGa
         std::shared_ptr<ID3D12CommandQueue> graphics_command_queue_;
         std::shared_ptr<ID3D12GraphicsCommandList> graphics_command_list_;
         std::vector<FrameContext> frame_contexts_;
-        FrameContext* current_frame;
+        decltype(frame_contexts_)::iterator current_frame;
         std::shared_ptr<ID3D12Fence> fence_;
         HANDLE frameLatencyWaitableObject_;
         HANDLE fenceEvent_;

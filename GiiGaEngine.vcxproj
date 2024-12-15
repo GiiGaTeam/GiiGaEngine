@@ -97,7 +97,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
@@ -130,7 +130,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
@@ -148,7 +148,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
@@ -161,6 +161,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
+    <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
@@ -177,6 +178,7 @@
     <ClCompile Include="Source\Core\Assets\RuntimeAssetDatabase.ixx" />
     <ClCompile Include="Source\Components\TransformComponent.ixx" />
     <ClCompile Include="Source\Core\Component.ixx" />
+    <ClCompile Include="Source\Core\DXMathUtils.ixx" />
     <ClCompile Include="Source\Core\EditorEngine.ixx" />
     <ClCompile Include="Source\Core\Engine.ixx" />
     <ClCompile Include="Source\Core\EventSystem.ixx" />
@@ -201,6 +203,7 @@
     <ClCompile Include="Source\Core\Render\Material.ixx" />
     <ClCompile Include="Source\Core\Render\Mesh.ixx" />
     <ClCompile Include="Source\Core\Render\PerObjectData.ixx" />
+    <ClCompile Include="Source\Core\Render\PSO.ixx" />
     <ClCompile Include="Source\Core\Render\RenderContext.ixx" />
     <ClCompile Include="Source\Core\Render\RenderData.ixx" />
     <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
@@ -289,6 +292,7 @@
     <ClCompile Include="Source\Core\Misc.ixx" />
     <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
     <ClCompile Include="Source\Core\Render\SceneVisibility.ixx" />
+    <ClCompile Include="Source\Core\Render\ShaderManager.ixx" />
     <ClCompile Include="Source\Core\Render\SkeletalMesh.ixx" />
     <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
     <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
@@ -299,12 +303,14 @@
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
+    <ClCompile Include="Source\Core\unique_any.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
     <ClCompile Include="Source\Core\Variant.ixx" />
     <ClCompile Include="Source\Core\Window.ixx" />
     <ClCompile Include="Source\Core\WindowManager.ixx" />
     <ClCompile Include="Source\Core\WindowSettings.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
   <ItemGroup>
@@ -317,7 +323,7 @@
     <ClInclude Include="ThirdParty\FileWatch.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Core\Utils.h" />
+    <Folder Include="Shaders\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,6 +4,7 @@ module;
 #include <string>
 #include <memory>
 #include <d3d12.h>
+#include <iostream>
 
 export module EditorViewport;
 
@@ -29,7 +30,7 @@ namespace GiiGa
         void Execute(RenderContext& context) override
         {
             ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
-            
+
             auto current_size = ImGui::GetWindowSize();
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
@@ -38,14 +39,14 @@ namespace GiiGa
             resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
             const float clear_color_with_alpha[4] = {1, 0, 0, 1};
-            
-            context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(),clear_color_with_alpha);
-            
+
+            context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(), clear_color_with_alpha);
+
             // draw here
-            
+
             resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-            ImGui::Image((ImTextureID) resultSRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            ImGui::Image((ImTextureID)resultSRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             ImGui::End();
         }

@@ -10,6 +10,7 @@ module;
 #include <mutex>
 #include <unordered_set>
 #include <vector>
+#include <any>
 
 export module DescriptorHeap;
 
@@ -62,11 +63,11 @@ namespace GiiGa
 
         // Initializes non-null allocation
         DescriptorHeapAllocation(IDescriptorAllocator& Allocator,
-            std::shared_ptr<ID3D12DescriptorHeap> pHeap,
-            D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle,
-            D3D12_GPU_DESCRIPTOR_HANDLE GpuHandle,
-            uint32_t NHandles,
-            uint16_t AllocationManagerId) noexcept :
+                                 std::shared_ptr<ID3D12DescriptorHeap> pHeap,
+                                 D3D12_CPU_DESCRIPTOR_HANDLE CpuHandle,
+                                 D3D12_GPU_DESCRIPTOR_HANDLE GpuHandle,
+                                 uint32_t NHandles,
+                                 uint16_t AllocationManagerId) noexcept :
             // clang-format off
             m_FirstCpuHandle{CpuHandle},
             m_FirstGpuHandle{GpuHandle},
@@ -270,7 +271,7 @@ namespace GiiGa
                 {
                     return DeviceD3D12Impl.CreateDescriptorHeap(HeapDesc);
                 }(),
-                0, // First descriptor
+                0,                      // First descriptor
                 HeapDesc.NumDescriptors // Num descriptors
             }
         {
@@ -399,8 +400,10 @@ namespace GiiGa
 
             assert(m_ThisManagerId < std::numeric_limits<uint16_t>::max()); //"ManagerID exceeds 16-bit range"
 
-            return DescriptorHeapAllocation{m_ParentAllocator, m_pd3d12DescriptorHeap, CPUHandle, GPUHandle, Count,
-                                            static_cast<uint16_t>(m_ThisManagerId)};
+            return DescriptorHeapAllocation{
+                m_ParentAllocator, m_pd3d12DescriptorHeap, CPUHandle, GPUHandle, Count,
+                static_cast<uint16_t>(m_ThisManagerId)
+            };
         }
 
         void FreeAllocation(DescriptorHeapAllocation&& Allocation)
@@ -621,7 +624,7 @@ namespace GiiGa
 
                 StaleAllocation(const StaleAllocation&) = delete;
                 StaleAllocation& operator=(const StaleAllocation&) = delete;
-                StaleAllocation& operator=(StaleAllocation&&) = delete;
+                StaleAllocation& operator=(StaleAllocation&&) = default;
 
                 StaleAllocation(StaleAllocation&& rhs) noexcept :
                     Allocation{std::move(rhs.Allocation)},
@@ -639,7 +642,7 @@ namespace GiiGa
                 }
             };
             // todo review here should be enqueueing
-            StaleAllocation{std::move(Allocation), *this};
+            m_DeviceD3D12Impl.EnqueueToDelete(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
@@ -828,7 +831,8 @@ namespace GiiGa
                 }
             };
             // todo review here should be enqueueing
-            StaleAllocation{std::move(Allocation), *this};
+            //StaleAllocation{std::move(Allocation), *this};
+            m_DeviceD3D12Impl.EnqueueToDelete(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
@@ -881,8 +885,8 @@ namespace GiiGa
     {
     public:
         DynamicSuballocationsManager(GPUDescriptorHeap& ParentGPUHeap,
-            uint32_t DynamicChunkSize,
-            std::string ManagerName)
+                                     uint32_t DynamicChunkSize,
+                                     std::string ManagerName)
             :
             // clang-format off
             m_ParentGPUHeap{ParentGPUHeap},
@@ -954,11 +958,11 @@ namespace GiiGa
             assert(ManagerId < std::numeric_limits<uint16_t>::max()); //, "ManagerID exceed allowed limit"
 
             DescriptorHeapAllocation Allocation(*this,
-                CurrentSuballocation.GetDescriptorHeap(),
-                CurrentSuballocation.GetCpuHandle(m_CurrentSuballocationOffset),
-                CurrentSuballocation.GetGpuHandle(m_CurrentSuballocationOffset),
-                Count,
-                static_cast<uint16_t>(ManagerId));
+                                                CurrentSuballocation.GetDescriptorHeap(),
+                                                CurrentSuballocation.GetCpuHandle(m_CurrentSuballocationOffset),
+                                                CurrentSuballocation.GetGpuHandle(m_CurrentSuballocationOffset),
+                                                Count,
+                                                static_cast<uint16_t>(ManagerId));
             m_CurrentSuballocationOffset += Count;
             m_CurrDescriptorCount += Count;
             m_PeakDescriptorCount = std::max(m_PeakDescriptorCount, m_CurrDescriptorCount);

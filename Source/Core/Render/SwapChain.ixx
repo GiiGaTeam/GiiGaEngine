@@ -22,7 +22,7 @@ namespace GiiGa
     public:
         SwapChain(RenderDevice& device, const std::shared_ptr<ID3D12CommandQueue>& command_queue, const Window& window)
         {
-            CreateSwapChainObject(command_queue, window);
+            CreateSwapChainObject(device, command_queue, window);
 
             render_targets_.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
 
@@ -55,13 +55,20 @@ namespace GiiGa
             return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor().GetCpuHandle();
         }
 
+        void Resize(RenderDevice& device, int width, int height)
+        {
+            render_targets_.clear();
+            swap_chain_->ResizeBuffers(RenderSystemSettings::NUM_BACK_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
+            CreateRenderTarget(device);
+        }
+
     private:
         UINT currentBackBufferIdx = 0;
         std::shared_ptr<IDXGISwapChain4> swap_chain_;
         HANDLE waitable_object_ = nullptr;
         std::vector<GPULocalResource> render_targets_;
 
-        void CreateSwapChainObject(const std::shared_ptr<ID3D12CommandQueue> command_queue, const Window& window)
+        void CreateSwapChainObject(RenderDevice& device, const std::shared_ptr<ID3D12CommandQueue> command_queue, const Window& window)
         {
             DXGI_SWAP_CHAIN_DESC1 sd;
             {
@@ -86,11 +93,11 @@ namespace GiiGa
 
             CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
             dxgiFactory->CreateSwapChainForHwnd(command_queue.get(), window.GetHandle(), &sd,
-                nullptr, nullptr,
-                &swapChain1);
+                                                nullptr, nullptr,
+                                                &swapChain1);
             swapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain));
 
-            swap_chain_ = std::shared_ptr<IDXGISwapChain4>(pSwapChain, DirectXDeleter{});
+            swap_chain_ = std::shared_ptr<IDXGISwapChain4>(pSwapChain, DXDeleter{});
 
             swapChain1->Release();
             dxgiFactory->Release();
@@ -105,7 +112,7 @@ namespace GiiGa
             {
                 ID3D12Resource* pBackBuffer = nullptr;
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DirectXDeleter());
+                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{}); //DXDelayedDeleter{device}
                 render_targets_.emplace_back(device, res);
                 (--render_targets_.end())->CreateRenderTargetView(nullptr);
             }

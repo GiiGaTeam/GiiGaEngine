@@ -13,7 +13,7 @@ namespace GiiGa
 {
     export class GameObject;
 
-    export class Component : public ITickable
+    export class Component : public ITickable, public std::enable_shared_from_this<Component>
     {
     public:
         virtual ~Component() = default;
@@ -22,12 +22,17 @@ namespace GiiGa
 
         virtual std::shared_ptr<Component> Clone() = 0;
 
+        virtual void SetOwner(std::shared_ptr<GameObject> go)
+        {
+            owner_ = go;
+        }
+
         Uuid GetUuid() const
         {
             // TO DO
             Uuid::Null();
         }
-        
+
         virtual Json::Value ToJSon() const
         {
             Json::Value result;
@@ -37,7 +42,6 @@ namespace GiiGa
         }
 
     protected:
-        friend class GameObject;
         std::weak_ptr<GameObject> owner_;
     };
-}  // namespace GiiGa
+} // namespace GiiGa
