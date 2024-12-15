@@ -56,7 +56,7 @@ namespace GiiGa
                 });
 
             project_watcher_.OnFileRemoved.Register([this](const auto& path) {
-                std::cout << "[DEBUG] File removed modified: " << path << std::endl;
+                std::cout << "[DEBUG] File removed: " << path << std::endl;
                 RemoveAsset(path);
 
                 });

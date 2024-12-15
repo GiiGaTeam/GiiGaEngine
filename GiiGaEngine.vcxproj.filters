@@ -264,10 +264,13 @@
     <ClCompile Include="Source\Core\Render\Viewport.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\AssetLoaders\DDSTextureLoader.ixx">
+    <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\TextureAsset.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

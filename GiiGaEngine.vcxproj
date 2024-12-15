@@ -162,7 +162,8 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\DDSTextureLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />

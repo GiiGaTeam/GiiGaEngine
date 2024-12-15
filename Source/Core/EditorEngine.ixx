@@ -12,6 +12,7 @@ import EditorAssetDatabase;
 import World;
 
 import DDSAssetLoader;
+import ImageAssetLoader;
 
 namespace GiiGa
 {
@@ -69,11 +70,17 @@ namespace GiiGa
             asset_database_ = database;
 
             database->InitializeDatabase();
+            DefaultLoaderSetup(database);
+
             database->StartProjectWatcher();
-            
-            database->RegisterLoader<DDSAssetLoader>();
+
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
+        }
+
+        void DefaultLoaderSetup(std::shared_ptr<EditorAssetDatabase> database) {
+            database->RegisterLoader<DDSAssetLoader>();
+            database->RegisterLoader<ImageAssetLoader>();
         }
     };
 } // namespace GiiGa
