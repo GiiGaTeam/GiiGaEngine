@@ -23,12 +23,16 @@ namespace GiiGa
         {
             //RenderSystem::Initialize();
 
-            root.AddChild(std::make_shared<ShadowPass>());
+            root_.AddPass(std::make_shared<ShadowPass>());
             std::shared_ptr<EditorSwapChainPass> tempEditorSCP = std::make_shared<EditorSwapChainPass>(device_, swapChain_);
             editorSwapChainPass_ = tempEditorSCP;
-            root.AddChild(tempEditorSCP);
+            root_.AddPass(tempEditorSCP);
 
             editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_));
+            for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
+            {
+                viewport->Init();
+            }
         }
 
     private:

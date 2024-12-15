@@ -55,7 +55,7 @@ namespace GiiGa
             ImGui_ImplDX12_Shutdown();
         }
 
-        void Draw(RenderContext& context) override
+        void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport) override
         {
             ImGui_ImplDX12_NewFrame();
             ImGui_ImplSDL2_NewFrame();

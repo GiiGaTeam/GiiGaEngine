@@ -3,23 +3,43 @@ module;
 #include <vector>
 #include <memory>
 #include <typeindex>
+#include <directxtk12/SimpleMath.h>
 #include <json/json.h>
 
 export module GameObject;
 
 import Component;
+import TransformComponent;
 import Uuid;
+using namespace DirectX::SimpleMath;
 
 namespace GiiGa
 {
     export class GameObject final : public ITickable, public std::enable_shared_from_this<GameObject>
     {
     public:
+        explicit GameObject(const Vector3 location = Vector3::Zero
+                           , const Vector3 rotation = Vector3::Zero
+                           , const Vector3 scale = Vector3::One)
+        {
+            transform_ = CreateComponent<TransformComponent>(location, rotation, scale);
+        }
+
         void Tick(float dt) override
         {
             for (auto&& component : components_)
             {
                 component->Tick(dt);
+            }
+        }
+
+        void Init()
+        {
+            if (transform_.expired()) transform_ = CreateComponent<TransformComponent>();
+
+            for (auto&& component : components_)
+            {
+                component->Init();
             }
         }
 
@@ -44,6 +64,11 @@ namespace GiiGa
                     return comp;
             }
             return nullptr;
+        }
+
+        std::weak_ptr<TransformComponent> GetTransformComponent()
+        {
+            return transform_;
         }
 
         void AddComponent(std::shared_ptr<Component> component)
@@ -95,5 +120,6 @@ namespace GiiGa
 
     private:
         std::vector<std::shared_ptr<Component>> components_;
+        std::weak_ptr<TransformComponent> transform_;
     };
 } // namespace GiiGa

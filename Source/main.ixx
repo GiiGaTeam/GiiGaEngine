@@ -23,7 +23,7 @@ export int main()
     ImGui::CreateContext();
 
     std::shared_ptr<GiiGa::Project> proj;
-    
+
     {
         GiiGa::EditorEngine engine = GiiGa::EditorEngine();
 

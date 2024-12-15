@@ -10,26 +10,16 @@ export import RenderContext;
 
 namespace GiiGa
 {
+    export class Viewport;
+
     export class RenderPass
     {
     public:
         virtual ~RenderPass() = default;
 
-        virtual void Draw(RenderContext& context)
-        {
-            for (auto&& child : children_)
-            {
-                child->Draw(context);
-            }
-        }
-
-        void AddChild(std::shared_ptr<RenderPass> pass)
-        {
-            children_.push_back(std::move(pass));
-        }
+        virtual void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport)=0;
 
     protected:
         int32_t default_filter_type_ = Static | Dynamic | Opacity | Transparency;
-        std::vector<std::shared_ptr<RenderPass>> children_;
     };
 }

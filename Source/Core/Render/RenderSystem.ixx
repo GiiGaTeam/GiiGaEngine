@@ -11,11 +11,14 @@ export import Window;
 export import RenderDevice;
 import RenderContext;
 import DescriptorHeap;
-import RenderPass;
+import RenderGraph;
 import SwapChain;
+import ShaderManager;
+import Viewport;
 
 namespace GiiGa
 {
+    
     export class RenderSystem
     {
     public:
@@ -31,6 +34,7 @@ namespace GiiGa
         {
             context_.SetFrameLatencyWaitableObject(swapChain_->GetFrameLatencyWaitableObject());
             window.OnWindowResize.Register(std::bind(&RenderSystem::ResizeSwapChain, this, std::placeholders::_1));
+            //shaderManager_ = std::make_unique<ShaderManager>();
         }
 
         virtual void Initialize() = 0;
@@ -39,7 +43,8 @@ namespace GiiGa
         {
             device_.DeleteStaleObjects();
             context_.StartFrame();
-            root.Draw(context_);
+            const std::shared_ptr<Viewport> viewport = nullptr;
+            root_.Draw(context_, viewport);
             context_.EndFrame();
             swapChain_->Present();
         }
@@ -60,6 +65,7 @@ namespace GiiGa
         RenderDevice device_;
         RenderContext context_;
         std::shared_ptr<SwapChain> swapChain_;
-        RenderPass root;
+        RenderGraph root_;
+        std::unique_ptr<ShaderManager> shaderManager_;
     };
 }

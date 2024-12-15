@@ -10,10 +10,12 @@ export module EditorViewport;
 
 export import Viewport;
 import RenderDevice;
+import ForwardPass;
+import RenderGraph;
 
 namespace GiiGa
 {
-    export class EditorViewport : public Viewport
+    export class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
         EditorViewport(RenderDevice& device):
@@ -22,13 +24,21 @@ namespace GiiGa
             Resize(viewport_size_);
         }
 
-        DescriptorHeapAllocation getCameraDescriptor() override
+        void Init() override
+        {
+            renderGraph_ = std::make_shared<RenderGraph>();
+            renderGraph_->AddPass(std::make_shared<ForwardPass>());
+        }
+
+        DescriptorHeapAllocation GetCameraDescriptor() override
         {
             return {};
         }
 
         void Execute(RenderContext& context) override
         {
+            if (camera_.expired()) return;
+
             ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
 
             auto current_size = ImGui::GetWindowSize();
@@ -43,6 +53,8 @@ namespace GiiGa
             context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(), clear_color_with_alpha);
 
             // draw here
+            renderGraph_->Draw(context, shared_from_this());
+            // draw here - end
 
             resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 

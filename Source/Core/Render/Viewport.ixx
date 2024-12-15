@@ -5,16 +5,21 @@ module;
 #include<memory>
 #include<directxtk/SimpleMath.h>
 
+
 export module Viewport;
 
 import RenderDevice;
-import RenderPass;
 export import GPULocalResource;
 export import DescriptorHeap;
 import BufferView;
+import CameraComponent;
+import RenderContext;
+
 
 namespace GiiGa
 {
+    export class RenderGraph;
+
     export class Viewport
     {
     public:
@@ -23,17 +28,21 @@ namespace GiiGa
         {
         }
 
+        virtual void Init() = 0;
+
         virtual ~Viewport() = default;
 
-        virtual DescriptorHeapAllocation getCameraDescriptor() =0;
+        virtual DescriptorHeapAllocation GetCameraDescriptor() =0;
 
-        virtual void Execute(RenderContext& context)
+        std::weak_ptr<CameraComponent> GetCameraComponent() const { return camera_; }
+
+        void SetCameraComponent(const std::weak_ptr<CameraComponent>& camera)
         {
-            for (auto&& renderPass : renderPasses_)
-            {
-                renderPass->Draw(context);
-            }
+            if (camera_.expired()) return;
+            camera_ = camera;
         }
+
+        virtual void Execute(RenderContext& context) =0;
 
         void Resize(DirectX::SimpleMath::Vector2 new_size)
         {
@@ -56,7 +65,7 @@ namespace GiiGa
                 clear_value.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
                 clear_value.Color[0] = 1.0f;
                 clear_value.Color[1] = 0.0f;
-                clear_value.Color[2] = 0.0f; 
+                clear_value.Color[2] = 0.0f;
                 clear_value.Color[3] = 1.0f;
 
                 resultResource_ = std::make_unique<GPULocalResource>(device_, rtvDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clear_value);
@@ -90,9 +99,10 @@ namespace GiiGa
     protected:
         RenderDevice& device_;
         DirectX::SimpleMath::Vector2 viewport_size_ = DirectX::SimpleMath::Vector2(300, 300);
-        std::vector<std::unique_ptr<RenderPass>> renderPasses_;
+        std::shared_ptr<RenderGraph> renderGraph_;
         std::unique_ptr<GPULocalResource> resultResource_;
         std::shared_ptr<BufferView<RenderTarget>> resultRTV_;
         std::shared_ptr<BufferView<ShaderResource>> resultSRV_;
+        std::weak_ptr<CameraComponent> camera_;
     };
 }
