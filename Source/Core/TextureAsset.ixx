@@ -10,7 +10,7 @@ import GPULocalResource;
 
 namespace GiiGa
 {
-    export class TextureAsset : public AssetBase, GPULocalResource
+    export class TextureAsset : public AssetBase, public GPULocalResource
     {
     public:
         TextureAsset(AssetHandle handle, RenderDevice& device, std::shared_ptr<ID3D12Resource> resource)
@@ -25,7 +25,5 @@ namespace GiiGa
         virtual AssetType GetType() override {
             return AssetType::Texture2D;
         }
-
-        EventDispatcher<AssetHandle> OnDestroy;
     };
 }  // namespace GiiGa

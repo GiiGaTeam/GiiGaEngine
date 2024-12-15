@@ -13,6 +13,7 @@ import AssetLoader;
 import AssetType;
 import TextureAsset;
 import Engine;
+import DirectXUtils;
 
 namespace GiiGa
 {

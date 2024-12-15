@@ -57,11 +57,11 @@ namespace GiiGa
         {
             std::cout << "[DEBUG] Saving registry" << std::endl;
 
-            Json::Value root(Json::objectValue);
+            Json::Value root(Json::arrayValue);
 
             for (const auto& [handle, meta] : registry_map_)
             {
-                Json::Value entry;
+                Json::Value entry(Json::objectValue);
                 entry["id"] = handle.ToJson();
                 entry["meta"] = meta.ToJson();
                 root.append(entry);
