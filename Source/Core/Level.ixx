@@ -45,21 +45,21 @@ namespace GiiGa
             root_game_objects_.push_back(gameObject);
             for (const auto& component_ : gameObject->GetComponents())
             {
-                componentsInLevel_.AddComponent(std::dynamic_pointer_cast<Component>(component_));
+                componentsInLevel_.AddComponent(component_);
             }
 
             for (const auto& kid : gameObject->GetChildren())
             {
                 for (const auto& kid_comp : kid->GetComponents())
-                    componentsInLevel_.AddComponent(std::dynamic_pointer_cast<Component>(kid_comp));
+                    componentsInLevel_.AddComponent(kid_comp);
             }
         }
         
         bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
         {
             Todo();// review
-            for (const auto& component_ : gameObject->GetComponents())
-                componentsInLevel_.removeComponent(std::dynamic_pointer_cast<Component>(component_));
+            for (const std::shared_ptr<IComponent> component_ : gameObject->GetComponents())
+                componentsInLevel_.removeComponent(component_);
             
             auto iterator = root_game_objects_.erase(
                     std::remove(root_game_objects_.begin(), root_game_objects_.end(), gameObject),
@@ -138,14 +138,14 @@ namespace GiiGa
             template <typename T>
             void AddComponent(std::shared_ptr<T> component)
             {
-                static_assert(std::is_base_of<Component, T>::value, "T must be derived from Component");
+                static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
                 components_[typeid(*component)].push_back(component);
             }
 
             template <typename T>
             std::vector<std::shared_ptr<T>> getComponentsOfType()
             {
-                static_assert(std::is_base_of<Component, T>::value, "T must be derived from Component");
+                static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
 
                 std::type_index typeIndex(typeid(T));
                 std::vector<std::shared_ptr<T>> result;
@@ -162,7 +162,7 @@ namespace GiiGa
                 return result;
             }
             
-            void removeComponent(const std::shared_ptr<Component>& component) {
+            void removeComponent(const std::shared_ptr<IComponent>& component) {
                 // Будет работать только в том случае, если умные указатели будут корректно сравниваться в течении всей работы программы.
                 // На короткой дистанции так скорее всего и будет.
                 
@@ -175,7 +175,7 @@ namespace GiiGa
             }
     
         private:
-            std::map<std::type_index, std::vector<std::shared_ptr<Component>>> components_;
+            std::map<std::type_index, std::vector<std::shared_ptr<IComponent>>> components_;
         } componentsInLevel_; 
     };
 }

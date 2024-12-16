@@ -91,7 +91,7 @@ namespace GiiGa
             return newGameObject;
         }
 
-        const std::vector<std::shared_ptr<IComponent>>& GetComponents() const
+        std::vector<std::shared_ptr<IComponent>>& GetComponents()
         {
             return components_;
         }
@@ -122,8 +122,7 @@ namespace GiiGa
 
             return result;
         }
-
-
+    
     private:
         Uuid uuid_ = Uuid::Null();
         std::string name_;
