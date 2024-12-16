@@ -164,13 +164,11 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
-            Component::Tick(dt);
             if (is_dirty_) UpdateTransformMatrices();
         }
 
         void Init() override
         {
-            Component::Init();
             AttachTo(parent_);
         }
 
@@ -414,7 +412,7 @@ namespace GiiGa
         std::shared_ptr<IComponent> Clone() override
         {
             Todo();
-            return Component::Clone();
+            return nullptr;
         }
     };
 #pragma endregion

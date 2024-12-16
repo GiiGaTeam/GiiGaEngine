@@ -1,3 +1,15 @@
 {
-    
+    "LevelSettings":
+    {
+        "Name":"Hello World"
+    },
+    "GameObjects":
+    [
+        {
+            "Name":"GO Hello",
+            "Uuid": "42a43292-4b41-46a3-b514-0732ee9bf3b9",
+            "Components": [],
+            "Children": []
+        }
+    ]
 }

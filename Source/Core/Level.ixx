@@ -18,28 +18,35 @@ namespace GiiGa
 {
     export class Level
     {
-    
     public:
-
+        /*  Level Json:
+         *  {
+         *      LevelSettings:
+         *      {
+         *          Name:
+         *      },
+         *      GameObjects:[...]
+         *  }
+         */
         Level(const Json::Value& level_root)
         {
             SetIsActive(false);
-            
-            auto level_settings = level_root["LevelSettings"];
-            name = level_settings["Name"].asString();
-            SetIsActive(false);
 
-            auto root_level_go = level_settings["GameObjects"];
+            auto&& level_settings = level_root["LevelSettings"];
+            name = level_settings["Name"].asString();
+
+            auto&& root_level_go = level_root["GameObjects"];
             for (auto&& gameobject_js : root_level_go)
             {
                 AddRootGameObject(std::make_shared<GameObject>(gameobject_js));
             }
         }
-        
+
         const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const
         {
             return root_game_objects_;
         }
+
         void AddRootGameObject(std::shared_ptr<GameObject> gameObject)
         {
             root_game_objects_.push_back(gameObject);
@@ -54,34 +61,42 @@ namespace GiiGa
                     componentsInLevel_.AddComponent(kid_comp);
             }
         }
-        
+
         bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
         {
-            Todo();// review
-            for (const std::shared_ptr<IComponent> component_ : gameObject->GetComponents())
-                componentsInLevel_.removeComponent(component_);
-            
-            auto iterator = root_game_objects_.erase(
+            if (auto parent = gameObject->GetParent())
+            {
+                parent->RemoveChild(gameObject);
+            }
+            else
+            {
+                root_game_objects_.erase(
                     std::remove(root_game_objects_.begin(), root_game_objects_.end(), gameObject),
                     root_game_objects_.end());
-
-            if (iterator->get())
-            {
-                return true;
             }
-            return false;
+
+            for (const std::shared_ptr<IComponent> component_ : gameObject->GetComponents())
+                componentsInLevel_.removeComponent(component_);
+
+            for (const auto& kid : gameObject->GetChildren())
+            {
+                DestroyGameObject(gameObject);
+            }
+            
+            return true;
         }
+
         bool GetIsActive() const
         {
             return isActive_;
         }
-        
+
         void SetIsActive(bool newActive)
         {
             isActive_ = newActive;
         }
-        
-        template<typename T>
+
+        template <typename T>
         std::vector<std::shared_ptr<T>> GetComponentsOfType()
         {
             return componentsInLevel_.getComponentsOfType<T>();
@@ -104,35 +119,35 @@ namespace GiiGa
         {
             if (!std::filesystem::exists(level_path))
             {
-                throw std::runtime_error("Project file 'project.giga' not found in: " + level_path.string());
+                throw std::runtime_error("Level file not found in: " + level_path.string());
             }
 
             std::ifstream level_file(level_path);
             if (!level_file.is_open())
             {
-                throw std::runtime_error("Failed to open project file: " + level_path.string());
+                throw std::runtime_error("Failed to open level file: " + level_path.string());
             }
-            
+
             Json::CharReaderBuilder reader_builder;
             Json::Value level_json;
             std::string errs;
-            
+
             if (!Json::parseFromStream(reader_builder, level_file, &level_json, &errs))
             {
-                throw std::runtime_error("Failed to parse project file: " + errs);
+                throw std::runtime_error("Failed to parse level file: " + errs);
             }
 
             return Level(level_json);
         }
-        
+
     public:
         std::string name;
-        
+
     private:
         std::vector<std::shared_ptr<GameObject>> root_game_objects_;
         bool isActive_ = false;
-        
-        class 
+
+        class
         {
         public:
             template <typename T>
@@ -151,9 +166,12 @@ namespace GiiGa
                 std::vector<std::shared_ptr<T>> result;
 
                 auto it = components_.find(typeIndex);
-                if (it != components_.end()) {
-                    for (const auto& component : it->second) {
-                        if (auto castedComponent = std::dynamic_pointer_cast<T>(component)) {
+                if (it != components_.end())
+                {
+                    for (const auto& component : it->second)
+                    {
+                        if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
+                        {
                             result.push_back(castedComponent);
                         }
                     }
@@ -161,21 +179,23 @@ namespace GiiGa
 
                 return result;
             }
-            
-            void removeComponent(const std::shared_ptr<IComponent>& component) {
+
+            void removeComponent(const std::shared_ptr<IComponent>& component)
+            {
                 // Будет работать только в том случае, если умные указатели будут корректно сравниваться в течении всей работы программы.
                 // На короткой дистанции так скорее всего и будет.
-                
+
                 std::type_index typeIndex(typeid(*component));
                 auto it = components_.find(typeIndex);
-                if (it != components_.end()) {
+                if (it != components_.end())
+                {
                     auto& vec = it->second;
                     vec.erase(std::remove(vec.begin(), vec.end(), component), vec.end());
                 }
             }
-    
+
         private:
             std::map<std::type_index, std::vector<std::shared_ptr<IComponent>>> components_;
-        } componentsInLevel_; 
+        } componentsInLevel_;
     };
 }

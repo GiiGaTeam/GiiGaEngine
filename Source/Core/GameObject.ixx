@@ -4,6 +4,7 @@ module;
 #include <memory>
 #include <typeindex>
 #include <json/json.h>
+#include <unordered_set>
 
 export module GameObject;
 
@@ -11,13 +12,30 @@ export import IGameObject;
 import IComponent;
 import ITickable;
 import Uuid;
+import TransformComponent;
+import ConsoleComponent;
+import Misc;
 
 namespace GiiGa
 {
+    // life time of one GameObject is bound to parent
+    // cause it has shared_ptr to GameObject
+    // note: if GameObject does not has parent he should be in Levels root GameObjects list
     export class GameObject final : public IGameObject
     {
     public:
         GameObject() = default;
+
+        GameObject(const GameObject& other) = delete;
+        GameObject(GameObject&& other) noexcept = default;
+        GameObject& operator=(const GameObject& other) = delete;
+        GameObject& operator=(GameObject&& other) noexcept = default;
+
+        GameObject(const Uuid& uuid):
+            uuid_(uuid)
+        {
+        }
+
         void Tick(float dt) override
         {
             for (auto&& component : components_)
@@ -26,26 +44,62 @@ namespace GiiGa
             }
         }
 
+        /* GameObject Json
+         * Name:
+         * Uuid:
+         * Components:[...]
+         * Children:[...]
+        */
         GameObject(Json::Value json)
         {
-            name_ = json["name"].asString();
-            
-            for (auto&& comp_js : json["Components"])
+            name_ = json["Name"].asString();
+
+            auto js_uuid = Uuid::FromString(json["Uuid"].asString());
+
+            if (!js_uuid.has_value())
             {
-                //if (comp_js["Type"].asString() == typeid(TransformComponent).name())
-                //{
-                //    AddComponent(std::make_shared<TransformComponent>(comp_js["Properties"]));
-                //}
-                //else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
-                //{
-                //    AddComponent(std::make_shared<ConsoleComponent>(comp_js["Properties"]));
-                //}
+                throw std::runtime_error("Invalid UUID");
             }
 
-            for (auto&& kid_js: json["Children"])
+            uuid_ = js_uuid.value();
+
+            for (auto&& comp_js : json["Components"])
             {
-                children_.push_back(std::make_shared<GameObject>(kid_js));
+                if (comp_js["Type"].asString() == typeid(TransformComponent).name())
+                {
+                    AddComponent(std::make_shared<TransformComponent>(comp_js["Properties"]));
+                }
+                else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
+                {
+                    AddComponent(std::make_shared<ConsoleComponent>(comp_js["Properties"]));
+                }
             }
+
+            for (auto&& kid_js : json["Children"])
+            {
+                auto new_kid = std::make_shared<GameObject>(kid_js);
+                new_kid->parent_ = std::static_pointer_cast<GameObject>(shared_from_this());
+                children_.insert(new_kid);
+            }
+        }
+
+        Json::Value ToJson()
+        {
+            Json::Value result;
+            result["Name"] = name_;
+            result["Uuid"] = uuid_.ToString();
+
+            for (auto component : components_)
+            {
+                result["Components"].append(component->ToJson());
+            }
+
+            for (auto child : children_)
+            {
+                result["Children"].append(child->ToJson());
+            }
+
+            return result;
         }
 
         template <typename T, typename... Args>
@@ -54,7 +108,7 @@ namespace GiiGa
             if (std::shared_ptr<T> newComp = std::make_shared<T>(args...))
             {
                 newComp->SetOwner(shared_from_this());
-                components_.push_back(newComp);
+                components_.insert(newComp);
                 return newComp;
             }
             return nullptr;
@@ -71,14 +125,15 @@ namespace GiiGa
             return nullptr;
         }
 
-        void AddComponent(std::shared_ptr<IComponent> component)override
+        void AddComponent(std::shared_ptr<IComponent> component) override
         {
             component->SetOwner(shared_from_this());
-            components_.push_back(component);
+            components_.insert(component);
         }
 
         void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom)
         {
+            Todo(); //todo
         }
 
         virtual std::shared_ptr<GameObject> Clone()
@@ -91,14 +146,19 @@ namespace GiiGa
             return newGameObject;
         }
 
-        std::vector<std::shared_ptr<IComponent>>& GetComponents()
+        std::unordered_set<std::shared_ptr<IComponent>>& GetComponents()
         {
             return components_;
         }
 
-        const std::vector<std::shared_ptr<GameObject>>& GetChildren() const
+        const std::unordered_set<std::shared_ptr<GameObject>>& GetChildren() const
         {
             return children_;
+        }
+
+        void RemoveChild(std::shared_ptr<GameObject> child)
+        {
+            children_.erase(child);
         }
 
         Uuid GetUuid() const
@@ -106,28 +166,28 @@ namespace GiiGa
             return uuid_;
         }
 
-        Json::Value ToJson()
+        std::shared_ptr<GameObject> GetParent()
         {
-            Json::Value result;
-            result["Name"] = "";
-            Json::Value componentsResult;
-            for (auto component : components_)
-            {
-                Json::Value componentJson;
-                componentJson["component"] = typeid(component).name();
-                componentJson.append(component->ToJson().toStyledString());
-                componentsResult.append(componentJson);
-            }
-            result["Components"] = componentsResult.toStyledString();
-
-            return result;
+            return parent_.lock();
         }
-    
+
     private:
-        Uuid uuid_ = Uuid::Null();
+        Uuid uuid_ = Uuid::New();
         std::string name_;
-        std::vector<std::shared_ptr<IComponent>> components_;
-        std::vector<std::shared_ptr<GameObject>> children_;
+        std::unordered_set<std::shared_ptr<IComponent>> components_;
+        std::weak_ptr<GameObject> parent_;
+        std::unordered_set<std::shared_ptr<GameObject>> children_;
         //std::weak_ptr<Level> level_;
     };
 } // namespace GiiGa
+
+template <>
+struct std::hash<GiiGa::GameObject>
+{
+    std::size_t operator()(const GiiGa::GameObject& obj) const
+    {
+        // Assuming Uuid class has an appropriate std::hash specialization or 
+        // a method to convert to a hashable format
+        return obj.GetUuid().Hash();
+    }
+};

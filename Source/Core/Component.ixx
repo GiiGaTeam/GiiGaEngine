@@ -2,6 +2,7 @@ module;
 
 #include <memory>
 #include <json/json.h>
+#include <stduuid/uuid.h>
 
 export module Component;
 
@@ -26,12 +27,11 @@ namespace GiiGa
             owner_ = go;
         }
 
-        virtual void Restore(const ::Json::Value&)=0;
+        virtual void Restore(const ::Json::Value&) =0;
 
         Uuid GetUuid() const
         {
-            // TO DO
-            Uuid::Null();
+            return uuid_;
         }
 
         virtual Json::Value ToJson() override
@@ -42,8 +42,10 @@ namespace GiiGa
             return result;
         }
 
-        
+        void Tick(float dt) override =0;
+
     protected:
+        Uuid uuid_ = Uuid::New();
         std::weak_ptr<IGameObject> owner_;
     };
 } // namespace GiiGa

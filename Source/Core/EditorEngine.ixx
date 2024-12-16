@@ -55,8 +55,12 @@ namespace GiiGa
             render_system_->Initialize();
             //todo
             auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
-            
-            World::AddLevel(Level::FromAbsolutePath(level_path));
+            World::AddLevel(Level::FromAbsolutePath(level_path), true);
+
+            auto& world = World::GetInstance();
+
+            int i=0;
+            i++;
         }
     };
 } // namespace GiiGa
