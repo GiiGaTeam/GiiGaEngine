@@ -52,13 +52,12 @@ namespace GiiGa
                 });
 
             project_watcher_.OnFileModified.Register([this](const auto& path) {
-                std::cout << "[DEBUG] File was modified: " << path << std::endl;
+                //std::cout << "[DEBUG] File was modified: " << path << std::endl;
                 });
 
             project_watcher_.OnFileRemoved.Register([this](const auto& path) {
                 std::cout << "[DEBUG] File removed: " << path << std::endl;
                 RemoveAsset(path);
-
                 });
 
             project_watcher_.OnFileRenamed.Register([this](const auto& pair) {
@@ -66,6 +65,12 @@ namespace GiiGa
                 std::cout << "[DEBUG] File was renamed from " << f << " to " << s << std::endl;
                 UpdateAssetPath(f, s);
 
+                });
+
+            project_watcher_.OnFileMoved.Register([this](const auto& pair) {
+                auto [f, s] = pair;
+                std::cout << "[DEBUG] File was moved from " << f << " to " << s << std::endl;
+                UpdateAssetPath(f, s);
                 });
 
             project_watcher_.StartWatch();
