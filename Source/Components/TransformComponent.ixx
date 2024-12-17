@@ -10,6 +10,7 @@ import MathUtils;
 import Component;
 import EventSystem;
 import Misc;
+import IComponentsInLevel;
 
 namespace GiiGa
 {
@@ -116,25 +117,22 @@ namespace GiiGa
         TransformComponent(const Vector3 location = Vector3::Zero
                            , const Vector3 rotation = Vector3::Zero
                            , const Vector3 scale = Vector3::One
-                           , const std::shared_ptr<TransformComponent>& parent = nullptr)
+                           , const std::shared_ptr<TransformComponent>& parent = nullptr):
+            Component(parent->componentsInLevel_.lock())
         {
             transform_ = Transform{location, rotation, scale};
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const Transform& transform, const std::shared_ptr<TransformComponent>& parent = nullptr)
+        TransformComponent(const Transform& transform, const std::shared_ptr<TransformComponent>& parent = nullptr):
+            Component(parent->componentsInLevel_.lock())
         {
             transform_ = transform;
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const std::weak_ptr<TransformComponent>& other)
-        {
-            transform_ = other.lock()->transform_;
-            parent_ = other.lock()->parent_;
-        }
-
-        TransformComponent(const Json::Value& json)
+        TransformComponent(const Json::Value& json, std::shared_ptr<IComponentsInLevel> inLevel = nullptr):
+            Component(inLevel)
         {
             // todo: ugly review
             transform_ = Transform(

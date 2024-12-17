@@ -15,6 +15,8 @@ import Uuid;
 import TransformComponent;
 import ConsoleComponent;
 import Misc;
+import IComponentsInLevel;
+import ILevelRootGameObjects;
 
 namespace GiiGa
 {
@@ -24,24 +26,43 @@ namespace GiiGa
     export class GameObject final : public IGameObject
     {
     public:
-        GameObject() = default;
+        GameObject(std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, std::shared_ptr<IComponentsInLevel> level_comps = nullptr):
+            level_root_gos_(level_rgo),
+            level_components_(level_comps)
+        {
+            if (level_rgo)
+                level_rgo->AddRootGameObject(shared_from_this());
+        }
+
+        void Destroy()
+        {
+            if (auto l_level = level_root_gos_.lock())
+            {
+                l_level->RemoveRootGameObject(shared_from_this());
+            }
+
+            for (auto kid : children_)
+            {
+                kid->Destroy();
+            }
+
+            for (auto comp : components_)
+            {
+                comp->Destroy();
+            }
+        }
+
+        ~GameObject() override = default;
 
         GameObject(const GameObject& other) = delete;
         GameObject(GameObject&& other) noexcept = default;
         GameObject& operator=(const GameObject& other) = delete;
         GameObject& operator=(GameObject&& other) noexcept = default;
 
-        GameObject(const Uuid& uuid):
-            uuid_(uuid)
+        GameObject(const Uuid& uuid, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, std::shared_ptr<IComponentsInLevel> level_comps = nullptr):
+            GameObject(level_rgo, level_comps)
         {
-        }
-
-        void Tick(float dt) override
-        {
-            for (auto&& component : components_)
-            {
-                component->Tick(dt);
-            }
+            uuid_ = uuid;
         }
 
         /* GameObject Json
@@ -50,7 +71,8 @@ namespace GiiGa
          * Components:[...]
          * Children:[...]
         */
-        GameObject(Json::Value json)
+        GameObject(Json::Value json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, std::shared_ptr<IComponentsInLevel> level_comps = nullptr):
+            GameObject(level_rgo, level_comps)
         {
             name_ = json["Name"].asString();
 
@@ -67,23 +89,23 @@ namespace GiiGa
             {
                 if (comp_js["Type"].asString() == typeid(TransformComponent).name())
                 {
-                    AddComponent(std::make_shared<TransformComponent>(comp_js["Properties"]));
+                    CreateComponent<TransformComponent>(comp_js["Properties"], level_comps);
                 }
                 else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
                 {
-                    AddComponent(std::make_shared<ConsoleComponent>(comp_js["Properties"]));
+                    CreateComponent<ConsoleComponent>(comp_js["Properties"], level_comps);
                 }
             }
 
             for (auto&& kid_js : json["Children"])
             {
-                auto new_kid = std::make_shared<GameObject>(kid_js);
+                auto new_kid = std::make_shared<GameObject>(kid_js, nullptr, level_comps);
                 new_kid->parent_ = std::static_pointer_cast<GameObject>(shared_from_this());
                 children_.insert(new_kid);
             }
         }
 
-        Json::Value ToJson()
+        Json::Value ToJson() const override
         {
             Json::Value result;
             result["Name"] = name_;
@@ -100,6 +122,14 @@ namespace GiiGa
             }
 
             return result;
+        }
+
+        void Tick(float dt) override
+        {
+            for (auto&& component : components_)
+            {
+                component->Tick(dt);
+            }
         }
 
         template <typename T, typename... Args>
@@ -177,7 +207,8 @@ namespace GiiGa
         std::unordered_set<std::shared_ptr<IComponent>> components_;
         std::weak_ptr<GameObject> parent_;
         std::unordered_set<std::shared_ptr<GameObject>> children_;
-        //std::weak_ptr<Level> level_;
+        std::weak_ptr<ILevelRootGameObjects> level_root_gos_;
+        std::weak_ptr<IComponentsInLevel> level_components_;
     };
 } // namespace GiiGa
 

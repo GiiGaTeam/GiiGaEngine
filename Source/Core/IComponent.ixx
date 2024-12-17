@@ -18,6 +18,8 @@ namespace GiiGa
         virtual std::shared_ptr<IComponent> Clone() =0;
         virtual Json::Value ToJson() =0;
 
+        virtual void Destroy()=0;
+
         virtual void SetOwner(std::shared_ptr<IGameObject> newOwner) = 0;
     };
 }

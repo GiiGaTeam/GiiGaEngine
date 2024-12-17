@@ -1,12 +1,16 @@
 ﻿module;
 
-export module LightComponent;
-import Component;
+#include <memory>
 #include <directxtk/SimpleMath.h>
+
+export module LightComponent;
+
+import Component;
+import IComponentsInLevel;
 
 namespace GiiGa
 {
-    class LightComponent: public Component
+    class LightComponent : public Component
     {
         enum class LightType
         {
@@ -14,8 +18,10 @@ namespace GiiGa
             Spot,
             Point
         };
-        public:
-        LightComponent()
+
+    public:
+        LightComponent(std::shared_ptr<IComponentsInLevel> inLevel):
+            Component(inLevel)
         {
             data_.type = LightType::Directional;
             data_.range = 10.0f;
@@ -23,7 +29,7 @@ namespace GiiGa
             data_.color = DirectX::SimpleMath::Vector3::One;
             data_.intensity = 1.0f;
         }
-        
+
         void SetType(LightType type)
         {
             data_.type = type;
@@ -48,11 +54,10 @@ namespace GiiGa
         {
             data_.intensity = intensity;
         }
-        
-        private:
+
+    private:
         struct LightData
         {
-
             LightType type;
             float range;
             float angle;
@@ -61,6 +66,5 @@ namespace GiiGa
             //TODO:
             //LightMode mode; // Baked, Realtime
         } data_;
-        
     };
 }

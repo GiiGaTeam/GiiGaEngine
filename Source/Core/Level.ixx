@@ -11,12 +11,14 @@ module;
 export module Level;
 
 import GameObject;
+import ILevelRootGameObjects;
+import IComponentsInLevel;
 import Component;
 import Misc;
 
 namespace GiiGa
 {
-    export class Level
+    export class Level : public ILevelRootGameObjects, public IComponentsInLevel, public std::enable_shared_from_this<Level>
     {
     public:
         /*  Level Json:
@@ -38,52 +40,13 @@ namespace GiiGa
             auto&& root_level_go = level_root["GameObjects"];
             for (auto&& gameobject_js : root_level_go)
             {
-                AddRootGameObject(std::make_shared<GameObject>(gameobject_js));
+                std::make_shared<GameObject>(gameobject_js, shared_from_this());
             }
         }
 
-        const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const
+        const std::vector<std::shared_ptr<IGameObject>>& GetRootGameObjects() const
         {
             return root_game_objects_;
-        }
-
-        void AddRootGameObject(std::shared_ptr<GameObject> gameObject)
-        {
-            root_game_objects_.push_back(gameObject);
-            for (const auto& component_ : gameObject->GetComponents())
-            {
-                componentsInLevel_.AddComponent(component_);
-            }
-
-            for (const auto& kid : gameObject->GetChildren())
-            {
-                for (const auto& kid_comp : kid->GetComponents())
-                    componentsInLevel_.AddComponent(kid_comp);
-            }
-        }
-
-        bool DestroyGameObject(std::shared_ptr<GameObject> gameObject)
-        {
-            if (auto parent = gameObject->GetParent())
-            {
-                parent->RemoveChild(gameObject);
-            }
-            else
-            {
-                root_game_objects_.erase(
-                    std::remove(root_game_objects_.begin(), root_game_objects_.end(), gameObject),
-                    root_game_objects_.end());
-            }
-
-            for (const std::shared_ptr<IComponent> component_ : gameObject->GetComponents())
-                componentsInLevel_.removeComponent(component_);
-
-            for (const auto& kid : gameObject->GetChildren())
-            {
-                DestroyGameObject(gameObject);
-            }
-            
-            return true;
         }
 
         bool GetIsActive() const
@@ -97,9 +60,26 @@ namespace GiiGa
         }
 
         template <typename T>
-        std::vector<std::shared_ptr<T>> GetComponentsOfType()
+        std::vector<std::shared_ptr<T>> getComponentsOfType()
         {
-            return componentsInLevel_.getComponentsOfType<T>();
+            static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
+
+            std::type_index typeIndex(typeid(T));
+            std::vector<std::shared_ptr<T>> result;
+
+            auto it = type_to_components_.find(typeIndex);
+            if (it != type_to_components_.end())
+            {
+                for (const auto& component : it->second)
+                {
+                    if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
+                    {
+                        result.push_back(castedComponent);
+                    }
+                }
+            }
+
+            return result;
         }
 
         Json::Value ToJson()
@@ -140,62 +120,8 @@ namespace GiiGa
             return Level(level_json);
         }
 
-    public:
-        std::string name;
-
     private:
-        std::vector<std::shared_ptr<GameObject>> root_game_objects_;
+        std::string name;
         bool isActive_ = false;
-
-        class
-        {
-        public:
-            template <typename T>
-            void AddComponent(std::shared_ptr<T> component)
-            {
-                static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
-                components_[typeid(*component)].push_back(component);
-            }
-
-            template <typename T>
-            std::vector<std::shared_ptr<T>> getComponentsOfType()
-            {
-                static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
-
-                std::type_index typeIndex(typeid(T));
-                std::vector<std::shared_ptr<T>> result;
-
-                auto it = components_.find(typeIndex);
-                if (it != components_.end())
-                {
-                    for (const auto& component : it->second)
-                    {
-                        if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
-                        {
-                            result.push_back(castedComponent);
-                        }
-                    }
-                }
-
-                return result;
-            }
-
-            void removeComponent(const std::shared_ptr<IComponent>& component)
-            {
-                // Будет работать только в том случае, если умные указатели будут корректно сравниваться в течении всей работы программы.
-                // На короткой дистанции так скорее всего и будет.
-
-                std::type_index typeIndex(typeid(*component));
-                auto it = components_.find(typeIndex);
-                if (it != components_.end())
-                {
-                    auto& vec = it->second;
-                    vec.erase(std::remove(vec.begin(), vec.end(), component), vec.end());
-                }
-            }
-
-        private:
-            std::map<std::type_index, std::vector<std::shared_ptr<IComponent>>> components_;
-        } componentsInLevel_;
     };
 }
