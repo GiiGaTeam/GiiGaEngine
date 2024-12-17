@@ -1,5 +1,6 @@
 module;
 
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <memory>
@@ -10,10 +11,11 @@ export module World;
 
 export import Level;
 export import GameObject;
+export import IWorldQuery;
 
 namespace GiiGa
 {
-    export class World
+    export class World final
     {
     public:
         World()
@@ -27,31 +29,24 @@ namespace GiiGa
             else return instance_ = std::make_unique<World>();
         }
 
-        static const std::vector<Level>& GetLevels()
+        static const std::vector<std::shared_ptr<Level>>& GetLevels()
         {
             return GetInstance()->levels_;
         }
 
-        static void AddLevel(Level&& level, bool setIsActive = true)
+        static void AddLevelFromAbsolutePath(const std::filesystem::path& absolutePath)
         {
-            level.SetIsActive(setIsActive);
-            GetInstance()->levels_.push_back(level);
+            AddLevel(Level::FromAbsolutePath(absolutePath), true);
         }
 
-        Json::Value ToJson()
+        static void AddLevel(std::shared_ptr<Level> level, bool setIsActive = true)
         {
-            Json::Value result;
-            Json::Value levelsJson;
-            for (auto& level : levels_)
-            {
-                levelsJson.append(level.ToJson());
-            }
-            result["Levels"] = levelsJson.toStyledString();
-            return result;
+            level->SetIsActive(setIsActive);
+            GetInstance()->levels_.push_back(level);
         }
 
     private:
         static inline std::unique_ptr<World> instance_ = nullptr;
-        std::vector<Level> levels_;
+        std::vector<std::shared_ptr<Level>> levels_;
     };
 }

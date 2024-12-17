@@ -10,7 +10,7 @@ import MathUtils;
 import Component;
 import EventSystem;
 import Misc;
-import IComponentsInLevel;
+import IWorldQuery;
 
 namespace GiiGa
 {
@@ -117,22 +117,19 @@ namespace GiiGa
         TransformComponent(const Vector3 location = Vector3::Zero
                            , const Vector3 rotation = Vector3::Zero
                            , const Vector3 scale = Vector3::One
-                           , const std::shared_ptr<TransformComponent>& parent = nullptr):
-            Component(parent->componentsInLevel_.lock())
+                           , const std::shared_ptr<TransformComponent>& parent = nullptr)
         {
             transform_ = Transform{location, rotation, scale};
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const Transform& transform, const std::shared_ptr<TransformComponent>& parent = nullptr):
-            Component(parent->componentsInLevel_.lock())
+        TransformComponent(const Transform& transform, const std::shared_ptr<TransformComponent>& parent = nullptr)
         {
             transform_ = transform;
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const Json::Value& json, std::shared_ptr<IComponentsInLevel> inLevel = nullptr):
-            Component(inLevel)
+        TransformComponent(const Json::Value& json)
         {
             // todo: ugly review
             transform_ = Transform(
@@ -153,6 +150,12 @@ namespace GiiGa
         bool operator==(const TransformComponent* rhs) const
         {
             return transform_ == rhs->transform_;
+        }
+
+        std::shared_ptr<IComponent> Clone() override
+        {
+            Todo();
+            return nullptr;
         }
 
         void Restore(const Json::Value&) override
@@ -404,13 +407,6 @@ namespace GiiGa
         {
             is_dirty_ = true;
             UpdateTransformMatrices();
-        }
-
-    public:
-        std::shared_ptr<IComponent> Clone() override
-        {
-            Todo();
-            return nullptr;
         }
     };
 #pragma endregion

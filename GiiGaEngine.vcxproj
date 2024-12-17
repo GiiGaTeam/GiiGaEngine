@@ -184,7 +184,7 @@
     <ClCompile Include="Source\Core\GameEngine.ixx" />
     <ClCompile Include="Source\Core\GameObject.ixx" />
     <ClCompile Include="Source\Core\IComponent.ixx" />
-    <ClCompile Include="Source\Core\IComponentsInLevel.ixx" />
+    <ClCompile Include="Source\Core\IWorldQuery.ixx" />
     <ClCompile Include="Source\Core\IGameObject.ixx" />
     <ClCompile Include="Source\Core\ILevelRootGameObjects.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />

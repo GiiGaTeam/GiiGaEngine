@@ -21,7 +21,7 @@ namespace GiiGa
         virtual void Run(std::shared_ptr<Project> proj)
         {
             Initialize(proj);
-            
+
             Time::Start();
 
             while (!quit_)
@@ -34,11 +34,11 @@ namespace GiiGa
                 Time::UpdateTime();
                 for (auto& level : World::GetLevels())
                 {
-                    if (!level.GetIsActive())
+                    if (!level->GetIsActive())
                     {
                         continue;
                     }
-                    for (auto&& game_object : level.GetRootGameObjects())
+                    for (auto&& game_object : level->GetRootGameObjects())
                     {
                         if (game_object->tick_type == TickType::Default)
                             game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
@@ -47,6 +47,7 @@ namespace GiiGa
                 render_system_->Tick();
             }
         }
+
     private:
         void Initialize(std::shared_ptr<Project> proj) override
         {
@@ -55,11 +56,11 @@ namespace GiiGa
             render_system_->Initialize();
             //todo
             auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
-            World::AddLevel(Level::FromAbsolutePath(level_path), true);
+            World::AddLevelFromAbsolutePath(level_path);
 
             auto& world = World::GetInstance();
 
-            int i=0;
+            int i = 0;
             i++;
         }
     };

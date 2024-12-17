@@ -6,7 +6,7 @@
 export module LightComponent;
 
 import Component;
-import IComponentsInLevel;
+import IWorldQuery;
 
 namespace GiiGa
 {
@@ -20,8 +20,7 @@ namespace GiiGa
         };
 
     public:
-        LightComponent(std::shared_ptr<IComponentsInLevel> inLevel):
-            Component(inLevel)
+        LightComponent()
         {
             data_.type = LightType::Directional;
             data_.range = 10.0f;

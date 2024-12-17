@@ -12,13 +12,13 @@ export module Level;
 
 import GameObject;
 import ILevelRootGameObjects;
-import IComponentsInLevel;
+import IWorldQuery;
 import Component;
 import Misc;
 
 namespace GiiGa
 {
-    export class Level : public ILevelRootGameObjects, public IComponentsInLevel, public std::enable_shared_from_this<Level>
+    export class Level : public ILevelRootGameObjects, public std::enable_shared_from_this<Level>
     {
     public:
         /*  Level Json:
@@ -59,29 +59,6 @@ namespace GiiGa
             isActive_ = newActive;
         }
 
-        template <typename T>
-        std::vector<std::shared_ptr<T>> getComponentsOfType()
-        {
-            static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
-
-            std::type_index typeIndex(typeid(T));
-            std::vector<std::shared_ptr<T>> result;
-
-            auto it = type_to_components_.find(typeIndex);
-            if (it != type_to_components_.end())
-            {
-                for (const auto& component : it->second)
-                {
-                    if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
-                    {
-                        result.push_back(castedComponent);
-                    }
-                }
-            }
-
-            return result;
-        }
-
         Json::Value ToJson()
         {
             Json::Value result;
@@ -95,7 +72,7 @@ namespace GiiGa
             return result;
         }
 
-        static Level FromAbsolutePath(const std::filesystem::path& level_path)
+        static std::shared_ptr<Level> FromAbsolutePath(const std::filesystem::path& level_path)
         {
             if (!std::filesystem::exists(level_path))
             {
@@ -117,7 +94,7 @@ namespace GiiGa
                 throw std::runtime_error("Failed to parse level file: " + errs);
             }
 
-            return Level(level_json);
+            return std::make_shared<Level>(level_json);
         }
 
     private:

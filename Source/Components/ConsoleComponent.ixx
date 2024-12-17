@@ -7,15 +7,14 @@ export module ConsoleComponent;
 
 import Component;
 import Time;
-import IComponentsInLevel;
+import IWorldQuery;
 
 namespace GiiGa
 {
     export class ConsoleComponent final : public Component
     {
     public:
-        ConsoleComponent(Json::Value json, std::shared_ptr<IComponentsInLevel> inLevel = nullptr):
-            Component(inLevel)
+        ConsoleComponent(Json::Value json)
         {
         }
 
@@ -34,7 +33,7 @@ namespace GiiGa
             return std::make_shared<ConsoleComponent>(*this);
         }
 
-        void Restore(const ::Json::Value&) override
+        virtual void Restore(const ::Json::Value&) override
         {
         }
 

@@ -9,35 +9,45 @@ export module Component;
 export import ITickable;
 import IComponent;
 import Uuid;
-import IComponentsInLevel;
+import IWorldQuery;
 
 namespace GiiGa
 {
+    /*
+     * Each Component Should register it self in WorldQuery Singleton
+     * upon creation, and unregister on destroy
+     */
     export class Component : public IComponent
     {
     public:
-        Component(std::shared_ptr<IComponentsInLevel> inLevel = nullptr):
-            componentsInLevel_(inLevel)
+        Component()
         {
-            if (inLevel)
-                inLevel->AddComponent(shared_from_this());
-            else
-                enabled = false;
+            WorldQuery::AddComponent(shared_from_this());
+            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<Component>(shared_from_this()));
         }
 
-        Component(Uuid uuid, std::shared_ptr<IComponentsInLevel> inLevel = nullptr):
-            Component(inLevel)
+        Component(Json::Value json)
         {
-            uuid_ = uuid;
+            auto js_uuid = Uuid::FromString(json["Uuid"].asString());
+
+            if (!js_uuid.has_value())
+            {
+                throw std::runtime_error("Invalid UUID");
+            }
+
+            uuid_ = js_uuid.value();
+
+            WorldQuery::AddComponent(shared_from_this());
+            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<Component>(shared_from_this()));
         }
 
         void Destroy() override
         {
-            if (auto l_level = componentsInLevel_.lock())
-                l_level->RemoveComponent(shared_from_this());
+            WorldQuery::RemoveComponent(shared_from_this());
+            WorldQuery::RemoveAnyWithUuid(uuid_);
         }
 
-        virtual ~Component() = default;
+        virtual ~Component() override = default;
 
         virtual void Init() = 0;
 
@@ -47,10 +57,8 @@ namespace GiiGa
         {
             owner_ = go;
         }
-
-        virtual void Restore(const ::Json::Value&) =0;
-
-        Uuid GetUuid() const
+        
+        Uuid GetUuid() const override
         {
             return uuid_;
         }
@@ -58,8 +66,7 @@ namespace GiiGa
         virtual Json::Value ToJson() override
         {
             Json::Value result;
-            //result["Owner"] = ;
-            result["uuid"] = GetUuid().ToString();
+            result["Uuid"] = GetUuid().ToString();
             return result;
         }
 
@@ -69,6 +76,5 @@ namespace GiiGa
         Uuid uuid_ = Uuid::New();
         bool enabled = true;
         std::weak_ptr<IGameObject> owner_;
-        std::weak_ptr<IComponentsInLevel> componentsInLevel_;
     };
 } // namespace GiiGa
