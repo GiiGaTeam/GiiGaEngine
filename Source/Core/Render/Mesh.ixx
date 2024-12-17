@@ -15,24 +15,13 @@ export import VertexTypes;
 
 namespace GiiGa
 {
-    export class Mesh : public AssetBase
+    export class Mesh
     {
     public:
         using VertexType = VertexPNTBT;
 
-        Mesh(Uuid id, RenderDevice& device, const std::vector<VertexType>& vertices,
-             const std::vector<Index16>& indices, DirectX::BoundingBox aabb):
-            AssetBase(AssetHandle{id, AssetType::Mesh}),
-            vertexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE)),
-            indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE)),
-            AABB(aabb)
-        {
-            throw std::exception();
-        }
-
         Mesh(IRenderContext& render_context, RenderDevice& device, const std::vector<VertexType>& vertices,
              const std::vector<Index16>& indices, DirectX::BoundingBox aabb):
-            AssetBase(AssetHandle{Uuid::New(), AssetType::Mesh}),
             vertexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE)),
             indexBuffer_(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE)),
             AABB(aabb)

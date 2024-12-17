@@ -16,13 +16,13 @@ namespace GiiGa
         static inline const DXGI_FORMAT Format = DXGI_FORMAT_R16_UINT;
     };
 
-    export typedef enum
+    export enum class VertexTypes
     {
         None = 0,
         VertexPosition = 1,
         VertexPNTBT = 2,
         VertexBoned = 4
-    } VertexTypes;
+    };
 
     export struct VertexPNTBT
     {

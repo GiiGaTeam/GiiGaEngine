@@ -27,12 +27,14 @@ namespace GiiGa
     {
     private:
         ProjectWatcher project_watcher_;
+        std::filesystem::path asset_path_;
 
     public:
         EditorAssetDatabase(std::shared_ptr<Project> proj) 
             : project_watcher_(std::vector<std::string>{ 
                 (proj->GetProjectPath() / "Assets").string()
             })
+            , asset_path_(proj->GetProjectPath() / "Assets")
             , BaseAssetDatabase(proj->GetProjectPath())
         {
             
@@ -82,7 +84,6 @@ namespace GiiGa
             AssetHandle handle = asset.GetId();
             
             AssetMeta meta;
-            meta.id = handle;
             meta.path = path;
 
             registry_map_.emplace(handle, std::move(meta));
@@ -103,8 +104,9 @@ namespace GiiGa
             return handle;
         }
 
-        AssetHandle ImportAsset(const std::filesystem::path& path) {
+        void ImportAsset(const std::filesystem::path& path) {
             AssetType asset_type;
+            AssetLoader* selected_loader = nullptr;
             bool found_loader = false;
             for (const auto& [type, loaders] : asset_loaders_)
             {
@@ -113,6 +115,7 @@ namespace GiiGa
                     if (loader->MatchesPattern(path))
                     {
                         asset_type = type;
+                        selected_loader = loader.get();
                         found_loader = true;
                         break;
                     }
@@ -125,17 +128,15 @@ namespace GiiGa
                 throw std::runtime_error("No asset loader found for the file path: " + path.string());
             }
 
-            AssetHandle handle{};
-            handle.id = Uuid::New();
-            handle.type = asset_type;
+            auto handles = selected_loader->Preprocess(asset_path_ / path);
 
-            AssetMeta meta;
-            meta.id = handle;
-            meta.path = path;
+            for (auto& handle : handles) {
+                AssetMeta meta;
+                meta.path = path;
+                meta.type = asset_type;
 
-            registry_map_.emplace(handle, std::move(meta));
-
-            return handle;
+                registry_map_.emplace(handle, std::move(meta));
+            }
         }
 
         void RemoveAsset(const std::filesystem::path& path) {

@@ -13,15 +13,15 @@ namespace GiiGa
 {
     export struct AssetMeta
     {
-        AssetHandle id;
+        AssetType type;
         std::filesystem::path path;
 
         Json::Value ToJson() const
         {
             Json::Value json;
 
-            json["id"] = id.ToJson();
             json["path"] = path.string();
+            json["type"] = AssetTypeToString(type);
 
             return json;
         }
@@ -37,10 +37,15 @@ namespace GiiGa
                 throw std::invalid_argument("Invalid JSON: Missing or invalid 'path'");
             }
 
+            if (!json.isMember("type") || !json["type"].isString())
+            {
+                throw std::invalid_argument("Invalid JSON: Missing or invalid 'type'");
+            }
+
             AssetMeta meta;
 
-            meta.id = AssetHandle::FromJson(json["id"]);
             meta.path = json["path"].asString();
+            meta.type = StringToAssetType(json["type"].asString());
 
             return meta;
         }

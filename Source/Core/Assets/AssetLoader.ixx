@@ -7,6 +7,7 @@ module;
 #include <memory>
 #include <filesystem>
 #include <thread>
+#include <vector>
 
 export module AssetLoader;
 
@@ -28,8 +29,8 @@ namespace GiiGa
         AssetType type_;
 
     public:
-        virtual void Preprocess(AssetHandle handle, const std::filesystem::path& path) {
-
+        virtual std::vector<AssetHandle> Preprocess(const std::filesystem::path& path) {
+            return { AssetHandle(Uuid::New(), 0) };
         }
 
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;

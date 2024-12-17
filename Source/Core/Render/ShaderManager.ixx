@@ -28,7 +28,7 @@ namespace GiiGa
         ShaderManager()
         {
             // Сначала создаём Shader, передавая путь до него, входную функцию в нём, а также тип с версией шейдера. Если это VertexShader, то можно (нужно) ещё указать VertexType для более легкого поиска в дальнейшем
-            auto shader = std::make_unique<Shader>(L"Shaders/SimpleVertexShader.hlsl", "VSMain", "vs_5_1", VertexPosition);
+            auto shader = std::make_unique<Shader>(L"Shaders/SimpleVertexShader.hlsl", "VSMain", "vs_5_1", VertexTypes::VertexPosition);
             
             // Можно изменить созданный shader, например задав ему макросы, инклюды или может какие-нибудь другие флаги, но сейчас это не нужно
             //shader->SetDefines(...);
@@ -59,7 +59,7 @@ namespace GiiGa
         }
         D3D12_SHADER_BYTECODE GetVertexShaderByVertexType(VertexTypes vertex_type)
         {
-            if (vertex_type == None) return D3D12_SHADER_BYTECODE{};
+            if (vertex_type == VertexTypes::None) return D3D12_SHADER_BYTECODE{};
             for (auto const& [key, val]  : shaderMap_)
             {
                 if (val->GetVertexType() == vertex_type)
@@ -74,7 +74,7 @@ namespace GiiGa
         class Shader
         {
             public:
-            Shader(LPCWSTR file_name, LPCSTR entry_point, LPCSTR target, VertexTypes vertex_type = None) :
+            Shader(LPCWSTR file_name, LPCSTR entry_point, LPCSTR target, VertexTypes vertex_type = VertexTypes::None) :
             file_name_(file_name),
             entry_point_(entry_point),
             target_(target),
