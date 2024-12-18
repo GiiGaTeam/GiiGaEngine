@@ -7,6 +7,7 @@ module;
 #include <typeindex>
 #include <json/json.h>
 #include <fstream>
+#include <iostream>
 
 export module Level;
 
@@ -63,15 +64,53 @@ namespace GiiGa
         Json::Value ToJson()
         {
             Json::Value result;
-            result["Name"] = name;
+
+            Json::Value level_settings;
+            level_settings["Name"] = name;
+            result["LevelSettings"] = level_settings;
+
             Json::Value gameObjectsJson;
-            Todo();
-            for (auto&& [_,GO] : root_game_objects_)
+            for (auto&& [_,root_go] : root_game_objects_)
             {
-                gameObjectsJson.append(GO->ToJson());
+                auto go_with_kids = root_go->ToJson();
+                for (auto&& go : go_with_kids)
+                {
+                    result["GameObjects"].append(go);
+                }
             }
-            result["GameObjects"] = gameObjectsJson.toStyledString();
+
             return result;
+        }
+
+        void SaveToAbsolutePath(const std::filesystem::path& level_path)
+        {
+            std::ofstream level_file(level_path, std::ios::out | std::ios::trunc);
+
+            if (!level_file.is_open())
+            {
+                throw std::runtime_error("Failed to open project file for writing: " + level_path.string());
+            }
+
+            // Ensure ToJson() works correctly
+            Json::Value json = ToJson();
+            if (json.isNull())
+            {
+                throw std::runtime_error("Failed to convert object to JSON");
+            }
+
+            Json::StreamWriterBuilder writer_builder;
+            std::string jsonString = Json::writeString(writer_builder, json);
+
+            // Writing JSON string to the file
+            level_file << jsonString;
+
+            // Check if the file stream has any errors
+            if (level_file.fail())
+            {
+                throw std::runtime_error("Failed to write to file: " + level_path.string());
+            }
+
+            level_file.close();
         }
 
         static std::shared_ptr<Level> FromAbsolutePath(const std::filesystem::path& level_path)
@@ -98,14 +137,23 @@ namespace GiiGa
 
             auto level = std::make_shared<Level>(level_json["LevelSettings"]);
 
-            // creates game objects with their components
+            // creates game objects only
             std::vector<std::shared_ptr<GameObject>> gameobjects;
             auto&& level_gos = level_json["GameObjects"];
             for (auto&& gameobject_js : level_gos)
             {
                 auto new_go = std::make_shared<GameObject>(gameobject_js, level);
-                new_go->RegisterInWorld();
                 gameobjects.push_back(new_go);
+            }
+
+            for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
+            {
+                gameobjects[it.index()]->CreateComponents(*it);
+            }
+
+            for (auto gameobject : gameobjects)
+            {
+                gameobject->RegisterInWorld();
             }
 
             for (auto it = level_gos.begin(); it != level_gos.end(); ++it)

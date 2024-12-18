@@ -1,5 +1,8 @@
 module;
 
+#include <json/config.h>
+#include <json/value.h>
+
 #include "directxtk12/SimpleMath.h"
 
 export module MathUtils;
@@ -34,6 +37,28 @@ namespace GiiGa
         const auto y = DegFromRad(vec.y);
         const auto z = DegFromRad(vec.z);
         return Vector3{x, y, z};
+    }
+
+    export Json::Value Vector3ToJson(const Vector3& vec)
+    {
+        Json::Value json;
+
+        json["x"] = vec.x;
+        json["y"] = vec.y;
+        json["z"] = vec.z;
+
+        return json;
+    }
+
+    export Vector3 Vector3FromJson(const Json::Value& json)
+    {
+        Vector3 vec;
+
+        vec.x = json["x"].asFloat();
+        vec.y = json["y"].asFloat();
+        vec.z = json["z"].asFloat();
+
+        return vec;
     }
 
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf

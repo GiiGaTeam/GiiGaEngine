@@ -7,7 +7,7 @@ export module IComponent;
 
 export import ITickable;
 
-import Uuid;
+export import Uuid;
 
 namespace GiiGa
 {

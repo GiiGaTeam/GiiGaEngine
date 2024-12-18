@@ -68,7 +68,7 @@ namespace GiiGa
          * Parent:
          * Components:[...]
         */
-        GameObject(Json::Value json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
+        GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
             level_root_gos_(level_rgo)
         {
             name_ = json["Name"].asString();
@@ -81,16 +81,19 @@ namespace GiiGa
             }
 
             uuid_ = js_uuid.value();
+        }
 
+        void CreateComponents(const Json::Value& json)
+        {
             for (auto&& comp_js : json["Components"])
             {
                 if (comp_js["Type"].asString() == typeid(TransformComponent).name())
                 {
-                    CreateComponent<TransformComponent>(comp_js["Properties"]);
+                    CreateComponent<TransformComponent>(comp_js);
                 }
                 else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
                 {
-                    CreateComponent<ConsoleComponent>(comp_js["Properties"]);
+                    CreateComponent<ConsoleComponent>(comp_js);
                 }
             }
         }
@@ -110,7 +113,7 @@ namespace GiiGa
         {
             if (!level_root_gos_.expired())
                 TryRemoveFromLevelRoot();
-            
+
             level_root_gos_ = level_rgo;
             if (parent_.expired())
                 level_rgo->AddRootGameObject(shared_from_this());
@@ -135,18 +138,35 @@ namespace GiiGa
         Json::Value ToJson() const override
         {
             Json::Value result;
-            result["Name"] = name_;
-            result["Uuid"] = uuid_.ToString();
+
+            Json::Value this_json;
+
+            this_json["Name"] = name_;
+            this_json["Uuid"] = uuid_.ToString();
+
+            auto&& l_parent = parent_.lock();
+
+            if (l_parent)
+                this_json["Parent"] = l_parent->GetUuid().ToString();
+            else
+                this_json["Parent"] = Uuid::Null().ToString();
 
             for (auto&& [_,component] : components_)
             {
-                result["Components"].append(component->ToJson());
+                this_json["Components"].append(component->ToJson());
+            }
+
+            result.append(this_json);
+
+            for (auto&& [_,kid] : children_)
+            {
+                result.append(kid->ToJson());
             }
 
             return result;
         }
 
-        void Restore(Json::Value json)
+        void Restore(const Json::Value& json)
         {
             auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
 
@@ -157,7 +177,7 @@ namespace GiiGa
 
             for (auto&& comp_js : json["Components"])
             {
-                components_.at(Uuid::FromString(comp_js["Uuid"].asString()).value())->Restore(comp_js["Properties"]);
+                components_.at(Uuid::FromString(comp_js["Uuid"].asString()).value())->Restore(comp_js);
             }
         }
 

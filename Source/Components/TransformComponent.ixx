@@ -30,6 +30,12 @@ namespace GiiGa
             rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
         }
 
+        Transform(Json::Value json)
+            : location_(Vector3FromJson(json["Location"])), scale_(Vector3FromJson(json["Scale"]))
+        {
+            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(Vector3FromJson(json["Rotation"])));
+        }
+
         Transform(const Transform& transform) = default;
 
         Transform(Transform&& transform) noexcept
@@ -88,6 +94,17 @@ namespace GiiGa
             return resMat;
         }
 
+        Json::Value ToJson() const
+        {
+            Json::Value res;
+
+            res["Location"] = Vector3ToJson(location_);
+            res["Rotation"] = Vector3ToJson(rotate_.ToEuler());
+            res["Scale"] = Vector3ToJson(scale_);
+
+            return res;
+        }
+
         static Transform TransformFromMatrix(const Matrix& mTrans)
         {
             Transform resTrans;
@@ -129,13 +146,10 @@ namespace GiiGa
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const Json::Value& json)
+        TransformComponent(const Json::Value& json):
+            Component(json)
         {
-            // todo: ugly review
-            transform_ = Transform(
-                {json["Location"]["x"].asFloat(), json["Location"]["y"].asFloat(), json["Location"]["z"].asFloat()},
-                {json["Rotation"]["x"].asFloat(), json["Rotation"]["y"].asFloat(), json["Rotation"]["z"].asFloat()},
-                {json["Scale"]["x"].asFloat(), json["Scale"]["y"].asFloat(), json["Scale"]["z"].asFloat()});
+            transform_ = Transform(json["Transform"]);
         }
 
         TransformComponent* operator=(const std::weak_ptr<TransformComponent>& other)
@@ -152,15 +166,34 @@ namespace GiiGa
             return transform_ == rhs->transform_;
         }
 
+        Json::Value DerivedToJson() override
+        {
+            Json::Value result;
+
+            result["Type"] = typeid(TransformComponent).name();
+
+            result["Transform"] = transform_.ToJson();
+
+            if (auto l_parent = parent_.lock())
+                result["Parent"] = l_parent->GetUuid().ToString();
+            else
+                result["Parent"] = Uuid::Null().ToString();
+
+            return result;
+        }
+
         std::shared_ptr<IComponent> Clone() override
         {
             Todo();
             return nullptr;
         }
 
-        void Restore(const Json::Value&) override
+        void Restore(const Json::Value& json) override
         {
-            Todo();
+            auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
+
+            if (parentUuid != Uuid::Null())
+                AttachTo(WorldQuery::GetWithUUID<std::shared_ptr<TransformComponent>>(parentUuid));
         }
 
         void Tick(float dt) override

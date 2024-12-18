@@ -1,15 +1,43 @@
 {
-    "LevelSettings":
-    {
-        "Name":"Hello World"
-    },
-    "GameObjects":
-    [
-        {
-            "Name":"GO Hello",
-            "Uuid": "42a43292-4b41-46a3-b514-0732ee9bf3b9",
-            "Parent": "00000000-0000-0000-0000-000000000000",
-            "Components": []
-        }
-    ]
+	"GameObjects" : 
+	[
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "00000000-0000-0000-0000-000000000000",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 1.0
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "9a507953-b70e-4cad-a108-17c1d1094f2a"
+				}
+			],
+			"Name" : "GO Hello",
+			"Parent" : "00000000-0000-0000-0000-000000000000",
+			"Uuid" : "42a43292-4b41-46a3-b514-0732ee9bf3b9"
+		}
+	],
+	"LevelSettings" : 
+	{
+		"Name" : "Hello World"
+	}
 }

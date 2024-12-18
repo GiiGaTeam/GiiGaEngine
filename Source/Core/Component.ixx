@@ -22,7 +22,7 @@ namespace GiiGa
     public:
         Component() = default;
 
-        Component(Json::Value json)
+        Component(const Json::Value& json)
         {
             auto js_uuid = Uuid::FromString(json["Uuid"].asString());
 
@@ -64,10 +64,22 @@ namespace GiiGa
 
         virtual Json::Value ToJson() override
         {
-            Json::Value result;
-            result["Uuid"] = GetUuid().ToString();
-            return result;
+            Json::Value json;
+
+            json["Uuid"] = uuid_.ToString();
+
+            // Combining json with the result of DerivedToJson
+            Json::Value derivedJson = DerivedToJson();
+            for (Json::Value::const_iterator it = derivedJson.begin(); it != derivedJson.end(); ++it)
+            {
+                json[it.key().asString()] = *it;
+            }
+
+            return json;
         }
+
+
+        virtual Json::Value DerivedToJson() =0;
 
         void Tick(float dt) override =0;
 

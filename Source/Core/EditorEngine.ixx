@@ -13,6 +13,8 @@ import Misc;
 import EditorRenderSystem;
 import World;
 
+import TransformComponent;
+
 namespace GiiGa
 {
     export class EditorEngine : public Engine
@@ -57,11 +59,6 @@ namespace GiiGa
             //todo
             auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
             World::AddLevelFromAbsolutePath(level_path);
-
-            auto& world = World::GetInstance();
-
-            int i = 0;
-            i++;
         }
     };
 } // namespace GiiGa

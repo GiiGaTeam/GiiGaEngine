@@ -37,6 +37,17 @@ namespace GiiGa
         {
         }
 
+        Json::Value DerivedToJson() override
+        {
+            Json::Value json;
+
+            json["Type"] = typeid(ConsoleComponent).name();
+
+            json["Properties"] = Json::Value();
+
+            return json;
+        }
+
     private:
         float time_sum_ = 0;
     };
