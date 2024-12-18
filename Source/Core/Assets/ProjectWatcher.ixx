@@ -30,12 +30,12 @@ namespace GiiGa
             bool flag = false;
 
             for (const auto& [removed_path, timestamp] : removed_files_) {
-                if (removed_path.filename() == path.filename()) {
+                if (now - timestamp > std::chrono::milliseconds(500)) {
+                    to_remove_with_cb.push_back(removed_path);
+                } else if (removed_path.filename() == path.filename()) {
                     OnFileMoved.Invoke(std::make_tuple(removed_path, path));
                     to_remove.push_back(removed_path);
                     flag = true;
-                } else if (now - timestamp > std::chrono::milliseconds(500)) {
-                    to_remove_with_cb.push_back(removed_path);
                 }
             }
 

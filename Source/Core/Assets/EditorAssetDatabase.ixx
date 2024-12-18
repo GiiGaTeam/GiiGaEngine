@@ -54,20 +54,17 @@ namespace GiiGa
                 });
 
             project_watcher_.OnFileRemoved.Register([this](const auto& path) {
-                std::cout << "[DEBUG] File removed: " << path << std::endl;
                 RemoveAsset(path);
                 });
 
             project_watcher_.OnFileRenamed.Register([this](const auto& pair) {
                 auto [f, s] = pair;
-                std::cout << "[DEBUG] File was renamed from " << f << " to " << s << std::endl;
                 UpdateAssetPath(f, s);
 
                 });
 
             project_watcher_.OnFileMoved.Register([this](const auto& pair) {
                 auto [f, s] = pair;
-                std::cout << "[DEBUG] File was moved from " << f << " to " << s << std::endl;
                 UpdateAssetPath(f, s);
                 });
 
@@ -105,7 +102,7 @@ namespace GiiGa
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path)) {
                     if (entry.is_regular_file()) {
                         try {
-                            ImportAsset(entry.path());
+                            ImportAsset(std::filesystem::relative(entry.path(), asset_path_));
                         }
                         catch (std::runtime_error& err) {
                             std::cout << "[WARN] Failed to add new file: " << err.what() << std::endl;
@@ -115,8 +112,7 @@ namespace GiiGa
                 return;
             }
 
-            auto relative_path = std::filesystem::relative(path, asset_path_);
-            std::cout << "[DEBUG] Register new file: " << relative_path << std::endl;
+            std::cout << "[DEBUG] Register new file: " << path << std::endl;
 
             AssetType asset_type;
             AssetLoader* selected_loader = nullptr;
@@ -125,7 +121,7 @@ namespace GiiGa
             {
                 for (const auto& loader : loaders)
                 {
-                    if (loader->MatchesPattern(relative_path))
+                    if (loader->MatchesPattern(path))
                     {
                         asset_type = type;
                         selected_loader = loader.get();
@@ -138,14 +134,14 @@ namespace GiiGa
 
             if (!found_loader)
             {
-                throw std::runtime_error("No asset loader found for the file path: " + relative_path.string());
+                throw std::runtime_error("No asset loader found for the file path: " + path.string());
             }
 
-            auto handles = selected_loader->Preprocess(asset_path_ / relative_path);
+            auto handles = selected_loader->Preprocess(asset_path_ / path);
 
             for (auto& handle : handles) {
                 AssetMeta meta;
-                meta.path = relative_path;
+                meta.path = path;
                 meta.type = asset_type;
 
                 registry_map_.emplace(handle, std::move(meta));
@@ -153,26 +149,37 @@ namespace GiiGa
         }
 
         void RemoveAsset(const std::filesystem::path& path) {
-            auto it = std::find_if(registry_map_.begin(), registry_map_.end(), 
-                [&path](const auto& pair) { 
-                    return pair.second.path == path; 
-                });
+            auto it = registry_map_.begin();
+            while (it != registry_map_.end()) {
+                const auto& asset_path = it->second.path;
 
-            if (it != registry_map_.end())
-            {
-                registry_map_.erase(it);
+                if (asset_path.string().compare(0, path.string().size(), path.string()) == 0) {
+                    std::cout << "[DEBUG] File removed: " << asset_path << std::endl;
+                    it = registry_map_.erase(it); 
+                }
+                else {
+                    ++it;
+                }
             }
         }
 
         void UpdateAssetPath(const std::filesystem::path& old_path, const std::filesystem::path& new_path){
-            auto it = std::find_if(registry_map_.begin(), registry_map_.end(), 
-                [&old_path](const auto& pair) { 
-                    return pair.second.path == old_path; 
-                });
+            for (auto& [handle, meta] : registry_map_) {
+                auto& asset_path = meta.path;
 
-            if (it != registry_map_.end())
-            {
-                it->second.path = new_path;
+                if (asset_path.string().compare(0, old_path.string().size(), old_path.string()) == 0) {
+                    std::filesystem::path relative_path = std::filesystem::relative(asset_path, old_path);
+
+                    if (relative_path == ".") {
+                        asset_path = new_path;
+
+                        std::cout << "[DEBUG] Updated path: " << old_path << " -> " << asset_path << std::endl;
+                    } else {
+                        asset_path = new_path / relative_path;
+
+                        std::cout << "[DEBUG] Updated path: " << old_path / relative_path << " -> " << asset_path << std::endl;
+                    } 
+                }
             }
         }
     };
