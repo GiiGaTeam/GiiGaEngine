@@ -4,7 +4,7 @@ module;
 #include <filesystem>
 #include <string>
 #include <chrono>
-
+#include <easylogging++.h>
 #include <iostream>
 
 export module ProjectWatcher;
@@ -65,7 +65,7 @@ namespace GiiGa
         void StartWatch() { 
             for (const auto& dir : dirs_to_watch_)
             {
-                std::cout << "[DEBUG] Starting watch " << dir << std::endl;
+                el::Loggers::getLogger("ResourceManager")->debug( "Starting watch %v" , dir);
                 watchers_.emplace_back(std::make_unique<filewatch::FileWatch<std::string>>(dir,
                     [this](const std::string& path, const filewatch::Event change_type)
                     {

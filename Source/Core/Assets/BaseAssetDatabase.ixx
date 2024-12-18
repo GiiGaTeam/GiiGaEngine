@@ -7,6 +7,7 @@ module;
 #include <fstream>
 #include <iostream>
 #include <json/json.h>
+#include <easylogging++.h>
 
 export module BaseAssetDatabase;
 
@@ -24,6 +25,7 @@ namespace GiiGa
     {
     private:
         static inline const char* registry_name = "database.json";
+
     protected:
         std::filesystem::path registry_path_;
         std::filesystem::path asset_path_;
@@ -32,31 +34,34 @@ namespace GiiGa
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
+
     public:
         friend class ResourceManager;
 
         BaseAssetDatabase(const std::filesystem::path& registry_path)
             : registry_path_(registry_path / registry_name)
-            , asset_path_(registry_path / "Assets")
-        {}
+              , asset_path_(registry_path / "Assets")
+        {
+        }
 
-        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle) { 
-            std::cout << "[DEBUG] Request for asset: " << handle.id.ToString() << std::endl;
+        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle)
+        {
+            el::Loggers::getLogger("ResourceManager")->debug("Request for asset: %v",handle.id.ToString());
 
             auto it = registry_map_.find(handle);
 
             if (it != registry_map_.end())
             {
-                std::cout << "[DEBUG] Found asset: " << handle.id.ToString() << std::endl;
+                el::Loggers::getLogger("ResourceManager")->debug("Found asset: %v", handle.id.ToString());
                 return std::ref(it->second);
             }
 
-            return std::nullopt; 
+            return std::nullopt;
         }
 
         void SaveRegistry()
         {
-            std::cout << "[DEBUG] Saving registry" << std::endl;
+            el::Loggers::getLogger("ResourceManager")->debug("Saving registry");
 
             Json::Value root(Json::arrayValue);
 
@@ -84,18 +89,19 @@ namespace GiiGa
         {
             auto loader_ptr = std::make_shared<T>();
 
-            std::cout << "[DEBUG] Registered loader: " << loader_ptr->GetName() << std::endl;
+            el::Loggers::getLogger("ResourceManager")->debug("Registered loader: %v", loader_ptr->GetName());
 
             asset_loaders_[loader_ptr->Type()].emplace_back(std::move(loader_ptr));
         }
-    private:
-        virtual void _MakeVirtual() {
 
+    private:
+        virtual void _MakeVirtual()
+        {
         }
 
         void LoadRegistry()
         {
-            std::cout << "[DEBUG] Load registry " << registry_path_ << std::endl;
+            el::Loggers::getLogger("ResourceManager")->debug("Load registry %v", registry_path_);
 
             Json::Value root;
             Json::CharReaderBuilder reader_builder;
@@ -130,7 +136,7 @@ namespace GiiGa
 
         void OpenRegistryFile()
         {
-            std::cout << "[DEBUG] Opening or creating registry file " << registry_path_ << std::endl;
+            el::Loggers::getLogger("ResourceManager")->debug("Opening or creating registry file %v", registry_path_);
 
             if (!std::filesystem::exists(registry_path_))
             {
@@ -140,7 +146,7 @@ namespace GiiGa
                     throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
                 }
 
-                std::cout << "[DEBUG] Saving registry" << std::endl;
+                el::Loggers::getLogger("ResourceManager")->debug("Saving registry");
 
                 Json::Value root(Json::arrayValue);
 
@@ -151,4 +157,4 @@ namespace GiiGa
             }
         }
     };
-}  // namespace GiiGa
+} // namespace GiiGa

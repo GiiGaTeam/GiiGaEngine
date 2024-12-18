@@ -8,6 +8,11 @@ module;
 #include <wrl.h>
 #include <DXGIDebug.h> // Ensure this header is included
 #pragma comment(lib, "dxguid.lib")
+#include <memory>
+
+#include "easylogging++.h"
+INITIALIZE_EASYLOGGINGPP
+
 
 export module Main;
 
@@ -21,6 +26,10 @@ import EventSystem;
 
 export int main(int argc, char* argv[])
 {
+    
+    START_EASYLOGGINGPP(argc, argv);
+    el::Loggers::configureFromGlobal("logging.conf");
+    el::Loggers::getLogger("ResourceManager")->info("Hello World!");
     try
     {
         std::filesystem::path project_path;

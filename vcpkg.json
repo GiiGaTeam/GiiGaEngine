@@ -19,6 +19,7 @@
     "stduuid",
     "jsoncpp",
     "sdl2",
-    "directxtk12"
+    "directxtk12",
+    "easyloggingpp"
   ]
 }

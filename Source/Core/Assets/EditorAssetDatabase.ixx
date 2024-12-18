@@ -1,7 +1,5 @@
 module;
 
-export module EditorAssetDatabase;
-
 #include <filesystem>
 #include <span>
 #include <concepts>
@@ -9,6 +7,9 @@ export module EditorAssetDatabase;
 #include <type_traits>
 #include <vector>
 #include <iostream>
+#include <easylogging++.h>
+
+export module EditorAssetDatabase;
 
 import BaseAssetDatabase;
 import AssetHandle;
@@ -29,49 +30,55 @@ namespace GiiGa
         ProjectWatcher project_watcher_;
 
     public:
-        EditorAssetDatabase(std::shared_ptr<Project> proj) 
-            : project_watcher_(std::vector<std::string>{ 
-                (proj->GetProjectPath() / "Assets").string()
-            })
-            , BaseAssetDatabase(proj->GetProjectPath())
+        EditorAssetDatabase(std::shared_ptr<Project> proj)
+            : project_watcher_(std::vector<std::string>{
+                  (proj->GetProjectPath() / "Assets").string()
+              })
+              , BaseAssetDatabase(proj->GetProjectPath())
         {
-            
         }
 
-        void StartProjectWatcher() {
-            project_watcher_.OnFileAdded.Register([this](const auto& path) {
-                try {
+        void StartProjectWatcher()
+        {
+            project_watcher_.OnFileAdded.Register([this](const auto& path)
+            {
+                try
+                {
                     ImportAsset(path);
                 }
-                catch (std::runtime_error& err) {
-                    std::cout << "[WARN] Failed to add new file: " << err.what() << std::endl;
+                catch (std::runtime_error& err)
+                {
+                    el::Loggers::getLogger("ResourceManager")->warn("Failed to add new file: %v", err.what());
                 }
+            });
 
-                });
-
-            project_watcher_.OnFileModified.Register([this](const auto& path) {
+            project_watcher_.OnFileModified.Register([this](const auto& path)
+            {
                 //std::cout << "[DEBUG] File was modified: " << path << std::endl;
-                });
+            });
 
-            project_watcher_.OnFileRemoved.Register([this](const auto& path) {
+            project_watcher_.OnFileRemoved.Register([this](const auto& path)
+            {
                 RemoveAsset(path);
-                });
+            });
 
-            project_watcher_.OnFileRenamed.Register([this](const auto& pair) {
+            project_watcher_.OnFileRenamed.Register([this](const auto& pair)
+            {
                 auto [f, s] = pair;
                 UpdateAssetPath(f, s);
+            });
 
-                });
-
-            project_watcher_.OnFileMoved.Register([this](const auto& pair) {
+            project_watcher_.OnFileMoved.Register([this](const auto& pair)
+            {
                 auto [f, s] = pair;
                 UpdateAssetPath(f, s);
-                });
+            });
 
             project_watcher_.StartWatch();
         }
 
-        void Shutdown() {
+        void Shutdown()
+        {
             project_watcher_.ClearRemovedFiles();
         }
 
@@ -79,7 +86,7 @@ namespace GiiGa
         AssetHandle CreateAsset(T& asset, std::filesystem::path& path)
         {
             AssetHandle handle = asset.GetId();
-            
+
             AssetMeta meta;
             meta.path = path;
 
@@ -101,22 +108,28 @@ namespace GiiGa
             return handle;
         }
 
-        void ImportAsset(const std::filesystem::path& path) {
-            if (std::filesystem::is_directory(asset_path_ / path)) {
-                for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path)) {
-                    if (entry.is_regular_file()) {
-                        try {
+        void ImportAsset(const std::filesystem::path& path)
+        {
+            if (std::filesystem::is_directory(asset_path_ / path))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path))
+                {
+                    if (entry.is_regular_file())
+                    {
+                        try
+                        {
                             ImportAsset(std::filesystem::relative(entry.path(), asset_path_));
                         }
-                        catch (std::runtime_error& err) {
-                            std::cout << "[WARN] Failed to add new file: " << err.what() << std::endl;
+                        catch (std::runtime_error& err)
+                        {
+                            el::Loggers::getLogger("ResourceManager")->warn("Failed to add new file: %v", err.what());
                         }
                     }
                 }
                 return;
             }
 
-            std::cout << "[DEBUG] Register new file: " << path << std::endl;
+            el::Loggers::getLogger("ResourceManager")->debug("Register new file: %v", path);
 
             AssetType asset_type;
             AssetLoader* selected_loader = nullptr;
@@ -143,7 +156,8 @@ namespace GiiGa
 
             auto handles = selected_loader->Preprocess(asset_path_ / path);
 
-            for (auto& handle : handles) {
+            for (auto& handle : handles)
+            {
                 AssetMeta meta;
                 meta.path = path;
                 meta.type = asset_type;
@@ -152,39 +166,49 @@ namespace GiiGa
             }
         }
 
-        void RemoveAsset(const std::filesystem::path& path) {
+        void RemoveAsset(const std::filesystem::path& path)
+        {
             auto it = registry_map_.begin();
-            while (it != registry_map_.end()) {
+            while (it != registry_map_.end())
+            {
                 const auto& asset_path = it->second.path;
 
-                if (asset_path.string().compare(0, path.string().size(), path.string()) == 0) {
-                    std::cout << "[DEBUG] File removed: " << asset_path << std::endl;
-                    it = registry_map_.erase(it); 
+                if (asset_path.string().compare(0, path.string().size(), path.string()) == 0)
+                {
+                    el::Loggers::getLogger("ResourceManager")->debug("File removed: %v", asset_path);
+                    it = registry_map_.erase(it);
                 }
-                else {
+                else
+                {
                     ++it;
                 }
             }
         }
 
-        void UpdateAssetPath(const std::filesystem::path& old_path, const std::filesystem::path& new_path){
-            for (auto& [handle, meta] : registry_map_) {
+        void UpdateAssetPath(const std::filesystem::path& old_path, const std::filesystem::path& new_path)
+        {
+            for (auto& [handle, meta] : registry_map_)
+            {
                 auto& asset_path = meta.path;
 
-                if (asset_path.string().compare(0, old_path.string().size(), old_path.string()) == 0) {
+                if (asset_path.string().compare(0, old_path.string().size(), old_path.string()) == 0)
+                {
                     std::filesystem::path relative_path = std::filesystem::relative(asset_path, old_path);
 
-                    if (relative_path == ".") {
+                    if (relative_path == ".")
+                    {
                         asset_path = new_path;
 
-                        std::cout << "[DEBUG] Updated path: " << old_path << " -> " << asset_path << std::endl;
-                    } else {
+                        el::Loggers::getLogger("ResourceManager")->debug("Updated path: %v -> %v", old_path, asset_path);
+                    }
+                    else
+                    {
                         asset_path = new_path / relative_path;
 
-                        std::cout << "[DEBUG] Updated path: " << old_path / relative_path << " -> " << asset_path << std::endl;
-                    } 
+                        el::Loggers::getLogger("ResourceManager")->debug("Updated path: %v -> %v", old_path / relative_path, asset_path);
+                    }
                 }
             }
         }
     };
-}  // namespace GiiGa
+} // namespace GiiGa
