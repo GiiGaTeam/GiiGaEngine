@@ -20,7 +20,7 @@ namespace GiiGa
             for (const auto& object : drawables_objects)
             {
                 //TODO: PSO
-                object.lock()->Draw();
+                object.lock()->Draw(context);
             }
         }
     };

@@ -20,7 +20,10 @@ namespace GiiGa
 
         virtual void Init() = 0;
 
-        virtual std::shared_ptr<Component> Clone() = 0;
+        virtual std::shared_ptr<Component> Clone()
+        {
+            return shared_from_this();
+        };
 
         virtual void SetOwner(std::shared_ptr<GameObject> go)
         {
@@ -30,7 +33,7 @@ namespace GiiGa
         Uuid GetUuid() const
         {
             // TO DO
-            Uuid::Null();
+            return Uuid::Null();
         }
 
         virtual Json::Value ToJSon() const

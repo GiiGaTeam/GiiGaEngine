@@ -8,6 +8,7 @@ export module IRenderable;
 
 import ObjectShaderResource;
 import RenderSystemSettings;
+import RenderContext;
 
 namespace GiiGa
 {
@@ -20,7 +21,7 @@ namespace GiiGa
     export class IRenderable
     {
     public:
-        virtual void Draw() =0;
+        virtual void Draw(RenderContext& context) =0;
         virtual SortData GetSortData() =0;
     };
 

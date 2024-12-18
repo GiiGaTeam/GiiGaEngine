@@ -1,5 +1,6 @@
 module;
 
+#include <imgui.h>
 #include <memory>
 
 export module EditorRenderSystem;
@@ -8,6 +9,10 @@ import RenderSystem;
 import ShadowPass;
 import EditorSwapChainPass;
 import EditorViewport;
+import World;
+import CameraComponent;
+import GameObject;
+import SpectatorMovementComponent;
 
 namespace GiiGa
 {
@@ -28,7 +33,11 @@ namespace GiiGa
             editorSwapChainPass_ = tempEditorSCP;
             root_.AddPass(tempEditorSCP);
 
-            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_));
+            const auto editorCamera = World::CreateGameObject();
+            const auto cameraComponent = editorCamera->CreateComponent<CameraComponent>(Perspective, 90, 16/9);
+            editorCamera->CreateComponent<SpectatorMovementComponent>();
+            
+            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_, cameraComponent));
             for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
             {
                 viewport->Init();

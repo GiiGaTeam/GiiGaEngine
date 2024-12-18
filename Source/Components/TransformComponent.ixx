@@ -148,13 +148,13 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
-            Component::Tick(dt);
+            //Component::Tick(dt);
             if (is_dirty_) UpdateTransformMatrices();
         }
 
         void Init() override
         {
-            Component::Init();
+            //Component::Init();
             AttachTo(parent_);
         }
 

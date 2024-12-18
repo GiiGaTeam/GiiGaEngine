@@ -23,8 +23,8 @@ namespace GiiGa
     export class Viewport
     {
     public:
-        explicit Viewport(RenderDevice& device):
-            device_(device)
+        explicit Viewport(RenderDevice& device, std::shared_ptr<CameraComponent> camera = nullptr):
+            device_(device), camera_(camera)
         {
         }
 

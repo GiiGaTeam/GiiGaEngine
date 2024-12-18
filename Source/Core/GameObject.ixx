@@ -22,7 +22,7 @@ namespace GiiGa
                            , const Vector3 rotation = Vector3::Zero
                            , const Vector3 scale = Vector3::One)
         {
-            transform_ = CreateComponent<TransformComponent>(location, rotation, scale);
+            tempInit_ = Transform(location, rotation, scale);
         }
 
         void Tick(float dt) override
@@ -34,7 +34,8 @@ namespace GiiGa
         }
 
         void Init()
-        {
+        {            
+            transform_ = CreateComponent<TransformComponent>(tempInit_);
             if (transform_.expired()) transform_ = CreateComponent<TransformComponent>();
 
             for (auto&& component : components_)
@@ -121,5 +122,6 @@ namespace GiiGa
     private:
         std::vector<std::shared_ptr<Component>> components_;
         std::weak_ptr<TransformComponent> transform_;
+        Transform tempInit_;
     };
 } // namespace GiiGa

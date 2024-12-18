@@ -164,6 +164,7 @@
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
+    <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
@@ -396,6 +397,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\FileWatch.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitmodules" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

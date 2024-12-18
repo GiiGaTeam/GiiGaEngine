@@ -26,7 +26,7 @@ namespace GiiGa
 
             for (auto& renderable : renderables)
             {
-                renderable.Draw();
+                renderable.Draw(context);
             }
         }
     };

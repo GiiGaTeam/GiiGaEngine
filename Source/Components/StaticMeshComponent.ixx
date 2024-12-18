@@ -64,7 +64,7 @@ namespace GiiGa
             //material_ = Engine::Instance().ResourceManager().GetAsset<Material>(AssetHandle{jsonid, AssetType::Material});
         }
 
-        void Draw() override;
+        void Draw(RenderContext& context) override;
         SortData GetSortData() override;
 
     private:

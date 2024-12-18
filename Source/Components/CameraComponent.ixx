@@ -1,5 +1,6 @@
 ﻿module;
 #include <algorithm>
+#include <memory>
 #include <directxtk12/SimpleMath.h>
 
 export module CameraComponent;
@@ -8,6 +9,7 @@ import TransformComponent;
 import GameObject;
 
 using namespace DirectX::SimpleMath;
+
 namespace GiiGa
 {
     export enum CameraType
@@ -56,6 +58,7 @@ namespace GiiGa
 
     export class CameraComponent : public Component
     {
+    public:
         CameraComponent(CameraType type = Perspective, float FOV = 90, float aspect = 16 / 9, float width = 1280, float height = 720, float Near = 0.01, float Far = 100)
         {
             camera_ = Camera{type, FOV, aspect, width, height, Near, Far};

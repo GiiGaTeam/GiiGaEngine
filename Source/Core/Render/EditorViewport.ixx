@@ -12,14 +12,15 @@ export import Viewport;
 import RenderDevice;
 import ForwardPass;
 import RenderGraph;
+import CameraComponent;
 
 namespace GiiGa
 {
     export class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
-        EditorViewport(RenderDevice& device):
-            Viewport(device)
+        EditorViewport(RenderDevice& device, std::shared_ptr<CameraComponent> camera = nullptr):
+            Viewport(device, camera)
         {
             Resize(viewport_size_);
         }
