@@ -1,14 +1,14 @@
 module;
 
+export module EditorAssetDatabase;
+
 #include <filesystem>
 #include <span>
 #include <concepts>
 #include <stdexcept>
 #include <type_traits>
-
+#include <vector>
 #include <iostream>
-
-export module EditorAssetDatabase;
 
 import BaseAssetDatabase;
 import AssetHandle;
@@ -40,8 +40,6 @@ namespace GiiGa
 
         void StartProjectWatcher() {
             project_watcher_.OnFileAdded.Register([this](const auto& path) {
-                std::cout << "[DEBUG] Register new file: " << path << std::endl;
-
                 try {
                     ImportAsset(path);
                 }
@@ -103,6 +101,23 @@ namespace GiiGa
         }
 
         void ImportAsset(const std::filesystem::path& path) {
+            if (std::filesystem::is_directory(asset_path_ / path)) {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path)) {
+                    if (entry.is_regular_file()) {
+                        try {
+                            ImportAsset(entry.path());
+                        }
+                        catch (std::runtime_error& err) {
+                            std::cout << "[WARN] Failed to add new file: " << err.what() << std::endl;
+                        }
+                    }
+                }
+                return;
+            }
+
+            auto relative_path = std::filesystem::relative(path, asset_path_);
+            std::cout << "[DEBUG] Register new file: " << relative_path << std::endl;
+
             AssetType asset_type;
             AssetLoader* selected_loader = nullptr;
             bool found_loader = false;
@@ -110,7 +125,7 @@ namespace GiiGa
             {
                 for (const auto& loader : loaders)
                 {
-                    if (loader->MatchesPattern(path))
+                    if (loader->MatchesPattern(relative_path))
                     {
                         asset_type = type;
                         selected_loader = loader.get();
@@ -123,14 +138,14 @@ namespace GiiGa
 
             if (!found_loader)
             {
-                throw std::runtime_error("No asset loader found for the file path: " + path.string());
+                throw std::runtime_error("No asset loader found for the file path: " + relative_path.string());
             }
 
-            auto handles = selected_loader->Preprocess(asset_path_ / path);
+            auto handles = selected_loader->Preprocess(asset_path_ / relative_path);
 
             for (auto& handle : handles) {
                 AssetMeta meta;
-                meta.path = path;
+                meta.path = relative_path;
                 meta.type = asset_type;
 
                 registry_map_.emplace(handle, std::move(meta));
