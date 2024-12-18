@@ -96,5 +96,12 @@ namespace GiiGa
                     }));
             }
         }
+
+        void ClearRemovedFiles() {
+            for (const auto& removed_path : removed_files_) {
+                OnFileRemoved.Invoke(removed_path.first);
+            }
+            removed_files_.clear();
+        }
     };
 }  // namespace GiiGa

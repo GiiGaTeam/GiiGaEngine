@@ -49,7 +49,8 @@ namespace GiiGa
                 render_system_->Tick();
             }
 
-            asset_database_->SaveRegistry();
+            editor_asset_database_->Shutdown();
+            editor_asset_database_->SaveRegistry();
         }
 
         static EditorEngine& Instance()
@@ -61,29 +62,31 @@ namespace GiiGa
             return std::dynamic_pointer_cast<EditorAssetDatabase>(asset_database_);
         }
     private:
+        std::shared_ptr<EditorAssetDatabase> editor_asset_database_;
+
         void Initialize(std::shared_ptr<Project> proj) override
         {
             Engine::Initialize(proj);
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 
-            auto database = std::make_shared<EditorAssetDatabase>(proj);
-            asset_database_ = database;
+            editor_asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
+            asset_database_ = editor_asset_database_;
 
-            database->InitializeDatabase();
-            DefaultLoaderSetup(database);
+            editor_asset_database_->InitializeDatabase();
+            DefaultLoaderSetup();
 
-            database->StartProjectWatcher();
-            resource_manager_->SetDatabase(database);
+            editor_asset_database_->StartProjectWatcher();
+            resource_manager_->SetDatabase(editor_asset_database_);
 
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
         }
 
-        void DefaultLoaderSetup(std::shared_ptr<EditorAssetDatabase> database) {
-            database->RegisterLoader<DDSAssetLoader>();
-            database->RegisterLoader<ImageAssetLoader>();
-            database->RegisterLoader<MeshAssetLoader>();
+        void DefaultLoaderSetup() {
+            editor_asset_database_->RegisterLoader<DDSAssetLoader>();
+            editor_asset_database_->RegisterLoader<ImageAssetLoader>();
+            editor_asset_database_->RegisterLoader<MeshAssetLoader>();
         }
     };
 } // namespace GiiGa

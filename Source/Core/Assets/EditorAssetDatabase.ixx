@@ -71,6 +71,10 @@ namespace GiiGa
             project_watcher_.StartWatch();
         }
 
+        void Shutdown() {
+            project_watcher_.ClearRemovedFiles();
+        }
+
         template <IsAssetBase T>
         AssetHandle CreateAsset(T& asset, std::filesystem::path& path)
         {
