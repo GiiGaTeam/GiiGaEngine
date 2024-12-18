@@ -7,6 +7,7 @@ module;
 #include <json/json.h>
 #include <unordered_set>
 #include <iostream>
+#include <directxtk12/SimpleMath.h>
 
 export module GameObject;
 
@@ -31,12 +32,7 @@ namespace GiiGa
     export class GameObject final : public IGameObject
     {
     public:
-        GameObject()(const Vector3 location = Vector3::Zero
-                           , const Vector3 rotation = Vector3::Zero
-                           , const Vector3 scale = Vector3::One)
-        {
-            tempInit_ = Transform(location, rotation, scale);
-        }
+        GameObject()=default;
 
         void Destroy()
         {
@@ -62,9 +58,8 @@ namespace GiiGa
         GameObject& operator=(const GameObject& other) = delete;
         GameObject& operator=(GameObject&& other) noexcept = default;
 
-        GameObject(const Uuid& uuid)
+        GameObject(const Uuid& uuid) : uuid_(uuid)
         {
-            uuid_ = uuid;
         }
 
         /* GameObject Json
@@ -94,7 +89,7 @@ namespace GiiGa
             {
                 if (comp_js["Type"].asString() == typeid(TransformComponent).name())
                 {
-                    CreateComponent<TransformComponent>(comp_js);
+                    transform_ = CreateComponent<TransformComponent>(comp_js);
                 }
                 else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
                 {
@@ -107,11 +102,6 @@ namespace GiiGa
         void RegisterInWorld()
         {
             WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
-
-            for (auto&& [_,component] : components_)
-            {
-                component->RegisterInWorld();
-            }
         }
 
         void AttachToLevel(std::shared_ptr<ILevelRootGameObjects> level_rgo)
@@ -187,11 +177,10 @@ namespace GiiGa
         }
 
         void Init()
-        {            
-            transform_ = CreateComponent<TransformComponent>(tempInit_);
+        {
             if (transform_.expired()) transform_ = CreateComponent<TransformComponent>();
 
-            for (auto&& component : components_)
+            for (auto&& [_,component] : components_)
             {
                 component->Init();
             }
@@ -217,6 +206,7 @@ namespace GiiGa
             {
                 newComp->SetOwner(shared_from_this());
                 components_.insert({newComp->GetUuid(), newComp});
+                newComp->RegisterInWorld();
                 return newComp;
             }
             return nullptr;
@@ -233,10 +223,9 @@ namespace GiiGa
             return nullptr;
         }
 
-        void AddComponent(std::shared_ptr<IComponent> component) override
+        std::weak_ptr<TransformComponent> GetTransformComponent()
         {
-            component->SetOwner(shared_from_this());
-            components_.insert({component->GetUuid(), component});
+            return transform_;
         }
 
         void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom)
@@ -248,10 +237,11 @@ namespace GiiGa
 
         virtual std::shared_ptr<GameObject> Clone()
         {
+            Todo();
             auto newGameObject = std::make_shared<GameObject>();
             for (auto&& [_,component] : components_)
             {
-                newGameObject->AddComponent(component->Clone());
+                //newGameObject->AddComponent(component->Clone());
             }
             return newGameObject;
         }
@@ -296,8 +286,7 @@ namespace GiiGa
         std::weak_ptr<ILevelRootGameObjects> level_root_gos_;
 
         std::weak_ptr<TransformComponent> transform_;
-        Transform tempInit_;
-        
+
         void TryRemoveFromLevelRoot()
         {
             auto l_level = level_root_gos_.lock();

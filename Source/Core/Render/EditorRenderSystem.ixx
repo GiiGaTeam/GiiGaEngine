@@ -33,10 +33,12 @@ namespace GiiGa
             editorSwapChainPass_ = tempEditorSCP;
             root_.AddPass(tempEditorSCP);
 
+            
             const auto editorCamera = World::CreateGameObject();
             const auto cameraComponent = editorCamera->CreateComponent<CameraComponent>(Perspective, 90, 16/9);
             editorCamera->CreateComponent<SpectatorMovementComponent>();
             
+            editorCamera->Init();
             editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_, cameraComponent));
             for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
             {

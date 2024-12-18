@@ -71,6 +71,7 @@ namespace GiiGa
         void Initialize(std::shared_ptr<Project> proj) override
         {
             Engine::Initialize(proj);
+            World::CreateLevelHAHAHA();
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 

@@ -48,8 +48,6 @@ namespace GiiGa
 
         virtual ~Component() override = default;
 
-        virtual void Init() = 0;
-
         virtual std::shared_ptr<IComponent> Clone() = 0;
 
         virtual void SetOwner(std::shared_ptr<IGameObject> go) override

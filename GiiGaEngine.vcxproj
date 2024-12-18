@@ -162,7 +162,7 @@
   <ItemGroup>
     <None Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
-    <ClCompile Include="Shaders\SimpleVertexShader.hlsl" />
+    <None Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
@@ -415,6 +415,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Shaders\" />
+    <Folder Include="TemplateProject\Assets\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

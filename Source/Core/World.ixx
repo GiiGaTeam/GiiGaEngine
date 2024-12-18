@@ -47,6 +47,20 @@ namespace GiiGa
             GetInstance()->levels_.push_back(level);
         }
 
+        static std::shared_ptr<GameObject> CreateGameObject()
+        {
+            if (GetInstance()->levels_.empty()) return nullptr;
+            const auto gameObject = std::make_shared<GameObject>();
+            gameObject->AttachToLevel(GetInstance()->levels_[0]);
+            gameObject->RegisterInWorld();
+            return gameObject;
+        }
+
+        static void CreateLevelHAHAHA()
+        {
+            GetInstance()->levels_.push_back(std::make_shared<Level>(Json::Value()));
+        }
+
     private:
         static inline std::unique_ptr<World> instance_ = nullptr;
         std::vector<std::shared_ptr<Level>> levels_;

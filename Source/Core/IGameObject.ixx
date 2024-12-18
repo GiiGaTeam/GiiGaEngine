@@ -19,8 +19,6 @@ namespace GiiGa
     {
         virtual ~IGameObject() = default;
 
-        virtual void AddComponent(std::shared_ptr<IComponent> newComp) =0;
-
         virtual Uuid GetUuid() const =0;
 
         virtual Json::Value ToJson() const =0;

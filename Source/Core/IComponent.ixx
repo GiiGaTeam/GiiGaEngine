@@ -25,6 +25,8 @@ namespace GiiGa
         
         virtual void Restore(const ::Json::Value&) =0;
         
+        virtual void Init() = 0;
+        
         virtual void Destroy() =0;
 
         virtual Uuid GetUuid() const = 0;

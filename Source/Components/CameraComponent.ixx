@@ -1,12 +1,14 @@
 ﻿module;
 #include <algorithm>
-#include <memory>
 #include <directxtk12/SimpleMath.h>
+#include <json/value.h>
 
 export module CameraComponent;
+import <memory>;
 import Component;
 import TransformComponent;
 import GameObject;
+import Misc;
 
 using namespace DirectX::SimpleMath;
 
@@ -82,13 +84,31 @@ namespace GiiGa
 
         void Init() override
         {
+            ownerGO_ = std::dynamic_pointer_cast<GameObject>(owner_.lock());
+        }
+
+        void Restore(const ::Json::Value&) override
+        {
+            Todo();
+        }
+
+        std::shared_ptr<IComponent> Clone() override
+        {
+            Todo();
+            return nullptr;
+        }
+
+        ::Json::Value DerivedToJson() override
+        {
+            Todo();
+            return Json::Value();
         }
 
         void Tick(float dt) override
         {
-            if (owner_.expired() || owner_.lock()->GetTransformComponent().expired()) return;
+            if (ownerGO_.expired() || ownerGO_.lock()->GetTransformComponent().expired()) return;
 
-            const auto transform = owner_.lock()->GetTransformComponent().lock().get();
+            const auto transform = ownerGO_.lock()->GetTransformComponent().lock().get();
             if (!transform) return;
 
             const Vector3 position = transform->GetLocation();
@@ -100,5 +120,6 @@ namespace GiiGa
 
     protected:
         Camera camera_;
+        std::weak_ptr<GameObject> ownerGO_;
     };
 }
