@@ -47,8 +47,9 @@ namespace GiiGa
 
             std::vector<AssetHandle> handles;
 
+            auto uuid = Uuid::New();
             for (int i = 0; i < scene->mNumMeshes; ++i) {
-                handles.push_back(AssetHandle(Uuid::New(), i));
+                handles.push_back(AssetHandle(uuid, i));
             }
 
             return handles;
@@ -88,7 +89,7 @@ namespace GiiGa
 
             DirectX::BoundingBox aabb = CalculateBoundingBox(vertices);
 
-            return std::make_shared<MeshAsset>(handle, rs->GetRenderContext(), rs->GetRenderDevice(), vertices, indices, aabb);
+             return std::make_shared<MeshAsset>(handle, rs->GetRenderContext(), rs->GetRenderDevice(), vertices, indices, aabb);
         }
 
         void Save(AssetBase& asset, std::filesystem::path& path) override

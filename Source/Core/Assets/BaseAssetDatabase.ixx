@@ -26,6 +26,7 @@ namespace GiiGa
         static inline const char* registry_name = "database.json";
     protected:
         std::filesystem::path registry_path_;
+        std::filesystem::path asset_path_;
 
         // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
@@ -36,6 +37,7 @@ namespace GiiGa
 
         BaseAssetDatabase(const std::filesystem::path& registry_path)
             : registry_path_(registry_path / registry_name)
+            , asset_path_(registry_path / "Assets")
         {}
 
         std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle) { 

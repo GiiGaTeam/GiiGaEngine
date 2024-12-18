@@ -23,7 +23,7 @@ namespace GiiGa
     protected:
         friend class AssetBase;
 
-        BaseAssetDatabase* database_;
+        std::shared_ptr<BaseAssetDatabase> database_;
 
         std::unordered_map<AssetHandle, std::weak_ptr<AssetBase>> loaded_assets_;
     public:
@@ -44,6 +44,10 @@ namespace GiiGa
             }
 
              throw std::runtime_error("Failed to load asset with handle: " + handle.id.ToString());
+        }
+
+        void SetDatabase(std::shared_ptr<BaseAssetDatabase> database) {
+            database_ = database;
         }
 
     private:
@@ -77,7 +81,7 @@ namespace GiiGa
             {
                 if (loader->MatchesPattern(asset_meta.path))
                 {
-                    auto asset = loader->Load(handle, asset_meta.path);
+                    auto asset = loader->Load(handle, database_->asset_path_ / asset_meta.path);
                     loaded_assets_[handle] = asset;
                     asset->OnDestroy.Register([this](const auto& handle) {
                         RemoveAsset(handle);

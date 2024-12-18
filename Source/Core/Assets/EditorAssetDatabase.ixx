@@ -27,14 +27,12 @@ namespace GiiGa
     {
     private:
         ProjectWatcher project_watcher_;
-        std::filesystem::path asset_path_;
 
     public:
         EditorAssetDatabase(std::shared_ptr<Project> proj) 
             : project_watcher_(std::vector<std::string>{ 
                 (proj->GetProjectPath() / "Assets").string()
             })
-            , asset_path_(proj->GetProjectPath() / "Assets")
             , BaseAssetDatabase(proj->GetProjectPath())
         {
             

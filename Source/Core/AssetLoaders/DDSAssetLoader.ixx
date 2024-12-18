@@ -39,14 +39,13 @@ namespace GiiGa
             DirectX::ResourceUploadBatch upload_batch(device.get());
             upload_batch.Begin();
 
-            std::shared_ptr<ID3D12Resource> texture(nullptr, DXDelayedDeleter{rs->GetRenderDevice()});
-            auto texture_ptr = texture.get();
+            ID3D12Resource* texture = nullptr;
 
             HRESULT hr = DirectX::CreateDDSTextureFromFile(
                 device.get(),
                 upload_batch,
                 path.c_str(),
-                &texture_ptr
+                &texture
             );
 
             if (FAILED(hr))
@@ -55,7 +54,9 @@ namespace GiiGa
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 
-            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture);
+            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rs->GetRenderDevice() });
+
+            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture_ptr);
         }
 
         void Save(AssetBase& asset, std::filesystem::path& path) override

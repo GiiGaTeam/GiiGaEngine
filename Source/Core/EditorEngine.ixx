@@ -1,7 +1,6 @@
 module;
 
 #include <memory>
-#include <iostream>
 
 export module EditorEngine;
 
@@ -15,7 +14,6 @@ import World;
 import DDSAssetLoader;
 import ImageAssetLoader;
 import MeshAssetLoader;
-import MeshAsset;
 
 namespace GiiGa
 {
@@ -76,14 +74,7 @@ namespace GiiGa
             DefaultLoaderSetup(database);
 
             database->StartProjectWatcher();
-
-            auto uuid = Uuid::FromString("e6195e4d-5c82-4658-a9ec-e4d7028af09d").value();
-            auto resource = resource_manager_->GetAsset<MeshAsset>(AssetHandle{
-                uuid,
-                0
-                });
-
-            std::cout << "test" << std::endl;
+            resource_manager_->SetDatabase(database);
 
             //todo
             //World::LoadLevel(proj->GetDefaultLevelPath());
