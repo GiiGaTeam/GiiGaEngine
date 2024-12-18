@@ -20,11 +20,7 @@ namespace GiiGa
     export class Component : public IComponent
     {
     public:
-        Component()
-        {
-            WorldQuery::AddComponent(shared_from_this());
-            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<Component>(shared_from_this()));
-        }
+        Component() = default;
 
         Component(Json::Value json)
         {
@@ -36,7 +32,10 @@ namespace GiiGa
             }
 
             uuid_ = js_uuid.value();
+        }
 
+        void RegisterInWorld() override
+        {
             WorldQuery::AddComponent(shared_from_this());
             WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<Component>(shared_from_this()));
         }
@@ -57,7 +56,7 @@ namespace GiiGa
         {
             owner_ = go;
         }
-        
+
         Uuid GetUuid() const override
         {
             return uuid_;

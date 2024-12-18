@@ -38,7 +38,7 @@ namespace GiiGa
                     {
                         continue;
                     }
-                    for (auto&& game_object : level->GetRootGameObjects())
+                    for (auto&& [_,game_object] : level->GetRootGameObjects())
                     {
                         if (game_object->tick_type == TickType::Default)
                             game_object->Tick(static_cast<float>(Time::GetDeltaTime()));

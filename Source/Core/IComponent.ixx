@@ -18,8 +18,13 @@ namespace GiiGa
         virtual ~IComponent() override = default;
 
         virtual std::shared_ptr<IComponent> Clone() =0;
+        
         virtual Json::Value ToJson() =0;
+
+        virtual void RegisterInWorld()=0;
+        
         virtual void Restore(const ::Json::Value&) =0;
+        
         virtual void Destroy() =0;
 
         virtual Uuid GetUuid() const = 0;

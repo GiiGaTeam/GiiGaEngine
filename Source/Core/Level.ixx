@@ -18,7 +18,7 @@ import Misc;
 
 namespace GiiGa
 {
-    export class Level : public ILevelRootGameObjects, public std::enable_shared_from_this<Level>
+    export class Level : public ILevelRootGameObjects
     {
     public:
         /*  Level Json:
@@ -27,24 +27,25 @@ namespace GiiGa
          *      {
          *          Name:
          *      },
-         *      GameObjects:[...]
+         *      GameObjects:
+         *      [
+         *          {
+         *          GO1
+         *          }
+         *          {
+         *          GO2
+         *          }
+         *      ]
          *  }
          */
-        Level(const Json::Value& level_root)
+        Level(const Json::Value& level_settings)
         {
             SetIsActive(false);
 
-            auto&& level_settings = level_root["LevelSettings"];
             name = level_settings["Name"].asString();
-
-            auto&& root_level_go = level_root["GameObjects"];
-            for (auto&& gameobject_js : root_level_go)
-            {
-                std::make_shared<GameObject>(gameobject_js, shared_from_this());
-            }
         }
 
-        const std::vector<std::shared_ptr<IGameObject>>& GetRootGameObjects() const
+        const auto& GetRootGameObjects() const
         {
             return root_game_objects_;
         }
@@ -64,7 +65,8 @@ namespace GiiGa
             Json::Value result;
             result["Name"] = name;
             Json::Value gameObjectsJson;
-            for (auto GO : root_game_objects_)
+            Todo();
+            for (auto&& [_,GO] : root_game_objects_)
             {
                 gameObjectsJson.append(GO->ToJson());
             }
@@ -94,7 +96,24 @@ namespace GiiGa
                 throw std::runtime_error("Failed to parse level file: " + errs);
             }
 
-            return std::make_shared<Level>(level_json);
+            auto level = std::make_shared<Level>(level_json["LevelSettings"]);
+
+            // creates game objects with their components
+            std::vector<std::shared_ptr<GameObject>> gameobjects;
+            auto&& level_gos = level_json["GameObjects"];
+            for (auto&& gameobject_js : level_gos)
+            {
+                auto new_go = std::make_shared<GameObject>(gameobject_js, level);
+                new_go->RegisterInWorld();
+                gameobjects.push_back(new_go);
+            }
+
+            for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
+            {
+                gameobjects[it.index()]->Restore(*it);
+            }
+
+            return level;
         }
 
     private:
