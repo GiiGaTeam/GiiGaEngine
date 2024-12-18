@@ -7,10 +7,10 @@ module;
 #include <fstream>
 #include <iostream>
 #include <json/json.h>
-#include <easylogging++.h>
 
 export module BaseAssetDatabase;
 
+import Logger;
 import AssetHandle;
 import AssetMeta;
 import AssetLoader;
@@ -46,13 +46,13 @@ namespace GiiGa
 
         std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle)
         {
-            el::Loggers::getLogger("ResourceManager")->debug("Request for asset: %v",handle.id.ToString());
+            el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v",handle.id.ToString());
 
             auto it = registry_map_.find(handle);
 
             if (it != registry_map_.end())
             {
-                el::Loggers::getLogger("ResourceManager")->debug("Found asset: %v", handle.id.ToString());
+                el::Loggers::getLogger(LogResourceManager)->debug("Found asset: %v", handle.id.ToString());
                 return std::ref(it->second);
             }
 
@@ -61,7 +61,7 @@ namespace GiiGa
 
         void SaveRegistry()
         {
-            el::Loggers::getLogger("ResourceManager")->debug("Saving registry");
+            el::Loggers::getLogger(LogResourceManager)->debug("Saving registry");
 
             Json::Value root(Json::arrayValue);
 
@@ -89,7 +89,7 @@ namespace GiiGa
         {
             auto loader_ptr = std::make_shared<T>();
 
-            el::Loggers::getLogger("ResourceManager")->debug("Registered loader: %v", loader_ptr->GetName());
+            el::Loggers::getLogger(LogResourceManager)->debug("Registered loader: %v", loader_ptr->GetName());
 
             asset_loaders_[loader_ptr->Type()].emplace_back(std::move(loader_ptr));
         }
@@ -101,7 +101,7 @@ namespace GiiGa
 
         void LoadRegistry()
         {
-            el::Loggers::getLogger("ResourceManager")->debug("Load registry %v", registry_path_);
+            el::Loggers::getLogger(LogResourceManager)->debug("Load registry %v", registry_path_);
 
             Json::Value root;
             Json::CharReaderBuilder reader_builder;
@@ -136,7 +136,7 @@ namespace GiiGa
 
         void OpenRegistryFile()
         {
-            el::Loggers::getLogger("ResourceManager")->debug("Opening or creating registry file %v", registry_path_);
+            el::Loggers::getLogger(LogResourceManager)->debug("Opening or creating registry file %v", registry_path_);
 
             if (!std::filesystem::exists(registry_path_))
             {
@@ -146,7 +146,7 @@ namespace GiiGa
                     throw std::runtime_error("Failed to create registry file: " + registry_path_.string());
                 }
 
-                el::Loggers::getLogger("ResourceManager")->debug("Saving registry");
+                el::Loggers::getLogger(LogResourceManager)->debug("Saving registry");
 
                 Json::Value root(Json::arrayValue);
 

@@ -29,7 +29,7 @@ export int main(int argc, char* argv[])
     
     START_EASYLOGGINGPP(argc, argv);
     el::Loggers::configureFromGlobal("logging.conf");
-    el::Loggers::getLogger("ResourceManager")->info("Hello World!");
+    LOG(INFO) << "Main Function Start";
     try
     {
         std::filesystem::path project_path;

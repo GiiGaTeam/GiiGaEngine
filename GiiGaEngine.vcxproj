@@ -191,6 +191,7 @@
     <ClCompile Include="Source\Core\ILevelRootGameObjects.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Logger.ixx" />
     <ClCompile Include="Source\Core\MeshAsset.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />

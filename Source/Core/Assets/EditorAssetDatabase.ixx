@@ -7,10 +7,10 @@ module;
 #include <type_traits>
 #include <vector>
 #include <iostream>
-#include <easylogging++.h>
 
 export module EditorAssetDatabase;
 
+import Logger;
 import BaseAssetDatabase;
 import AssetHandle;
 import AssetBase;
@@ -48,7 +48,7 @@ namespace GiiGa
                 }
                 catch (std::runtime_error& err)
                 {
-                    el::Loggers::getLogger("ResourceManager")->warn("Failed to add new file: %v", err.what());
+                    el::Loggers::getLogger(LogResourceManager)->warn("Failed to add new file: %v", err.what());
                 }
             });
 
@@ -122,14 +122,14 @@ namespace GiiGa
                         }
                         catch (std::runtime_error& err)
                         {
-                            el::Loggers::getLogger("ResourceManager")->warn("Failed to add new file: %v", err.what());
+                            el::Loggers::getLogger(LogResourceManager)->warn("Failed to add new file: %v", err.what());
                         }
                     }
                 }
                 return;
             }
 
-            el::Loggers::getLogger("ResourceManager")->debug("Register new file: %v", path);
+            el::Loggers::getLogger(LogResourceManager)->debug("Register new file: %v", path);
 
             AssetType asset_type;
             AssetLoader* selected_loader = nullptr;
@@ -175,7 +175,7 @@ namespace GiiGa
 
                 if (asset_path.string().compare(0, path.string().size(), path.string()) == 0)
                 {
-                    el::Loggers::getLogger("ResourceManager")->debug("File removed: %v", asset_path);
+                    el::Loggers::getLogger(LogResourceManager)->debug("File removed: %v", asset_path);
                     it = registry_map_.erase(it);
                 }
                 else
@@ -199,13 +199,13 @@ namespace GiiGa
                     {
                         asset_path = new_path;
 
-                        el::Loggers::getLogger("ResourceManager")->debug("Updated path: %v -> %v", old_path, asset_path);
+                        el::Loggers::getLogger(LogResourceManager)->debug("Updated path: %v -> %v", old_path, asset_path);
                     }
                     else
                     {
                         asset_path = new_path / relative_path;
 
-                        el::Loggers::getLogger("ResourceManager")->debug("Updated path: %v -> %v", old_path / relative_path, asset_path);
+                        el::Loggers::getLogger(LogResourceManager)->debug("Updated path: %v -> %v", old_path / relative_path, asset_path);
                     }
                 }
             }
