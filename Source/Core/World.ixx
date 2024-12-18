@@ -12,6 +12,7 @@ export module World;
 export import Level;
 export import GameObject;
 export import IWorldQuery;
+import Logger;
 
 namespace GiiGa
 {
@@ -36,6 +37,7 @@ namespace GiiGa
 
         static void AddLevelFromAbsolutePath(const std::filesystem::path& absolutePath)
         {
+            el::Loggers::getLogger(LogWorld)->info("Loading level with path: %v", absolutePath);
             AddLevel(Level::FromAbsolutePath(absolutePath), true);
         }
 

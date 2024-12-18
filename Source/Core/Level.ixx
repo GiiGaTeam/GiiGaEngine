@@ -16,6 +16,7 @@ import ILevelRootGameObjects;
 import IWorldQuery;
 import Component;
 import Misc;
+import Logger;
 
 namespace GiiGa
 {
@@ -138,6 +139,7 @@ namespace GiiGa
             auto level = std::make_shared<Level>(level_json["LevelSettings"]);
 
             // creates game objects only
+            el::Loggers::getLogger(LogWorld)->info("Creating game objects");
             std::vector<std::shared_ptr<GameObject>> gameobjects;
             auto&& level_gos = level_json["GameObjects"];
             for (auto&& gameobject_js : level_gos)
@@ -146,16 +148,19 @@ namespace GiiGa
                 gameobjects.push_back(new_go);
             }
 
+            el::Loggers::getLogger(LogWorld)->info("Creating components");
             for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
             {
                 gameobjects[it.index()]->CreateComponents(*it);
             }
 
+            el::Loggers::getLogger(LogWorld)->info("Registering game objects and components in world");
             for (auto gameobject : gameobjects)
             {
                 gameobject->RegisterInWorld();
             }
 
+            el::Loggers::getLogger(LogWorld)->info("Restoring components references");
             for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
             {
                 gameobjects[it.index()]->Restore(*it);

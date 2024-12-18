@@ -7,7 +7,7 @@ export import <easylogging++.h>;
 
 namespace GiiGa
 {
-    export std::string LogResourceManager = "ResourceManager";
-    export std::string LogRendering = "Rendering";
-    export std::string LogWorld = "World";
+    export const std::string LogResourceManager = "ResourceManager";
+    export const std::string LogRendering = "Rendering";
+    export const std::string LogWorld = "World";
 }
