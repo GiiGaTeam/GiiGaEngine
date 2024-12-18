@@ -162,11 +162,15 @@
   <ItemGroup>
     <None Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
+    <ClCompile Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\MeshAssetLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
@@ -185,8 +189,14 @@
     <ClCompile Include="Source\Core\EventSystem.ixx" />
     <ClCompile Include="Source\Core\GameEngine.ixx" />
     <ClCompile Include="Source\Core\GameObject.ixx" />
+    <ClCompile Include="Source\Core\IComponent.ixx" />
+    <ClCompile Include="Source\Core\IWorldQuery.ixx" />
+    <ClCompile Include="Source\Core\IGameObject.ixx" />
+    <ClCompile Include="Source\Core\ILevelRootGameObjects.ixx" />
     <ClCompile Include="Source\Core\ITickable.ixx" />
     <ClCompile Include="Source\Core\Level.ixx" />
+    <ClCompile Include="Source\Core\Logger.ixx" />
+    <ClCompile Include="Source\Core\MeshAsset.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
@@ -379,6 +389,7 @@
     <ClCompile Include="Source\Core\Render\Viewport.ixx" />
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
+    <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\unique_any.ixx" />
     <ClCompile Include="Source\Core\Uuid.ixx" />
@@ -393,6 +404,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="README.md" />
+    <None Include="TemplateProject\project.giga" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
@@ -400,6 +412,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitmodules" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Shaders\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

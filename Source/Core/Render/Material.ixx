@@ -10,6 +10,7 @@ export module Material;
 import GPULocalResource;
 import RenderDevice;
 import AssetBase;
+import TextureAsset;
 
 namespace GiiGa
 {

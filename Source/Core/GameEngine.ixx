@@ -15,17 +15,17 @@ namespace GiiGa
     export class GameEngine : public Engine
     {
     private:
-        virtual void Initialize()
+        virtual void Initialize(std::shared_ptr<Project> proj)
         {
-            Engine::Initialize();
+            Engine::Initialize(proj);
             //render_system_ = std::make_shared<RenderSystem>(*window_);
         }
 
     public:
         virtual void Run(std::shared_ptr<Project> proj)
         {
-            Initialize();
-            
+            Initialize(proj);
+
             Time::Start();
 
             while (!quit_)
@@ -38,11 +38,11 @@ namespace GiiGa
                 Time::UpdateTime();
                 for (auto& level : World::GetLevels())
                 {
-                    if (!level.GetIsActive())
+                    if (!level->GetIsActive())
                     {
                         continue;
                     }
-                    for (auto&& game_object : level.GetGameObjects())
+                    for (auto&& [_,game_object] : level->GetRootGameObjects())
                     {
                         if (game_object->tick_type == TickType::Default)
                             game_object->Tick(static_cast<float>(Time::GetDeltaTime()));

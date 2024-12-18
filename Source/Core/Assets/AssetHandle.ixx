@@ -12,26 +12,26 @@ namespace GiiGa
     export struct AssetHandle
     {
         Uuid id = Uuid::Null();
-        AssetType type = AssetType::Unknown;
+        int subresource = 0;
 
         AssetHandle()
         {
         }
 
-        AssetHandle(Uuid id, AssetType type) : id(id), type(type)
+        AssetHandle(Uuid id, int subresource) : id(id), subresource(subresource)
         {
         }
 
         bool operator==(const AssetHandle& other) const
         {
-            return type == other.type && id == other.id;
+            return id == other.id;
         }
 
         Json::Value ToJson() const
         {
             Json::Value json;
             json["id"] = id.ToString();
-            json["type"] = AssetTypeToString(type);
+            json["subresource"] = subresource;
             return json;
         }
 
@@ -47,7 +47,7 @@ namespace GiiGa
             }
 
             handle.id = *uuid;
-            handle.type = StringToAssetType(json["type"].asString());
+            handle.subresource = json["subresource"].asInt();
 
             return handle;
         }
@@ -61,7 +61,7 @@ namespace std
     {
         size_t operator()(const GiiGa::AssetHandle& handle) const
         {
-            return hash<GiiGa::Uuid>()(handle.id) ^ (hash<int>()(static_cast<int>(handle.type)) << 1);
+            return hash<GiiGa::Uuid>()(handle.id) ^ (hash<int>()(handle.subresource));
         }
     };
 } // namespace std

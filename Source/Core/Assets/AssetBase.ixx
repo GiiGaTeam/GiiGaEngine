@@ -18,9 +18,27 @@ namespace GiiGa
         AssetHandle id_;
 
     public:
-        AssetBase()
-        {
+        AssetBase() = default;
 
+        AssetBase(const AssetBase&) = delete;
+        AssetBase& operator=(const AssetBase&) = delete;
+
+        AssetBase(AssetBase&& other) noexcept
+            : id_(std::move(other.id_)),
+            OnDestroy(std::move(other.OnDestroy))
+        {
+            other.id_ = AssetHandle{};
+        }
+
+        AssetBase& operator=(AssetBase&& other) noexcept
+        {
+            if (this != &other)
+            {
+                id_ = std::move(other.id_);
+                OnDestroy = std::move(other.OnDestroy);
+                other.id_ = AssetHandle{};
+            }
+            return *this;
         }
 
         AssetBase(AssetHandle uuid)
@@ -30,10 +48,6 @@ namespace GiiGa
 
         AssetHandle GetId() const {
             return id_;
-        }
-
-        void SetId(AssetHandle id) {
-            id_ = id;
         }
 
         virtual AssetType GetType() = 0;

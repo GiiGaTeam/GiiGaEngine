@@ -2,12 +2,15 @@
 
 #include "directxtk12/SimpleMath.h"
 #include <memory>
+#include <json/json.h>
 
 export module TransformComponent;
 
 import MathUtils;
 import Component;
 import EventSystem;
+import Misc;
+import IWorldQuery;
 
 namespace GiiGa
 {
@@ -25,6 +28,12 @@ namespace GiiGa
             : location_(loc), scale_(scale)
         {
             rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
+        }
+
+        Transform(Json::Value json)
+            : location_(Vector3FromJson(json["Location"])), scale_(Vector3FromJson(json["Scale"]))
+        {
+            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(Vector3FromJson(json["Rotation"])));
         }
 
         Transform(const Transform& transform) = default;
@@ -85,6 +94,17 @@ namespace GiiGa
             return resMat;
         }
 
+        Json::Value ToJson() const
+        {
+            Json::Value res;
+
+            res["Location"] = Vector3ToJson(location_);
+            res["Rotation"] = Vector3ToJson(rotate_.ToEuler());
+            res["Scale"] = Vector3ToJson(scale_);
+
+            return res;
+        }
+
         static Transform TransformFromMatrix(const Matrix& mTrans)
         {
             Transform resTrans;
@@ -126,10 +146,10 @@ namespace GiiGa
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const std::weak_ptr<TransformComponent>& other)
+        TransformComponent(const Json::Value& json):
+            Component(json)
         {
-            transform_ = other.lock()->transform_;
-            parent_ = other.lock()->parent_;
+            transform_ = Transform(json["Transform"]);
         }
 
         TransformComponent* operator=(const std::weak_ptr<TransformComponent>& other)
@@ -146,15 +166,43 @@ namespace GiiGa
             return transform_ == rhs->transform_;
         }
 
+        Json::Value DerivedToJson() override
+        {
+            Json::Value result;
+
+            result["Type"] = typeid(TransformComponent).name();
+
+            result["Transform"] = transform_.ToJson();
+
+            if (auto l_parent = parent_.lock())
+                result["Parent"] = l_parent->GetUuid().ToString();
+            else
+                result["Parent"] = Uuid::Null().ToString();
+
+            return result;
+        }
+
+        std::shared_ptr<IComponent> Clone() override
+        {
+            Todo();
+            return nullptr;
+        }
+
+        void Restore(const Json::Value& json) override
+        {
+            auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
+
+            if (parentUuid != Uuid::Null())
+                AttachTo(WorldQuery::GetWithUUID<std::shared_ptr<TransformComponent>>(parentUuid));
+        }
+
         void Tick(float dt) override
         {
-            //Component::Tick(dt);
             if (is_dirty_) UpdateTransformMatrices();
         }
 
         void Init() override
         {
-            //Component::Init();
             AttachTo(parent_);
         }
 
@@ -392,12 +440,6 @@ namespace GiiGa
         {
             is_dirty_ = true;
             UpdateTransformMatrices();
-        }
-
-    public:
-        std::shared_ptr<Component> Clone() override
-        {
-            return Component::Clone();
         }
     };
 #pragma endregion

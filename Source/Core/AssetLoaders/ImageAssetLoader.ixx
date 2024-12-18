@@ -1,32 +1,33 @@
 module;
 
 #include <d3d12.h>
-#include <directxtk12/DDSTextureLoader.h>
-#include "directxtk12/ResourceUploadBatch.h"
+#include <directxtk12/WICTextureLoader.h>
+#include <directxtk12/ResourceUploadBatch.h>
 #include <stdexcept>
 #include <filesystem>
 #include <memory>
 
-export module DDSAssetLoader;
+export module ImageAssetLoader;
 
 import AssetLoader;
 import AssetType;
-import GPULocalResource;
+import TextureAsset;
+import DirectXUtils;
 import Engine;
 
 namespace GiiGa
 {
-    export class DDSAssetLoader : public AssetLoader
+    export class ImageAssetLoader : public AssetLoader
     {
     protected:
 
     public:
-        DDSAssetLoader() {
-            pattern_ = R"((.+)\.dds)";
+        ImageAssetLoader() {
+            pattern_ = R"((.+)\.(png|jpg|jpeg))";
             type_ = AssetType::Texture2D;
         }
 
-        std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) override {
+        std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) override {
             if (!std::filesystem::exists(path))
                 throw std::runtime_error("File does not exist: " + path.string());
 
@@ -36,9 +37,9 @@ namespace GiiGa
             DirectX::ResourceUploadBatch upload_batch(device.get());
             upload_batch.Begin();
 
-            std::shared_ptr<ID3D12Resource> texture = nullptr;
+            ID3D12Resource* texture = nullptr;
 
-            HRESULT hr = DirectX::CreateDDSTextureFromFile(
+            HRESULT hr = DirectX::CreateWICTextureFromFile(
                 device.get(),
                 upload_batch,
                 path.c_str(),
@@ -46,17 +47,23 @@ namespace GiiGa
             );
 
             if (FAILED(hr))
-                throw std::runtime_error("Failed to load DDS texture: " + path.string());
+                throw std::runtime_error("Failed to load PNG/JPEG texture: " + path.string());
 
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 
-            return std::make_shared<GPULocalResource>(device, texture);
+            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rs->GetRenderDevice() });
+
+            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture_ptr);
         }
 
         void Save(AssetBase& asset, std::filesystem::path& path) override
         {
-            throw std::runtime_error("Saving DDS textures is not supported.");
+            throw std::runtime_error("Saving PNG/JPEG textures is not supported.");
+        }
+
+        const char* GetName() override {
+            return "PNG/JPEG Texture Loader";
         }
     };
 }

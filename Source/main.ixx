@@ -3,10 +3,16 @@ module;
 #include <imgui.h>
 #include<string>
 #include<iostream>
+#include <filesystem>
 #include <dxgi1_4.h>
 #include <wrl.h>
 #include <DXGIDebug.h> // Ensure this header is included
 #pragma comment(lib, "dxguid.lib")
+#include <memory>
+
+#include "easylogging++.h"
+INITIALIZE_EASYLOGGINGPP
+
 
 export module Main;
 
@@ -18,19 +24,33 @@ import WindowSettings;
 import Input;
 import EventSystem;
 
-export int main()
+export int main(int argc, char* argv[])
 {
-    ImGui::CreateContext();
-
-    std::shared_ptr<GiiGa::Project> proj;
-
+    
+    START_EASYLOGGINGPP(argc, argv);
+    el::Loggers::configureFromGlobal("logging.conf");
+    LOG(INFO) << "Main Function Start";
+    try
     {
+        std::filesystem::path project_path;
+        if (argc > 1)
+        {
+            project_path = argv[1];
+        }
+
+        auto project = GiiGa::Project::CreateOrOpen(project_path);
+        
         GiiGa::EditorEngine engine = GiiGa::EditorEngine();
 
-        engine.Run(proj);
+        engine.Run(project);
+        
+        return 0;
     }
-
-    ImGui::DestroyContext();
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
 
     IDXGIDebug1* dxgiDebug;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))

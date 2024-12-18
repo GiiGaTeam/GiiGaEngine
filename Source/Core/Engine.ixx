@@ -5,6 +5,7 @@ module;
 export module Engine;
 
 import ResourceManager;
+import BaseAssetDatabase;
 import Input;
 import Window;
 import RenderSystem;
@@ -24,12 +25,14 @@ namespace GiiGa
         std::shared_ptr<Project> project_;
         Input input;
 
-        ResourceManager* resource_manager_ = nullptr;
+        std::shared_ptr<ResourceManager> resource_manager_ = nullptr;
+        std::shared_ptr<BaseAssetDatabase> asset_database_ = nullptr;
 
-        virtual void Initialize()
+        virtual void Initialize(std::shared_ptr<Project> proj)
         {
             instance_ = this;
-            resource_manager_ = new GiiGa::ResourceManager();
+            project_ = proj;
+            resource_manager_ = std::make_shared<GiiGa::ResourceManager>();
             auto settings = WindowSettings{"GiiGa Engine", 1240, 720};
             window_ = WindowManager::CreateWindow(settings);
 
@@ -48,16 +51,16 @@ namespace GiiGa
         */
 
     public:
-        virtual void Run(std::shared_ptr<Project>) = 0;
+        virtual void Run(std::shared_ptr<Project> proj) = 0;
 
         static Engine& Instance()
         {
             return *instance_;
         }
 
-        ResourceManager& ResourceManager()
+        std::shared_ptr<ResourceManager> ResourceManager()
         {
-            return *resource_manager_;
+            return resource_manager_;
         }
 
         std::shared_ptr<RenderSystem> RenderSystem()
@@ -65,10 +68,13 @@ namespace GiiGa
             return render_system_;
         }
 
+        std::shared_ptr<BaseAssetDatabase> AssetDatabase()
+        {
+            return asset_database_;
+        }
 
         virtual ~Engine()
         {
-            delete resource_manager_;
         }
     };
 }

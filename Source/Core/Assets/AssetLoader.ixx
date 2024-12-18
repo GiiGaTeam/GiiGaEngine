@@ -7,6 +7,7 @@ module;
 #include <memory>
 #include <filesystem>
 #include <thread>
+#include <vector>
 
 export module AssetLoader;
 
@@ -28,14 +29,18 @@ namespace GiiGa
         AssetType type_;
 
     public:
-        virtual std::shared_ptr<AssetBase> Load(const std::filesystem::path& path) = 0;
+        virtual std::vector<AssetHandle> Preprocess(const std::filesystem::path& path) {
+            return { AssetHandle(Uuid::New(), 0) };
+        }
+
+        virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(AssetBase& asset, std::filesystem::path& path) = 0;
 
-        void LoadAsync(const std::filesystem::path& path, LoadCallback&& callback) { 
-             std::thread([this, path, callback = std::move(callback)]() {
+        void LoadAsync(AssetHandle handle, const std::filesystem::path& path, LoadCallback&& callback) {
+             std::thread([this, handle, path, callback = std::move(callback)]() {
                 try
                 {
-                    auto asset = Load(path);
+                    auto asset = Load(handle, path);
                     callback(asset);
                 }
                 catch (...)
@@ -49,6 +54,14 @@ namespace GiiGa
         bool MatchesPattern(const std::filesystem::path& path) const {
             std::string filename = path.filename().string();
             return std::regex_match(filename, pattern_);
+        }
+
+        AssetType Type() const {
+            return type_;
+        }
+
+        virtual const char* GetName() {
+            return "Unnamed";
         }
     };
 }  // namespace GiiGa

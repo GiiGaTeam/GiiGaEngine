@@ -13,6 +13,7 @@ namespace GiiGa
     export class ITickable
     {
     public:
+        virtual ~ITickable() = default;
         virtual void Tick(float dt) =0;
         TickType tick_type = Default;
     };
