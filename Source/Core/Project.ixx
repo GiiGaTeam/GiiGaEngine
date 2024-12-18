@@ -15,7 +15,7 @@ namespace GiiGa
     {
     private:
         std::filesystem::path project_path_;
-        std::string default_level_path_;
+        std::filesystem::path default_level_path_;
 
         Json::Value project_settings_;
 
@@ -113,7 +113,7 @@ namespace GiiGa
         void SetDefaultLevelPath(const std::string& path)
         {
             default_level_path_ = path;
-            project_settings_["DefaultLevelPath"] = default_level_path_;
+            project_settings_["DefaultLevelPath"] = default_level_path_.c_str();
         }
 
         void SaveProjectSettings() const
@@ -129,7 +129,7 @@ namespace GiiGa
             project_file << Json::writeString(writer_builder, project_settings_);
         }
 
-        const std::string& GetDefaultLevelPath() const {
+        const std::filesystem::path& GetDefaultLevelPath() const {
             return default_level_path_;
         };
 

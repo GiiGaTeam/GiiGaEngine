@@ -31,6 +31,7 @@ namespace GiiGa
         virtual void Initialize(std::shared_ptr<Project> proj)
         {
             instance_ = this;
+            project_ = proj;
             resource_manager_ = std::make_shared<GiiGa::ResourceManager>();
             auto settings = WindowSettings{"GiiGa Engine", 1240, 720};
             window_ = WindowManager::CreateWindow(settings);

@@ -1,6 +1,9 @@
 module;
 
+#include <filesystem>
 #include <memory>
+#include <json/reader.h>
+#include <fstream>
 
 export module EditorEngine;
 
@@ -10,7 +13,7 @@ import Misc;
 import EditorRenderSystem;
 import EditorAssetDatabase;
 import World;
-
+import TransformComponent;
 import DDSAssetLoader;
 import ImageAssetLoader;
 import MeshAssetLoader;
@@ -23,7 +26,7 @@ namespace GiiGa
         virtual void Run(std::shared_ptr<Project> proj)
         {
             Initialize(proj);
-            
+
             Time::Start();
 
             while (!quit_)
@@ -36,11 +39,11 @@ namespace GiiGa
                 Time::UpdateTime();
                 for (auto& level : World::GetLevels())
                 {
-                    if (!level.GetIsActive())
+                    if (!level->GetIsActive())
                     {
                         continue;
                     }
-                    for (auto&& game_object : level.GetGameObjects())
+                    for (auto&& [_,game_object] : level->GetRootGameObjects())
                     {
                         if (game_object->tick_type == TickType::Default)
                             game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
@@ -61,6 +64,7 @@ namespace GiiGa
         std::shared_ptr<EditorAssetDatabase> EditorDatabase() {
             return std::dynamic_pointer_cast<EditorAssetDatabase>(asset_database_);
         }
+
     private:
         std::shared_ptr<EditorAssetDatabase> editor_asset_database_;
 
@@ -80,7 +84,8 @@ namespace GiiGa
             resource_manager_->SetDatabase(editor_asset_database_);
 
             //todo
-            //World::LoadLevel(proj->GetDefaultLevelPath());
+            auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
+            World::AddLevelFromAbsolutePath(level_path);
         }
 
         void DefaultLoaderSetup() {

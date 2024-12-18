@@ -25,7 +25,7 @@ namespace GiiGa
         virtual void Run(std::shared_ptr<Project> proj)
         {
             Initialize(proj);
-            
+
             Time::Start();
 
             while (!quit_)
@@ -38,11 +38,11 @@ namespace GiiGa
                 Time::UpdateTime();
                 for (auto& level : World::GetLevels())
                 {
-                    if (!level.GetIsActive())
+                    if (!level->GetIsActive())
                     {
                         continue;
                     }
-                    for (auto&& game_object : level.GetGameObjects())
+                    for (auto&& [_,game_object] : level->GetRootGameObjects())
                     {
                         if (game_object->tick_type == TickType::Default)
                             game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
