@@ -32,23 +32,8 @@ namespace GiiGa
             while (!quit_)
             {
                 window_->ProcessEvents();
-                if (false)
-                {
-                    quit_ = true;
-                }
                 Time::UpdateTime();
-                for (auto& level : World::GetLevels())
-                {
-                    if (!level->GetIsActive())
-                    {
-                        continue;
-                    }
-                    for (auto&& [_,game_object] : level->GetRootGameObjects())
-                    {
-                        if (game_object->tick_type == TickType::Default)
-                            game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
-                    }
-                }
+                World::Tick(static_cast<float>(Time::GetDeltaTime()));
                 render_system_->Tick();
             }
 
@@ -61,7 +46,8 @@ namespace GiiGa
             return *dynamic_cast<EditorEngine*>(instance_);
         }
 
-        std::shared_ptr<EditorAssetDatabase> EditorDatabase() {
+        std::shared_ptr<EditorAssetDatabase> EditorDatabase()
+        {
             return std::dynamic_pointer_cast<EditorAssetDatabase>(asset_database_);
         }
 
@@ -71,7 +57,8 @@ namespace GiiGa
         void Initialize(std::shared_ptr<Project> proj) override
         {
             Engine::Initialize(proj);
-            World::CreateLevelHAHAHA();
+            World::Initialize();
+
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 
@@ -89,7 +76,8 @@ namespace GiiGa
             World::AddLevelFromAbsolutePath(level_path);
         }
 
-        void DefaultLoaderSetup() {
+        void DefaultLoaderSetup()
+        {
             editor_asset_database_->RegisterLoader<DDSAssetLoader>();
             editor_asset_database_->RegisterLoader<ImageAssetLoader>();
             editor_asset_database_->RegisterLoader<MeshAssetLoader>();

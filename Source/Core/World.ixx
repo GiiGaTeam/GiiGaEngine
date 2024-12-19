@@ -19,15 +19,38 @@ namespace GiiGa
     export class World final
     {
     public:
-        World()
-        {
-        }
-
-    public:
         static std::unique_ptr<World>& GetInstance()
         {
             if (instance_) return instance_;
-            else return instance_ = std::make_unique<World>();
+            else return instance_ = std::unique_ptr<World>(new World());
+        }
+
+        static void Initialize()
+        {
+            Json::Value level_settings;
+            level_settings["Name"] = "PersistentLevel";
+            auto p_level = std::make_shared<Level>(level_settings);
+            GetInstance()->levels_.push_back(p_level);
+        }
+
+        static void BeginPlay()
+        {
+        }
+
+        static void Tick(float dt)
+        {
+            for (auto& level : GetLevels())
+            {
+                if (!level->GetIsActive())
+                {
+                    continue;
+                }
+                for (auto&& [_,game_object] : level->GetRootGameObjects())
+                {
+                    if (game_object->tick_type == TickType::Default)
+                        game_object->Tick(dt);
+                }
+            }
         }
 
         static const std::vector<std::shared_ptr<Level>>& GetLevels()
@@ -50,19 +73,13 @@ namespace GiiGa
         static std::shared_ptr<GameObject> CreateGameObject()
         {
             if (GetInstance()->levels_.empty()) return nullptr;
-            const auto gameObject = std::make_shared<GameObject>();
-            gameObject->AttachToLevel(GetInstance()->levels_[0]);
-            gameObject->RegisterInWorld();
-            return gameObject;
-        }
-
-        static void CreateLevelHAHAHA()
-        {
-            GetInstance()->levels_.push_back(std::make_shared<Level>(Json::Value()));
+            return GameObject::CreateEmptyGameObjectInLevelRoot(GetInstance()->levels_[0]);
         }
 
     private:
         static inline std::unique_ptr<World> instance_ = nullptr;
         std::vector<std::shared_ptr<Level>> levels_;
+
+        World() = default;
     };
 }

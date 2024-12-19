@@ -40,11 +40,12 @@ namespace GiiGa
          *      ]
          *  }
          */
+
         Level(const Json::Value& level_settings)
         {
             SetIsActive(false);
 
-            name = level_settings["Name"].asString();
+            name_ = level_settings["Name"].asString();
         }
 
         const auto& GetRootGameObjects() const
@@ -67,7 +68,7 @@ namespace GiiGa
             Json::Value result;
 
             Json::Value level_settings;
-            level_settings["Name"] = name;
+            level_settings["Name"] = name_;
             result["LevelSettings"] = level_settings;
 
             Json::Value gameObjectsJson;
@@ -144,20 +145,8 @@ namespace GiiGa
             auto&& level_gos = level_json["GameObjects"];
             for (auto&& gameobject_js : level_gos)
             {
-                auto new_go = std::make_shared<GameObject>(gameobject_js, level);
+                auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
                 gameobjects.push_back(new_go);
-            }
-
-            el::Loggers::getLogger(LogWorld)->info("Creating components");
-            for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
-            {
-                gameobjects[it.index()]->CreateComponents(*it);
-            }
-
-            el::Loggers::getLogger(LogWorld)->info("Registering game objects and components in world");
-            for (auto gameobject : gameobjects)
-            {
-                gameobject->RegisterInWorld();
             }
 
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");
@@ -170,7 +159,7 @@ namespace GiiGa
         }
 
     private:
-        std::string name;
+        std::string name_;
         bool isActive_ = false;
     };
 }

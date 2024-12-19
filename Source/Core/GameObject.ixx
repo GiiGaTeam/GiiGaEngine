@@ -32,8 +32,6 @@ namespace GiiGa
     export class GameObject final : public IGameObject
     {
     public:
-        GameObject()=default;
-
         void Destroy()
         {
             TryRemoveFromLevelRoot();
@@ -57,52 +55,6 @@ namespace GiiGa
         GameObject(GameObject&& other) noexcept = default;
         GameObject& operator=(const GameObject& other) = delete;
         GameObject& operator=(GameObject&& other) noexcept = default;
-
-        GameObject(const Uuid& uuid) : uuid_(uuid)
-        {
-        }
-
-        /* GameObject Json
-         * Name:
-         * Uuid:
-         * Parent:
-         * Components:[...]
-        */
-        GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
-            level_root_gos_(level_rgo)
-        {
-            name_ = json["Name"].asString();
-
-            auto js_uuid = Uuid::FromString(json["Uuid"].asString());
-
-            if (!js_uuid.has_value())
-            {
-                throw std::runtime_error("Invalid UUID");
-            }
-
-            uuid_ = js_uuid.value();
-        }
-
-        void CreateComponents(const Json::Value& json)
-        {
-            for (auto&& comp_js : json["Components"])
-            {
-                if (comp_js["Type"].asString() == typeid(TransformComponent).name())
-                {
-                    transform_ = CreateComponent<TransformComponent>(comp_js);
-                }
-                else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
-                {
-                    CreateComponent<ConsoleComponent>(comp_js);
-                }
-            }
-        }
-
-        // does not register children
-        void RegisterInWorld()
-        {
-            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
-        }
 
         void AttachToLevel(std::shared_ptr<ILevelRootGameObjects> level_rgo)
         {
@@ -128,6 +80,26 @@ namespace GiiGa
             }
             parent_.reset();
             AttachToLevel(level_root_gos_.lock());
+        }
+
+        static std::shared_ptr<GameObject> CreateEmptyGameObjectInLevelRoot(std::shared_ptr<ILevelRootGameObjects> level_rgo)
+        {
+            auto gameObject = std::shared_ptr<GameObject>(new GameObject());
+            gameObject->AttachToLevel(level_rgo);
+            gameObject->RegisterInWorld();
+
+            return gameObject;
+        }
+
+        static std::shared_ptr<GameObject> CreateGameObjectFromJson(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr)
+        {
+            std::shared_ptr<GameObject> newGameObject = std::shared_ptr<GameObject>(new GameObject(json, level_rgo));
+
+            newGameObject->RegisterInWorld();
+
+            newGameObject->CreateComponents(json);
+
+            return newGameObject;
         }
 
         Json::Value ToJson() const override
@@ -238,7 +210,7 @@ namespace GiiGa
         virtual std::shared_ptr<GameObject> Clone()
         {
             Todo();
-            auto newGameObject = std::make_shared<GameObject>();
+            auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
             for (auto&& [_,component] : components_)
             {
                 //newGameObject->AddComponent(component->Clone());
@@ -292,6 +264,50 @@ namespace GiiGa
             auto l_level = level_root_gos_.lock();
             if (l_level && parent_.expired())
                 l_level->RemoveRootGameObject(shared_from_this());
+        }
+
+        GameObject() = default;
+
+        /* GameObject Json
+         * Name:
+         * Uuid:
+         * Parent:
+         * Components:[...]
+        */
+        GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
+            level_root_gos_(level_rgo)
+        {
+            name_ = json["Name"].asString();
+
+            auto js_uuid = Uuid::FromString(json["Uuid"].asString());
+
+            if (!js_uuid.has_value())
+            {
+                throw std::runtime_error("Invalid UUID");
+            }
+
+            uuid_ = js_uuid.value();
+        }
+
+        // does not register children
+        void RegisterInWorld()
+        {
+            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
+        }
+
+        void CreateComponents(const Json::Value& json)
+        {
+            for (auto&& comp_js : json["Components"])
+            {
+                if (comp_js["Type"].asString() == typeid(TransformComponent).name())
+                {
+                    transform_ = CreateComponent<TransformComponent>(comp_js);
+                }
+                else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
+                {
+                    CreateComponent<ConsoleComponent>(comp_js);
+                }
+            }
         }
     };
 } // namespace GiiGa
