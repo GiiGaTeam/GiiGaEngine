@@ -37,7 +37,7 @@ namespace GiiGa
             const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
             ConstantBuffer_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-            ConstantBuffer_->UpdateContents(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            ConstantBuffer_->UpdateContentsImmediate(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             ConstantBufferView_ = ConstantBuffer_->CreateConstantBufferView(desc);
         }
 
@@ -52,7 +52,7 @@ namespace GiiGa
             
             if (IsStatic_)
             {
-                ConstantBuffer_->UpdateContents(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                ConstantBuffer_->UpdateContentsImmediate(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             }
             else
             {

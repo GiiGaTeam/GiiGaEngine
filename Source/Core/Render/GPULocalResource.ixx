@@ -38,7 +38,16 @@ namespace GiiGa
             resource_ = device.CreateCommittedResource(heapProperties, D3D12_HEAP_FLAG_NONE, desc, current_state_, clearValue);
         }
 
-        void UpdateContents(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfer)
+        // Deffered occurs only in beginning of frame
+        // should **not** be called after frame start
+        // instead call UpdateContentsImmediate
+        void UpdateContentsDeffered(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfter)
+        {
+            render_context.CreateDefferedUpload({.data = data, .current_state = current_state_, .stateAfter = stateAfter, .destination = resource_});
+        }
+
+        // If you do want to update contents in middle of frame use this
+        void UpdateContentsImmediate(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfer)
         {
             UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(data.size());
 

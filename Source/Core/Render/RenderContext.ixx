@@ -3,8 +3,9 @@
 #include <complex.h>
 #include<memory>
 #include<vector>
+#include<directx/d3dx12.h>
 #include <d3d12.h>
-#include <span>
+#include <queue>
 
 export module RenderContext;
 
@@ -24,7 +25,7 @@ namespace GiiGa
         friend class EditorSwapChainPass;
 
     public:
-        RenderContext(RenderDevice& device):
+        explicit RenderContext(RenderDevice& device):
             device_(device),
             graphics_command_queue_([&device]()
             {
@@ -55,6 +56,11 @@ namespace GiiGa
         void SetFrameLatencyWaitableObject(HANDLE FrameLatencyWaitableObject)
         {
             frameLatencyWaitableObject_ = FrameLatencyWaitableObject;
+        }
+
+        void CreateDefferedUpload(DefferedUploadEntry entry) override
+        {
+            defferedUploads_.push(std::move(entry));
         }
 
         UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size) override
@@ -97,6 +103,35 @@ namespace GiiGa
             WaitForNextFrameResources();
 
             current_frame->Reset(graphics_command_list_);
+
+            while (!defferedUploads_.empty())
+            {
+                auto defferedUpload = defferedUploads_.front();
+                defferedUploads_.pop();
+                UploadBuffer::Allocation allocation = CreateAndAllocateUploadBuffer(defferedUpload.data.size());
+
+                std::copy(defferedUpload.data.begin(), defferedUpload.data.end(), allocation.CPU.begin());
+
+                CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+                    defferedUpload.destination.get(),
+                    defferedUpload.current_state,
+                    D3D12_RESOURCE_STATE_COPY_DEST
+                );
+
+                ResourceBarrier(1, barrier);
+
+                CopyBufferRegion(defferedUpload.destination, 0, allocation.resource, 0, defferedUpload.data.size());
+
+                barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+                    defferedUpload.destination.get(),
+                    D3D12_RESOURCE_STATE_COPY_DEST,
+                    defferedUpload.stateAfter
+                );
+
+                ResourceBarrier(1, barrier);
+
+                defferedUpload.current_state = defferedUpload.stateAfter;
+            }
 
             ID3D12DescriptorHeap* descriptorHeap = device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetDescriptorHeap().
                                                            get();
@@ -163,5 +198,6 @@ namespace GiiGa
         HANDLE fenceEvent_;
         size_t frameIndex_ = 0;
         UINT64 fenceLastSignaledValue_ = 0;
+        std::queue<DefferedUploadEntry> defferedUploads_;
     };
 };
