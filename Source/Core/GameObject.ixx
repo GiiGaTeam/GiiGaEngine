@@ -104,47 +104,34 @@ namespace GiiGa
 
         Json::Value ToJson() const override
         {
-            Json::Value result;
-
             Json::Value this_json;
 
             this_json["Name"] = name_;
             this_json["Uuid"] = uuid_.ToString();
-
-            auto&& l_parent = parent_.lock();
-
-            if (l_parent)
-                this_json["Parent"] = l_parent->GetUuid().ToString();
-            else
-                this_json["Parent"] = Uuid::Null().ToString();
-
+            
             for (auto&& [_,component] : components_)
             {
                 this_json["Components"].append(component->ToJson());
             }
 
-            result.append(this_json);
-
-            for (auto&& [_,kid] : children_)
+            for (auto&& [_, kid] : children_)
             {
-                result.append(kid->ToJson());
+                this_json["Children"].append(kid->ToJson());
             }
 
-            return result;
+            return this_json;
         }
 
         void Restore(const Json::Value& json)
         {
-            auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
-
-            if (parentUuid != Uuid::Null())
-                WorldQuery::GetWithUUID<std::shared_ptr<GameObject>>(parentUuid)->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
-            else
-                AttachToLevel(level_root_gos_.lock());
-
             for (auto&& comp_js : json["Components"])
             {
                 components_.at(Uuid::FromString(comp_js["Uuid"].asString()).value())->Restore(comp_js);
+            }
+
+            for (auto&& kid_js : json["Children"])
+            {
+                children_.at(Uuid::FromString(kid_js["Uuid"].asString()).value())->Restore(kid_js);
             }
         }
 
@@ -200,10 +187,13 @@ namespace GiiGa
             return transform_;
         }
 
-        void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom)
+        void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom = false)
         {
             TryRemoveFromLevelRoot();
-            parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
+
+            if (parent->children_.find(this->uuid_) == parent->children_.end())
+                parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
+
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());
         }
 
@@ -231,7 +221,7 @@ namespace GiiGa
         void AddChild(std::shared_ptr<GameObject> child)
         {
             children_.insert({child->GetUuid(), child});
-            child->parent_ = std::static_pointer_cast<GameObject>(shared_from_this());
+            child->SetParent(std::static_pointer_cast<GameObject>(shared_from_this()));
         }
 
         void RemoveChild(std::shared_ptr<GameObject> child)
@@ -271,8 +261,8 @@ namespace GiiGa
         /* GameObject Json
          * Name:
          * Uuid:
-         * Parent:
          * Components:[...]
+         * Children: [...]
         */
         GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
             level_root_gos_(level_rgo)
@@ -307,6 +297,15 @@ namespace GiiGa
                 {
                     CreateComponent<ConsoleComponent>(comp_js);
                 }
+            }
+        }
+
+        void CreateChildren(const Json::Value& json)
+        {
+            for (auto&& kid_js : json["Children"])
+            {
+                auto kid_go = CreateGameObjectFromJson(kid_js, this->level_root_gos_.lock());
+                this->AddChild(kid_go);
             }
         }
     };

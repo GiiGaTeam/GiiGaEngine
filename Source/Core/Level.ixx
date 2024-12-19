@@ -71,14 +71,11 @@ namespace GiiGa
             level_settings["Name"] = name_;
             result["LevelSettings"] = level_settings;
 
-            Json::Value gameObjectsJson;
             for (auto&& [_,root_go] : root_game_objects_)
             {
                 auto go_with_kids = root_go->ToJson();
-                for (auto&& go : go_with_kids)
-                {
-                    result["GameObjects"].append(go);
-                }
+                el::Loggers::getLogger(LogWorld)->debug("game object: %v",go_with_kids.toStyledString());
+                result["RootGameObjects"].append(go_with_kids);
             }
 
             return result;
@@ -86,6 +83,8 @@ namespace GiiGa
 
         void SaveToAbsolutePath(const std::filesystem::path& level_path)
         {
+            el::Loggers::getLogger(LogWorld)->info("Saving Level %v in %v", this->name_, level_path);
+            
             std::ofstream level_file(level_path, std::ios::out | std::ios::trunc);
 
             if (!level_file.is_open())
@@ -140,19 +139,19 @@ namespace GiiGa
             auto level = std::make_shared<Level>(level_json["LevelSettings"]);
 
             // creates game objects only
-            el::Loggers::getLogger(LogWorld)->info("Creating game objects");
-            std::vector<std::shared_ptr<GameObject>> gameobjects;
-            auto&& level_gos = level_json["GameObjects"];
-            for (auto&& gameobject_js : level_gos)
+            el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
+            auto&& level_root_gos = level_json["RootGameObjects"];
+            for (auto&& gameobject_js : level_root_gos)
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
-                gameobjects.push_back(new_go);
+                new_go->AttachToLevel(level);
             }
 
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");
-            for (auto it = level_gos.begin(); it != level_gos.end(); ++it)
+            for (auto&& gameobject_js : level_root_gos)
             {
-                gameobjects[it.index()]->Restore(*it);
+                auto root_go = level->root_game_objects_.at(Uuid::FromString(gameobject_js["Uuid"].asString()).value());
+                std::dynamic_pointer_cast<GameObject>(root_go)->Restore(gameobject_js);
             }
 
             return level;

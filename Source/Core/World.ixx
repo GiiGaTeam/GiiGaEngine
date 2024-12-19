@@ -14,6 +14,8 @@ export import GameObject;
 export import IWorldQuery;
 import Logger;
 
+import TransformComponent;
+
 namespace GiiGa
 {
     export class World final
