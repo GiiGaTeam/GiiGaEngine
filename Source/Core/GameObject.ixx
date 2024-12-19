@@ -23,6 +23,12 @@ import ILevelRootGameObjects;
 
 namespace GiiGa
 {
+    export struct SpawnParameters
+    {
+        std::string name;
+        std::weak_ptr<IGameObject> Owner;
+    };
+
     /*
      * LifeTime:
      *  of one GameObject is bound to parent
@@ -36,7 +42,7 @@ namespace GiiGa
         {
             TryRemoveFromLevelRoot();
 
-            WorldQuery::GetInstance()->RemoveAnyWithUuid(uuid_);
+            WorldQuery::RemoveAnyWithUuid(uuid_);
 
             for (auto&& [_,kid] : children_)
             {
@@ -56,7 +62,7 @@ namespace GiiGa
         GameObject& operator=(const GameObject& other) = delete;
         GameObject& operator=(GameObject&& other) noexcept = default;
 
-        void AttachToLevel(std::shared_ptr<ILevelRootGameObjects> level_rgo)
+        void AttachToLevelRoot(std::shared_ptr<ILevelRootGameObjects> level_rgo)
         {
             if (!level_root_gos_.expired())
                 TryRemoveFromLevelRoot();
@@ -67,7 +73,7 @@ namespace GiiGa
 
             for (auto&& [_,kid] : children_)
             {
-                kid->AttachToLevel(level_rgo);
+                kid->level_root_gos_ = level_rgo;
             }
         }
 
@@ -79,21 +85,37 @@ namespace GiiGa
                 l_parent->GetComponent<TransformComponent>()->Detach();
             }
             parent_.reset();
-            AttachToLevel(level_root_gos_.lock());
+            AttachToLevelRoot(level_root_gos_.lock());
         }
 
-        static std::shared_ptr<GameObject> CreateEmptyGameObjectInLevelRoot(std::shared_ptr<ILevelRootGameObjects> level_rgo)
+        static std::shared_ptr<GameObject> CreateEmptyGameObject(const SpawnParameters& spawnParameters)
         {
-            auto gameObject = std::shared_ptr<GameObject>(new GameObject());
-            gameObject->AttachToLevel(level_rgo);
-            gameObject->RegisterInWorld();
+            auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
+            newGameObject->name_ = spawnParameters.name;
 
-            return gameObject;
+            if (!newGameObject->GetComponent<TransformComponent>())
+                newGameObject->CreateComponent<TransformComponent>();
+
+            if (!spawnParameters.Owner.expired())
+            {
+                newGameObject->AttachToLevelRoot(std::static_pointer_cast<GameObject>(spawnParameters.Owner.lock())->level_root_gos_.lock());
+            }
+            else
+            {
+                newGameObject->AttachToLevelRoot(WorldQuery::GetPersistentLevel());
+            }
+
+            newGameObject->RegisterInWorld();
+
+            return newGameObject;
         }
 
         static std::shared_ptr<GameObject> CreateGameObjectFromJson(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr)
         {
             std::shared_ptr<GameObject> newGameObject = std::shared_ptr<GameObject>(new GameObject(json, level_rgo));
+
+            if (!newGameObject->GetComponent<TransformComponent>())
+                newGameObject->CreateComponent<TransformComponent>();
 
             newGameObject->RegisterInWorld();
 
@@ -108,7 +130,7 @@ namespace GiiGa
 
             this_json["Name"] = name_;
             this_json["Uuid"] = uuid_.ToString();
-            
+
             for (auto&& [_,component] : components_)
             {
                 this_json["Components"].append(component->ToJson());
@@ -135,16 +157,6 @@ namespace GiiGa
             }
         }
 
-        void Init()
-        {
-            if (transform_.expired()) transform_ = CreateComponent<TransformComponent>();
-
-            for (auto&& [_,component] : components_)
-            {
-                component->Init();
-            }
-        }
-
         void Tick(float dt) override
         {
             for (auto&& [_,component] : components_)
@@ -163,7 +175,7 @@ namespace GiiGa
         {
             if (std::shared_ptr<T> newComp = std::make_shared<T>(args...))
             {
-                newComp->SetOwner(shared_from_this());
+                newComp->SetOwner(std::static_pointer_cast<GameObject>(shared_from_this()));
                 components_.insert({newComp->GetUuid(), newComp});
                 newComp->RegisterInWorld();
                 return newComp;
@@ -191,7 +203,7 @@ namespace GiiGa
         {
             TryRemoveFromLevelRoot();
 
-            if (parent->children_.find(this->uuid_) == parent->children_.end())
+            if (!parent->children_.contains(this->uuid_))
                 parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
 
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());

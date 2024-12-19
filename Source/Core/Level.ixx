@@ -74,7 +74,7 @@ namespace GiiGa
             for (auto&& [_,root_go] : root_game_objects_)
             {
                 auto go_with_kids = root_go->ToJson();
-                el::Loggers::getLogger(LogWorld)->debug("game object: %v",go_with_kids.toStyledString());
+                el::Loggers::getLogger(LogWorld)->debug("game object: %v", go_with_kids.toStyledString());
                 result["RootGameObjects"].append(go_with_kids);
             }
 
@@ -84,7 +84,7 @@ namespace GiiGa
         void SaveToAbsolutePath(const std::filesystem::path& level_path)
         {
             el::Loggers::getLogger(LogWorld)->info("Saving Level %v in %v", this->name_, level_path);
-            
+
             std::ofstream level_file(level_path, std::ios::out | std::ios::trunc);
 
             if (!level_file.is_open())
@@ -144,7 +144,7 @@ namespace GiiGa
             for (auto&& gameobject_js : level_root_gos)
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
-                new_go->AttachToLevel(level);
+                new_go->AttachToLevelRoot(level);
             }
 
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");

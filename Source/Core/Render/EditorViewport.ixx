@@ -33,7 +33,7 @@ namespace GiiGa
             renderGraph_ = std::make_shared<RenderGraph>();
             renderGraph_->AddPass(std::make_shared<ForwardPass>());
 
-            camera_ = World::CreateGameObject();
+            camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }

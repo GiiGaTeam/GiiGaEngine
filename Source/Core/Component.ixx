@@ -8,6 +8,7 @@ export module Component;
 
 export import ITickable;
 import IComponent;
+import IGameObject;
 import Uuid;
 import IWorldQuery;
 

@@ -3,16 +3,15 @@ module;
 #include <memory>
 #include <json/json.h>
 
+
 export module IComponent;
 
 export import ITickable;
-
 export import Uuid;
+import IGameObject;
 
 namespace GiiGa
 {
-    export class IGameObject;
-
     export struct IComponent : public ITickable, public std::enable_shared_from_this<IComponent>
     {
         virtual ~IComponent() override = default;

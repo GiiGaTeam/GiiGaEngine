@@ -13,8 +13,6 @@ import ITickable;
 
 namespace GiiGa
 {
-    export class IComponent;
-
     export struct IGameObject : public ITickable, public std::enable_shared_from_this<IGameObject>
     {
         virtual ~IGameObject() = default;
