@@ -12,15 +12,18 @@ export import Viewport;
 import RenderDevice;
 import ForwardPass;
 import RenderGraph;
+import World;
 import CameraComponent;
+import GameObject;
+import SpectatorMovementComponent;
 
 namespace GiiGa
 {
     export class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
-        EditorViewport(RenderDevice& device, std::shared_ptr<CameraComponent> camera = nullptr):
-            Viewport(device, camera)
+        EditorViewport(RenderDevice& device):
+            Viewport(device)
         {
             Resize(viewport_size_);
         }
@@ -29,6 +32,10 @@ namespace GiiGa
         {
             renderGraph_ = std::make_shared<RenderGraph>();
             renderGraph_->AddPass(std::make_shared<ForwardPass>());
+
+            camera_ = World::CreateGameObject();
+            const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
+            camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }
 
         DescriptorHeapAllocation GetCameraDescriptor() override
@@ -66,5 +73,6 @@ namespace GiiGa
 
     private:
         int viewport_index = 0;
+        std::weak_ptr<GameObject> camera_;
     };
 }

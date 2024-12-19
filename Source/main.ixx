@@ -24,39 +24,47 @@ import WindowSettings;
 import Input;
 import EventSystem;
 
-export int main(int argc, char* argv[])
+void DxReportLiveObjects()
 {
-    
-    START_EASYLOGGINGPP(argc, argv);
-    el::Loggers::configureFromGlobal("logging.conf");
-    LOG(INFO) << "Main Function Start";
-    try
-    {
-        std::filesystem::path project_path;
-        if (argc > 1)
-        {
-            project_path = argv[1];
-        }
-
-        auto project = GiiGa::Project::CreateOrOpen(project_path);
-        
-        GiiGa::EditorEngine engine = GiiGa::EditorEngine();
-
-        engine.Run(project);
-        
-        return 0;
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "Error: " << e.what() << "\n";
-        return 1;
-    }
-
     IDXGIDebug1* dxgiDebug;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
     {
         dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
     }
+}
+
+export int main(int argc, char* argv[])
+{
+    START_EASYLOGGINGPP(argc, argv);
+    el::Loggers::configureFromGlobal("logging.conf");
+    LOG(INFO) << "Main Function Start";
+    try
+    {
+        {
+            std::filesystem::path project_path;
+            if (argc > 1)
+            {
+                project_path = argv[1];
+            }
+
+            auto project = GiiGa::Project::CreateOrOpen(project_path);
+
+            GiiGa::EditorEngine engine = GiiGa::EditorEngine();
+
+            engine.Run(project);
+        }
+
+        DxReportLiveObjects();
+
+        return 0;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        DxReportLiveObjects();
+        return 1;
+    }
+
 
     return 0;
 }

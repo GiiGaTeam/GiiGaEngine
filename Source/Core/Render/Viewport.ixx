@@ -23,8 +23,8 @@ namespace GiiGa
     export class Viewport
     {
     public:
-        explicit Viewport(RenderDevice& device, std::shared_ptr<CameraComponent> camera = nullptr):
-            device_(device), camera_(camera)
+        explicit Viewport(RenderDevice& device):
+            device_(device)
         {
         }
 
@@ -33,15 +33,7 @@ namespace GiiGa
         virtual ~Viewport() = default;
 
         virtual DescriptorHeapAllocation GetCameraDescriptor() =0;
-
-        std::weak_ptr<CameraComponent> GetCameraComponent() const { return camera_; }
-
-        void SetCameraComponent(const std::weak_ptr<CameraComponent>& camera)
-        {
-            if (camera_.expired()) return;
-            camera_ = camera;
-        }
-
+        
         virtual void Execute(RenderContext& context) =0;
 
         void Resize(DirectX::SimpleMath::Vector2 new_size)
@@ -103,6 +95,5 @@ namespace GiiGa
         std::unique_ptr<GPULocalResource> resultResource_;
         std::shared_ptr<BufferView<RenderTarget>> resultRTV_;
         std::shared_ptr<BufferView<ShaderResource>> resultSRV_;
-        std::weak_ptr<CameraComponent> camera_;
     };
 }
