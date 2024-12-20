@@ -236,7 +236,7 @@ export struct WindowResizeEvent
 
 static std::array<KeyCode, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
 void InitializeScancodeMap();
-
+// todo we should split window on Editor and Game modes
 export class Window
 {
 public:
@@ -247,6 +247,15 @@ public:
         InitializeScancodeMap();
         // todo: spit window to EditorW and GameW
         ImGui::CreateContext();
+
+        // todo this should be moved to config
+        ImGuiIO& io = ImGui::GetIO();
+        (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
+        
         ImGui_ImplSDL2_InitForD3D(window);
     }
 

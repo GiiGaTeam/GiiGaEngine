@@ -10,7 +10,7 @@ namespace GiiGa
     export class ShadowPass : public RenderPass
     {
     public:
-        void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport) override
+        void Draw(RenderContext& context) override
         {
         }
     };

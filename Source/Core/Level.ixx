@@ -51,6 +51,16 @@ namespace GiiGa
             return root_game_objects_;
         }
 
+        size_t GetNumRootGameObjects() const
+        {
+            return root_game_objects_.size();
+        }
+
+        const std::string& GetLevelName() const
+        {
+            return name_;
+        }
+
         bool GetIsActive() const
         {
             return isActive_;

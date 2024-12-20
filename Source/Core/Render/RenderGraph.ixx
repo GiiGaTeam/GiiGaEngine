@@ -15,11 +15,11 @@ namespace GiiGa
     public:
         virtual ~RenderGraph() = default;
 
-        virtual void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport)
+        virtual void Draw(RenderContext& context)
         {
             for (auto&& pass : passes_)
             {
-                pass->Draw(context, viewport);
+                pass->Draw(context);
             }
         }
 

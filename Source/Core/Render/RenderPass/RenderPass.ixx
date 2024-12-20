@@ -17,7 +17,7 @@ namespace GiiGa
     public:
         virtual ~RenderPass() = default;
 
-        virtual void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport)=0;
+        virtual void Draw(RenderContext& context)=0;
 
     protected:
         int32_t default_filter_type_ = Static | Dynamic | Opacity | Transparency;

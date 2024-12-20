@@ -228,6 +228,11 @@ namespace GiiGa
             return children_;
         }
 
+        size_t GetChildrenCount() const
+        {
+            return children_.size();
+        }
+
         void AddChild(std::shared_ptr<GameObject> child)
         {
             children_.insert({child->GetUuid(), child});
@@ -237,6 +242,11 @@ namespace GiiGa
         void RemoveChild(std::shared_ptr<GameObject> child)
         {
             children_.erase(child->GetUuid());
+        }
+
+        const std::string& GetName()const
+        {
+            return name_;
         }
 
         Uuid GetUuid() const override

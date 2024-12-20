@@ -1,21 +1,27 @@
+#include<d3d12.h>
+
 export module ForwardPass;
 
 import <memory>;
 import <vector>;
+import <functional>;
 
 import RenderPass;
 //import ShaderManager;
 import PSO;
 import IRenderable;
-import Viewport;
 
 namespace GiiGa
 {
-
     export class ForwardPass : public RenderPass
     {
     public:
-        void Draw(RenderContext& context, const std::weak_ptr<Viewport>& viewport) override
+        ForwardPass(const std::function<D3D12_GPU_DESCRIPTOR_HANDLE()>& getCamDescFn):
+            getCamDescFnFunction_(getCamDescFn)
+        {
+        }
+
+        void Draw(RenderContext& context) override
         {
             auto pso = PSO();
             //pso.set_vs(ShaderManager::GetShaderByName(L"Shaders/SimpleVertexShader.hlsl"));
@@ -28,5 +34,8 @@ namespace GiiGa
                 renderable.Draw(context);
             }
         }
+
+    private:
+        std::function<D3D12_GPU_DESCRIPTOR_HANDLE()> getCamDescFnFunction_;
     };
 }

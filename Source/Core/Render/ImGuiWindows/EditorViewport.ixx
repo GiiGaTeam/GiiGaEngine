@@ -29,14 +29,14 @@ namespace GiiGa
         void Init() override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
-            renderGraph_->AddPass(std::make_shared<ForwardPass>());
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(std::bind(&EditorViewport::GetCameraDescriptor, this)));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }
 
-        DescriptorHeapAllocation GetCameraDescriptor() override
+        D3D12_GPU_DESCRIPTOR_HANDLE GetCameraDescriptor() override
         {
             return {};
         }
@@ -59,7 +59,7 @@ namespace GiiGa
             context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(), clear_color_with_alpha);
 
             // draw here
-            renderGraph_->Draw(context, shared_from_this());
+            renderGraph_->Draw(context);
             // draw here - end
 
             resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);

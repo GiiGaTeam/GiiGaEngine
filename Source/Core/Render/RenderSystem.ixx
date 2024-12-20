@@ -16,7 +16,6 @@ import Viewport;
 
 namespace GiiGa
 {
-    
     export class RenderSystem
     {
     public:
@@ -41,16 +40,18 @@ namespace GiiGa
         {
             device_.DeleteStaleObjects();
             context_.StartFrame();
-            const std::shared_ptr<Viewport> viewport = nullptr;
-            root_.Draw(context_, viewport);
+            root_.Draw(context_);
             context_.EndFrame();
             swapChain_->Present();
         }
-        RenderDevice& GetRenderDevice() {
+
+        RenderDevice& GetRenderDevice()
+        {
             return device_;
         }
 
-        RenderContext& GetRenderContext() {
+        RenderContext& GetRenderContext()
+        {
             return context_;
         }
 
@@ -59,6 +60,7 @@ namespace GiiGa
             context_.ContextIdle();
             swapChain_->Resize(device_, event.width, event.height);
         }
+
     protected:
         RenderDevice device_;
         RenderContext context_;

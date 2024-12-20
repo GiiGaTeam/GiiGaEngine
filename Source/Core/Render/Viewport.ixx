@@ -29,7 +29,7 @@ namespace GiiGa
 
         virtual ~Viewport() = default;
 
-        virtual DescriptorHeapAllocation GetCameraDescriptor() =0;
+        virtual D3D12_GPU_DESCRIPTOR_HANDLE GetCameraDescriptor() =0;
         
         virtual void Execute(RenderContext& context) =0;
 
