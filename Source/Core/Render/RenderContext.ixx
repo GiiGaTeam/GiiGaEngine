@@ -1,13 +1,11 @@
-﻿module;
+﻿export module RenderContext;
 
-#include <complex.h>
-#include<memory>
-#include<vector>
-#include<directx/d3dx12.h>
-#include <d3d12.h>
-#include <queue>
-
-export module RenderContext;
+import <complex.h>;
+import<memory>;
+import<vector>;
+import<directx/d3dx12.h>;
+import <d3d12.h>;
+import <queue>;
 
 import IRenderContext;
 import RenderSystemSettings;

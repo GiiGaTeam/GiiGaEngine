@@ -1,11 +1,9 @@
-module;
-
-#include <vector>
-#include <memory>
-#include <typeindex>
-#include <json/json.h>
-
 export module IGameObject;
+
+import <vector>;
+import <memory>;
+import <typeindex>;
+import <json/json.h>;
 
 export import Uuid;
 import ITickable;

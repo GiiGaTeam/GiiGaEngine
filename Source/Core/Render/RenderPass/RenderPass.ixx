@@ -1,8 +1,8 @@
-﻿module;
-#include <memory>
-#include <vector>
+﻿export module RenderPass;
 
-export module RenderPass;
+import <memory>;
+import <vector>;
+
 import IRenderable;
 import RenderTypes;
 import SceneVisibility;

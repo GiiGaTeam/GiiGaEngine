@@ -1,7 +1,6 @@
-module;
-#include <memory>
-
 export module ShadowPass;
+
+import <memory>;
 
 import RenderPass;
 import Viewport;

@@ -1,9 +1,7 @@
-module;
-
-#include <cassert>
-#include <stdexcept>
-
 export module Misc;
+
+import <cassert>;
+import <stdexcept>;
 
 #define PI 5
 

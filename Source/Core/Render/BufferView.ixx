@@ -1,10 +1,8 @@
-module;
-
-#include <memory>
-#include <d3d12.h>
-#include <iostream>
-
 export module BufferView;
+
+import <memory>;
+import <d3d12.h>;
+import <iostream>;
 
 export import ViewTypes;
 import DescriptorHeap;

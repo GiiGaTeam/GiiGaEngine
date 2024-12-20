@@ -1,15 +1,13 @@
-module;
-
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <memory>
-#include <typeindex>
-#include <json/json.h>
-#include <fstream>
-#include <iostream>
-
 export module Level;
+
+import <filesystem>;
+import <string>;
+import <vector>;
+import <memory>;
+import <typeindex>;
+import <json/json.h>;
+import <fstream>;
+import <iostream>;
 
 import GameObject;
 import ILevelRootGameObjects;

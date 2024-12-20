@@ -1,8 +1,7 @@
-﻿module;
-#include <vector>
-#include <memory>
+﻿export module RenderGraph;
 
-export module RenderGraph;
+import <vector>;
+import <memory>;
 
 import RenderPass;
 import Viewport;

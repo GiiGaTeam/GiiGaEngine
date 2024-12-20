@@ -1,13 +1,11 @@
-﻿module;
+﻿export module PSO;
 
-#include <bitset>
-#include <map>
-#include <vector>
-#include <memory>
-#include <directx/d3d12.h>
-#include <directx/d3dx12_root_signature.h>
-
-export module PSO;
+import <bitset>;
+import <map>;
+import <vector>;
+import <memory>;
+import <directx/d3d12.h>;
+import <directx/d3dx12_root_signature.h>;
 
 import RenderDevice;
 import Material;

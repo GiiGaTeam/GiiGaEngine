@@ -1,9 +1,7 @@
-module;
-
-#include <imgui.h>
-#include <memory>
-
 export module EditorRenderSystem;
+
+import <imgui.h>;
+import <memory>;
 
 import RenderSystem;
 import ShadowPass;

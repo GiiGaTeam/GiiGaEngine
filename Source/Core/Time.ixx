@@ -1,8 +1,6 @@
-module;
-
-#include<chrono>
-
 export module Time;
+
+import<chrono>;
 
 export using duration = std::chrono::duration<double>;
 export using sys_clock = std::chrono::system_clock;

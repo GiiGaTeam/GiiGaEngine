@@ -1,13 +1,11 @@
-module;
-
-#include <unordered_map>
-#include <memory>
-#include <typeindex>
-#include <any>
-#include <stdexcept>
-#include <queue>
-
 export module IWorldQuery;
+
+import <unordered_map>;
+import <memory>;
+import <typeindex>;
+import <any>;
+import <stdexcept>;
+import <queue>;
 
 import IComponent;
 import IGameObject;

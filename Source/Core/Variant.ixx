@@ -1,10 +1,8 @@
-module;
-
-#include <optional>
-#include <string>
-#include <variant>
-
 export module Variant;
+
+import <optional>;
+import <string>;
+import <variant>;
 
 export struct ComponentName {
     std::string name;

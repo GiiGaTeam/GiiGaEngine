@@ -1,10 +1,8 @@
-module;
-
-#include <d3d12.h>
-#include <directxtk/SimpleMath.h>
-#include <array>
-
 export module VertexTypes;
+
+import <d3d12.h>;
+import <directxtk/SimpleMath.h>;
+import <array>;
 
 using namespace DirectX;
 

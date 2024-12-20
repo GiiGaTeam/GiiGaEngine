@@ -1,8 +1,7 @@
-module;
-#include <memory>
-#include <vector>
-
 export module ForwardPass;
+
+import <memory>;
+import <vector>;
 
 import RenderPass;
 //import ShaderManager;

@@ -1,10 +1,7 @@
-module;
-
-#include <memory>
-#include <json/json.h>
-
-
 export module IComponent;
+
+import <memory>;
+import <json/json.h>;
 
 export import ITickable;
 export import Uuid;

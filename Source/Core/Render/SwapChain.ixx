@@ -1,11 +1,9 @@
-module;
-
-#include<memory>
-#include<d3d12.h>
-#include<dxgi1_6.h>
-#include <vector>
-
 export module SwapChain;
+
+import<memory>;
+import<d3d12.h>;
+import<dxgi1_6.h>;
+import <vector>;
 
 import RenderSystemSettings;
 import DirectXUtils;

@@ -1,8 +1,6 @@
-module;
-
-#include <string>
-
 export module WindowSettings;
+
+import <string>;
 
 namespace GiiGa
 {

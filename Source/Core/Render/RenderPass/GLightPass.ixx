@@ -1,9 +1,8 @@
-﻿module;
+﻿export module GLightPass;
 
-#include <vector>
-#include <memory>
+import <vector>;
+import <memory>;
 
-export module GLightPass;
 import RenderPass;
 import IRenderable;
 import Viewport;

@@ -1,11 +1,9 @@
-﻿module;
+﻿export module DirectXUtils;
 
-#include<exception>
-#include<iostream>
-#include <d3d12.h>
-#include<string>
-
-export module DirectXUtils;
+import<exception>;
+import<iostream>;
+import <d3d12.h>;
+import<string>;
 
 import IRenderDevice;
 

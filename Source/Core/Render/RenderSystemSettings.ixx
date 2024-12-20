@@ -1,11 +1,8 @@
-﻿module;
+﻿export module RenderSystemSettings;
 
-#include <cstdint>
-#include <OCIdl.h>
-#include <bitset>
-
-export module RenderSystemSettings;
-
+import <cstdint>;
+import <OCIdl.h>;
+import <bitset>;
 
 namespace GiiGa
 {

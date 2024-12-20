@@ -1,12 +1,10 @@
-module;
-
-#include <memory>
-#include <tuple>
-#include <unordered_map>
-#include <SDL2/SDL_events.h>
-
-
 export module Input;
+
+import <memory>;
+import <tuple>;
+import <unordered_map>;
+import <SDL2/SDL_events.h>;
+
 import Window;
 
 namespace GiiGa

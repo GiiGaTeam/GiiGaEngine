@@ -1,9 +1,7 @@
-module;
-
-#include <iostream>
-#include <json/json.h>
-
 export module ConsoleComponent;
+
+import <iostream>;
+import <json/json.h>;
 
 import Component;
 import Time;

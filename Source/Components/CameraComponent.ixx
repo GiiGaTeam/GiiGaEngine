@@ -1,10 +1,10 @@
-﻿module;
-#include <algorithm>
-#include <directxtk12/SimpleMath.h>
-#include <json/value.h>
+﻿export module CameraComponent;
 
-export module CameraComponent;
+import <algorithm>;
+import <directxtk12/SimpleMath.h>;
+import <json/value.h>;
 import <memory>;
+
 import Component;
 import TransformComponent;
 import GameObject;

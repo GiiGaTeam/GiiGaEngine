@@ -1,11 +1,9 @@
-module;
-
-#include <filesystem>
-#include <memory>
-#include <json/reader.h>
-#include <fstream>
-
 export module EditorEngine;
+
+import <filesystem>;
+import <memory>;
+import <json/reader.h>;
+import <fstream>;
 
 export import Engine;
 import Time;

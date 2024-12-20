@@ -1,13 +1,11 @@
-module;
-
-#include <array>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-#include <SDL2/SDL_events.h>
-#include <imgui_impl_sdl2.h>
-#include <windows.h>  // Для типа HWND
-
 export module Window;
+
+import <array>;
+import <SDL2/SDL.h>;
+import <SDL2/SDL_syswm.h>;
+import <SDL2/SDL_events.h>;
+import <imgui_impl_sdl2.h>;
+import <windows.h>;  // Для типа HWND
 
 export import WindowSettings;
 import EventSystem;

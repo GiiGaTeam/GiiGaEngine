@@ -1,8 +1,6 @@
-module;
-
-#include <type_traits>
-
 export module Align;
+
+import <type_traits>;
 
 namespace GiiGa
 {

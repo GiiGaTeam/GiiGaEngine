@@ -1,8 +1,6 @@
-module;
-
-#include <json/json.h>
-
 export module AssetHandle;
+
+import <json/json.h>;
 
 import Uuid;
 export import AssetType;

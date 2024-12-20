@@ -1,17 +1,16 @@
-module;
-
-#include <d3d12.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <stdexcept>
-#include <filesystem>
-#include <memory>
-#include <vector>
-#include <DirectXCollision.h>
-#include <directxtk/SimpleMath.h>
-
 export module MeshAssetLoader;
+
+
+import <d3d12.h>;
+import <assimp/Importer.hpp>;
+import <assimp/scene.h>;
+import <assimp/postprocess.h>;
+import <stdexcept>;
+import <filesystem>;
+import <memory>;
+import <vector>;
+import <DirectXCollision.h>;
+import <directxtk/SimpleMath.h>;
 
 import Uuid;
 import AssetLoader;

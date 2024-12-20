@@ -1,8 +1,6 @@
-module;
-
-#include <memory>
-
 export module Engine;
+
+import <memory>;
 
 import ResourceManager;
 import BaseAssetDatabase;

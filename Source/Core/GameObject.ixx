@@ -1,15 +1,13 @@
-module;
-
-#include <vector>
-#include <memory>
-#include <typeindex>
-#include <unordered_map>
-#include <json/json.h>
-#include <unordered_set>
-#include <iostream>
-#include <directxtk12/SimpleMath.h>
-
 export module GameObject;
+
+import <vector>;
+import <memory>;
+import <typeindex>;
+import <unordered_map>;
+import <json/json.h>;
+import <unordered_set>;
+import <iostream>;
+import <directxtk12/SimpleMath.h>;
 
 export import IGameObject;
 import IComponent;

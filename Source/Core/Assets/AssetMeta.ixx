@@ -1,11 +1,9 @@
-module;
-
-#include <vector>
-#include <string>
-#include <filesystem>
-#include <json/json.h>
-
 export module AssetMeta;
+
+import <vector>;
+import <string>;
+import <filesystem>;
+import <json/json.h>;
 
 import AssetHandle;
 

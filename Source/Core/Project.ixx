@@ -1,13 +1,11 @@
-module;
-
-#include <memory>
-#include <filesystem>
-#include <fstream>
-#include <stdexcept>
-#include <iostream>
-#include <json/json.h>
-
 export module Project;
+
+import <memory>;
+import <filesystem>;
+import <fstream>;
+import <stdexcept>;
+import <iostream>;
+import <json/json.h>;
 
 namespace GiiGa
 {

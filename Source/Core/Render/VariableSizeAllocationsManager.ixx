@@ -1,9 +1,7 @@
-module;
-
-#include <cassert>
-#include <map>
-
 export module VariableSizeAllocationsManager;
+
+import <cassert>;
+import <map>;
 
 import Align;
 
@@ -41,12 +39,12 @@ namespace GiiGa
         // Type of the map that keeps memory blocks sorted by their offsets
         using TFreeBlocksByOffsetMap =
         std::map<OffsetType,
-            FreeBlockInfo>;
+                 FreeBlockInfo>;
 
         // Type of the map that keeps memory blocks sorted by their sizes
         using TFreeBlocksBySizeMap =
         std::multimap<OffsetType,
-            TFreeBlocksByOffsetMap::iterator>;
+                      TFreeBlocksByOffsetMap::iterator>;
 
         struct FreeBlockInfo
         {
@@ -167,7 +165,7 @@ namespace GiiGa
             bool operator==(const Allocation& rhs) const noexcept
             {
                 return UnalignedOffset == rhs.UnalignedOffset &&
-                       Size == rhs.Size;
+                    Size == rhs.Size;
             }
 
             OffsetType UnalignedOffset = InvalidOffset;
@@ -177,7 +175,7 @@ namespace GiiGa
         Allocation Allocate(OffsetType Size, OffsetType Alignment)
         {
             assert(Size > 0);
-            assert(IsPowerOfTwo(Alignment), "Alignment (", Alignment, ") must be power of 2");
+            assert(IsPowerOfTwo(Alignment)); // "Alignment (", Alignment, ") must be power of 2");
             Size = AlignUp(Size, Alignment);
             if (m_FreeSize < Size)
                 return Allocation::InvalidAllocation();
@@ -381,7 +379,7 @@ namespace GiiGa
                     NewBlockSize += LastBlockSize;
 
                     assert(LastBlockIt->second.OrderBySizeIt->first == LastBlockSize &&
-                                LastBlockIt->second.OrderBySizeIt->second == LastBlockIt);
+                        LastBlockIt->second.OrderBySizeIt->second == LastBlockIt);
                     m_FreeBlocksBySize.erase(LastBlockIt->second.OrderBySizeIt);
                     m_FreeBlocksByOffset.erase(LastBlockIt);
                 }

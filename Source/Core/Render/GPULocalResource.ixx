@@ -1,13 +1,10 @@
-module;
-
-#include<memory>
-#include<span>
-#include<algorithm>
-#include <cassert>
-#include<unordered_map>
-#include<directx/d3dx12.h>
-
 export module GPULocalResource;
+
+import<memory>;
+import<span>;
+import<algorithm>;
+import<unordered_map>;
+import<directx/d3dx12.h>;
 
 import RenderDevice;
 import IRenderContext;

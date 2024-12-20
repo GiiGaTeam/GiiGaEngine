@@ -1,9 +1,7 @@
-﻿module;
+﻿export module LightComponent;
 
-#include <memory>
-#include <directxtk/SimpleMath.h>
-
-export module LightComponent;
+import <memory>;
+import <directxtk/SimpleMath.h>;
 
 import Component;
 import IWorldQuery;

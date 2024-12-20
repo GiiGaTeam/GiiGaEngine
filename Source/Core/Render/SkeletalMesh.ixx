@@ -1,11 +1,9 @@
-module;
-
-#include <span>
-#include <vector>
-#include<directx/d3dx12.h>
-#include <directxtk/SimpleMath.h>
-
 export module SkeletalMesh;
+
+import <span>;
+import <vector>;
+import<directx/d3dx12.h>;
+import <directxtk/SimpleMath.h>;
 
 import RenderDevice;
 import IRenderContext;

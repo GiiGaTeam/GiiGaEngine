@@ -1,8 +1,6 @@
-module;
-
-#include <d3d12.h>
-
 export module ViewTypes;
+
+import <d3d12.h>;
 
 import DescriptorHeap;
 

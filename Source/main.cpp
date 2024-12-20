@@ -1,20 +1,20 @@
-#include "imgui.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx12.h"
-#include <d3d12.h>
-#include <dxgi1_4.h>
-#include <tchar.h>
+import "imgui.h"
+import "imgui_impl_win32.h"
+import "imgui_impl_dx12.h"
+import <d3d12.h>
+import <dxgi1_4.h>
+import <tchar.h>
 
 #ifdef _DEBUG
 #define DX12_ENABLE_DEBUG_LAYER
 #endif
 
 #ifdef DX12_ENABLE_DEBUG_LAYER
-#include <dxgidebug.h>
+import <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
 #endif
 
-#include "imgui_internal.h"
+import "imgui_internal.h"
 
 struct FrameContext
 {

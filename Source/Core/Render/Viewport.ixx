@@ -1,12 +1,9 @@
-module;
-
-#include<vector>
-#include<d3d12.h>
-#include<memory>
-#include<directxtk/SimpleMath.h>
-
-
 export module Viewport;
+
+import<vector>;
+import<d3d12.h>;
+import<memory>;
+import<directxtk/SimpleMath.h>;
 
 import RenderDevice;
 export import GPULocalResource;

@@ -1,11 +1,10 @@
-﻿module;
+﻿export module ObjectShaderResource;
 
-#include <memory>
-#include <span>
-#include <directx/d3dx12.h>
-#include <directxtk/SimpleMath.h>
+import <memory>;
+import <span>;
+import <directx/d3dx12.h>;
+import <directxtk/SimpleMath.h>;
 
-export module ObjectShaderResource;
 import RenderDevice;
 import RenderContext;
 import GPULocalResource;

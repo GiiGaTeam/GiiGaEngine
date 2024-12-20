@@ -1,8 +1,7 @@
-﻿module;
-#include <memory>
-#include <directxtk12/SimpleMath.h>
+﻿export module SpectatorMovementComponent;
 
-export module SpectatorMovementComponent;
+import <memory>;
+import <directxtk12/SimpleMath.h>;
 import <json/value.h>;
 import Component;
 import GameObject;

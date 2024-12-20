@@ -1,9 +1,7 @@
-module;
-
-#include <string>
-#include <stduuid/uuid.h>
-
 export module Uuid;
+
+import <string>;
+import <stduuid/uuid.h>;
 
 namespace GiiGa
 {

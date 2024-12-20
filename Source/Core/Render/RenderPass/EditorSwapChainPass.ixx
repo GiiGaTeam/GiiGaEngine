@@ -1,14 +1,12 @@
-module;
-
-#include <d3d12.h>
-#include <vector>
-#include <memory>
-
-#include <imgui.h>
-#include <imgui_impl_dx12.h>
-#include <imgui_impl_sdl2.h>
-
 export module EditorSwapChainPass;
+
+import <d3d12.h>;
+import <vector>;
+import <memory>;
+
+import <imgui.h>;
+import <imgui_impl_dx12.h>;
+import <imgui_impl_sdl2.h>;
 
 import RenderSystemSettings;
 import RenderDevice;

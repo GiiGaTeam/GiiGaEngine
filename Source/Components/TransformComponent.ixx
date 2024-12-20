@@ -1,10 +1,8 @@
-﻿module;
+﻿export module TransformComponent;
 
-#include "directxtk12/SimpleMath.h"
-#include <memory>
-#include <json/json.h>
-
-export module TransformComponent;
+import <directxtk12/SimpleMath.h>;
+import <memory>;
+import <json/json.h>;
 
 import MathUtils;
 import Component;

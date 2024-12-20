@@ -1,9 +1,7 @@
-module;
-
-#include <unordered_map>
-#include <memory>
-
 export module ILevelRootGameObjects;
+
+import <unordered_map>;
+import <memory>;
 
 import IGameObject;
 

@@ -1,9 +1,7 @@
-module;
-
-#include <vector>
-#include <filesystem>
-
 export module MeshAsset;
+
+import <vector>;
+import <filesystem>;
 
 import AssetBase;
 import Mesh;

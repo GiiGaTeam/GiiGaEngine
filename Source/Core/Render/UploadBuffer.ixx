@@ -1,11 +1,9 @@
-module;
-
-#include<memory>
-#include<deque>
-#include<span>
-#include<directx/d3dx12.h>
-
 export module UploadBuffer;
+
+import<memory>;
+import<deque>;
+import<span>;
+import<directx/d3dx12.h>;
 
 import Align;
 import RenderDevice;

@@ -1,11 +1,10 @@
-﻿module;
+﻿export module PerObjectData;
 
-#include <memory>
-#include <span>
-#include <directx/d3dx12.h>
-#include <directxtk/SimpleMath.h>
+import <memory>;
+import <span>;
+import <directx/d3dx12.h>;
+import <directxtk/SimpleMath.h>;
 
-export module PerObjectData;
 import TransformComponent;
 import BufferView;
 import GPULocalResource;

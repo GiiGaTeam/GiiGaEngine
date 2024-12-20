@@ -1,11 +1,8 @@
-module;
-
-#include <memory>
-#include <d3d12.h>
-
 export module IRenderContext;
 
+import <memory>;
 export import <span>;
+import <d3d12.h>;
 
 export import UploadBuffer;
 

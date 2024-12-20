@@ -1,11 +1,9 @@
-module;
-
-#include "FileWatch.hpp"
-#include <filesystem>
-#include <string>
-#include <chrono>
-
 export module ProjectWatcher;
+
+import "FileWatch.hpp";
+import <filesystem>;
+import <string>;
+import <chrono>;
 
 import EventSystem;
 import Logger;

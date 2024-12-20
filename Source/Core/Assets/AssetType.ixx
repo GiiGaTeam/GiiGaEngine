@@ -1,10 +1,8 @@
-module;
-
 export module AssetType;
 
-#include <json/json.h>
-#include <unordered_map>
-#include <string>
+import <json/json.h>;
+import <unordered_map>;
+import <string>;
 
 namespace GiiGa
 {

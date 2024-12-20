@@ -1,11 +1,9 @@
-﻿module;
+﻿export module FrameContext;
 
-#include<memory>
-#include<vector>
-#include<d3d12.h>
-#include <span>
-
-export module FrameContext;
+import<memory>;
+import<vector>;
+import<d3d12.h>;
+import <span>;
 
 import RenderDevice;
 import DescriptorHeap;

@@ -1,13 +1,11 @@
-module;
-
-#include <d3d12.h>
-#include <directxtk12/WICTextureLoader.h>
-#include <directxtk12/ResourceUploadBatch.h>
-#include <stdexcept>
-#include <filesystem>
-#include <memory>
-
 export module ImageAssetLoader;
+
+import <d3d12.h>;
+import <directxtk12/WICTextureLoader.h>;
+import <directxtk12/ResourceUploadBatch.h>;
+import <stdexcept>;
+import <filesystem>;
+import <memory>;
 
 import AssetLoader;
 import AssetType;

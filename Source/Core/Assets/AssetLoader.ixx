@@ -1,15 +1,13 @@
-module;
-
-#include <regex>
-#include <unordered_map>
-#include <string>
-#include <functional>
-#include <memory>
-#include <filesystem>
-#include <thread>
-#include <vector>
-
 export module AssetLoader;
+
+import <regex>;
+import <unordered_map>;
+import <string>;
+import <functional>;
+import <memory>;
+import <filesystem>;
+import <thread>;
+import <vector>;
 
 import AssetHandle;
 import AssetType;

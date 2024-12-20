@@ -1,12 +1,10 @@
-module;
-
-#include <cassert>
-#include <memory>
-#include <type_traits>
-#include <utility>
-#include <iostream>
-
 export module unique_any;
+
+import <cassert>;
+import <memory>;
+import <type_traits>;
+import <utility>;
+import <iostream>;
 
 namespace GiiGa
 {

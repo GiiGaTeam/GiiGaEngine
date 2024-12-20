@@ -1,8 +1,7 @@
-module;
-#include <memory>
-#include <SDL2/SDL.h>
-
 export module WindowManager;
+
+import <memory>;
+import <SDL2/SDL.h>;
 
 export import Window;
 export import WindowSettings;

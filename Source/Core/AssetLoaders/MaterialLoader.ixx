@@ -1,9 +1,7 @@
-module;
-
-#include <filesystem>
-#include<memory>
-
 export module MaterialLoader;
+
+import <filesystem>;
+import<memory>;
 
 import AssetLoader;
 import GPULocalResource;

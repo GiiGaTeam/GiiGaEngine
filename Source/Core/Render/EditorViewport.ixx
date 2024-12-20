@@ -1,12 +1,10 @@
-module;
-
-#include <imgui.h>
-#include <string>
-#include <memory>
-#include <d3d12.h>
-#include <iostream>
-
 export module EditorViewport;
+
+import <imgui.h>;
+import <string>;
+import <memory>;
+import <d3d12.h>;
+import <iostream>;
 
 export import Viewport;
 import RenderDevice;

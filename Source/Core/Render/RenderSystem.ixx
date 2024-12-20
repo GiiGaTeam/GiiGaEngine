@@ -1,10 +1,8 @@
-﻿module;
+﻿export module RenderSystem;
 
-#include <functional>
-#include <memory>
-#include <iostream>
-
-export module RenderSystem;
+import <functional>;
+import <memory>;
+import <iostream>;
 
 import RenderSystemSettings;
 export import Window;

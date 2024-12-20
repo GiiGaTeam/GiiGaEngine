@@ -1,9 +1,7 @@
-module;
-
-#include <functional>
-#include <unordered_map>
-
 export module EventSystem;
+
+import <functional>;
+import <unordered_map>;
 
 namespace GiiGa
 {

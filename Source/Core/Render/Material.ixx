@@ -1,12 +1,11 @@
-﻿module;
+﻿export module Material;
 
-#include <DirectXMath.h>
-#include <memory>
-#include <directx/d3dx12_core.h>
-#include <directxtk/SimpleMath.h>
-#include <cmath>
+import <DirectXMath.h>;
+import <memory>;
+import <directx/d3dx12_core.h>;
+import <directxtk/SimpleMath.h>;
+import <cmath>;
 
-export module Material;
 import GPULocalResource;
 import RenderDevice;
 import AssetBase;

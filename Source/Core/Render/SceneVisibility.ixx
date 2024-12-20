@@ -1,16 +1,17 @@
 module;
 
-#include <DirectXCollision.h>
-#include <memory>
-#include <vector>
-#include <Octree/octree.h>
-#include <limits>
-#include <unordered_map>
 #define NOMINMAX
 #include <directxtk12/SimpleMath.h>
 #include<directxtk12/SimpleMath.inl>
 
 export module SceneVisibility;
+
+import <DirectXCollision.h>;
+import <memory>;
+import <vector>;
+import <Octree/octree.h>;
+import <limits>;
+import <unordered_map>;
 
 import IRenderable;
 import ITickable;

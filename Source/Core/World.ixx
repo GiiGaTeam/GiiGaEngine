@@ -1,13 +1,11 @@
-module;
-
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <memory>
-#include <vector>
-#include <json/json.h>
-
 export module World;
+
+import <filesystem>;
+import <string>;
+import <vector>;
+import <memory>;
+import <vector>;
+import <json/json.h>;
 
 export import Level;
 export import GameObject;

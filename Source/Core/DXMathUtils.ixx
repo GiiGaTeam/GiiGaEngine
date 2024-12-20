@@ -1,11 +1,9 @@
-module;
-
-#include <json/config.h>
-#include <json/value.h>
-
-#include "directxtk12/SimpleMath.h"
-
 export module MathUtils;
+
+import <json/config.h>;
+import <json/value.h>;
+
+import "directxtk12/SimpleMath.h";
 
 using namespace DirectX::SimpleMath;
 

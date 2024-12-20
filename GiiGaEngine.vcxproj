@@ -398,7 +398,6 @@
     <ClCompile Include="Source\Core\WindowManager.ixx" />
     <ClCompile Include="Source\Core\WindowSettings.ixx" />
     <ClCompile Include="Source\Core\World.ixx" />
-    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
   <ItemGroup>

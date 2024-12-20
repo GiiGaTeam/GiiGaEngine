@@ -1,13 +1,11 @@
-﻿module;
+﻿export module RenderDevice;
 
-#include <cassert>
-#include <d3d12.h>
-#include <memory>
-#include <unordered_map>
-#include <any>
-#include <iostream>
-
-export module RenderDevice;
+import <cassert>;
+import <d3d12.h>;
+import <memory>;
+import <unordered_map>;
+import <any>;
+import <iostream>;
 
 export import IRenderDevice;
 import DirectXUtils;

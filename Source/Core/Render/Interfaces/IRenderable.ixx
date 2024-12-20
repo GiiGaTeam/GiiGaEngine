@@ -1,10 +1,8 @@
-module;
-
-#include <vector>
-#include <unordered_map>
-#include <memory>
-
 export module IRenderable;
+
+import <vector>;
+import <unordered_map>;
+import <memory>;
 
 import ObjectShaderResource;
 import RenderSystemSettings;

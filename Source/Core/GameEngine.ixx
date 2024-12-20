@@ -1,8 +1,6 @@
-module;
-
-#include <memory>
-
 export module GameEngine;
+
+import <memory>;
 
 import Engine;
 import Misc;

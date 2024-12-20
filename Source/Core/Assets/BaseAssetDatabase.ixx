@@ -1,14 +1,12 @@
-module;
-
-#include <unordered_map>
-#include <optional>
-#include <string>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <json/json.h>
-
 export module BaseAssetDatabase;
+
+import <unordered_map>;
+import <optional>;
+import <string>;
+import <filesystem>;
+import <fstream>;
+import <iostream>;
+import <json/json.h>;
 
 import Logger;
 import AssetHandle;

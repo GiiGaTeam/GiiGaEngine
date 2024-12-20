@@ -1,14 +1,10 @@
-module;
-
-#include<memory>
-#include<list>
-#include<vector>
-#include<d3d12.h>
-#include<iostream>
-
-
-
 export module IRenderDevice;
+
+import<memory>;
+import<list>;
+import<vector>;
+import<d3d12.h>;
+import<iostream>;
 
 export import unique_any;
 

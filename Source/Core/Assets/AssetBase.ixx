@@ -1,9 +1,7 @@
-module;
-
-#include <vector>
-#include <filesystem>
-
 export module AssetBase;
+
+import <vector>;
+import <filesystem>;
 
 export import AssetHandle;
 export import Uuid;

@@ -1,11 +1,9 @@
-module;
-
-#include <unordered_map>
-#include <string>
-#include <functional>
-#include <memory>
-
 export module ResourceManager;
+
+import <unordered_map>;
+import <string>;
+import <functional>;
+import <memory>;
 
 import AssetHandle;
 import AssetType;

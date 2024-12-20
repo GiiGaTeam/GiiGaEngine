@@ -1,14 +1,12 @@
-module;
-
-#include <filesystem>
-#include <span>
-#include <concepts>
-#include <stdexcept>
-#include <type_traits>
-#include <vector>
-#include <iostream>
-
 export module EditorAssetDatabase;
+
+import <filesystem>;
+import <span>;
+import <concepts>;
+import <stdexcept>;
+import <type_traits>;
+import <vector>;
+import <iostream>;
 
 import Logger;
 import BaseAssetDatabase;

@@ -1,18 +1,19 @@
 module;
 
-#include <algorithm>
 #define NOMINMAX
-#include <d3d12.h>
-#include <cstdint>
-#include <limits>
-#include <cassert>
-#include <memory>
-#include <mutex>
-#include <unordered_set>
-#include <vector>
-#include <any>
+#include <d3d12.h>;
 
 export module DescriptorHeap;
+
+import <algorithm>;
+import <cstdint>;
+import <limits>;
+import <cassert>;
+import <memory>;
+import <mutex>;
+import <unordered_set>;
+import <vector>;
+import <any>;
 
 import VariableSizeAllocationsManager;
 import IRenderDevice;

@@ -1,10 +1,8 @@
-module;
-
-#include <DirectXCollision.h>
-#include <memory>
-#include <json/value.h>
-
 export module StaticMeshComponent;
+
+import <DirectXCollision.h>;
+import <memory>;
+import <json/value.h>;
 
 import Engine;
 import Component;

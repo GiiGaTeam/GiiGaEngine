@@ -1,11 +1,12 @@
-﻿module;
-#include <d3d12.h>
-#include <windows.h>
-#include <d3dcompiler.h>
-#include <filesystem>
-#include <map>
-#include <vector>
-export module ShaderManager;
+﻿export module ShaderManager;
+
+import <d3d12.h>;
+import <windows.h>;
+import <d3dcompiler.h>;
+import <filesystem>;
+import <map>;
+import <vector>;
+
 import VertexTypes;
 
 namespace GiiGa
