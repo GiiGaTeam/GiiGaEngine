@@ -27,7 +27,7 @@ namespace GiiGa
             const auto MaterialSpan = std::span{reinterpret_cast<uint8_t*>(&data), SizeInBytes};
 
             MaterialCB_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-            MaterialCB_->UpdateContentsImmediate(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            MaterialCB_->UpdateContentsDeffered(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             MaterialCBV_ = MaterialCB_->CreateConstantBufferView(desc);
         }
 
@@ -75,7 +75,7 @@ namespace GiiGa
 
     private:
         bool IsStatic_;
-        std::unique_ptr<GPULocalResource> MaterialCB_;
+        std::shared_ptr<GPULocalResource> MaterialCB_;
         std::shared_ptr<Material> Material_;
         std::shared_ptr<BufferView<Constant>> MaterialCBV_;
     };

@@ -1,10 +1,13 @@
-﻿export module RenderContext;
+﻿module;
+
+#include<directx/d3dx12.h>;
+#include <d3d12.h>;
+
+export module RenderContext;
 
 import <complex.h>;
 import<memory>;
 import<vector>;
-import<directx/d3dx12.h>;
-import <d3d12.h>;
 import <queue>;
 
 import IRenderContext;
@@ -18,6 +21,13 @@ import BufferView;
 
 namespace GiiGa
 {
+    struct DefferedUploadEntry
+    {
+        UploadBuffer uploadBuffer;
+        UploadBuffer::Allocation allocation;
+        DefferedUploadQuery query;
+    };
+
     export class RenderContext : public IRenderContext
     {
         friend class EditorSwapChainPass;
@@ -56,12 +66,22 @@ namespace GiiGa
             frameLatencyWaitableObject_ = FrameLatencyWaitableObject;
         }
 
-        void CreateDefferedUpload(DefferedUploadEntry entry) override
+        void CreateDefferedUpload(const std::span<const uint8_t>& data, DefferedUploadQuery&& query) override
         {
+            DefferedUploadEntry entry
+            {
+                .uploadBuffer = UploadBuffer(device_, data.size_bytes()),
+                .query = std::move(query)
+            };
+
+            entry.allocation = entry.uploadBuffer.Allocate(data.size(), 1);
+
+            std::copy(data.begin(), data.end(), entry.allocation.CPU.begin());
+
             defferedUploads_.push(std::move(entry));
         }
 
-        UploadBuffer::Allocation CreateAndAllocateUploadBuffer(size_t size) override
+        UploadBuffer::Allocation CreateAndAllocateUploadBufferInCurrentFrame(size_t size) override
         {
             UploadBuffer& upload_buffer = current_frame->CreateUploadBuffer(device_, size);
 
@@ -104,31 +124,28 @@ namespace GiiGa
 
             while (!defferedUploads_.empty())
             {
-                auto defferedUpload = defferedUploads_.front();
+                DefferedUploadEntry defferedUpload = std::move(defferedUploads_.front());
                 defferedUploads_.pop();
-                UploadBuffer::Allocation allocation = CreateAndAllocateUploadBuffer(defferedUpload.data.size());
-
-                std::copy(defferedUpload.data.begin(), defferedUpload.data.end(), allocation.CPU.begin());
 
                 CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                    defferedUpload.destination.get(),
-                    defferedUpload.current_state,
+                    defferedUpload.query.destination.get(),
+                    defferedUpload.query.getStateFunction(),
                     D3D12_RESOURCE_STATE_COPY_DEST
                 );
 
                 ResourceBarrier(1, barrier);
 
-                CopyBufferRegion(defferedUpload.destination, 0, allocation.resource, 0, defferedUpload.data.size());
+                CopyBufferRegion(defferedUpload.query.destination, 0, defferedUpload.allocation.resource, 0, defferedUpload.allocation.CPU.size());
 
                 barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                    defferedUpload.destination.get(),
+                    defferedUpload.query.destination.get(),
                     D3D12_RESOURCE_STATE_COPY_DEST,
-                    defferedUpload.stateAfter
+                    defferedUpload.query.stateAfter
                 );
 
                 ResourceBarrier(1, barrier);
 
-                defferedUpload.current_state = defferedUpload.stateAfter;
+                defferedUpload.query.setStateFunction(defferedUpload.query.stateAfter);
             }
 
             ID3D12DescriptorHeap* descriptorHeap = device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetDescriptorHeap().

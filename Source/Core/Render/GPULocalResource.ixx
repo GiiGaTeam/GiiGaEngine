@@ -1,6 +1,6 @@
 export module GPULocalResource;
 
-import<memory>;
+import <memory>;
 import<span>;
 import<algorithm>;
 import<unordered_map>;
@@ -14,7 +14,7 @@ export import DirectXUtils;
 
 namespace GiiGa
 {
-    export class GPULocalResource
+    export class GPULocalResource : public std::enable_shared_from_this<GPULocalResource>
     {
     public:
         GPULocalResource(RenderDevice& device, std::shared_ptr<ID3D12Resource> resource,
@@ -40,13 +40,21 @@ namespace GiiGa
         // instead call UpdateContentsImmediate
         void UpdateContentsDeffered(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfter)
         {
-            render_context.CreateDefferedUpload({.data = data, .current_state = current_state_, .stateAfter = stateAfter, .destination = resource_});
+            auto s_this = shared_from_this();
+            render_context.CreateDefferedUpload(data,
+                                                {
+                                                    .getStateFunction = [s_this]() { return s_this->current_state_; },
+                                                    .setStateFunction = [s_this](D3D12_RESOURCE_STATES new_state) { return s_this->current_state_ = new_state; },
+                                                    .stateAfter = stateAfter,
+                                                    .destination = resource_
+                                                }
+            );
         }
 
-        // If you do want to update contents in middle of frame use this
+        // If you do want to update contents after frame start use this
         void UpdateContentsImmediate(IRenderContext& render_context, const std::span<const uint8_t>& data, D3D12_RESOURCE_STATES stateAfer)
         {
-            UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBuffer(data.size());
+            UploadBuffer::Allocation allocation = render_context.CreateAndAllocateUploadBufferInCurrentFrame(data.size());
 
             std::copy(data.begin(), data.end(), allocation.CPU.begin());
 

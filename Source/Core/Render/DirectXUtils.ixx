@@ -540,7 +540,7 @@ namespace GiiGa
             //    std::wcout << name << "\n";
             //    d3d12Object->Release();
             //}
-            device_.EnqueueToDelete(unique_any(std::unique_ptr<IUnknown, DXDeleter>(std::move(resource))));
+            device_.KeepAliveForFramesInFlight(unique_any(std::unique_ptr<IUnknown, DXDeleter>(std::move(resource))));
         }
 
     private:

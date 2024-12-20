@@ -643,7 +643,7 @@ namespace GiiGa
                 }
             };
             // todo review here should be enqueueing
-            m_DeviceD3D12Impl.EnqueueToDelete(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
+            m_DeviceD3D12Impl.KeepAliveForFramesInFlight(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
@@ -833,7 +833,7 @@ namespace GiiGa
             };
             // todo review here should be enqueueing
             //StaleAllocation{std::move(Allocation), *this};
-            m_DeviceD3D12Impl.EnqueueToDelete(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
+            m_DeviceD3D12Impl.KeepAliveForFramesInFlight(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 

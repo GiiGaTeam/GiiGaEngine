@@ -30,9 +30,9 @@ namespace GiiGa
         virtual std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, D3D12_RESOURCE_DESC pDesc,
                                                                         D3D12_RESOURCE_STATES InitialResourceState, D3D12_CLEAR_VALUE* clearValue = nullptr) =0;
 
-        void EnqueueToDelete(unique_any to_destroy)
+        void KeepAliveForFramesInFlight(unique_any to_keep_alive)
         {
-            delete_queue.back().push_back(std::move(to_destroy));
+            delete_queue.back().push_back(std::move(to_keep_alive));
         }
 
         void DeleteStaleObjects()
