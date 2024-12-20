@@ -35,6 +35,8 @@ namespace GiiGa
 
     public:
         friend class ResourceManager;
+        // todo: temp
+        friend class ImGuiContentBrowser; 
 
         BaseAssetDatabase(const std::filesystem::path& registry_path)
             : registry_path_(registry_path / registry_name)

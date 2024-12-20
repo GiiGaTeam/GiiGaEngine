@@ -279,6 +279,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Source\Core\Render\ImGuiWindows\IImGuiWindow.ixx" />
+    <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.ixx" />
     <ClCompile Include="Source\Core\Render\ObjectShaderResource.ixx" />

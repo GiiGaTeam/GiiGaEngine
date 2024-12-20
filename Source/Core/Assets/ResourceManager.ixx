@@ -20,6 +20,8 @@ namespace GiiGa
     {
     protected:
         friend class AssetBase;
+        // todo: temp
+        friend class ImGuiContentBrowser; 
 
         std::shared_ptr<BaseAssetDatabase> database_;
 

@@ -19,6 +19,7 @@ import EditorContext;
 import IImGuiWindow;
 import ImGuiSceneHierarchy;
 import ImGuiInspector;
+import ImGuiContentBrowser;
 
 namespace GiiGa
 {
@@ -47,6 +48,7 @@ namespace GiiGa
 
             windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
+            windows_.push_back(std::make_unique<ImGuiContentBrowser>());
         }
 
         ~EditorSwapChainPass() override
