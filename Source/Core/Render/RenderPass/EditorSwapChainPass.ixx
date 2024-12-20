@@ -15,8 +15,10 @@ import SwapChain;
 import EditorViewport;
 import DescriptorHeap;
 import Window;
+import EditorContext;
 import IImGuiWindow;
 import ImGuiSceneHierarchy;
+import ImGuiInspector;
 
 namespace GiiGa
 {
@@ -26,7 +28,8 @@ namespace GiiGa
 
     public:
         EditorSwapChainPass(RenderDevice& device, std::shared_ptr<SwapChain> swapChain):
-            swapChain_(swapChain)
+            swapChain_(swapChain),
+            editorContext_(std::make_shared<EditorContext>())
         {
             // Setup Dear ImGui style
             ImGui::StyleColorsDark();
@@ -42,7 +45,8 @@ namespace GiiGa
                                 imgui_srv_desc_heap_allocation_.GetCpuHandle(),
                                 imgui_srv_desc_heap_allocation_.GetGpuHandle());
 
-            windows_.push_back(std::make_unique<ImGuiSceneHierarchy>());
+            windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
+            windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
         }
 
         ~EditorSwapChainPass() override
@@ -62,7 +66,7 @@ namespace GiiGa
                 {
                     window->RecordImGui();
                 }
-                
+
                 for (auto viewport : viewports_)
                 {
                     viewport->Execute(context);
@@ -97,6 +101,7 @@ namespace GiiGa
 
     private:
         std::shared_ptr<SwapChain> swapChain_;
+        std::shared_ptr<EditorContext> editorContext_;
         std::vector<std::shared_ptr<Viewport>> viewports_;
         std::vector<std::unique_ptr<IImGuiWindow>> windows_;
         DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;

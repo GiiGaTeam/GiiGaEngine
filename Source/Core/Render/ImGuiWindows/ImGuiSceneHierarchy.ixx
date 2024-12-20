@@ -5,13 +5,17 @@ import <memory>;
 
 import IImGuiWindow;
 import World;
+import EditorContext;
 
 namespace GiiGa
 {
     export class ImGuiSceneHierarchy : public IImGuiWindow
     {
     public:
-        ImGuiSceneHierarchy() = default;
+        ImGuiSceneHierarchy(std::shared_ptr<EditorContext> ec):
+            editorContext_(ec)
+        {
+        }
 
         void RecordImGui() override
         {
@@ -24,12 +28,12 @@ namespace GiiGa
                 RecursiveDrawLevel(level);
             }
 
-            //if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
-            //{
-            //    if (selected_)
-            //        deselect(selected_);
-            //    selected_ = scene_.getNullEntt();
-            //}
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
+            {
+                //if (selected_)
+                //    deselect(selected_);
+                editorContext_->selectedGameObject.reset();
+            }
 
             //if (ImGui::BeginPopupContextWindow())
             //{
@@ -38,11 +42,13 @@ namespace GiiGa
             //
             //    ImGui::EndPopup();
             //}
-            
+
             ImGui::End();
         }
 
     private:
+        std::shared_ptr<EditorContext> editorContext_;
+
         void RecursiveDrawLevel(std::shared_ptr<Level> level)
         {
             const ImGuiTreeNodeFlags flags =
@@ -77,7 +83,19 @@ namespace GiiGa
             const bool opened = ImGui::TreeNodeEx(
                 gameObject->GetUuid().ToString().c_str(),
                 flags,
-                gameObject->GetName().c_str());
+                gameObject->name.c_str());
+
+            if (ImGui::IsItemClicked())
+            {
+                //if (selected_)
+                //{
+                //    deselect(selected_);
+                //}
+
+                editorContext_->selectedGameObject = gameObject;
+
+                //select(selected_);
+            }
 
             if (opened)
             {

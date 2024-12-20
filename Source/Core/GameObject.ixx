@@ -36,6 +36,8 @@ namespace GiiGa
     export class GameObject final : public IGameObject
     {
     public:
+        std::string name;
+
         void Destroy()
         {
             TryRemoveFromLevelRoot();
@@ -89,10 +91,10 @@ namespace GiiGa
         static std::shared_ptr<GameObject> CreateEmptyGameObject(const SpawnParameters& spawnParameters)
         {
             auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
-            newGameObject->name_ = spawnParameters.name;
+            newGameObject->name = spawnParameters.name;
 
             if (!newGameObject->GetComponent<TransformComponent>())
-                newGameObject->CreateComponent<TransformComponent>();
+                newGameObject->transform_ = newGameObject->CreateComponent<TransformComponent>();
 
             if (!spawnParameters.Owner.expired())
             {
@@ -113,7 +115,7 @@ namespace GiiGa
             std::shared_ptr<GameObject> newGameObject = std::shared_ptr<GameObject>(new GameObject(json, level_rgo));
 
             if (!newGameObject->GetComponent<TransformComponent>())
-                newGameObject->CreateComponent<TransformComponent>();
+                newGameObject->transform_ = newGameObject->CreateComponent<TransformComponent>();
 
             newGameObject->RegisterInWorld();
 
@@ -126,7 +128,7 @@ namespace GiiGa
         {
             Json::Value this_json;
 
-            this_json["Name"] = name_;
+            this_json["Name"] = name;
             this_json["Uuid"] = uuid_.ToString();
 
             for (auto&& [_,component] : components_)
@@ -244,11 +246,6 @@ namespace GiiGa
             children_.erase(child->GetUuid());
         }
 
-        const std::string& GetName()const
-        {
-            return name_;
-        }
-
         Uuid GetUuid() const override
         {
             return uuid_;
@@ -261,13 +258,12 @@ namespace GiiGa
 
     private:
         Uuid uuid_ = Uuid::New();
-        std::string name_;
         std::weak_ptr<GameObject> parent_;
         std::unordered_map<Uuid, std::shared_ptr<IComponent>> components_;
         std::unordered_map<Uuid, std::shared_ptr<GameObject>> children_;
         std::weak_ptr<ILevelRootGameObjects> level_root_gos_;
 
-        std::weak_ptr<TransformComponent> transform_;
+        std::shared_ptr<TransformComponent> transform_;
 
         void TryRemoveFromLevelRoot()
         {
@@ -287,7 +283,7 @@ namespace GiiGa
         GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
             level_root_gos_(level_rgo)
         {
-            name_ = json["Name"].asString();
+            name = json["Name"].asString();
 
             auto js_uuid = Uuid::FromString(json["Uuid"].asString());
 
