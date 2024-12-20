@@ -35,8 +35,7 @@ namespace GiiGa
                 render_system_->Tick();
             }
 
-            editor_asset_database_->Shutdown();
-            editor_asset_database_->SaveRegistry();
+            DeInitialize();
         }
 
         static EditorEngine& Instance()
@@ -56,7 +55,6 @@ namespace GiiGa
         {
             Engine::Initialize(proj);
             World::Initialize();
-
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 
@@ -72,6 +70,18 @@ namespace GiiGa
             //todo
             auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
             World::AddLevelFromAbsolutePath(level_path);
+        }
+
+        void DeInitialize() override
+        {
+
+            editor_asset_database_->Shutdown();
+            editor_asset_database_->SaveRegistry();
+            
+            editor_asset_database_.reset();
+            World::DeInitialize();
+            render_system_.reset();
+            Engine::DeInitialize();
         }
 
         void DefaultLoaderSetup()

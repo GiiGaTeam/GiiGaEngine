@@ -26,6 +26,11 @@ namespace GiiGa
             return handle;
         }
 
+        bool isValid() const
+        {
+            return is_valid_;
+        }
+
         template <typename U>
         friend class EventDispatcher;
     };

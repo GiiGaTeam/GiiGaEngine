@@ -6,7 +6,7 @@ import <json/value.h>;
 
 import Engine;
 import Component;
-import Mesh;
+import MeshAsset;
 import Material;
 import IRenderable;
 import SceneVisibility;
@@ -18,25 +18,115 @@ import Misc;
 
 namespace GiiGa
 {
-    export class StaticMeshComponent : public Component, public IRenderable, public IVisibilityEntry
+    export class StaticMeshComponent : public Component, public IRenderable
     {
     public:
-        StaticMeshComponent():
-            IVisibilityEntry(std::dynamic_pointer_cast<IRenderable>(this->shared_from_this()))
+        StaticMeshComponent() = default;
+
+        ~StaticMeshComponent()
+        {
+            if (auto l_owner = owner_.lock())
+            {
+                if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
+                    l_trans->OnUpdateTransform.Unregister(cashed_event_);
+            }
+        }
+
+        void Tick(float dt) override
         {
         }
 
-        void SetOwner(std::shared_ptr<IGameObject> go) override
+        void Init() override
         {
-            auto go_go = std::dynamic_pointer_cast<GameObject>(go);
-            auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
-            
-            if (go_go != nullptr)
-                std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetComponent<TransformComponent>()->OnUpdateTransform.Unregister(cashed_event_);
+            if (mesh_)
+            {
+                if (!visibilityEntry_)
+                    RegisterInVisibility();
+            }
+        }
 
-            Component::SetOwner(go_go);
+        ::std::shared_ptr<IComponent> Clone() override
+        {
+            Todo();
+            return {};
+        }
 
-            cashed_event_ = go_go->GetComponent<TransformComponent>()->OnUpdateTransform.Register(
+        void Draw(RenderContext& context) override
+        {
+            Todo();
+        }
+
+        SortData GetSortData() override
+        {
+            Todo();
+            return {};
+        }
+
+        void Restore(const Json::Value&) override
+        {
+            Todo();
+        }
+
+        Json::Value DerivedToJson() override
+        {
+            Todo();
+            return {};
+        }
+
+        Uuid GetMeshUuid()
+        {
+            if (mesh_)
+                return mesh_->GetId().id;
+            else
+                return Uuid::Null();
+        }
+
+        void SetMeshUuid(const Uuid& newUuid)
+        {
+            // what a fuck is subresource?
+            if (newUuid == Uuid::Null())
+            {
+                mesh_.reset();
+                visibilityEntry_.reset();
+            }
+            else
+            {
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset>({newUuid, 0});
+                RegisterInVisibility();
+            }
+        }
+
+        Uuid GetMaterialUuid() const
+        {
+            if (material_)
+                return mesh_->GetId().id;
+            else
+                return Uuid::Null();
+        }
+
+        void SetMaterialUuid(const Uuid& newUuid)
+        {
+            // what a fuck is subresource?
+            if (newUuid == Uuid::Null())
+                material_.reset();
+            else
+                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
+        }
+
+    private:
+        std::shared_ptr<MeshAsset> mesh_;
+        std::shared_ptr<Material> material_;
+        std::unique_ptr<VisibilityEntry> visibilityEntry_;
+        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+
+        void RegisterInVisibility()
+        {
+            visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<IRenderable>(shared_from_this()), mesh_->GetAABB());
+            if (cashed_event_.isValid())
+            {
+                std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Unregister(cashed_event_);
+            }
+            cashed_event_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Register(
                 [this](const UpdateTransformEvent& e)
                 {
                     auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
@@ -45,37 +135,8 @@ namespace GiiGa
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
 
-                    IVisibilityEntry::Update(origaabb);
+                    visibilityEntry_->Update(origaabb);
                 });
         }
-
-        void Tick(float dt) override;
-        void Init() override;
-        ::std::shared_ptr<IComponent> Clone() override
-        {
-            Todo();
-        }
-
-        // todo
-        Json::Value ToJson() override
-        {
-            //mesh_->GetId();
-            //material_->GetId();
-        }
-
-        // todo
-        Json::Value FromJson() const
-        {
-            //mesh_ = Engine::Instance().ResourceManager().GetAsset<Mesh>(AssetHandle{jsonid, AssetType::Mesh});
-            //material_ = Engine::Instance().ResourceManager().GetAsset<Material>(AssetHandle{jsonid, AssetType::Material});
-        }
-
-        void Draw(RenderContext& context) override;
-        SortData GetSortData() override;
-
-    private:
-        std::shared_ptr<Mesh> mesh_;
-        std::shared_ptr<Material> material_;
-        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
     };
 }

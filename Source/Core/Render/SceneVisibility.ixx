@@ -3,13 +3,13 @@ module;
 #define NOMINMAX
 #include <directxtk12/SimpleMath.h>
 #include<directxtk12/SimpleMath.inl>
+#include<Octree/octree.h>
 
 export module SceneVisibility;
 
 import <DirectXCollision.h>;
 import <memory>;
 import <vector>;
-import <Octree/octree.h>;
 import <limits>;
 import <unordered_map>;
 
@@ -96,7 +96,7 @@ namespace GiiGa
         static OrthoTree::index_t Register(std::shared_ptr<IRenderable> renderable, OrthoTree::BoundingBox3D box)
         {
             auto ent_id = current_free_id_++;
-            if (!GetInstance()->quadtree.Add(ent_id, box))
+            if (!GetInstance()->quadtree.Add(ent_id, box, true))
                 throw std::runtime_error("SceneVisibility::Register(): failed to add quadtree");
             GetInstance()->visibility_to_renderable_[ent_id] = renderable;
             return ent_id;
@@ -126,9 +126,9 @@ namespace GiiGa
             10,
             OrthoTree::BoundingBox3D{
                 {
-                    std::numeric_limits<float>::min(),
-                    std::numeric_limits<float>::min(),
-                    std::numeric_limits<float>::min()
+                    -std::numeric_limits<float>::max(),
+                    -std::numeric_limits<float>::max(),
+                    -std::numeric_limits<float>::max()
                 },
                 {
                     std::numeric_limits<float>::max(),
@@ -141,10 +141,10 @@ namespace GiiGa
     };
 
     // todo: create DirectX::Math to OrthoTree conversions or adapter
-    export class IVisibilityEntry
+    export class VisibilityEntry
     {
     public:
-        IVisibilityEntry(std::shared_ptr<IRenderable> renderable, DirectX::BoundingBox aabb = DirectX::BoundingBox())
+        static std::unique_ptr<VisibilityEntry> Register(std::shared_ptr<IRenderable> renderable, DirectX::BoundingBox aabb = DirectX::BoundingBox())
         {
             OrthoTree::Vector3D min{
                 aabb.Center.x - aabb.Extents.x,
@@ -158,10 +158,10 @@ namespace GiiGa
                 aabb.Center.z + aabb.Extents.z
             };
 
-            entity_index_ = SceneVisibility::Register(renderable, OrthoTree::BoundingBox3D{min, max});
+            return std::unique_ptr<VisibilityEntry>(new VisibilityEntry(SceneVisibility::Register(renderable, OrthoTree::BoundingBox3D{min, max})));
         }
 
-        virtual ~IVisibilityEntry()
+        ~VisibilityEntry()
         {
             SceneVisibility::Unregister(entity_index_);
         }
@@ -184,6 +184,11 @@ namespace GiiGa
         }
 
     private:
+        VisibilityEntry(OrthoTree::index_t id):
+            entity_index_(id)
+        {
+        }
+
         OrthoTree::index_t entity_index_;
     };
 }

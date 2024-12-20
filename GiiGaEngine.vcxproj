@@ -99,6 +99,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -115,6 +116,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,6 +134,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,6 +153,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,7 +164,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
     <None Include="Shaders\SimpleVertexShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />

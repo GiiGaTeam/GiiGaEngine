@@ -1,6 +1,8 @@
-﻿export module Material;
+﻿module;
+#include <DirectXMath.h>
 
-import <DirectXMath.h>;
+export module Material;
+
 import <memory>;
 import <directx/d3dx12_core.h>;
 import <directxtk/SimpleMath.h>;

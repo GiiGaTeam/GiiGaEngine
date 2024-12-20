@@ -40,6 +40,13 @@ namespace GiiGa
             window_->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
         }
 
+        virtual void DeInitialize()
+        {
+            window_.reset();
+            resource_manager_.reset();
+            project_.reset();
+        }
+
         /*
         IScriptSystem scriptSystem_;
         IAudioSystem audioSystem_;

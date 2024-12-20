@@ -32,6 +32,11 @@ namespace GiiGa
             auto p_level = std::make_shared<Level>(level_settings);
             GetInstance().levels_.push_back(p_level);
         }
+        
+        static void DeInitialize()
+        {
+            instance_.reset();
+        }
 
         static void Tick(float dt)
         {

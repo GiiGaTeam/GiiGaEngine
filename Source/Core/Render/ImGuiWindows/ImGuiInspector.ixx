@@ -9,6 +9,7 @@ import IImGuiWindow;
 import EditorContext;
 import World;
 import CameraComponent;
+import StaticMeshComponent;
 
 namespace GiiGa
 {
@@ -117,6 +118,52 @@ namespace GiiGa
                             ImGui::TreePop();
                         }
                     }
+                    else if (auto static_mesh_comp = std::dynamic_pointer_cast<StaticMeshComponent>(comp))
+                    {
+                        if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                        {
+                            // Get and display the Mesh UUID
+                            Uuid meshUuid = static_mesh_comp->GetMeshUuid();
+                            char meshUuidStr[37];
+                            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", meshUuid.ToString().c_str());
+                            if (ImGui::InputText("Mesh UUID", meshUuidStr, sizeof(meshUuidStr)))
+                            {
+                                auto newUuid = Uuid::FromString(meshUuidStr);
+                                if (newUuid.has_value())
+                                    static_mesh_comp->SetMeshUuid(newUuid.value());
+                            }
+
+                            // Get and display the Material UUID
+                            Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
+                            char materialUuidStr[37];
+                            snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
+                            if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
+                            {
+                                auto newUuid = Uuid::FromString(materialUuidStr);
+                                if (newUuid.has_value())
+                                    static_mesh_comp->SetMaterialUuid(newUuid.value());
+                            }
+
+                            ImGui::TreePop();
+                        }
+                    }
+                }
+
+                if (ImGui::Button("Add Component"))
+                    ImGui::OpenPopup("Add Component");
+
+                if (ImGui::BeginPopup("Add Component"))
+                {
+                    if (ImGui::MenuItem("Static Mesh Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<StaticMeshComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    ImGui::EndPopup();
                 }
             }
 
