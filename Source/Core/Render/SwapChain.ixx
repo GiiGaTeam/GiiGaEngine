@@ -112,7 +112,7 @@ namespace GiiGa
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
                 auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{}); //DXDelayedDeleter{device}
                 render_targets_.emplace_back(device, res);
-                (--render_targets_.end())->CreateRenderTargetView(nullptr);
+                (--render_targets_.end())->EmplaceRenderTargetView(nullptr);
             }
         }
     };

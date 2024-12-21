@@ -62,7 +62,7 @@ namespace GiiGa
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
     export std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
     {
-        std::vector<Plane> planes;
+        std::vector<Plane> planes(6);
 
         // Left plane
         planes[0] = Plane(viewProjMatrix._14 + viewProjMatrix._11,

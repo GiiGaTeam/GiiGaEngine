@@ -37,14 +37,14 @@ namespace GiiGa
             const auto vertices_span = std::span{reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size() * sizeof(VertexType)};
             vertexBuffer_->UpdateContentsDeffered(render_context, vertices_span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
-            vertexView_ = vertexBuffer_->CreateVetexBufferView(
+            vertexView_ = vertexBuffer_->EmplaceVetexBufferView(
                 D3D12_VERTEX_BUFFER_VIEW{0, static_cast<UINT>(vertices.size() * sizeof(VertexType)), sizeof(VertexType)});
             
             auto indices_span = std::span{reinterpret_cast<const uint8_t*>(indices.data()), indices.size() * sizeof(Index16)};
             indexCount = static_cast<UINT>(indices.size());
             indexBuffer_->UpdateContentsDeffered(render_context, indices_span, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-            indexView_ = indexBuffer_->CreateIndexBufferView(
+            indexView_ = indexBuffer_->EmplaceIndexBufferView(
                 D3D12_INDEX_BUFFER_VIEW{0, static_cast<UINT>(indices.size() * sizeof(Index16)), Index16::Format});
         }
 

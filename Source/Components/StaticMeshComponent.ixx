@@ -3,6 +3,7 @@ export module StaticMeshComponent;
 import <DirectXCollision.h>;
 import <memory>;
 import <json/value.h>;
+import <bitset>;
 
 import Engine;
 import Component;
@@ -14,6 +15,7 @@ import TransformComponent;
 import EventSystem;
 import GameObject;
 import Misc;
+import IObjectShaderResource;
 
 
 namespace GiiGa
@@ -40,6 +42,10 @@ namespace GiiGa
         {
             if (mesh_)
             {
+                if (!material_)
+                {
+                    
+                }
                 if (!visibilityEntry_)
                     RegisterInVisibility();
             }
@@ -58,8 +64,8 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            Todo();
-            return {};
+            // todo: material shader resource, actually there should not be empty material, we need create default one
+            return {.object_mask = mesh_->GetObjectMask(), .shaderResource = nullptr};
         }
 
         void Restore(const Json::Value&) override

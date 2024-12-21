@@ -8,6 +8,7 @@ import <map>;
 import <vector>;
 
 import VertexTypes;
+import ObjectMask;
 
 namespace GiiGa
 {

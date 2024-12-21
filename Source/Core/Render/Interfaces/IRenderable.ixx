@@ -4,16 +4,17 @@ import <vector>;
 import <unordered_map>;
 import <memory>;
 
-import ObjectShaderResource;
+import ObjectMask;
 import RenderSystemSettings;
 import RenderContext;
+import IObjectShaderResource;
 
 namespace GiiGa
 {
     export struct SortData
     {
         ObjectMask object_mask;
-        std::shared_ptr<ObjectShaderResource> shaderResource;
+        std::shared_ptr<IObjectShaderResource> shaderResource;
     };
 
     export class IRenderable
@@ -25,10 +26,10 @@ namespace GiiGa
 
     export struct CommonResourceGroup
     {
-        std::shared_ptr<ObjectShaderResource> shaderResource;
+        std::shared_ptr<IObjectShaderResource> shaderResource;
         std::vector<std::weak_ptr<IRenderable>> renderables;
 
-        CommonResourceGroup(std::shared_ptr<ObjectShaderResource> in_shaderResource):
+        CommonResourceGroup(std::shared_ptr<IObjectShaderResource> in_shaderResource):
             shaderResource(in_shaderResource)
         {
         }

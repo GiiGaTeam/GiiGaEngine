@@ -33,10 +33,6 @@ namespace GiiGa
             8192, // D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
             1024 // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
         };
-
-        constexpr static uint32_t BitMaskSize = 64;
-
     };
     
-    export using ObjectMask = std::bitset<RenderSystemSettings::BitMaskSize>; 
 }

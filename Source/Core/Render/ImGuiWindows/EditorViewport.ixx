@@ -1,3 +1,5 @@
+#include<directxtk12/SimpleMath.h>
+
 export module EditorViewport;
 
 import <imgui.h>;
@@ -29,16 +31,23 @@ namespace GiiGa
         void Init() override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(std::bind(&EditorViewport::GetCameraDescriptor, this)));
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(std::bind(&EditorViewport::GetCameraInfo, this)));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetCameraDescriptor() override
+        RenderPassViewData GetCameraInfo() override
         {
-            return {};
+            DirectX::SimpleMath::Matrix viewProjMatrix;
+
+            auto camera_go = camera_.lock();
+
+            // do we need view mat in camera?
+            viewProjMatrix = camera_go->GetTransformComponent().lock()->GetInverseLocalMatrix() * camera_go->GetComponent<CameraComponent>()->GetCamera().GetProj();
+
+            return {.viewProjMatrix = viewProjMatrix, .camera_gpu_handle = {}};
         }
 
         void Execute(RenderContext& context) override

@@ -10,8 +10,6 @@ export import RenderContext;
 
 namespace GiiGa
 {
-    export class Viewport;
-
     export class RenderPass
     {
     public:

@@ -10,14 +10,17 @@ import RenderPass;
 //import ShaderManager;
 import PSO;
 import IRenderable;
+import SceneVisibility;
+import RenderPassViewData;
+import Logger;
 
 namespace GiiGa
 {
     export class ForwardPass : public RenderPass
     {
     public:
-        ForwardPass(const std::function<D3D12_GPU_DESCRIPTOR_HANDLE()>& getCamDescFn):
-            getCamDescFnFunction_(getCamDescFn)
+        ForwardPass(const std::function<RenderPassViewData()>& getCamDescFn):
+            getCamInfoDataFunction_(getCamDescFn)
         {
         }
 
@@ -26,16 +29,24 @@ namespace GiiGa
             auto pso = PSO();
             //pso.set_vs(ShaderManager::GetShaderByName(L"Shaders/SimpleVertexShader.hlsl"));
 
-            std::vector<IRenderable> renderables;
+            auto cam_info = getCamInfoDataFunction_();
+
+            const auto& renderables = SceneVisibility::Extract(renderpass_filter, cam_info.viewProjMatrix);
             // Getting renderables
 
-            for (auto& renderable : renderables)
-            {
-                renderable.Draw(context);
-            }
+            if (renderables.size() > 0)
+                el::Loggers::getLogger(LogRendering)->debug("See some renderable");
+
+            //for (auto& renderable : renderables)
+            //{
+            //    renderable.Draw(context);
+            //}
         }
 
     private:
-        std::function<D3D12_GPU_DESCRIPTOR_HANDLE()> getCamDescFnFunction_;
+        ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
+                                                   .SetShadingModel(ShadingModel::All)
+                                                   .SetVertexType(VertexTypes::All);
+        std::function<RenderPassViewData()> getCamInfoDataFunction_;
     };
 }

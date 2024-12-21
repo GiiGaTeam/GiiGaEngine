@@ -10,6 +10,7 @@ import RenderDevice;
 import IRenderContext;
 import GPULocalResource;
 export import VertexTypes;
+export import ObjectMask;
 
 namespace GiiGa
 {
@@ -31,14 +32,14 @@ namespace GiiGa
             const auto vertices_span = std::span{reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size() * sizeof(VertexType)};
             vertexBuffer_->UpdateContentsDeffered(render_context, vertices_span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
-            vertexView_ = vertexBuffer_->CreateVetexBufferView(
+            vertexView_ = vertexBuffer_->EmplaceVetexBufferView(
                 D3D12_VERTEX_BUFFER_VIEW{0, static_cast<UINT>(vertices.size() * sizeof(VertexType)), sizeof(VertexType)});
 
             auto indices_span = std::span{reinterpret_cast<const uint8_t*>(indices.data()), indices.size() * sizeof(Index16)};
             indexCount = static_cast<UINT>(indices.size());
             indexBuffer_->UpdateContentsDeffered(render_context, indices_span, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-            indexView_ = indexBuffer_->CreateIndexBufferView(
+            indexView_ = indexBuffer_->EmplaceIndexBufferView(
                 D3D12_INDEX_BUFFER_VIEW{0, static_cast<UINT>(indices.size() * sizeof(Index16)), Index16::Format});
         }
 
@@ -58,6 +59,11 @@ namespace GiiGa
             return AABB;
         }
 
+        ObjectMask GetObjectMask() const
+        {
+            return vertex_type_mask_;
+        }
+
     private:
         std::shared_ptr<GPULocalResource> vertexBuffer_;
         std::shared_ptr<BufferView<Vertex>> vertexView_;
@@ -65,5 +71,6 @@ namespace GiiGa
         std::shared_ptr<GPULocalResource> indexBuffer_;
         std::shared_ptr<BufferView<Index>> indexView_;
         DirectX::BoundingBox AABB;
+        ObjectMask vertex_type_mask_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT);
     };
 }

@@ -165,62 +165,69 @@ namespace GiiGa
             desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
-            constantViews_.emplace(key, device_.CreateConstantBufferView(desc));
+            if (!constantViews_.contains(key))
+                constantViews_.emplace(key, device_.CreateConstantBufferView(desc));
 
             return constantViews_[key];
         }
 
-        std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<ShaderResource>> EmplaceShaderResourceBufferView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
         {
-            shaderResourceViews_.emplace(desc, device_.CreateShaderResourceBufferView(resource_, desc));
+            if (!shaderResourceViews_.contains(desc))
+                shaderResourceViews_.emplace(desc, device_.CreateShaderResourceBufferView(resource_, desc));
 
             return shaderResourceViews_[desc];
         }
 
-        std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& counterBuffer,
-                                                                               const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<UnorderedAccess>> EmplaceUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& counterBuffer,
+                                                                                const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
         {
-            unorderedAccessViews_.emplace(desc, device_.CreateUnorderedAccessView(resource_, counterBuffer, desc));
+            if (!unorderedAccessViews_.contains(desc))
+                unorderedAccessViews_.emplace(desc, device_.CreateUnorderedAccessView(resource_, counterBuffer, desc));
 
             return unorderedAccessViews_[desc];
         }
 
-        std::shared_ptr<BufferView<RenderTarget>> CreateRenderTargetView(const D3D12_RENDER_TARGET_VIEW_DESC* desc)
+        std::shared_ptr<BufferView<RenderTarget>> EmplaceRenderTargetView(const D3D12_RENDER_TARGET_VIEW_DESC* desc)
         {
             D3D12_RENDER_TARGET_VIEW_DESC temp_copy{};
             if (desc != nullptr)
                 temp_copy = *desc;
 
-            renderTargetViews_.emplace(temp_copy, device_.CreateRenderTargetView(resource_, desc));
+            if (!renderTargetViews_.contains(temp_copy))
+                renderTargetViews_.emplace(temp_copy, device_.CreateRenderTargetView(resource_, desc));
 
             return renderTargetViews_[temp_copy];
         }
 
-        std::shared_ptr<BufferView<DepthStencil>> CreateDepthStencilView(const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<DepthStencil>> EmplaceDepthStencilView(const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
         {
-            depthStencilViews_.emplace(desc, device_.CreateDepthStencilView(resource_, desc));
+            if (!depthStencilViews_.contains(desc))
+                depthStencilViews_.emplace(desc, device_.CreateDepthStencilView(resource_, desc));
 
             return depthStencilViews_[desc];
         }
 
-        std::shared_ptr<BufferView<Index>> CreateIndexBufferView(D3D12_INDEX_BUFFER_VIEW desc)
+        std::shared_ptr<BufferView<Index>> EmplaceIndexBufferView(D3D12_INDEX_BUFFER_VIEW desc)
         {
             D3D12_INDEX_BUFFER_VIEW key = desc;
             desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
-            indexViews_.emplace(key, device_.CreateIndexBufferView(resource_, desc));
+            if (!indexViews_.contains(key))
+                indexViews_.emplace(key, device_.CreateIndexBufferView(resource_, desc));
 
             return indexViews_[key];
         }
 
-        std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(D3D12_VERTEX_BUFFER_VIEW desc)
+        std::shared_ptr<BufferView<Vertex>> EmplaceVetexBufferView(D3D12_VERTEX_BUFFER_VIEW desc)
         {
             D3D12_VERTEX_BUFFER_VIEW key = desc;
             desc.BufferLocation = resource_->GetGPUVirtualAddress();
             key.BufferLocation = 0;
 
-            vertexViews_.emplace(key, device_.CreateVetexBufferView(resource_, desc));
+            if (!vertexViews_.contains(key))
+                vertexViews_.emplace(key, device_.CreateVetexBufferView(resource_, desc));
 
             return vertexViews_[key];
         }

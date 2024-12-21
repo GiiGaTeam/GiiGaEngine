@@ -15,7 +15,7 @@ import <unordered_map>;
 
 import IRenderable;
 import ITickable;
-import RenderSystemSettings;
+export import ObjectMask;
 import MathUtils;
 
 namespace GiiGa
@@ -72,11 +72,16 @@ namespace GiiGa
                         if (drawPacket == mask_to_draw_packets.end())
                             mask_to_draw_packets.emplace(mask_with_filter, DrawPacket{mask_with_filter});
 
+                        drawPacket = mask_to_draw_packets.find(mask_with_filter);
+
                         // Find or create a resource group for the object's shader resource.
+                        auto t = sort_data.shaderResource.get();
                         auto CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
                         if (CMR == drawPacket->second.common_resource_renderables.end())
                             drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
 
+                        CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
+                        
                         // Add the renderable to the resource group's renderables list.
                         CMR->second.renderables.push_back(renderable);
                     }
@@ -85,6 +90,8 @@ namespace GiiGa
                 // Throw an error if the renderable is null.
                     throw std::runtime_error("SceneVisibility::SceneVisibility(): renderable is null");
             }
+
+            return mask_to_draw_packets;
         }
 
         static std::unique_ptr<SceneVisibility>& GetInstance()

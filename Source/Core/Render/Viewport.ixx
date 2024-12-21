@@ -8,6 +8,7 @@ import<directxtk/SimpleMath.h>;
 import RenderDevice;
 export import GPULocalResource;
 export import DescriptorHeap;
+export import RenderPassViewData;
 import BufferView;
 import CameraComponent;
 import RenderContext;
@@ -29,7 +30,7 @@ namespace GiiGa
 
         virtual ~Viewport() = default;
 
-        virtual D3D12_GPU_DESCRIPTOR_HANDLE GetCameraDescriptor() =0;
+        virtual RenderPassViewData GetCameraInfo() =0;
         
         virtual void Execute(RenderContext& context) =0;
 
@@ -67,7 +68,7 @@ namespace GiiGa
                 rtvDesc.Texture2D.MipSlice = 0;   // Use the first mip level
                 rtvDesc.Texture2D.PlaneSlice = 0; // Only relevant for certain texture formats, usually set to 0
 
-                resultRTV_ = resultResource_->CreateRenderTargetView(&rtvDesc);
+                resultRTV_ = resultResource_->EmplaceRenderTargetView(&rtvDesc);
             }
 
             {
@@ -81,7 +82,7 @@ namespace GiiGa
                 srvDesc.Texture2D.ResourceMinLODClamp = 0.0f; // Resource minimum level-of-detail clamp
 
                 // Create the Shader Resource View
-                resultSRV_ = resultResource_->CreateShaderResourceBufferView(srvDesc);
+                resultSRV_ = resultResource_->EmplaceShaderResourceBufferView(srvDesc);
             }
         }
 
