@@ -208,6 +208,11 @@ namespace GiiGa
             graphics_command_list_->SetPipelineState(pso.GetState());
         }
 
+        void SetSignature(PSO& pso)
+        {
+            graphics_command_list_->SetGraphicsRootSignature(pso.GetSignature());
+        }
+
         void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)
         {
             graphics_command_list_->SetGraphicsRootDescriptorTable(root_index, handle);

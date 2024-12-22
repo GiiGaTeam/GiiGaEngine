@@ -1,5 +1,4 @@
-﻿
-export module PSO;
+﻿export module PSO;
 
 import <bitset>;
 import <map>;
@@ -17,7 +16,6 @@ import DirectXUtils;
 
 namespace GiiGa
 {
-
     export typedef enum
     {
         Wrap = 0x1,
@@ -26,86 +24,98 @@ namespace GiiGa
         Border = 0x8,
         MirrorOnce = 0x10,
     } SamplerAddressMode;
+
     export class PSO
     {
-        public:
+    public:
         PSO() = default;
 
         void GeneratePSO(RenderDevice& device, int cbv_num, int srv_num, int uav_num)
-        {            
-            // Root parameter can be a table, root descriptor or root constants.
-            CD3DX12_ROOT_PARAMETER slotRootParameter[1];
-            
-            // Create a single descriptor table of CBVs.
-            std::vector<CD3DX12_DESCRIPTOR_RANGE> Tables;
-            //CD3DX12_DESCRIPTOR_RANGE Tables[3];
-            if (cbv_num)
+        {
+            // here
+            // Define descriptor ranges
+            std::vector<D3D12_DESCRIPTOR_RANGE> ranges(cbv_num + srv_num + uav_num);
+            for (int i = 0; i < cbv_num; ++i)
             {
-                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
-                
-                Tables[0].Init(
-                D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
-                cbv_num,  // Number of descriptors in table
-                0);// base shader register arguments are bound to for this root parameter
+                ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                ranges[i].NumDescriptors = 1;
+                ranges[i].BaseShaderRegister = i;
+                ranges[i].RegisterSpace = 0;
+                ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+            }
+            for (int i = 0; i < srv_num; ++i)
+            {
+                ranges[cbv_num + i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+                ranges[cbv_num + i].NumDescriptors = 1;
+                ranges[cbv_num + i].BaseShaderRegister = i;
+                ranges[cbv_num + i].RegisterSpace = 0;
+                ranges[cbv_num + i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+            }
+            for (int i = 0; i < uav_num; ++i)
+            {
+                ranges[cbv_num + srv_num + i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+                ranges[cbv_num + srv_num + i].NumDescriptors = 1;
+                ranges[cbv_num + srv_num + i].BaseShaderRegister = i;
+                ranges[cbv_num + srv_num + i].RegisterSpace = 0;
+                ranges[cbv_num + srv_num + i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
             }
 
-            if (srv_num)
+            // Create root parameters
+            std::vector<D3D12_ROOT_PARAMETER> rootParameters(ranges.size());
+            for (size_t i = 0; i < ranges.size(); ++i)
             {
-                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
-                Tables[Tables.size()-1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srv_num, 0);
+                rootParameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+                rootParameters[i].DescriptorTable.NumDescriptorRanges = 1;
+                rootParameters[i].DescriptorTable.pDescriptorRanges = &ranges[i];
+                rootParameters[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
             }
 
-            if (uav_num)
-            {
-                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
-                Tables[Tables.size()-1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uav_num, 0);
-            }
-            
-            slotRootParameter[0].InitAsDescriptorTable(
-                Tables.size(),  // Number of ranges
-                Tables.data()); // Pointer to array of ranges
-            
-            // A root signature is an array of root parameters.
-            CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, samplers_.size(),
-                samplers_.data(),
-                D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-            
+            // Create the root signature description
+            D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
+            rootSigDesc.NumParameters = static_cast<UINT>(rootParameters.size());
+            rootSigDesc.pParameters = rootParameters.data();
+            rootSigDesc.NumStaticSamplers = 0;
+            rootSigDesc.pStaticSamplers = nullptr;
+            rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
             // create a root signature with a single slot which points to a
             // descriptor range consisting of a single constant buffer.
             ID3DBlob* serializedRootSig = nullptr;
             ID3DBlob* errorBlob = nullptr;
             HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc,
-                D3D_ROOT_SIGNATURE_VERSION_1,
-                    &serializedRootSig,
-                    &errorBlob);
+                                                     D3D_ROOT_SIGNATURE_VERSION_1,
+                                                     &serializedRootSig,
+                                                     &errorBlob);
 
             if (FAILED(hr))
+            {
+                // If the shader failed to compile it should have written something to the error message.
+                if (errorBlob)
                 {
-                    // If the shader failed to compile it should have written something to the error message.
-                    if (errorBlob)
-                    {
-                        char* compileErrors =  (char*)(errorBlob->GetBufferPointer());
-                        std::cout << compileErrors << std::endl;
-                    }
+                    char* compileErrors = (char*)(errorBlob->GetBufferPointer());
+                    std::cout << compileErrors << std::endl;
                 }
-              
-            
-            ID3D12RootSignature* mRootSignature = nullptr;
+            }
+
+
+            mRootSignature = nullptr;
             ThrowIfFailed(device.GetDevice()->CreateRootSignature(
                 0,
                 serializedRootSig->GetBufferPointer(),
                 serializedRootSig->GetBufferSize(),
                 IID_PPV_ARGS(&mRootSignature)));
-            
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{mRootSignature, VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
+
+            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{
+                mRootSignature, VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
                 rasterizer_state_, depth_stencil_state_, input_layout_, strip_cut_value_, primitive_topology_type_, NumRenderTargets_, {*RTVFormat_},
-                DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_};
+                DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_
+            };
             ThrowIfFailed(device.GetDevice()->CreateGraphicsPipelineState(
                 &psoDesc,
                 IID_PPV_ARGS(&state_)));
         }
+
         //=============================SETTING PSO PARAMETERS=============================
-        
+
         void set_vs(const D3D12_SHADER_BYTECODE& vs)
         {
             VS_ = vs;
@@ -160,7 +170,7 @@ namespace GiiGa
         {
             input_layout_ = input_layout;
         }
-        
+
         void SetBufferStripCutValue(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE StripCutValue)
         {
             strip_cut_value_ = StripCutValue;
@@ -170,17 +180,16 @@ namespace GiiGa
         {
             primitive_topology_type_ = primitive_topology_type;
         }
-        
+
         void set_rtv_format(DXGI_FORMAT rtv_format[], size_t num_render_targets)
         {
-            
             NumRenderTargets_ = num_render_targets;
             for (size_t i = 0; i < num_render_targets; ++i)
             {
                 RTVFormat_[i] = rtv_format[i];
             }
         }
-        
+
         void set_dsv_format(DXGI_FORMAT dsv_format)
         {
             DSVFormat_ = dsv_format;
@@ -225,9 +234,14 @@ namespace GiiGa
             samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
         }
 
-        ID3D12PipelineState* GetState() {return state_;}
-        
-        private:
+        ID3D12PipelineState* GetState() { return state_; }
+
+        ID3D12RootSignature* GetSignature()
+        {
+            return mRootSignature;
+        }
+
+    private:
         void push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE address_mode)
         {
             D3D12_STATIC_SAMPLER_DESC sampler;
@@ -236,7 +250,7 @@ namespace GiiGa
             sampler.AddressW = address_mode;
             samplers_.push_back(sampler);
         }
-        
+
         D3D12_SHADER_BYTECODE VS_ = {};
         D3D12_SHADER_BYTECODE PS_ = {};
         D3D12_SHADER_BYTECODE DS_ = {};
@@ -251,15 +265,19 @@ namespace GiiGa
         D3D12_INDEX_BUFFER_STRIP_CUT_VALUE strip_cut_value_ = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
         D3D12_PRIMITIVE_TOPOLOGY_TYPE primitive_topology_type_ = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         UINT NumRenderTargets_ = 1;
-        DXGI_FORMAT RTVFormat_[8] = {DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM};
+        DXGI_FORMAT RTVFormat_[8] = {
+            DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM,
+            DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM
+        };
         DXGI_FORMAT DSVFormat_ = DXGI_FORMAT_D24_UNORM_S8_UINT;
         DXGI_SAMPLE_DESC sample_desc_ = DXGI_SAMPLE_DESC{1, 0};
         UINT node_mask_ = 0;
         D3D12_CACHED_PIPELINE_STATE cashed_pso_ = {};
         D3D12_PIPELINE_STATE_FLAGS flags_ = D3D12_PIPELINE_STATE_FLAG_NONE;
-        
+
         std::vector<D3D12_STATIC_SAMPLER_DESC> samplers_;
+
+        ID3D12RootSignature* mRootSignature;
 
         ID3D12PipelineState* state_;
     };

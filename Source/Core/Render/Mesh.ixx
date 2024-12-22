@@ -51,7 +51,7 @@ namespace GiiGa
 
             auto indexDesc = indexView_->getDescriptor();
             cmd_list->IASetIndexBuffer(&indexDesc);
-
+            
             cmd_list->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
         }
 

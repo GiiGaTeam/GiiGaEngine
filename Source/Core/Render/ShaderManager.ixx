@@ -76,7 +76,7 @@ namespace GiiGa
         ShaderManager()
         {
             // Сначала создаём Shader, передавая путь до него, входную функцию в нём, а также тип с версией шейдера. Если это VertexShader, то можно (нужно) ещё указать VertexType для более легкого поиска в дальнейшем
-            auto shader = std::make_shared<Shader>(VertexPositionShader, "VSMain", "vs_5_1", VertexTypes::VertexPosition);
+            auto shader = std::make_shared<Shader>(VertexPositionShader, "VSMain", "vs_5_0", VertexTypes::VertexPosition);
             
             // Можно изменить созданный shader, например задав ему макросы, инклюды или может какие-нибудь другие флаги, но сейчас это не нужно
             //shader->SetDefines(...);
@@ -87,11 +87,11 @@ namespace GiiGa
 
             // И так дальше с остальными шейдерами
 
-            shader = std::make_shared<Shader>(VertexPNTBTShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
+            shader = std::make_shared<Shader>(VertexPNTBTShader, "VSMain", "vs_5_0", VertexTypes::VertexPNTBT);
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
 
-            shader = std::make_shared<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_1" );
+            shader = std::make_shared<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_0" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }

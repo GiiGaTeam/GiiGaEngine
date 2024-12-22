@@ -51,7 +51,8 @@ namespace GiiGa
             pso.GeneratePSO(context.GetDevice(), 2, 0, 0);
 
             context.BindPSO(pso);
-
+            context.SetSignature(pso);
+            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             auto cam_info = getCamInfoDataFunction_();
             auto viewProj = cam_info.viewMatrix * cam_info.projMatrix;

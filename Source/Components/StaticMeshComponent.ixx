@@ -45,10 +45,8 @@ namespace GiiGa
             transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
-                
                 if (!material_)
                 {
-                    
                 }
                 if (!visibilityEntry_)
                     RegisterInVisibility();
@@ -63,9 +61,11 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            if (!perObjectData_)
+                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
             context.BindDescriptorHandle(0, GetGPUDescriptor(context));
-            
+
 
             mesh_->Draw(context.GetGraphicsCommandList());
         }
