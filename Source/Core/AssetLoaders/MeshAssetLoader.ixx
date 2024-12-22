@@ -28,6 +28,8 @@ namespace GiiGa
     protected:
 
     public:
+        virtual ~MeshAssetLoader() = default;
+
         MeshAssetLoader() {
             pattern_ = R"((.+)\.(fbx|obj|gltf))";
             type_ = AssetType::Mesh;

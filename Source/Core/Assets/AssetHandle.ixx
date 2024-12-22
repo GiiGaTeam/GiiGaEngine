@@ -2,7 +2,7 @@ export module AssetHandle;
 
 import <json/json.h>;
 
-import Uuid;
+export import Uuid;
 export import AssetType;
 
 namespace GiiGa

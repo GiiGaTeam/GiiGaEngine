@@ -9,6 +9,7 @@ import TransformComponent;
 import Input;
 import Window;
 import Misc;
+import Logger;
 
 using namespace DirectX::SimpleMath;
 

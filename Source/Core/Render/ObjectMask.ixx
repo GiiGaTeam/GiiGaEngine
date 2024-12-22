@@ -31,7 +31,7 @@ namespace GiiGa
         VertexBoned = 4,
         All = VertexPosition | VertexPNTBT | VertexBoned,
     };
-    
+
     export enum class BlendMode
     {
         None = 0,
@@ -76,22 +76,37 @@ namespace GiiGa
     export class ObjectMask
     {
     public:
-        ObjectMask& SetShadingModel(const ShadingModel& shadingMode)
+        // Sets the shading model, ensuring valid input
+        ObjectMask& SetShadingModel(ShadingModel shadingModel)
         {
-            SetRegion(ShadingModelMask(static_cast<int>(shadingMode)), BlendModeOffset);
+            SetRegion(ToBitset<ShadingModelMask>(shadingModel), ShadingModelOffset);
             return *this;
         }
 
-        ObjectMask& SetBlendMode(const BlendMode& blendMode)
+        // Sets the blend mode, ensuring valid input
+        ObjectMask& SetBlendMode(BlendMode blendMode)
         {
-            SetRegion(BlendModeMask(static_cast<int>(blendMode)), BlendModeOffset);
+            SetRegion(ToBitset<BlendModeMask>(blendMode), BlendModeOffset);
             return *this;
         }
 
-        ObjectMask& SetVertexType(const VertexTypes& in_vertex_type)
+        // Sets the vertex type, ensuring valid input
+        ObjectMask& SetVertexType(VertexTypes vertexType)
         {
-            SetRegion(VertexTypeMask(static_cast<int>(in_vertex_type)), VertexTypeRegionOffset);
+            SetRegion(ToBitset<VertexTypeMask>(vertexType), VertexTypeRegionOffset);
             return *this;
+        }
+
+        // Gets the current blend mode
+        BlendMode GetBlendMode() const
+        {
+            return FromBitset<BlendModeMask, BlendMode>(GetRegion<BlendModeRegionSize>(BlendModeOffset));
+        }
+
+        // Gets the current shading model
+        ShadingModel GetShadingModel() const
+        {
+            return FromBitset<ShadingModelMask, ShadingModel>(GetRegion<ShadingModelRegionSize>(ShadingModelOffset));
         }
 
         bool any()
@@ -173,19 +188,42 @@ namespace GiiGa
     private:
         std::bitset<BitMaskSize> mask_;
 
-        // Utility function to set a region in a larger bitset
+        // Converts an enum to a bitset
+        template <typename BitMask, typename Enum>
+        static BitMask ToBitset(Enum value)
+        {
+            return BitMask(static_cast<int>(value));
+        }
+
+        // Converts a bitset back to an enum
+        template <typename BitMask, typename Enum>
+        static Enum FromBitset(const BitMask& bitset)
+        {
+            return static_cast<Enum>(bitset.to_ulong());
+        }
+
+        // Sets a specific region in the mask
         template <size_t RegionSize>
-        void SetRegion(std::bitset<RegionSize> region_mask, size_t offset)
+        void SetRegion(std::bitset<RegionSize> regionMask, size_t offset)
         {
             static_assert(RegionSize <= BitMaskSize, "Region size must be less than or equal to the full size");
 
-            // Clear the target region in the full mask
-            std::bitset<BitMaskSize> region_clear_mask = (~(std::bitset<BitMaskSize>((1ULL << RegionSize) - 1) << offset));
-            mask_ &= region_clear_mask;
+            // Clear the target region
+            mask_ &= ~(std::bitset<BitMaskSize>((1ULL << RegionSize) - 1) << offset);
 
             // Set the new region bits
-            std::bitset<BitMaskSize> shifted_region_mask = (std::bitset<BitMaskSize>(region_mask.to_ullong()) << offset);
-            mask_ |= shifted_region_mask;
+            mask_ |= (std::bitset<BitMaskSize>(regionMask.to_ullong()) << offset);
+        }
+
+        // Gets a specific region from the mask
+        template <size_t RegionSize>
+        std::bitset<RegionSize> GetRegion(size_t offset) const
+        {
+            static_assert(RegionSize <= BitMaskSize, "Region size must be less than or equal to the full size");
+
+            // Extract the region and convert it to the correct bitset size
+            auto extracted = (mask_ >> offset) & std::bitset<BitMaskSize>((1ULL << RegionSize) - 1);
+            return std::bitset<RegionSize>(extracted.to_ullong());
         }
     };
 }
