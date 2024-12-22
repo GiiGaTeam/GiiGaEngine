@@ -71,26 +71,18 @@ namespace GiiGa
             }
 
             const AssetMeta& asset_meta = asset_meta_opt->get();
-            auto loader_it = database_->asset_loaders_.find(asset_meta.type);
-            if (loader_it == database_->asset_loaders_.end() || loader_it->second.empty())
+            auto loader_it = database_->asset_loader_by_uuid_.find(asset_meta.loader_id);
+            if (loader_it == database_->asset_loader_by_uuid_.end())
             {
                 throw std::runtime_error("No loader available for asset type: " + AssetTypeToString(asset_meta.type));
             }
 
-            for (auto loader : loader_it->second)
-            {
-                if (loader->MatchesPattern(asset_meta.path))
-                {
-                    auto asset = loader->Load(handle, database_->asset_path_ / asset_meta.path);
-                    loaded_assets_[handle] = asset;
-                    asset->OnDestroy.Register([this](const auto& handle) {
-                        RemoveAsset(handle);
-                    });
-                    return std::dynamic_pointer_cast<T>(asset);
-                }
-            }
-
-            throw std::runtime_error("Failed to load asset with handle: " + handle.id.ToString() + " of type: " + AssetTypeToString(asset_meta.type));
+            auto asset = loader_it->second->Load(handle, database_->asset_path_ / asset_meta.path);
+            loaded_assets_[handle] = asset;
+            asset->OnDestroy.Register([this](const auto& handle) {
+                RemoveAsset(handle);
+                });
+            return std::dynamic_pointer_cast<T>(asset);
         }
 
         void RemoveAsset(AssetHandle handle) { 

@@ -29,6 +29,7 @@ namespace GiiGa
 
     public:
         MeshAssetLoader() {
+            id_ = Uuid::FromString("ab702a1d-3b4f-4782-bac3-3af95b3145ac").value();
             pattern_ = R"((.+)\.(fbx|obj|gltf))";
             type_ = AssetType::Mesh;
         }

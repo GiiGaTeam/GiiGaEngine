@@ -25,6 +25,7 @@ namespace GiiGa
     protected:
         std::regex pattern_;
         AssetType type_;
+        Uuid id_ = Uuid::Null();
 
     public:
         virtual std::vector<AssetHandle> Preprocess(const std::filesystem::path& path) {
@@ -56,6 +57,10 @@ namespace GiiGa
 
         AssetType Type() const {
             return type_;
+        }
+
+        Uuid Id() const {
+            return id_;
         }
 
         virtual const char* GetName() {

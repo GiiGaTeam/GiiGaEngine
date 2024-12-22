@@ -21,6 +21,7 @@ namespace GiiGa
 
     public:
         ImageAssetLoader() {
+            id_ = Uuid::FromString("a2227622-70bb-4b66-bab0-1d92d292a75c").value();
             pattern_ = R"((.+)\.(png|jpg|jpeg))";
             type_ = AssetType::Texture2D;
         }

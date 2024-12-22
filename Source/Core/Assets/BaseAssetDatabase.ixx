@@ -13,6 +13,7 @@ import AssetHandle;
 import AssetMeta;
 import AssetLoader;
 import AssetType;
+import Uuid;
 
 namespace GiiGa
 {
@@ -32,6 +33,8 @@ namespace GiiGa
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
+        std::unordered_map<AssetType, std::shared_ptr<AssetLoader>> asset_savers_;
+        std::unordered_map<Uuid, std::shared_ptr<AssetLoader>> asset_loader_by_uuid_;
 
     public:
         friend class ResourceManager;
@@ -91,7 +94,8 @@ namespace GiiGa
 
             el::Loggers::getLogger(LogResourceManager)->debug("Registered loader: %v", loader_ptr->GetName());
 
-            asset_loaders_[loader_ptr->Type()].emplace_back(std::move(loader_ptr));
+            asset_loaders_[loader_ptr->Type()].emplace_back(loader_ptr);
+            asset_loader_by_uuid_.emplace(loader_ptr->Id(), loader_ptr);
         }
 
     private:

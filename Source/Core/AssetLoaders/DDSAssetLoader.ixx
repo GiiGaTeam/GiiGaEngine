@@ -23,6 +23,7 @@ namespace GiiGa
         virtual ~DDSAssetLoader() = default;
 
         DDSAssetLoader() {
+            id_ = Uuid::FromString("6238aaca-cd5b-4b6b-9578-ad5412bd1f47").value();
             pattern_ = R"((.+)\.dds)";
             type_ = AssetType::Texture2D;
         }

@@ -90,17 +90,15 @@ namespace GiiGa
 
             registry_map_.emplace(handle, std::move(meta));
 
-            // TODO: map of loaders for creating asset
-
             AssetType asset_type = handle.type;
-            auto loaderIt = asset_loaders_.find(asset_type);
+            auto loaderIt = asset_savers_.find(asset_type);
 
-            if (loaderIt == asset_loaders_.end() || loaderIt->second.empty())
+            if (loaderIt == asset_savers_.end())
             {
                 throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset_type));
             }
 
-            AssetLoader* loader = loaderIt->second.front();
+            AssetLoader* loader = loaderIt->second;
             loader->Save(asset, path);
 
             return handle;
@@ -159,6 +157,7 @@ namespace GiiGa
                 AssetMeta meta;
                 meta.path = path;
                 meta.type = asset_type;
+                meta.loader_id = selected_loader->Id();
 
                 registry_map_.emplace(handle, std::move(meta));
             }
