@@ -116,6 +116,7 @@ namespace GiiGa
             const Vector3 up = transform->GetTransform().GetUp();
 
             camera_.view_ = Matrix::CreateLookAt(position, target, up);
+            //camera_.view_ = transform->GetWorldMatrix().Invert();
         }
 
     protected:

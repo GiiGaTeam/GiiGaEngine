@@ -97,7 +97,7 @@ namespace GiiGa
             Json::Value res;
 
             res["Location"] = Vector3ToJson(location_);
-            res["Rotation"] = Vector3ToJson(rotate_.ToEuler());
+            res["Rotation"] = Vector3ToJson(GetRotation());
             res["Scale"] = Vector3ToJson(scale_);
 
             return res;

@@ -9,6 +9,7 @@ import TransformComponent;
 import Input;
 import Window;
 import Misc;
+import Logger;
 
 using namespace DirectX::SimpleMath;
 
@@ -39,34 +40,37 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
-            TryDoLocationMove();
-            TryDoRotationMove();
+            TryDoLocationMove(dt);
+            TryDoRotationMove(dt);
         }
 
-        void TryDoLocationMove() const
+        void TryDoLocationMove(float dt) const
         {
             if (transformOwner_.expired()) return;
             Vector3 velocity = Vector3::Zero;
             const auto transf = transformOwner_.lock();
-            if (Input::IsKeyDown(KeyCode::KeyW)) { velocity += transf->GetTransform().GetForward() * speed; }
-            if (Input::IsKeyDown(KeyCode::KeyS)) { velocity -= transf->GetTransform().GetForward() * speed; }
-            if (Input::IsKeyDown(KeyCode::KeyD)) { velocity += transf->GetTransform().GetRight() * speed; }
-            if (Input::IsKeyDown(KeyCode::KeyA)) { velocity -= transf->GetTransform().GetRight() * speed; }
+            if (Input::IsKeyDown(KeyCode::KeyW)) { velocity += transf->GetTransform().GetForward() * speed_ * dt; }
+            if (Input::IsKeyDown(KeyCode::KeyA)) { velocity -= transf->GetTransform().GetRight() * speed_ * dt; }
+            if (Input::IsKeyDown(KeyCode::KeyS)) { velocity -= transf->GetTransform().GetForward() * speed_ * dt; }
+            if (Input::IsKeyDown(KeyCode::KeyD)) { velocity += transf->GetTransform().GetRight() * speed_ * dt; }
+            el::Loggers::getLogger(LogMovement)->info("Movement location velocity: %v", velocity.x);
             transf->AddLocation(velocity);
         }
 
-        void TryDoRotationMove() const
+        void TryDoRotationMove(float dt) const
         {
             if (transformOwner_.expired()) return;
             Vector3 velocity = Vector3::Zero;
             const auto transf = transformOwner_.lock();
 
-            Input::GetMouseDelta();
+            const auto mouseDelta = Input::GetMouseDelta();
+            velocity.x += mouseDelta.dx * cameraSensitivity_ * dt;
+            velocity.y += mouseDelta.dy * cameraSensitivity_ * dt;
             transf->AddRotation(velocity);
         }
 
-        float speed = 1.0f;
-        float camera_sensitivity = 0.1f;
+        float speed_ = 1.0f;
+        float cameraSensitivity_ = 0.1f;
 
     protected:
         std::weak_ptr<TransformComponent> transformOwner_;
