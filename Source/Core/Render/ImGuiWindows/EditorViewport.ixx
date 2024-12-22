@@ -38,16 +38,15 @@ namespace GiiGa
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }
 
-        RenderPassViewData GetCameraInfo() override
+        RenderPassViewMatricies GetCameraInfo() override
         {
-            DirectX::SimpleMath::Matrix viewProjMatrix;
 
             auto camera_go = camera_.lock();
 
             // do we need view mat in camera?
-            viewProjMatrix = camera_go->GetComponent<CameraComponent>()->GetCamera().GetViewProj();
+            auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
 
-            return {.viewProjMatrix = viewProjMatrix, .camera_gpu_handle = {}};
+            return {.viewMatrix = camera.view_, .projMatrix = camera.GetProj()};
         }
 
         void Execute(RenderContext& context) override

@@ -30,7 +30,7 @@ namespace GiiGa
 
         virtual ~Viewport() = default;
 
-        virtual RenderPassViewData GetCameraInfo() =0;
+        virtual RenderPassViewMatricies GetCameraInfo() =0;
         
         virtual void Execute(RenderContext& context) =0;
 

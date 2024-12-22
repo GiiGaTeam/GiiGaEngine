@@ -41,7 +41,7 @@ namespace GiiGa
         static D3D12_SHADER_BYTECODE GetShaderByName(const LPCWSTR& name)
         {
             
-            std::map<std::pair<LPCWSTR, ShaderTypes>, std::unique_ptr<Shader>>::iterator it;
+            std::map<std::pair<LPCWSTR, ShaderTypes>, std::shared_ptr<Shader>>::iterator it;
             for (auto const& [key, val] : GetInstance().shaderMap_)
             {
                 if (key.first == name)
@@ -76,7 +76,7 @@ namespace GiiGa
         ShaderManager()
         {
             // Сначала создаём Shader, передавая путь до него, входную функцию в нём, а также тип с версией шейдера. Если это VertexShader, то можно (нужно) ещё указать VertexType для более легкого поиска в дальнейшем
-            auto shader = std::make_unique<Shader>(VertexPositionShader, "VSMain", "vs_5_1", VertexTypes::VertexPosition);
+            auto shader = std::make_shared<Shader>(VertexPositionShader, "VSMain", "vs_5_1", VertexTypes::VertexPosition);
             
             // Можно изменить созданный shader, например задав ему макросы, инклюды или может какие-нибудь другие флаги, но сейчас это не нужно
             //shader->SetDefines(...);
@@ -87,17 +87,17 @@ namespace GiiGa
 
             // И так дальше с остальными шейдерами
 
-            shader = std::make_unique<Shader>(VertexPNTBTShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
+            shader = std::make_shared<Shader>(VertexPNTBTShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
 
-            shader = std::make_unique<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_1" );
+            shader = std::make_shared<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }
 
         #pragma region ShaderClass
-        class Shader
+        class Shader : public std::enable_shared_from_this<Shader>
         {
             public:
             Shader(LPCWSTR file_name, LPCSTR entry_point, LPCSTR target, VertexTypes vertex_type = VertexTypes::None) :
@@ -129,7 +129,7 @@ namespace GiiGa
                 }
             }
 
-            void CompileShader(std::map<std::pair<LPCWSTR, ShaderTypes>, std::unique_ptr<Shader>>* map_to_store)
+            void CompileShader(std::map<std::pair<LPCWSTR, ShaderTypes>, std::shared_ptr<Shader>>* map_to_store)
             {
                 ID3DBlob* code_blob_ = nullptr;
                 ID3DBlob* error_blob_ = nullptr;
@@ -150,7 +150,7 @@ namespace GiiGa
                 shader_bc.pShaderBytecode = (code_blob_)->GetBufferPointer();
                 shader_bc.BytecodeLength = (code_blob_)->GetBufferSize();
 
-                map_to_store->emplace(std::make_pair(file_name_, shader_type_), std::move(this));
+                map_to_store->emplace(std::make_pair(file_name_, shader_type_), shared_from_this());
             }
             
             void SetDefines(D3D_SHADER_MACRO* defines)
@@ -199,6 +199,6 @@ namespace GiiGa
             
         };
         #pragma endregion
-        std::map<std::pair<LPCWSTR, ShaderTypes>, std::unique_ptr<Shader>> shaderMap_;
+        std::map<std::pair<LPCWSTR, ShaderTypes>, std::shared_ptr<Shader>> shaderMap_;
     };
 }

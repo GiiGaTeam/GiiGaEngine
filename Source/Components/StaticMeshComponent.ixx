@@ -4,6 +4,7 @@ import <DirectXCollision.h>;
 import <memory>;
 import <json/value.h>;
 import <bitset>;
+import <directx/d3dx12.h>;
 
 import Engine;
 import Component;
@@ -16,6 +17,7 @@ import EventSystem;
 import GameObject;
 import Misc;
 import IObjectShaderResource;
+import PerObjectData;
 
 
 namespace GiiGa
@@ -40,8 +42,10 @@ namespace GiiGa
 
         void Init() override
         {
+            transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
+                
                 if (!material_)
                 {
                     
@@ -59,7 +63,11 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
-            Todo();
+            perObjectData_->UpdateGPUData(context);
+            context.BindDescriptorHandle(0, GetGPUDescriptor(context));
+            
+
+            mesh_->Draw(context.GetGraphicsCommandList());
         }
 
         SortData GetSortData() override
@@ -124,6 +132,11 @@ namespace GiiGa
         std::shared_ptr<Material> material_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+        std::weak_ptr<TransformComponent> transform_;
+        std::shared_ptr<PerObjectData> perObjectData_;
+        //TODO
+        //Добавить возможность делать статик меши статическими или динамическими
+        bool isStatic_ = false;
 
         void RegisterInVisibility()
         {
@@ -143,6 +156,15 @@ namespace GiiGa
 
                     visibilityEntry_->Update(origaabb);
                 });
+        }
+
+        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptor(RenderContext& context)
+        {
+            if (transform_.expired()) return D3D12_GPU_DESCRIPTOR_HANDLE{};
+            if (perObjectData_)
+                return perObjectData_->GetDescriptor();
+            perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
+            return perObjectData_->GetDescriptor();
         }
     };
 }

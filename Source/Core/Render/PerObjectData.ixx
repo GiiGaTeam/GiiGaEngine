@@ -14,7 +14,7 @@ import RenderContext;
 namespace GiiGa
 {
 
-    struct WorldMatrices
+    struct alignas(256) WorldMatrices
     {
         DirectX::XMMATRIX World;
         DirectX::XMMATRIX WorldInverse;
@@ -22,8 +22,9 @@ namespace GiiGa
     export class PerObjectData
     {
         public:
-        PerObjectData(RenderDevice Device, RenderContext& Context,
-            std::shared_ptr<TransformComponent>& Transform, bool IsStatic) :
+        PerObjectData() = default;
+        PerObjectData(RenderContext& Context,
+            std::shared_ptr<TransformComponent> Transform, bool IsStatic) :
         IsStatic_(IsStatic),
         Transform_(Transform)
         {
@@ -35,7 +36,7 @@ namespace GiiGa
             WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
             const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
-            ConstantBuffer_ = std::make_unique<GPULocalResource>(Device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+            ConstantBuffer_ = std::make_unique<GPULocalResource>(Context.GetDevice(), CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
             ConstantBuffer_->UpdateContentsDeffered(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             ConstantBufferView_ = ConstantBuffer_->CreateConstantBufferView(desc);
         }
@@ -57,7 +58,7 @@ namespace GiiGa
             {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
             
-                ConstantBufferView_ = Context.AllocateDynamicConstantView(WorldMatricesSpan, 0, desc);
+                ConstantBufferView_ = Context.AllocateDynamicConstantView(WorldMatricesSpan, 1, desc);
             }
 
         }

@@ -8,6 +8,7 @@ import <memory>;
 import <directx/d3d12.h>;
 import <directx/d3dx12_root_signature.h>;
 import <iostream>;
+#include <directx/d3dx12_core.h>
 
 import RenderDevice;
 //import Material;
@@ -242,9 +243,9 @@ namespace GiiGa
         D3D12_SHADER_BYTECODE HS_ = {};
         D3D12_SHADER_BYTECODE GS_ = {};
         D3D12_STREAM_OUTPUT_DESC stream_output_ = {};
-        D3D12_BLEND_DESC blend_state_ = {};
+        D3D12_BLEND_DESC blend_state_ = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         UINT sample_mask_ = UINT_MAX;
-        D3D12_RASTERIZER_DESC rasterizer_state_ = {};
+        D3D12_RASTERIZER_DESC rasterizer_state_ = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
         D3D12_DEPTH_STENCIL_DESC depth_stencil_state_ = {};
         D3D12_INPUT_LAYOUT_DESC input_layout_ = {};
         D3D12_INDEX_BUFFER_STRIP_CUT_VALUE strip_cut_value_ = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;

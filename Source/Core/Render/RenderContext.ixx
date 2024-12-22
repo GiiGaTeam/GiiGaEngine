@@ -208,7 +208,13 @@ namespace GiiGa
             graphics_command_list_->SetPipelineState(pso.GetState());
         }
 
+        void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)
+        {
+            graphics_command_list_->SetGraphicsRootDescriptorTable(root_index, handle);
+        }
+
         RenderDevice& GetDevice() {return device_;}
+        std::shared_ptr<ID3D12GraphicsCommandList> GetGraphicsCommandList() {return graphics_command_list_;}
 
     private:
         RenderDevice& device_;

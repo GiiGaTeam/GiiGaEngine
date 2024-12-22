@@ -3,6 +3,7 @@ export module IRenderable;
 import <vector>;
 import <unordered_map>;
 import <memory>;
+import <directx/d3dx12.h>;
 
 import ObjectMask;
 import RenderSystemSettings;

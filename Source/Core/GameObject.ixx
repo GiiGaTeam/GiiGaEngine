@@ -18,6 +18,7 @@ import ConsoleComponent;
 import Misc;
 import IWorldQuery;
 import ILevelRootGameObjects;
+import PerObjectData;
 
 namespace GiiGa
 {
@@ -264,6 +265,8 @@ namespace GiiGa
         std::weak_ptr<ILevelRootGameObjects> level_root_gos_;
 
         std::shared_ptr<TransformComponent> transform_;
+
+        std::shared_ptr<PerObjectData> perObjectData_;
 
         void TryRemoveFromLevelRoot()
         {
