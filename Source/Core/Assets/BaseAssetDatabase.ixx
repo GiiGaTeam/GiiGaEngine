@@ -78,7 +78,7 @@ namespace GiiGa
             registry_file_ << Json::writeString(writer_builder, root);
         }
 
-        void InitializeDatabase()
+        void Initialize()
         {
             OpenRegistryFile();
             LoadRegistry();

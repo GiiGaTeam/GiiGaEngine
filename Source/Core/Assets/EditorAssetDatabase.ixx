@@ -208,5 +208,61 @@ namespace GiiGa
                 }
             }
         }
+
+        void ScanAssetsFolderForNewFiles()
+        {
+            try
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_))
+                {
+                    if (entry.is_regular_file())
+                    {
+                        auto relative_path = std::filesystem::relative(entry.path(), asset_path_);
+
+                        if (!IsFileInRegistry(relative_path))
+                        {
+                            el::Loggers::getLogger(LogResourceManager)->debug("Found new file: %v", relative_path);
+                            ImportAsset(relative_path);
+                        }
+                    }
+                }
+            }
+            catch (const std::filesystem::filesystem_error& e)
+            {
+                el::Loggers::getLogger(LogResourceManager)->warn("Failed to scan Assets folder: %v", e.what());
+            }
+        }
+
+        void RemoveMissingFilesFromRegistry()
+        {
+            for (auto it = registry_map_.begin(); it != registry_map_.end(); )
+            {
+                const auto& relative_path = it->second.path;
+                auto absolute_path = asset_path_ / relative_path;
+
+                if (!std::filesystem::exists(absolute_path))
+                {
+                    el::Loggers::getLogger(LogResourceManager)->debug("File missing, removing from registry: %v", relative_path);
+                    it = registry_map_.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+
+        private:
+            bool IsFileInRegistry(const std::filesystem::path& relative_path) const
+            {
+                for (const auto& [handle, meta] : registry_map_)
+                {
+                    if (meta.path == relative_path)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
     };
 } // namespace GiiGa

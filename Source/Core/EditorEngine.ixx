@@ -61,8 +61,10 @@ namespace GiiGa
             editor_asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
             asset_database_ = editor_asset_database_;
 
-            editor_asset_database_->InitializeDatabase();
-            DefaultLoaderSetup();
+            editor_asset_database_->Initialize();
+            SetupDefaultLoader();
+            editor_asset_database_->RemoveMissingFilesFromRegistry();
+            editor_asset_database_->ScanAssetsFolderForNewFiles();
 
             editor_asset_database_->StartProjectWatcher();
             resource_manager_->SetDatabase(editor_asset_database_);
@@ -84,7 +86,7 @@ namespace GiiGa
             Engine::DeInitialize();
         }
 
-        void DefaultLoaderSetup()
+        void SetupDefaultLoader()
         {
             editor_asset_database_->RegisterLoader<DDSAssetLoader>();
             editor_asset_database_->RegisterLoader<ImageAssetLoader>();
