@@ -289,9 +289,17 @@ namespace GiiGa
             D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 #ifndef NDEBUG
-            ID3D12Debug* pdx12Debug = nullptr;
+            ID3D12Debug3* pdx12Debug = nullptr;
             if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pdx12Debug))))
+            {
+                std::cout << "Enabled debug.\n";
                 pdx12Debug->EnableDebugLayer();
+                pdx12Debug->SetEnableGPUBasedValidation(true);
+            }
+            else
+            {
+                throw std::runtime_error("Failed to get D3D12 debug layer.");
+            }
 #endif
 
             ThrowIfFailed(D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(&device)));

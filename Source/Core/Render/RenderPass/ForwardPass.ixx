@@ -13,6 +13,9 @@ import IRenderable;
 import SceneVisibility;
 import RenderPassViewData;
 import Logger;
+import ShaderManager;
+import RenderContext;
+import VertexTypes;
 
 namespace GiiGa
 {
@@ -27,7 +30,11 @@ namespace GiiGa
         void Draw(RenderContext& context) override
         {
             auto pso = PSO();
-            //pso.set_vs(ShaderManager::GetShaderByName(L"Shaders/SimpleVertexShader.hlsl"));
+            pso.set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader));
+            pso.set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader));
+            pso.set_input_layout(VertexPNTBT::InputLayout);
+            pso.GeneratePSO(context.GetDevice(),2, 0, 0);
+            
 
             auto cam_info = getCamInfoDataFunction_();
 

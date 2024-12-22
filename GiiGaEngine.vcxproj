@@ -165,7 +165,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
-    <None Include="Shaders\SimpleVertexShader.hlsl" />
+    <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\ShaderHeader.hlsl" />
+    <None Include="Shaders\VertexPositionShader.hlsl" />
+    <None Include="Shaders\VertexPNTBTShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
     <ClCompile Include="Source\Components\LightComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
@@ -498,7 +501,6 @@
     <Content Include=".gitmodules" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Shaders\" />
     <Folder Include="TemplateProject\Assets\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

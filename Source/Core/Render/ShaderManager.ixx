@@ -6,12 +6,18 @@ import <d3dcompiler.h>;
 import <filesystem>;
 import <map>;
 import <vector>;
+import <unordered_map>;
+import <iostream>;
 
 import VertexTypes;
 import ObjectMask;
 
 namespace GiiGa
 {
+    export const LPCWSTR VertexPositionShader = L"Shaders/VertexPositionShader.hlsl";
+    export const LPCWSTR VertexPNTBTShader = L"Shaders/VertexPNTBTShader.hlsl";
+    export const LPCWSTR OpaqueUnlitShader = L"Shaders/OpaqueUnlitPixelShader.hlsl";
+    
     export class ShaderManager
     {
     public:
@@ -24,45 +30,36 @@ namespace GiiGa
             Geometry,
             Compute
         };
-        /*
-         * Здесь мы будем компилировать и сохранять шейдера для дальнейшего использования
-         */
-        ShaderManager()
+
+        static ShaderManager& GetInstance()
         {
-            // Сначала создаём Shader, передавая путь до него, входную функцию в нём, а также тип с версией шейдера. Если это VertexShader, то можно (нужно) ещё указать VertexType для более легкого поиска в дальнейшем
-            auto shader = std::make_unique<Shader>(L"Shaders/SimpleVertexShader.hlsl", "VSMain", "vs_5_1", VertexTypes::VertexPosition);
-            
-            // Можно изменить созданный shader, например задав ему макросы, инклюды или может какие-нибудь другие флаги, но сейчас это не нужно
-            //shader->SetDefines(...);
-
-            // Компилируем шейдер, передавая в него ссылку на мапу, которая в качестве ключей имеет пару <путь_до_файла, тип_шейдера>, а в качестве значения - байткод шейдера
-            shader->CompileShader(&shaderMap_);
-
-            // И так дальше с остальными шейдерами
+            if (instance_) return *std::static_pointer_cast<ShaderManager>(instance_);
+            else return *std::static_pointer_cast<ShaderManager>(instance_ = std::shared_ptr<ShaderManager>(new ShaderManager()));
         }
-
-        D3D12_SHADER_BYTECODE GetShaderByName(const LPCWSTR& name)
+        
+        
+        static D3D12_SHADER_BYTECODE GetShaderByName(const LPCWSTR& name)
         {
             
             std::map<std::pair<LPCWSTR, ShaderTypes>, std::unique_ptr<Shader>>::iterator it;
-            for (auto const& [key, val] : shaderMap_)
+            for (auto const& [key, val] : GetInstance().shaderMap_)
             {
                 if (key.first == name)
                     return val->GetShaderBC();
             }
         }
-        D3D12_SHADER_BYTECODE GetShaderByNameAndType(const LPCWSTR& name, ShaderTypes shader_type)
+        static D3D12_SHADER_BYTECODE GetShaderByNameAndType(const LPCWSTR& name, ShaderTypes shader_type)
         {
-            for (auto const& [key, val] : shaderMap_)
+            for (auto const& [key, val] : GetInstance().shaderMap_)
             {
                 if (key.first == name && key.second == shader_type)
                     return val->GetShaderBC();
             }
         }
-        D3D12_SHADER_BYTECODE GetVertexShaderByVertexType(VertexTypes vertex_type)
+        static D3D12_SHADER_BYTECODE GetVertexShaderByVertexType(VertexTypes vertex_type)
         {
             if (vertex_type == VertexTypes::None) return D3D12_SHADER_BYTECODE{};
-            for (auto const& [key, val]  : shaderMap_)
+            for (auto const& [key, val]  : GetInstance().shaderMap_)
             {
                 if (val->GetVertexType() == vertex_type)
                 {
@@ -72,6 +69,33 @@ namespace GiiGa
         }
         
         private:
+        static inline std::shared_ptr<ShaderManager> instance_;
+        /*
+         * Здесь мы будем компилировать и сохранять шейдера для дальнейшего использования
+         */
+        ShaderManager()
+        {
+            // Сначала создаём Shader, передавая путь до него, входную функцию в нём, а также тип с версией шейдера. Если это VertexShader, то можно (нужно) ещё указать VertexType для более легкого поиска в дальнейшем
+            auto shader = std::make_unique<Shader>(VertexPositionShader, "VSMain", "vs_5_1", VertexTypes::VertexPosition);
+            
+            // Можно изменить созданный shader, например задав ему макросы, инклюды или может какие-нибудь другие флаги, но сейчас это не нужно
+            //shader->SetDefines(...);
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+
+            // Компилируем шейдер, передавая в него ссылку на мапу, которая в качестве ключей имеет пару <путь_до_файла, тип_шейдера>, а в качестве значения - байткод шейдера
+            shader->CompileShader(&shaderMap_);
+
+            // И так дальше с остальными шейдерами
+
+            shader = std::make_unique<Shader>(VertexPNTBTShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_unique<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+        }
+
         #pragma region ShaderClass
         class Shader
         {
@@ -107,11 +131,24 @@ namespace GiiGa
 
             void CompileShader(std::map<std::pair<LPCWSTR, ShaderTypes>, std::unique_ptr<Shader>>* map_to_store)
             {
-                D3DCompileFromFile(file_name_, defines_, include_,
-                    entry_point_, target_, flags1_, flags2_, code_blob_.get(), error_blob_.get());
+                ID3DBlob* code_blob_ = nullptr;
+                ID3DBlob* error_blob_ = nullptr;
                 
-                shader_bc.pShaderBytecode = (*code_blob_)->GetBufferPointer();
-                shader_bc.BytecodeLength = (*code_blob_)->GetBufferSize();
+                auto res = D3DCompileFromFile(file_name_, defines_, include_,
+                    entry_point_, target_, flags1_, flags2_, &code_blob_, &error_blob_);
+
+                if (FAILED(res))
+                {
+                    // If the shader failed to compile it should have written something to the error message.
+                    if (error_blob_)
+                    {
+                        char* compileErrors =  (char*)(error_blob_->GetBufferPointer());
+                        std::cout << compileErrors << std::endl;
+                    }
+                }
+                
+                shader_bc.pShaderBytecode = (code_blob_)->GetBufferPointer();
+                shader_bc.BytecodeLength = (code_blob_)->GetBufferSize();
 
                 map_to_store->emplace(std::make_pair(file_name_, shader_type_), std::move(this));
             }
@@ -156,11 +193,9 @@ namespace GiiGa
             ID3DInclude* include_ = nullptr;
             UINT flags1_ = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
             UINT flags2_ = 0;
-            
-            std::unique_ptr<ID3DBlob*> code_blob_ = nullptr;
-            std::unique_ptr<ID3DBlob*> error_blob_ = nullptr;
 
-            D3D12_SHADER_BYTECODE shader_bc = {};          
+            D3D12_SHADER_BYTECODE shader_bc = {};
+
             
         };
         #pragma endregion

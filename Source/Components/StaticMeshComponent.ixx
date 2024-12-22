@@ -97,7 +97,7 @@ namespace GiiGa
             }
             else
             {
-                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset>({newUuid, 0});
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
                 RegisterInVisibility();
             }
         }
@@ -120,7 +120,7 @@ namespace GiiGa
         }
 
     private:
-        std::shared_ptr<MeshAsset> mesh_;
+        std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::shared_ptr<Material> material_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();

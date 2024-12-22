@@ -14,6 +14,32 @@ namespace GiiGa
         static inline const DXGI_FORMAT Format = DXGI_FORMAT_R16_UINT;
     };
 
+    export struct VertexPosition
+    {
+        friend struct VertexPNTBT;
+        
+        VertexPosition() = default;
+
+        explicit VertexPosition(const SimpleMath::Vector3& position) : Position(position) {}
+
+        SimpleMath::Vector3 Position;
+
+        virtual ~VertexPosition() = default;
+
+    private:
+        static inline const int InputElementCount = 1;
+
+        static inline const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount] =
+        {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        };
+    public:
+        static inline const D3D12_INPUT_LAYOUT_DESC InputLayout = {
+            InputElements,
+            InputElementCount
+        };
+    };
+
     export struct VertexPNTBT
     {
         friend struct VertexBoned;
@@ -22,9 +48,9 @@ namespace GiiGa
 
         explicit VertexPNTBT(const SimpleMath::Vector3& position,
             const SimpleMath::Vector3& normal,
-            const SimpleMath::Vector3& texCoord,
             const SimpleMath::Vector3& tangent = {0, 0, 0},
-            const SimpleMath::Vector3& bitangent = {0, 0, 0})
+            const SimpleMath::Vector3& bitangent = {0, 0, 0},
+            const SimpleMath::Vector2& texCoord = {0,0})
             : Position(position)
               , Normal(normal)
               , Tangent(tangent)
@@ -37,18 +63,20 @@ namespace GiiGa
         SimpleMath::Vector3 Normal;
         SimpleMath::Vector3 Tangent;
         SimpleMath::Vector3 Bitangent;
-        SimpleMath::Vector3 TexCoord;
+        SimpleMath::Vector2 TexCoord;
+
+        virtual ~VertexPNTBT() = default;
 
     private:
 
         static inline const int InputElementCount = 5;
         static inline const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount] =
         {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            VertexPosition::InputElements[0],
             {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
             {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
             {"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         };
 
     public:
@@ -64,9 +92,9 @@ namespace GiiGa
 
         explicit VertexBoned(const SimpleMath::Vector3& position,
             const SimpleMath::Vector3& normal,
-            const SimpleMath::Vector3& texCoord,
             const SimpleMath::Vector3& tangent = {0, 0, 0},
             const SimpleMath::Vector3& bitangent = {0, 0, 0},
+            const SimpleMath::Vector2& texCoord = {0,0},
             const std::array<uint16_t, MaxCountOfBonesPerVertex>& boneIDs = {0, 0, 0, 0},
             const SimpleMath::Vector4& boneWeights = {0, 0, 0, 0})
             : Position(position)
@@ -83,9 +111,11 @@ namespace GiiGa
         SimpleMath::Vector3 Normal;
         SimpleMath::Vector3 Tangent;
         SimpleMath::Vector3 Bitangent;
-        SimpleMath::Vector3 TexCoord;
+        SimpleMath::Vector2 TexCoord;
         std::array<uint16_t, MaxCountOfBonesPerVertex> BoneIDs;
         SimpleMath::Vector4 BoneWeights;
+        
+        virtual ~VertexBoned() = default;
 
     private:
         static inline const int InputElementCount = 7;

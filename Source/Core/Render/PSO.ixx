@@ -1,4 +1,5 @@
-﻿export module PSO;
+﻿
+export module PSO;
 
 import <bitset>;
 import <map>;
@@ -6,14 +7,16 @@ import <vector>;
 import <memory>;
 import <directx/d3d12.h>;
 import <directx/d3dx12_root_signature.h>;
+import <iostream>;
 
 import RenderDevice;
-import Material;
+//import Material;
 import ShaderManager;
 import DirectXUtils;
 
 namespace GiiGa
 {
+
     export typedef enum
     {
         Wrap = 0x1,
@@ -33,19 +36,33 @@ namespace GiiGa
             CD3DX12_ROOT_PARAMETER slotRootParameter[1];
             
             // Create a single descriptor table of CBVs.
-            CD3DX12_DESCRIPTOR_RANGE Tables[3];
-            Tables[0].Init(
+            std::vector<CD3DX12_DESCRIPTOR_RANGE> Tables;
+            //CD3DX12_DESCRIPTOR_RANGE Tables[3];
+            if (cbv_num)
+            {
+                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
+                
+                Tables[0].Init(
                 D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
                 cbv_num,  // Number of descriptors in table
                 0);// base shader register arguments are bound to for this root parameter
+            }
 
-            Tables[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srv_num, 0);
+            if (srv_num)
+            {
+                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
+                Tables[Tables.size()-1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, srv_num, 0);
+            }
 
-            Tables[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uav_num, 0);
+            if (uav_num)
+            {
+                Tables.push_back(CD3DX12_DESCRIPTOR_RANGE());
+                Tables[Tables.size()-1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, uav_num, 0);
+            }
             
             slotRootParameter[0].InitAsDescriptorTable(
-                3,  // Number of ranges
-                Tables); // Pointer to array of ranges
+                Tables.size(),  // Number of ranges
+                Tables.data()); // Pointer to array of ranges
             
             // A root signature is an array of root parameters.
             CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, samplers_.size(),
@@ -60,11 +77,22 @@ namespace GiiGa
                 D3D_ROOT_SIGNATURE_VERSION_1,
                     &serializedRootSig,
                     &errorBlob);
+
+            if (FAILED(hr))
+                {
+                    // If the shader failed to compile it should have written something to the error message.
+                    if (errorBlob)
+                    {
+                        char* compileErrors =  (char*)(errorBlob->GetBufferPointer());
+                        std::cout << compileErrors << std::endl;
+                    }
+                }
+              
             
             ID3D12RootSignature* mRootSignature = nullptr;
             ThrowIfFailed(device.GetDevice()->CreateRootSignature(
                 0,
-                serializedRootSig,
+                serializedRootSig->GetBufferPointer(),
                 serializedRootSig->GetBufferSize(),
                 IID_PPV_ARGS(&mRootSignature)));
             
@@ -73,7 +101,7 @@ namespace GiiGa
                 DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_};
             ThrowIfFailed(device.GetDevice()->CreateGraphicsPipelineState(
                 &psoDesc,
-                IID_PPV_ARGS(state_)));
+                IID_PPV_ARGS(&state_)));
         }
         //=============================SETTING PSO PARAMETERS=============================
         
@@ -195,6 +223,8 @@ namespace GiiGa
         {
             samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
         }
+
+        ID3D12PipelineState* GetState() {return state_;}
         
         private:
         void push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE address_mode)
@@ -230,6 +260,6 @@ namespace GiiGa
         
         std::vector<D3D12_STATIC_SAMPLER_DESC> samplers_;
 
-        ID3D12PipelineState** state_;
+        ID3D12PipelineState* state_;
     };
 }

@@ -18,6 +18,7 @@ import Window;
 import DescriptorHeap;
 import SwapChain;
 import BufferView;
+import PSO;
 
 namespace GiiGa
 {
@@ -201,6 +202,13 @@ namespace GiiGa
 
             WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
         }
+
+        void BindPSO(PSO& pso)
+        {
+            graphics_command_list_->SetPipelineState(pso.GetState());
+        }
+
+        RenderDevice& GetDevice() {return device_;}
 
     private:
         RenderDevice& device_;

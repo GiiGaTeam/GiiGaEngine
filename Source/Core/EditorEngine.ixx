@@ -15,6 +15,7 @@ import TransformComponent;
 import DDSAssetLoader;
 import ImageAssetLoader;
 import MeshAssetLoader;
+import VertexTypes;
 
 namespace GiiGa
 {
@@ -88,7 +89,8 @@ namespace GiiGa
         {
             editor_asset_database_->RegisterLoader<DDSAssetLoader>();
             editor_asset_database_->RegisterLoader<ImageAssetLoader>();
-            editor_asset_database_->RegisterLoader<MeshAssetLoader>();
+            editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPNTBT>>();
+            editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPosition>>();
         }
     };
 } // namespace GiiGa

@@ -45,7 +45,7 @@ namespace GiiGa
             auto camera_go = camera_.lock();
 
             // do we need view mat in camera?
-            viewProjMatrix = camera_go->GetTransformComponent().lock()->GetInverseLocalMatrix() * camera_go->GetComponent<CameraComponent>()->GetCamera().GetProj();
+            viewProjMatrix = camera_go->GetComponent<CameraComponent>()->GetCamera().GetViewProj();
 
             return {.viewProjMatrix = viewProjMatrix, .camera_gpu_handle = {}};
         }

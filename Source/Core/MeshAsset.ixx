@@ -2,13 +2,17 @@ export module MeshAsset;
 
 import <vector>;
 import <filesystem>;
+import  <DirectXCollision.h>;
 
 import AssetBase;
 import Mesh;
+import IRenderContext;
+import RenderDevice;
 
 namespace GiiGa
 {
-    export class MeshAsset : public AssetBase, public Mesh
+    export template <typename VertexType>
+    class MeshAsset : public AssetBase, public Mesh<VertexType>
     {
     public:
         MeshAsset(
@@ -19,7 +23,7 @@ namespace GiiGa
             const std::vector<Index16>& indices, 
             DirectX::BoundingBox aabb
         )
-            : Mesh(render_context, device, vertices, indices, aabb)
+            : Mesh<VertexType>(render_context, device, vertices, indices, aabb)
             , AssetBase(handle)
         {
         }
