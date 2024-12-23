@@ -28,6 +28,7 @@ import Engine;
 import StubTexturesHandles;
 import MathUtils;
 import Logger;
+import IUpdateGPUData;
 
 namespace GiiGa
 {
@@ -97,18 +98,9 @@ namespace GiiGa
         std::shared_ptr<BufferView<Constant>> MaterialCBV_;
     };
 
-    export class Material : public AssetBase
+    export class Material : public AssetBase, public IUpdateGPUData, public std::enable_shared_from_this<Material>
     {
     public:
-        AssetType GetType()
-        {
-            return AssetType::Material;
-        }
-
-        friend class ObjectShaderResource;
-
-        std::string name;
-
         struct alignas(256) MaterialData
         {
             DirectX::SimpleMath::Vector3 BaseColorTint_ = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
@@ -149,7 +141,19 @@ namespace GiiGa
             }
         };
 
-        Material(AssetHandle handle, const BlendMode& blendMode, const ShadingModel& shadingModel,
+        AssetType GetType()
+        {
+            return AssetType::Material;
+        }
+
+        friend class ObjectShaderResource;
+
+        ~Material() override
+        {
+            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+        }
+
+                Material(AssetHandle handle, const BlendMode& blendMode, const ShadingModel& shadingModel,
                  const MaterialData& data, const std::array<std::shared_ptr<TextureAsset>, MaxTextureCount>& textures,
                  const std::array<ComponentMapping, MaxTextureCount>& component_mappings) :
             AssetBase(handle),
@@ -157,6 +161,8 @@ namespace GiiGa
             shaderResource_(std::make_shared<MaterialShaderResource>()),
             textures_(textures)
         {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+            
             for (int i = 0; i < textures_.size(); ++i)
             {
                 if (textures_[i])
@@ -192,6 +198,8 @@ namespace GiiGa
                 shaderResource_->MaterialCBV_ = MaterialCB_->CreateConstantBufferView(desc);
             }
         }
+
+        std::string name;
 
         //todo: temp solution need change signature in AssetLoader Save
         Json::Value ToJson()
@@ -265,7 +273,7 @@ namespace GiiGa
             return nullptr;
         }
 
-        void UpdateGPUData(RenderContext& Context)
+        void UpdateGPUData(RenderContext& Context) override
         {
             if (!isDirty)
                 return;
@@ -524,7 +532,7 @@ namespace GiiGa
 
         std::array<std::shared_ptr<TextureAsset>, MaxTextureCount> textures_;
         std::shared_ptr<GPULocalResource> MaterialCB_;
-
+        
         void CheckAndLoadRequirededTextures_()
         {
             // Define required texture indices based on the blend mode and shading model

@@ -1,14 +1,14 @@
 module;
 
-#include<directxtk12/DirectXHelpers.h>
+#include <directx/d3dx12.h>
+#include <DirectXCollision.h>
 
 export module StaticMeshComponent;
 
-import <DirectXCollision.h>;
 import <memory>;
 import <json/value.h>;
 import <bitset>;
-import <directx/d3dx12.h>;
+import <filesystem>;
 
 import Engine;
 import Component;
@@ -22,20 +22,22 @@ import GameObject;
 import Misc;
 import IObjectShaderResource;
 import PerObjectData;
-
-import TextureAsset;
 import StubTexturesHandles;
-import <filesystem>;
+import IUpdateGPUData;
 
 namespace GiiGa
 {
-    export class StaticMeshComponent : public Component, public IRenderable
+    export class StaticMeshComponent : public Component, public IRenderable, public IUpdateGPUData
     {
     public:
-        StaticMeshComponent() = default;
+        StaticMeshComponent()
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+        }
 
         ~StaticMeshComponent()
         {
+            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
             {
                 if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
@@ -71,11 +73,6 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
-            if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
-
-            perObjectData_->UpdateGPUData(context);
-
             mesh_->Draw(context.GetGraphicsCommandList());
         }
 
@@ -116,9 +113,6 @@ namespace GiiGa
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
                 RegisterInVisibility();
 
-                std::array<std::shared_ptr<TextureAsset>, MaxTextureCount> textures;
-                std::array<ComponentMapping, MaxTextureCount> comp_map;
-
                 if (!material_)
                 {
                     auto rm = Engine::Instance().ResourceManager();
@@ -143,6 +137,13 @@ namespace GiiGa
                 material_.reset();
             else
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
+        }
+
+        void UpdateGPUData(RenderContext& context) override
+        {
+            if (!perObjectData_)
+                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
+            perObjectData_->UpdateGPUData(context);
         }
 
         PerObjectData& GetPerObjectData() override

@@ -3,6 +3,7 @@
 import <functional>;
 import <memory>;
 import <iostream>;
+import <unordered_set>;
 
 import RenderSystemSettings;
 export import Window;
@@ -13,6 +14,7 @@ import RenderGraph;
 import SwapChain;
 import ShaderManager;
 import Viewport;
+import IUpdateGPUData;
 
 namespace GiiGa
 {
@@ -40,6 +42,12 @@ namespace GiiGa
         {
             device_.DeleteStaleObjects();
             context_.StartFrame();
+
+            for (auto it = updateGpuData_registry_.begin(); it != updateGpuData_registry_.end(); ++it)
+            {
+                it.operator*()->UpdateGPUData(context_);
+            }
+
             root_.Draw(context_);
             context_.EndFrame();
             swapChain_->Present();
@@ -61,11 +69,37 @@ namespace GiiGa
             swapChain_->Resize(device_, event.width, event.height);
         }
 
+        void RegisterInUpdateGPUData(IUpdateGPUData* data)
+        {
+            if (!updateGpuData_registry_.contains(data))
+                updateGpuData_registry_.insert(data);
+            else
+                throw std::runtime_error("Update GPU data already exists");
+        }
+
+        void UnregisterInUpdateGPUData(IUpdateGPUData* data)
+        {
+            if (updateGpuData_registry_.contains(data))
+                updateGpuData_registry_.erase(data);
+            else
+                throw std::runtime_error("Update GPU data not found");
+        }
+
     protected:
         RenderDevice device_;
         RenderContext context_;
+        std::unordered_set<IUpdateGPUData*> updateGpuData_registry_;
         std::shared_ptr<SwapChain> swapChain_;
         RenderGraph root_;
         std::unique_ptr<ShaderManager> shaderManager_;
     };
 }
+
+//export template <>
+//struct std::hash<std::shared_ptr<GiiGa::IUpdateGPUData>>
+//{
+//    size_t operator()(std::shared_ptr<GiiGa::IUpdateGPUData> s_ptr) const noexcept
+//    {
+//        return std::hash<GiiGa::IUpdateGPUData*>()(s_ptr.get());
+//    }
+//};

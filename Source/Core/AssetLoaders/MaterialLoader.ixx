@@ -109,7 +109,6 @@ namespace GiiGa
 
         void Save(AssetBase& asset, ::std::filesystem::path& path) override
         {
-            
         }
 
         const char* GetName() override

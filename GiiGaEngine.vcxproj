@@ -288,6 +288,7 @@
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.ixx" />
+    <ClCompile Include="Source\Core\Render\Interfaces\IUpdateGPUData.ixx" />
     <ClCompile Include="Source\Core\Render\IObjectShaderResource.ixx" />
     <ClCompile Include="Source\Core\Render\ObjectMask.ixx" />
     <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
