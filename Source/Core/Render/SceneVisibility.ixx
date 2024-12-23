@@ -17,6 +17,7 @@ import IRenderable;
 import ITickable;
 export import ObjectMask;
 import MathUtils;
+import Logger;
 
 namespace GiiGa
 {
@@ -40,7 +41,15 @@ namespace GiiGa
             // Convert DirectX frustum planes to OrthoTree's Plane3D format.
             for (int i = 0; i < 6; i++)
             {
-                OrthoTree::Vector3D normal = {dxplanes[i].Normal().x, dxplanes[i].Normal().y, dxplanes[i].Normal().z};
+                auto dxnorm = dxplanes[i].Normal();
+
+                if (!(std::abs(dxnorm.LengthSquared() - 1.0) < 0.000001))
+                {
+                    el::Loggers::getLogger(LogWorld)->error("Length %v", dxnorm.LengthSquared());
+                    throw std::runtime_error("Plane Normal Length error");
+                }
+
+                OrthoTree::Vector3D normal = {dxnorm.x, dxnorm.y, dxnorm.z};
                 otplanes[i] = OrthoTree::Plane3D(dxplanes[i].D(), normal);
             }
 
@@ -81,7 +90,7 @@ namespace GiiGa
                             drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
 
                         CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
-                        
+
                         // Add the renderable to the resource group's renderables list.
                         CMR->second.renderables.push_back(renderable);
                     }

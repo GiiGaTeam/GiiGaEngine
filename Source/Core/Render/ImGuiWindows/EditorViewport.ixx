@@ -40,7 +40,6 @@ namespace GiiGa
 
         RenderPassViewMatricies GetCameraInfo() override
         {
-
             auto camera_go = camera_.lock();
 
             // do we need view mat in camera?
@@ -69,6 +68,22 @@ namespace GiiGa
             context.ClearRenderTargetView(RTHandle, clear_color_with_alpha);
             context.GetGraphicsCommandList()->OMSetRenderTargets(1, &RTHandle, true, nullptr);
             // draw here
+            D3D12_VIEWPORT viewport = {};
+            viewport.TopLeftX = 0.0f;
+            viewport.TopLeftY = 0.0f;
+            viewport.Width = current_size.x;
+            viewport.Height = current_size.y;
+            viewport.MinDepth = 0.0f;
+            viewport.MaxDepth = 1.0f;
+            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
+
+            D3D12_RECT scissorRect = {};
+            scissorRect.left = 0;
+            scissorRect.top = 0;
+            scissorRect.right = current_size.x;
+            scissorRect.bottom = current_size.y;
+            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
+
             renderGraph_->Draw(context);
             // draw here - end
 

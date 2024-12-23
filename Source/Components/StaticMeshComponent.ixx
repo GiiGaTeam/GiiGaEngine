@@ -64,7 +64,7 @@ namespace GiiGa
             if (!perObjectData_)
                 perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
-            context.BindDescriptorHandle(0, GetGPUDescriptor(context));
+            context.BindDescriptorHandle(1, GetGPUDescriptor(context));
 
 
             mesh_->Draw(context.GetGraphicsCommandList());

@@ -1,14 +1,14 @@
-cbuffer WorldMatricies : register(b0)
+cbuffer CameraMatricies : register(b0)
 {
-    matrix World;
-    matrix invWorld;
+    matrix View;
+    matrix Proj;
     //bool RenderState;
 }
 
 cbuffer WorldMatricies : register(b1)
 {
-    matrix View;
-    matrix Proj;
+    matrix World;
+    matrix invWorld;
     //bool RenderState;
 }
 

@@ -93,7 +93,7 @@ namespace GiiGa
         planes[5] = Plane(viewProjMatrix._14 - viewProjMatrix._13,
                           viewProjMatrix._24 - viewProjMatrix._23,
                           viewProjMatrix._34 - viewProjMatrix._33,
-                          viewProjMatrix._44 - viewProjMatrix._43);
+                          -(viewProjMatrix._44 - viewProjMatrix._43));
 
         // Normalize the planes
         for (int i = 0; i < 6; ++i)

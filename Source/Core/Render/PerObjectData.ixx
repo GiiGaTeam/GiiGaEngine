@@ -46,8 +46,8 @@ namespace GiiGa
             UINT SizeInBytes = sizeof(WorldMatrices);
                 
             WorldMatrices WorldMatrices;
-            WorldMatrices.World = Transform_->GetWorldMatrix();
-            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
+            WorldMatrices.World = Transform_->GetWorldMatrix().Transpose();
+            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix().Transpose();
             const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
             if (IsStatic_)

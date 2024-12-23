@@ -61,10 +61,7 @@ namespace GiiGa
 
             const auto& visibles = SceneVisibility::Extract(renderpass_filter, viewProj);
             // Getting renderables
-
-            if (visibles.size() > 0)
-                el::Loggers::getLogger(LogRendering)->debug("See some renderable");
-
+            
             cam_info = {cam_info.viewMatrix.Transpose(), cam_info.projMatrix.Transpose()};
             const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&cam_info), sizeof(RenderPassViewMatricies)};
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
@@ -76,7 +73,7 @@ namespace GiiGa
                 {
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
-                        context.BindDescriptorHandle(1, ConstantBufferView_->getDescriptor().getGPUHandle());
+                        context.BindDescriptorHandle(0, ConstantBufferView_->getDescriptor().getGPUHandle());
                         renderable.lock()->Draw(context);
                     }
                 }

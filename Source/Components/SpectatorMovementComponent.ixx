@@ -40,8 +40,8 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
-            TryDoLocationMove(dt);
-            TryDoRotationMove(dt);
+            //TryDoLocationMove(dt);
+            //TryDoRotationMove(dt);
         }
 
         void TryDoLocationMove(float dt)
