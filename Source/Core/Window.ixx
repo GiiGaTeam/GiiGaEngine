@@ -186,14 +186,14 @@ namespace GiiGa
 
     export struct MouseMotionEvent
     {
-        float x;
-        float y;
+        int32_t x;
+        int32_t y;
     };
 
     export struct MouseWheelEvent
     {
-        float x;
-        float y;
+        int32_t x;
+        int32_t y;
     };
 
     export struct MouseButtonEvent
@@ -309,13 +309,13 @@ namespace GiiGa
                 break;
                 case SDL_MOUSEMOTION:
                 {
-                    MouseMotionEvent t{static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)};
+                    MouseMotionEvent t{event.motion.x, event.motion.y};
                     OnMouseMotion.Invoke(t);
                 }
                 break;
                 case SDL_MOUSEWHEEL:
                 {
-                    MouseWheelEvent t{static_cast<float>(event.wheel.x), static_cast<float>(event.wheel.y)};
+                    MouseWheelEvent t{event.wheel.x, event.wheel.y};
                     OnMouseWheel.Invoke(t);
                 }
                 break;

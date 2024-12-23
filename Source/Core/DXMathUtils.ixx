@@ -23,18 +23,12 @@ namespace GiiGa
 
     export Vector3 RadFromDeg(const Vector3& vec)
     {
-        const auto x = RadFromDeg(vec.x);
-        const auto y = RadFromDeg(vec.y);
-        const auto z = RadFromDeg(vec.z);
-        return Vector3{x, y, z};
+        return vec * Pi / 180; 
     }
 
     export Vector3 DegFromRad(const Vector3& vec)
     {
-        const auto x = DegFromRad(vec.x);
-        const auto y = DegFromRad(vec.y);
-        const auto z = DegFromRad(vec.z);
-        return Vector3{x, y, z};
+        return vec * 180 / Pi;
     }
 
     export Json::Value Vector3ToJson(const Vector3& vec)

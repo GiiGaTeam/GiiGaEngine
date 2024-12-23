@@ -391,10 +391,10 @@ namespace GiiGa
 
         void CalcWorldTransformMatrix()
         {
-            const TransformComponent* rootComp = this;
+            auto rootComp =std::dynamic_pointer_cast<TransformComponent>(shared_from_this());
             world_matrix_ = rootComp->local_matrix_;
 
-            const TransformComponent* parentComp = rootComp->parent_.lock().get();
+            auto parentComp = rootComp->parent_.lock();
             while (parentComp)
             {
                 if (rootComp->attach_translation && rootComp->attach_rotate && rootComp->attach_scale)
@@ -430,7 +430,7 @@ namespace GiiGa
                 }
 
                 rootComp = parentComp;
-                parentComp = rootComp->parent_.lock().get();
+                parentComp = rootComp->parent_.lock();
             }
         }
 

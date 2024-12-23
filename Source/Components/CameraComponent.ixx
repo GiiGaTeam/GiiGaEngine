@@ -133,12 +133,12 @@ namespace GiiGa
             const auto transform = ownerGO_.lock()->GetTransformComponent().lock().get();
             if (!transform) return;
 
-            const Vector3 position = transform->GetLocation();
-            const Vector3 target = position + transform->GetTransform().GetForward();
-            const Vector3 up = transform->GetTransform().GetUp();
+            const Vector3 position = transform->GetWorldLocation();
+            const Vector3 target = position + transform->GetWorldTransform().GetForward();
+            const Vector3 up = transform->GetWorldTransform().GetUp();
 
-            camera_.view_ = Matrix::CreateLookAt(position, target, up);
-            //camera_.view_ = transform->GetWorldMatrix().Invert();
+            //camera_.view_ = Matrix::CreateLookAt(position, target, up);
+            camera_.view_ = transform->GetInverseWorldMatrix();
         }
 
     protected:
