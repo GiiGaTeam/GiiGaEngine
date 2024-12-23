@@ -75,11 +75,6 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<ID3D12Device> GetDevice()
-        {
-            return device_;
-        }
-
         ///////////////////////// Create INTERFACE /////////////////////////////////////////////////
 
         std::shared_ptr<ID3D12CommandQueue> CreateCommandQueue(const D3D12_COMMAND_QUEUE_DESC& desc)
@@ -271,7 +266,25 @@ namespace GiiGa
             return std::make_shared<BufferView<Vertex>>(std::move(desc));
         }
 
-        std::shared_ptr<ID3D12Device> GetDxDevice() {
+        ///////////////////////// PSO INTERFACE /////////////////////////////////////////////////
+
+        std::shared_ptr<ID3D12RootSignature> CreateRootSignature(UINT nodeMask,
+                                                                 ID3DBlob* serializedRootSig)
+        {
+            ID3D12RootSignature* mRootSignature;
+            device_->CreateRootSignature(nodeMask, serializedRootSig->GetBufferPointer(), serializedRootSig->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
+            return std::shared_ptr<ID3D12RootSignature>(mRootSignature, DXDelayedDeleter(*this));
+        }
+
+        std::shared_ptr<ID3D12PipelineState> CreateGraphicsPipelineState(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc)
+        {
+            ID3D12PipelineState* pso;
+            device_->CreateGraphicsPipelineState(&desc,IID_PPV_ARGS(&pso));
+            return std::shared_ptr<ID3D12PipelineState>(pso, DXDelayedDeleter(*this));
+        }
+
+        std::shared_ptr<ID3D12Device> GetDxDevice()
+        {
             return device_;
         }
 

@@ -205,12 +205,12 @@ namespace GiiGa
 
         void BindPSO(PSO& pso)
         {
-            graphics_command_list_->SetPipelineState(pso.GetState());
+            graphics_command_list_->SetPipelineState(pso.GetState().get());
         }
 
         void SetSignature(PSO& pso)
         {
-            graphics_command_list_->SetGraphicsRootSignature(pso.GetSignature());
+            graphics_command_list_->SetGraphicsRootSignature(pso.GetSignature().get());
         }
 
         void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)

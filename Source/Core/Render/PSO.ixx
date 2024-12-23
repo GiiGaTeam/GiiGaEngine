@@ -97,21 +97,14 @@ namespace GiiGa
             }
 
 
-            mRootSignature = nullptr;
-            ThrowIfFailed(device.GetDevice()->CreateRootSignature(
-                0,
-                serializedRootSig->GetBufferPointer(),
-                serializedRootSig->GetBufferSize(),
-                IID_PPV_ARGS(&mRootSignature)));
+            mRootSignature = device.CreateRootSignature(0, serializedRootSig);
 
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{
-                mRootSignature, VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
+                mRootSignature.get(), VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
                 rasterizer_state_, depth_stencil_state_, input_layout_, strip_cut_value_, primitive_topology_type_, NumRenderTargets_, {*RTVFormat_},
                 DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_
             };
-            ThrowIfFailed(device.GetDevice()->CreateGraphicsPipelineState(
-                &psoDesc,
-                IID_PPV_ARGS(&state_)));
+            state_ = device.CreateGraphicsPipelineState(psoDesc);
         }
 
         //=============================SETTING PSO PARAMETERS=============================
@@ -234,9 +227,9 @@ namespace GiiGa
             samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
         }
 
-        ID3D12PipelineState* GetState() { return state_; }
+        std::shared_ptr<ID3D12PipelineState> GetState() { return state_; }
 
-        ID3D12RootSignature* GetSignature()
+        std::shared_ptr<ID3D12RootSignature> GetSignature()
         {
             return mRootSignature;
         }
@@ -277,8 +270,8 @@ namespace GiiGa
 
         std::vector<D3D12_STATIC_SAMPLER_DESC> samplers_;
 
-        ID3D12RootSignature* mRootSignature;
+        std::shared_ptr<ID3D12RootSignature> mRootSignature;
 
-        ID3D12PipelineState* state_;
+        std::shared_ptr<ID3D12PipelineState> state_;
     };
 }
