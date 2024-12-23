@@ -73,17 +73,15 @@ namespace GiiGa
         {
             if (!perObjectData_)
                 perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
-            perObjectData_->UpdateGPUData(context);
-            context.BindDescriptorHandle(1, GetGPUDescriptor(context));
 
+            perObjectData_->UpdateGPUData(context);
 
             mesh_->Draw(context.GetGraphicsCommandList());
         }
 
         SortData GetSortData() override
         {
-            // todo: material shader resource, actually there should not be empty material, we need create default one
-            return {.object_mask = mesh_->GetObjectMask(), .shaderResource = nullptr};
+            return {.object_mask = mesh_->GetObjectMask() | material_->GetMaterialMask(), .shaderResource = material_->GetShaderResource()};
         }
 
         void Restore(const Json::Value&) override
@@ -147,6 +145,11 @@ namespace GiiGa
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
         }
 
+        PerObjectData& GetPerObjectData() override
+        {
+            return *perObjectData_;
+        }
+
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::shared_ptr<Material> material_;
@@ -176,15 +179,6 @@ namespace GiiGa
 
                     visibilityEntry_->Update(origaabb);
                 });
-        }
-
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptor(RenderContext& context)
-        {
-            if (transform_.expired()) return D3D12_GPU_DESCRIPTOR_HANDLE{};
-            if (perObjectData_)
-                return perObjectData_->GetDescriptor();
-            perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
-            return perObjectData_->GetDescriptor();
         }
     };
 }

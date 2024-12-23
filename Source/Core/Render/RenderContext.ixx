@@ -18,7 +18,6 @@ import Window;
 import DescriptorHeap;
 import SwapChain;
 import BufferView;
-import PSO;
 
 namespace GiiGa
 {
@@ -203,14 +202,14 @@ namespace GiiGa
             WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
         }
 
-        void BindPSO(PSO& pso)
+        void BindPSO(ID3D12PipelineState *pPipelineState)
         {
-            graphics_command_list_->SetPipelineState(pso.GetState().get());
+            graphics_command_list_->SetPipelineState(pPipelineState);
         }
 
-        void SetSignature(PSO& pso)
+        void SetSignature(ID3D12RootSignature *pRootSignature)
         {
-            graphics_command_list_->SetGraphicsRootSignature(pso.GetSignature().get());
+            graphics_command_list_->SetGraphicsRootSignature(pRootSignature);
         }
 
         void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)

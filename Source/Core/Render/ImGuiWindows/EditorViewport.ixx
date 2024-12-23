@@ -28,29 +28,26 @@ namespace GiiGa
             Resize(viewport_size_);
         }
 
-        void Init() override
+        void Init(RenderContext& context) override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(std::bind(&EditorViewport::GetCameraInfo, this)));
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
         }
 
-        RenderPassViewMatricies GetCameraInfo() override
+        RenderPassViewData GetCameraInfo() override
         {
-            auto camera_go = camera_.lock();
-
-            // do we need view mat in camera?
-            auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
-
-            return {.viewMatrix = camera.view_, .projMatrix = camera.GetProj()};
+            return RenderPassViewData{.ViewProjMat = ViewProjectionMatrix, .viewDescriptor = ViewInfoConstBuffer->getDescriptor().getGPUHandle()};
         }
 
         void Execute(RenderContext& context) override
         {
             if (camera_.expired()) return;
+
+            UpdateCameraInfo(context);
 
             ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
 
@@ -64,7 +61,6 @@ namespace GiiGa
             const float clear_color_with_alpha[4] = {1, 0, 0, 1};
 
             const auto RTHandle = resultRTV_->getDescriptor().GetCpuHandle();
-            const auto RTHandle2 = resultRTV_->getDescriptor().GetGpuHandle();
             context.ClearRenderTargetView(RTHandle, clear_color_with_alpha);
             context.GetGraphicsCommandList()->OMSetRenderTargets(1, &RTHandle, true, nullptr);
             // draw here
@@ -84,6 +80,7 @@ namespace GiiGa
             scissorRect.bottom = current_size.y;
             context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
 
+
             renderGraph_->Draw(context);
             // draw here - end
 
@@ -98,5 +95,23 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
+        std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
+        DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+
+        void UpdateCameraInfo(RenderContext& context)
+        {
+            auto camera_go = camera_.lock();
+            auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
+
+            ViewProjectionMatrix = camera.GetViewProj();
+
+            RenderPassViewMatricies const_buf_data = {camera.view_.Transpose(), camera.GetProj().Transpose()};
+
+            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
+
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
+
+            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, 1, desc);
+        }
     };
 }

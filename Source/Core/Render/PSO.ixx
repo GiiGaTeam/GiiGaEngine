@@ -1,18 +1,25 @@
-﻿export module PSO;
+﻿module;
+
+#include <directx/d3d12.h>
+#include <directx/d3dx12_root_signature.h>
+#include<directx/d3dx12_core.h>
+
+export module PSO;
 
 import <bitset>;
 import <map>;
 import <vector>;
 import <memory>;
-import <directx/d3d12.h>;
-import <directx/d3dx12_root_signature.h>;
 import <iostream>;
-#include <directx/d3dx12_core.h>
+import <functional>;
 
 import RenderDevice;
 //import Material;
 import ShaderManager;
 import DirectXUtils;
+import PerObjectData;
+import IObjectShaderResource;
+import RenderContext;
 
 namespace GiiGa
 {
@@ -30,7 +37,7 @@ namespace GiiGa
     public:
         PSO() = default;
 
-        void GeneratePSO(RenderDevice& device, int cbv_num, int srv_num, int uav_num)
+        void GeneratePSO(RenderDevice& device, int cbv_num, int srv_num = 0, int uav_num = 0)
         {
             // here
             // Define descriptor ranges
@@ -109,106 +116,124 @@ namespace GiiGa
 
         //=============================SETTING PSO PARAMETERS=============================
 
-        void set_vs(const D3D12_SHADER_BYTECODE& vs)
+        PSO& set_vs(const D3D12_SHADER_BYTECODE& vs)
         {
             VS_ = vs;
+            return *this;
         }
 
-        void set_ps(const D3D12_SHADER_BYTECODE& ps)
+        PSO& set_ps(const D3D12_SHADER_BYTECODE& ps)
         {
             PS_ = ps;
+            return *this;
         }
 
-        void set_ds(const D3D12_SHADER_BYTECODE& ds)
+        PSO& set_ds(const D3D12_SHADER_BYTECODE& ds)
         {
             DS_ = ds;
+            return *this;
         }
 
-        void set_hs(const D3D12_SHADER_BYTECODE& hs)
+        PSO& set_hs(const D3D12_SHADER_BYTECODE& hs)
         {
             HS_ = hs;
         }
 
-        void set_gs(const D3D12_SHADER_BYTECODE& gs)
+        PSO& set_gs(const D3D12_SHADER_BYTECODE& gs)
         {
             GS_ = gs;
+            return *this;
         }
 
-        void set_stream_output(const D3D12_STREAM_OUTPUT_DESC& stream_output)
+        PSO& set_stream_output(const D3D12_STREAM_OUTPUT_DESC& stream_output)
         {
             stream_output_ = stream_output;
+            return *this;
         }
 
-        void set_blend_state(const D3D12_BLEND_DESC& blend_state)
+        PSO& set_blend_state(const D3D12_BLEND_DESC& blend_state)
         {
             blend_state_ = blend_state;
+            return *this;
         }
 
-        void set_sample_mask(UINT sample_mask)
+        PSO& set_sample_mask(UINT sample_mask)
         {
             sample_mask_ = sample_mask;
+            return *this;
         }
 
-        void set_rasterizer_state(const D3D12_RASTERIZER_DESC& rasterizer_state)
+        PSO& set_rasterizer_state(const D3D12_RASTERIZER_DESC& rasterizer_state)
         {
             rasterizer_state_ = rasterizer_state;
+            return *this;
         }
 
-        void set_depth_stencil_state(const D3D12_DEPTH_STENCIL_DESC& depth_stencil_state)
+        PSO& set_depth_stencil_state(const D3D12_DEPTH_STENCIL_DESC& depth_stencil_state)
         {
             depth_stencil_state_ = depth_stencil_state;
+            return *this;
         }
 
-        void set_input_layout(const D3D12_INPUT_LAYOUT_DESC& input_layout)
+        PSO& set_input_layout(const D3D12_INPUT_LAYOUT_DESC& input_layout)
         {
             input_layout_ = input_layout;
+            return *this;
         }
 
-        void SetBufferStripCutValue(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE StripCutValue)
+        PSO& SetBufferStripCutValue(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE StripCutValue)
         {
             strip_cut_value_ = StripCutValue;
+            return *this;
         }
 
-        void set_primitive_topology_type(D3D12_PRIMITIVE_TOPOLOGY_TYPE primitive_topology_type)
+        PSO& set_primitive_topology_type(D3D12_PRIMITIVE_TOPOLOGY_TYPE primitive_topology_type)
         {
             primitive_topology_type_ = primitive_topology_type;
+            return *this;
         }
 
-        void set_rtv_format(DXGI_FORMAT rtv_format[], size_t num_render_targets)
+        PSO& set_rtv_format(DXGI_FORMAT rtv_format[], size_t num_render_targets)
         {
             NumRenderTargets_ = num_render_targets;
             for (size_t i = 0; i < num_render_targets; ++i)
             {
                 RTVFormat_[i] = rtv_format[i];
             }
+            return *this;
         }
 
-        void set_dsv_format(DXGI_FORMAT dsv_format)
+        PSO& set_dsv_format(DXGI_FORMAT dsv_format)
         {
             DSVFormat_ = dsv_format;
+            return *this;
         }
 
-        void set_sample_desc(const DXGI_SAMPLE_DESC& sample_desc)
+        PSO& set_sample_desc(const DXGI_SAMPLE_DESC& sample_desc)
         {
             sample_desc_ = sample_desc;
+            return *this;
         }
 
-        void SetNodeMask(UINT nodeMask)
+        PSO& SetNodeMask(UINT nodeMask)
         {
             node_mask_ = nodeMask;
+            return *this;
         }
 
-        void SetCashedPso(const D3D12_CACHED_PIPELINE_STATE& cashedPso)
+        PSO& SetCashedPso(const D3D12_CACHED_PIPELINE_STATE& cashedPso)
         {
             cashed_pso_ = cashedPso;
+            return *this;
         }
 
-        void SetFlags(D3D12_PIPELINE_STATE_FLAGS flags)
+        PSO& SetFlags(D3D12_PIPELINE_STATE_FLAGS flags)
         {
             flags_ = flags;
+            return *this;
         }
 
-        void add_simple_samplers(SamplerAddressMode address_mode)
+        PSO& add_simple_samplers(SamplerAddressMode address_mode)
         {
             if (address_mode & Wrap)
                 push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_WRAP);
@@ -220,11 +245,35 @@ namespace GiiGa
                 push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_BORDER);
             if (address_mode & MirrorOnce)
                 push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE);
+            return *this;
         }
 
-        void add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
+        PSO& add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
         {
             samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
+            return *this;
+        }
+
+        PSO& SetPerObjectDataFunction(const std::function<void(RenderContext& context, PerObjectData& per_obj)>& per_object_data_function)
+        {
+            set_per_obj_data_fn_ = per_object_data_function;
+            return *this;
+        }
+
+        PSO& SetShaderResourceFunction(std::function<void(RenderContext& context, IObjectShaderResource& resource)> shared_res_function)
+        {
+            set_obj_shared_res_fn_ = shared_res_function;
+            return *this;
+        }
+
+        void SetPerObjectData(RenderContext& context, PerObjectData& data)
+        {
+            set_per_obj_data_fn_(context, data);
+        }
+
+        void SetShaderResources(RenderContext& context, IObjectShaderResource& data)
+        {
+            set_obj_shared_res_fn_(context, data);
         }
 
         std::shared_ptr<ID3D12PipelineState> GetState() { return state_; }
@@ -267,6 +316,10 @@ namespace GiiGa
         UINT node_mask_ = 0;
         D3D12_CACHED_PIPELINE_STATE cashed_pso_ = {};
         D3D12_PIPELINE_STATE_FLAGS flags_ = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+        std::function<void(RenderContext& context, PerObjectData& per_obj)> set_per_obj_data_fn_;
+
+        std::function<void(RenderContext& context, IObjectShaderResource& resource)> set_obj_shared_res_fn_;
 
         std::vector<D3D12_STATIC_SAMPLER_DESC> samplers_;
 

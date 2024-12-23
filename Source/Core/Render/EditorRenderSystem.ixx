@@ -30,7 +30,7 @@ namespace GiiGa
             editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_));
             for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
             {
-                viewport->Init();
+                viewport->Init(context_);
             }
         }
 

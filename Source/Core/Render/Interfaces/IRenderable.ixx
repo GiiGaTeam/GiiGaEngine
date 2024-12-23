@@ -9,6 +9,7 @@ import ObjectMask;
 import RenderSystemSettings;
 import RenderContext;
 import IObjectShaderResource;
+import PerObjectData;
 
 namespace GiiGa
 {
@@ -23,6 +24,7 @@ namespace GiiGa
     public:
         virtual void Draw(RenderContext& context) =0;
         virtual SortData GetSortData() =0;
+        virtual PerObjectData& GetPerObjectData() =0;
     };
 
     export struct CommonResourceGroup

@@ -26,11 +26,11 @@ namespace GiiGa
         {
         }
 
-        virtual void Init() = 0;
+        virtual void Init(RenderContext& context) = 0;
 
         virtual ~Viewport() = default;
 
-        virtual RenderPassViewMatricies GetCameraInfo() =0;
+        virtual RenderPassViewData GetCameraInfo() =0;
         
         virtual void Execute(RenderContext& context) =0;
 

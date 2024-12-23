@@ -1,11 +1,14 @@
+module;
+
 #include<directxtk12/SimpleMath.h>
+#include<d3d12.h>
+#include<directx/d3dx12_core.h>
 
 export module ForwardPass;
+
 import <memory>;
 import <vector>;
 import <functional>;
-import <d3d12.h>;
-#include <directx/d3dx12_core.h>
 
 import RenderPass;
 import PSO;
@@ -17,63 +20,58 @@ import ShaderManager;
 import RenderContext;
 import VertexTypes;
 import CameraComponent;
+import PerObjectData;
+import IObjectShaderResource;
 
 namespace GiiGa
 {
     export class ForwardPass : public RenderPass
     {
     public:
-        ForwardPass(const std::function<RenderPassViewMatricies()>& getCamDescFn):
+        ForwardPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn):
             getCamInfoDataFunction_(getCamDescFn)
         {
+            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
+
+            mask_to_pso[ObjectMask().SetVertexType(VertexTypes::VertexPNTBT).SetShadingModel(ShadingModel::Unlit).SetBlendMode(BlendMode::Opaque)]
+                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
+                .set_rasterizer_state(rast_desc)
+                .set_input_layout(VertexPNTBT::InputLayout)
+                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                {
+                    context.BindDescriptorHandle(1, per_obj.GetDescriptor());
+                })
+                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                {
+                })
+                .GeneratePSO(context.GetDevice(), 2);
         }
 
         void Draw(RenderContext& context) override
         {
-              /*D3D12_INPUT_ELEMENT_DESC InputElements[5] =
-            {
-                {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-                {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-                {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-                {"BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-                {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            };
-
-            D3D12_INPUT_LAYOUT_DESC il = {InputElements, 5};*/
-
-            
-            auto pso = PSO();
-            pso.set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader));
-            pso.set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader));
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
-            pso.set_rasterizer_state(rast_desc);
-            pso.set_input_layout(VertexPNTBT::InputLayout);
-               
-            pso.GeneratePSO(context.GetDevice(), 2, 0, 0);
-
-            context.BindPSO(pso);
-            context.SetSignature(pso);
             context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             auto cam_info = getCamInfoDataFunction_();
-            auto viewProj = cam_info.viewMatrix * cam_info.projMatrix;
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, viewProj);
-            // Getting renderables
-            
-            cam_info = {cam_info.viewMatrix.Transpose(), cam_info.projMatrix.Transpose()};
-            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&cam_info), sizeof(RenderPassViewMatricies)};
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
-            std::shared_ptr<BufferView<Constant>> ConstantBufferView_ = context.AllocateDynamicConstantView(CameraMatricesSpan, 1, desc);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat);
+
+            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
+            context.BindDescriptorHandle(0, cam_info.viewDescriptor);
 
             for (auto& visible : visibles)
             {
+                PSO& pso = mask_to_pso.at(visible.first);
+                context.BindPSO(pso.GetState().get());
+                context.SetSignature(pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
                 {
+                    auto CRG = common_resource_group.second;
+                    pso.SetShaderResources(context, *CRG.shaderResource);
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
-                        context.BindDescriptorHandle(0, ConstantBufferView_->getDescriptor().getGPUHandle());
+                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
                         renderable.lock()->Draw(context);
                     }
                 }
@@ -84,6 +82,7 @@ namespace GiiGa
         ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
                                                    .SetShadingModel(ShadingModel::All)
                                                    .SetVertexType(VertexTypes::All);
-        std::function<RenderPassViewMatricies()> getCamInfoDataFunction_;
+        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        std::function<RenderPassViewData()> getCamInfoDataFunction_;
     };
 }
