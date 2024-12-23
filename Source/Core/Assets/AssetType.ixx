@@ -30,6 +30,7 @@ namespace GiiGa
             case AssetType::Prefab: return "Prefab";
             case AssetType::Behaviour: return "Behaviour";
             case AssetType::Audio: return "Audio";
+        case AssetType::Material: return "Material";
             default: throw std::invalid_argument("Unknown AssetType");
         }
     }
@@ -43,7 +44,8 @@ namespace GiiGa
             {"Scene", AssetType::Scene},
             {"Prefab", AssetType::Prefab}, 
             {"Behaviour", AssetType::Behaviour}, 
-            {"Audio", AssetType::Audio}
+            {"Audio", AssetType::Audio},
+            {"Material", AssetType::Material}
         };
 
         auto it = stringToTypeMap.find(str);

@@ -477,6 +477,7 @@
     <ClCompile Include="Source\Core\Render\Viewport.ixx" />
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
+    <ClCompile Include="Source\Core\StubTexturesHandles.ixx" />
     <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\unique_any.ixx" />
