@@ -61,7 +61,7 @@ namespace GiiGa
 
             fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         }
-
+        
         void SetFrameLatencyWaitableObject(HANDLE FrameLatencyWaitableObject)
         {
             frameLatencyWaitableObject_ = FrameLatencyWaitableObject;
@@ -218,8 +218,8 @@ namespace GiiGa
             graphics_command_list_->SetGraphicsRootDescriptorTable(root_index, handle);
         }
 
-        RenderDevice& GetDevice() {return device_;}
-        std::shared_ptr<ID3D12GraphicsCommandList> GetGraphicsCommandList() {return graphics_command_list_;}
+        RenderDevice& GetDevice() { return device_; }
+        std::shared_ptr<ID3D12GraphicsCommandList> GetGraphicsCommandList() { return graphics_command_list_; }
 
     private:
         RenderDevice& device_;
