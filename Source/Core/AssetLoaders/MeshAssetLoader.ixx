@@ -150,13 +150,13 @@ namespace GiiGa
                 if (typeid(VertexType) == typeid(VertexPosition))
                 {
                     auto v = VertexPosition{position};
-                    vertices[i] = *dynamic_cast<VertexType*>(&v);
+                    vertices[i] = *reinterpret_cast<VertexType*>(&v);
                 }
                     //vertices[i] = (VertexType{position});
                 else if (typeid(VertexType) == typeid(VertexPNTBT))
                 {
                     auto v = VertexPNTBT{position, normal, tangent, bitangent, texCoord};
-                    vertices[i] = *dynamic_cast<VertexType*>(&v);
+                    vertices[i] = *reinterpret_cast<VertexType*>(&v);
                 }
                 /*else if (typeid(VertexType) == typeid(VertexBoned))
                     vertices[i] = VertexBoned(position, normal, texCoord, tangent, bitangent, .........);*/

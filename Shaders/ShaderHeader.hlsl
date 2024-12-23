@@ -12,7 +12,7 @@ cbuffer WorldMatricies : register(b1)
     //bool RenderState;
 }
 
-struct VS_INPUT_PNTBT                   
+struct VS_INPUT                 
 {
     float3 Pos : POSITION;
     float3 Norm : NORMAL;

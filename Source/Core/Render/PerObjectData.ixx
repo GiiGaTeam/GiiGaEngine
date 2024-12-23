@@ -32,8 +32,8 @@ namespace GiiGa
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
 
             WorldMatrices WorldMatrices;
-            WorldMatrices.World = Transform_->GetWorldMatrix();
-            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix();
+            WorldMatrices.World = Transform_->GetWorldMatrix().Transpose();
+            WorldMatrices.WorldInverse = Transform_->GetInverseWorldMatrix().Transpose();
             const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
             
             ConstantBuffer_ = std::make_unique<GPULocalResource>(Context.GetDevice(), CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));

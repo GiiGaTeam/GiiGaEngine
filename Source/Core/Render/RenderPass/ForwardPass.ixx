@@ -1,14 +1,13 @@
 #include<directxtk12/SimpleMath.h>
 
 export module ForwardPass;
-
 import <memory>;
 import <vector>;
 import <functional>;
 import <d3d12.h>;
+#include <directx/d3dx12_core.h>
 
 import RenderPass;
-//import ShaderManager;
 import PSO;
 import IRenderable;
 import SceneVisibility;
@@ -46,6 +45,9 @@ namespace GiiGa
             auto pso = PSO();
             pso.set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader));
             pso.set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader));
+            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
+            pso.set_rasterizer_state(rast_desc);
             pso.set_input_layout(VertexPNTBT::InputLayout);
                
             pso.GeneratePSO(context.GetDevice(), 2, 0, 0);
@@ -63,6 +65,7 @@ namespace GiiGa
             if (visibles.size() > 0)
                 el::Loggers::getLogger(LogRendering)->debug("See some renderable");
 
+            cam_info = {cam_info.viewMatrix.Transpose(), cam_info.projMatrix.Transpose()};
             const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&cam_info), sizeof(RenderPassViewMatricies)};
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
             std::shared_ptr<BufferView<Constant>> ConstantBufferView_ = context.AllocateDynamicConstantView(CameraMatricesSpan, 1, desc);

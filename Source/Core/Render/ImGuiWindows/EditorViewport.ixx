@@ -64,14 +64,17 @@ namespace GiiGa
 
             const float clear_color_with_alpha[4] = {1, 0, 0, 1};
 
-            context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(), clear_color_with_alpha);
-
+            const auto RTHandle = resultRTV_->getDescriptor().GetCpuHandle();
+            const auto RTHandle2 = resultRTV_->getDescriptor().GetGpuHandle();
+            context.ClearRenderTargetView(RTHandle, clear_color_with_alpha);
+            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &RTHandle, true, nullptr);
             // draw here
             renderGraph_->Draw(context);
             // draw here - end
 
             resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
+            //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
             ImGui::Image((ImTextureID)resultSRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             ImGui::End();

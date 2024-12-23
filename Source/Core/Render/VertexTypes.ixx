@@ -24,7 +24,7 @@ namespace GiiGa
 
         SimpleMath::Vector3 Position;
 
-        virtual ~VertexPosition() = default;
+        //virtual ~VertexPosition() = default;
 
     private:
         static inline const int InputElementCount = 1;
@@ -65,7 +65,7 @@ namespace GiiGa
         SimpleMath::Vector3 Bitangent;
         SimpleMath::Vector2 TexCoord;
 
-        virtual ~VertexPNTBT() = default;
+        //virtual ~VertexPNTBT() = default;
 
     private:
 
@@ -115,7 +115,7 @@ namespace GiiGa
         std::array<uint16_t, MaxCountOfBonesPerVertex> BoneIDs;
         SimpleMath::Vector4 BoneWeights;
         
-        virtual ~VertexBoned() = default;
+        //virtual ~VertexBoned() = default;
 
     private:
         static inline const int InputElementCount = 7;
