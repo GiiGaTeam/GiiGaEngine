@@ -1,11 +1,16 @@
-﻿export module RenderDevice;
+﻿module;
+
+#include <d3d12.h>
+#include <directxtk12/DirectXHelpers.h>
+
+export module RenderDevice;
 
 import <cassert>;
-import <d3d12.h>;
 import <memory>;
 import <unordered_map>;
 import <any>;
 import <iostream>;
+
 
 export import IRenderDevice;
 import DirectXUtils;
@@ -170,7 +175,7 @@ namespace GiiGa
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<Constant>>(std::move(handles));
+            return std::make_shared<BufferView<Constant>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -179,13 +184,13 @@ namespace GiiGa
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             DescriptorHeapAllocation gpuAlloc = m_GPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].Allocate(1);
             device_->CreateShaderResourceView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
-
+            
             device_->CopyDescriptorsSimple(1, gpuAlloc.GetCpuHandle(), cpuAlloc.GetCpuHandle(),
                                            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<ShaderResource>>(std::move(handles));
+            return std::make_shared<BufferView<ShaderResource>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -201,7 +206,7 @@ namespace GiiGa
 
             DesciptorHandles handles(std::move(cpuAlloc), std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles));
+            return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<Constant>> CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC& desc,
@@ -211,7 +216,7 @@ namespace GiiGa
 
             DesciptorHandles handles({}, std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<Constant>>(std::move(handles));
+            return std::make_shared<BufferView<Constant>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<ShaderResource>> CreateShaderResourceBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -222,7 +227,7 @@ namespace GiiGa
 
             DesciptorHandles handles({}, std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<ShaderResource>>(std::move(handles));
+            return std::make_shared<BufferView<ShaderResource>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<UnorderedAccess>> CreateUnorderedAccessView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -234,7 +239,7 @@ namespace GiiGa
 
             DesciptorHandles handles({}, std::move(gpuAlloc));
 
-            return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles));
+            return std::make_shared<BufferView<UnorderedAccess>>(std::move(handles), desc);
         }
 
         std::shared_ptr<BufferView<RenderTarget>> CreateRenderTargetView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -243,7 +248,11 @@ namespace GiiGa
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV].Allocate(1);
             device_->CreateRenderTargetView(buffer.get(), desc, cpuAlloc.GetCpuHandle());
 
-            return std::make_shared<BufferView<RenderTarget>>(std::move(cpuAlloc));
+            D3D12_RENDER_TARGET_VIEW_DESC temp_copy{};
+            if (desc != nullptr)
+                temp_copy = *desc;
+
+            return std::make_shared<BufferView<RenderTarget>>(std::move(cpuAlloc), temp_copy);
         }
 
         std::shared_ptr<BufferView<DepthStencil>> CreateDepthStencilView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -252,7 +261,7 @@ namespace GiiGa
             DescriptorHeapAllocation cpuAlloc = m_CPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV].Allocate(1);
             device_->CreateDepthStencilView(buffer.get(), &desc, cpuAlloc.GetCpuHandle());
 
-            return std::make_shared<BufferView<DepthStencil>>(std::move(cpuAlloc));
+            return std::make_shared<BufferView<DepthStencil>>(std::move(cpuAlloc), desc);
         }
 
         std::shared_ptr<BufferView<Index>> CreateIndexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -260,7 +269,7 @@ namespace GiiGa
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 
-            return std::make_shared<BufferView<Index>>(std::move(desc));
+            return std::make_shared<BufferView<Index>>(std::move(desc), desc);
         }
 
         std::shared_ptr<BufferView<Vertex>> CreateVetexBufferView(const std::shared_ptr<ID3D12Resource>& buffer,
@@ -268,10 +277,11 @@ namespace GiiGa
         {
             desc.BufferLocation = buffer->GetGPUVirtualAddress();
 
-            return std::make_shared<BufferView<Vertex>>(std::move(desc));
+            return std::make_shared<BufferView<Vertex>>(std::move(desc), desc);
         }
 
-        std::shared_ptr<ID3D12Device> GetDxDevice() {
+        std::shared_ptr<ID3D12Device> GetDxDevice()
+        {
             return device_;
         }
 

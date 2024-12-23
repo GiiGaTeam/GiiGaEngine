@@ -1,3 +1,7 @@
+module;
+
+#include<directxtk12/DirectXHelpers.h>
+
 export module StaticMeshComponent;
 
 import <DirectXCollision.h>;
@@ -17,6 +21,9 @@ import GameObject;
 import Misc;
 import IObjectShaderResource;
 
+import TextureAsset;
+import StubTexturesHandles;
+import <filesystem>;
 
 namespace GiiGa
 {
@@ -44,7 +51,9 @@ namespace GiiGa
             {
                 if (!material_)
                 {
-                    
+                    auto rm = Engine::Instance().ResourceManager();
+
+                    material_ = rm->GetAsset<Material>(StubTexturesHandles::DefaultMaterial);
                 }
                 if (!visibilityEntry_)
                     RegisterInVisibility();
@@ -99,13 +108,23 @@ namespace GiiGa
             {
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset>({newUuid, 0});
                 RegisterInVisibility();
+
+                std::array<std::shared_ptr<TextureAsset>, MaxTextureCount> textures;
+                std::array<ComponentMapping, MaxTextureCount> comp_map;
+
+                if (!material_)
+                {
+                    auto rm = Engine::Instance().ResourceManager();
+
+                    material_ = rm->GetAsset<Material>(StubTexturesHandles::DefaultMaterial);
+                }
             }
         }
 
         Uuid GetMaterialUuid() const
         {
             if (material_)
-                return mesh_->GetId().id;
+                return material_->GetId().id;
             else
                 return Uuid::Null();
         }

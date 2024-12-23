@@ -40,7 +40,7 @@ namespace GiiGa
 
         static void Tick(float dt)
         {
-            auto instance = GetInstance();
+            auto& instance = GetInstance();
             while (!instance.comp_init_queue_.empty())
             {
                 auto comp_to_init = instance.comp_init_queue_.front();

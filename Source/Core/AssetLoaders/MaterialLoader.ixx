@@ -107,10 +107,9 @@ namespace GiiGa
             return result;
         }
 
-        // todo
         void Save(AssetBase& asset, ::std::filesystem::path& path) override
         {
-            // ToJson logic
+            
         }
 
         const char* GetName() override

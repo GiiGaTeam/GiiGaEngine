@@ -1,16 +1,20 @@
 ﻿module;
+
 #include <DirectXMath.h>
-#include <easylogging++.h>
 #include <stdexcept>
+#include <json/json.h>
 #include <json/value.h>
+#include <directx/d3dx12_core.h>
+#include <directxtk/SimpleMath.h>
 
 export module Material;
 
 import <memory>;
 import <array>;
-import <directx/d3dx12_core.h>;
-import <directxtk/SimpleMath.h>;
 import <cmath>;
+import <stdexcept>;
+import <exception>;
+import <filesystem>;
 
 import GPULocalResource;
 import RenderDevice;
@@ -23,15 +27,16 @@ import IObjectShaderResource;
 import Engine;
 import StubTexturesHandles;
 import MathUtils;
+import Logger;
 
 namespace GiiGa
 {
     export using ComponentMapping = int;
 
     // order of material textures
-    enum class TexturesOrder
+    export enum class TexturesOrder
     {
-        BaseColor,
+        BaseColor = 1,
         Metallic,
         Specular,
         Roughness,
@@ -43,14 +48,14 @@ namespace GiiGa
 
     enum class TexturesIndex
     {
-        BaseColor = 1 << 1,
-        Metallic = 1 << 2,
-        Specular = 1 << 3,
-        Roughness = 1 << 4,
-        Anisotropy = 1 << 5,
-        EmissiveColor = 1 << 6,
-        Opacity = 1 << 7,
-        Normal = 1 << 8,
+        BaseColor = 1 << 0,
+        Metallic = 1 << 1,
+        Specular = 1 << 2,
+        Roughness = 1 << 3,
+        Anisotropy = 1 << 4,
+        EmissiveColor = 1 << 5,
+        Opacity = 1 << 6,
+        Normal = 1 << 7,
     };
 
     template <typename Enum>
@@ -67,16 +72,6 @@ namespace GiiGa
     export constexpr uint8_t MaxTextureCount = 8;
 
     using RequiredTexturesMask = std::bitset<MaxTextureCount>;
-
-    const std::unordered_map<ShadingModel, RequiredTexturesMask> ShadingModelRequiredTextures =
-    {
-        {ShadingModel::DefaultLit, RequiredTexturesMask(toUnderlying(TexturesIndex::Metallic | TexturesIndex::Specular))}
-    };
-
-    const std::unordered_map<BlendMode, RequiredTexturesMask> BlendModeRequiredTextures =
-    {
-        {BlendMode::Masked, RequiredTexturesMask(toUnderlying(TexturesIndex::Metallic | TexturesIndex::Specular))}
-    };
 
     export class MaterialShaderResource : public IObjectShaderResource
     {
@@ -114,7 +109,7 @@ namespace GiiGa
 
         std::string name;
 
-        struct MaterialData
+        struct alignas(256) MaterialData
         {
             DirectX::SimpleMath::Vector3 BaseColorTint_ = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
             DirectX::SimpleMath::Vector3 EmissiveColorTint_ = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
@@ -123,6 +118,8 @@ namespace GiiGa
             float RoughnessScale_ = 1.0f;
             float AnisotropyScale_ = 1.0f;
             float OpacityScale_ = 1.0f;
+
+            MaterialData() = default;
 
             Json::Value ToJson()
             {
@@ -164,15 +161,22 @@ namespace GiiGa
             {
                 if (textures_[i])
                 {
-                    D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                        D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[i]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, component_mappings[i]);
+                    auto resourceDesc = textures_[i]->GetResource()->GetDesc();
 
-                    shaderResource_->texture_srvs_[i] = textures_[i]->EmplaceShaderResourceBufferView(desc);
+                    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                    srvDesc.Format = resourceDesc.Format;
+                    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                    srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+                    srvDesc.Texture2D.MostDetailedMip = 0;
+                    srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+                    srvDesc.Shader4ComponentMapping = component_mappings[i];
+
+                    shaderResource_->texture_srvs_[i] = textures_[i]->EmplaceShaderResourceBufferView(srvDesc);
                 }
             }
 
-            materialMask_.SetBlendMode(blendMode);
-            materialMask_.SetShadingModel(shadingModel);
+            SetBlendMode(blendMode);
+            SetShadingModel(shadingModel);
 
             auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
             auto& Context = Engine::Instance().RenderSystem()->GetRenderContext();
@@ -187,6 +191,70 @@ namespace GiiGa
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(MaterialCB_->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
                 shaderResource_->MaterialCBV_ = MaterialCB_->CreateConstantBufferView(desc);
             }
+        }
+
+        //todo: temp solution need change signature in AssetLoader Save
+        Json::Value ToJson()
+        {
+            Json::Value result;
+
+            result["Name"] = name;
+            result["BlendMode"] = static_cast<int>(materialMask_.GetBlendMode());
+            result["ShadingModel"] = static_cast<int>(materialMask_.GetShadingModel());
+
+            result["Properties"] = data_.ToJson();
+
+            for (int i = 0; i < textures_.size(); ++i)
+            {
+                Json::Value texture_js;
+
+                if (textures_[i])
+                {
+                    texture_js["AssetHandle"] = textures_[i]->GetId().ToJson();
+                    texture_js["Mapping"] = shaderResource_->texture_srvs_[i]->getCreationDescriptor().Shader4ComponentMapping;
+                }
+                else
+                {
+                    texture_js["AssetHandle"] = AssetHandle{}.ToJson();
+                    texture_js["Mapping"] = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                }
+                result["Textures"].append(texture_js);
+            }
+
+            return result;
+        }
+
+        void SaveToAbsolutePath(const std::filesystem::path& path)
+        {
+            el::Loggers::getLogger(LogWorld)->info("Saving Material %v in %v", this->name, path);
+
+            std::ofstream material_file(path, std::ios::out | std::ios::trunc);
+
+            if (!material_file.is_open())
+            {
+                throw std::runtime_error("Failed to open Material file for writing: " + path.string());
+            }
+
+            // Ensure ToJson() works correctly
+            Json::Value json = ToJson();
+            if (json.isNull())
+            {
+                throw std::runtime_error("Failed to convert object to JSON");
+            }
+
+            Json::StreamWriterBuilder writer_builder;
+            std::string jsonString = Json::writeString(writer_builder, json);
+
+            // Writing JSON string to the file
+            material_file << jsonString;
+
+            // Check if the file stream has any errors
+            if (material_file.fail())
+            {
+                throw std::runtime_error{"Failed to write to file: " + path.string()};
+            }
+
+            material_file.close();
         }
 
         std::shared_ptr<Material> CreateDynamicMaterailInstance(std::shared_ptr<Material> original)
@@ -247,102 +315,158 @@ namespace GiiGa
         // todo: add shading model / blend mode check
         void SetBaseColorTexture(std::shared_ptr<TextureAsset> BaseColorTexture)
         {
-            auto texture_index = static_cast<int>(TexturesOrder::BaseColor);
+            auto texture_index = static_cast<int>(TexturesOrder::BaseColor) - 1;
             textures_[texture_index] = BaseColorTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetMetallicTexture(std::shared_ptr<TextureAsset> MetallicTexture,
                                 ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Metallic) - 1;
             textures_[texture_index] = MetallicTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, Channel);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = Channel;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetSpecularTexture(std::shared_ptr<TextureAsset> SpecularTexture,
                                 ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Specular) - 1;
             textures_[texture_index] = SpecularTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, Channel);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = Channel;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetRoughnessTexture(std::shared_ptr<TextureAsset> RoughnessTexture,
                                  ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Roughness) - 1;
             textures_[texture_index] = RoughnessTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, Channel);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = Channel;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetAnisotropyTexture(std::shared_ptr<TextureAsset> AnisotropyTexture,
                                   ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Anisotropy) - 1;
             textures_[texture_index] = AnisotropyTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, Channel);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = Channel;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetEmissiveTexture(std::shared_ptr<TextureAsset> EmissiveTexture)
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::EmissiveColor) - 1;
             textures_[texture_index] = EmissiveTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetOpacityTexture(std::shared_ptr<TextureAsset> OpacityTexture,
                                ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Opacity) - 1;
             textures_[texture_index] = OpacityTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, Channel);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = Channel;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         // todo: add shading model / blend mode check
         void SetNormalTexture(std::shared_ptr<TextureAsset> NormalTexture)
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic);
+            auto texture_index = static_cast<int>(TexturesOrder::Normal) - 1;
             textures_[texture_index] = NormalTexture;
 
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc =
-                D3D12_SHADER_RESOURCE_VIEW_DESC(textures_[texture_index]->GetResource()->GetDesc().Format, D3D12_SRV_DIMENSION_TEXTURE2D, D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(desc);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = resourceDesc.Format;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         //=============================SETTING MATERIAL PARAMETERS=============================
@@ -409,9 +533,10 @@ namespace GiiGa
             auto rm = Engine::Instance().ResourceManager();
 
             // Safety check: Ensure required textures are present
-            for (size_t i = 0; i < MaxTextureCount; ++i)
+            for (size_t i = 1; i <= MaxTextureCount; ++i)
             {
-                if (requiredTextures[i] && !textures_[i])
+                TexturesOrder t = static_cast<TexturesOrder>(i);
+                if (requiredTextures[i - 1] && !textures_[i - 1])
                 {
                     TexturesOrder inorder = static_cast<TexturesOrder>(i);
                     switch (inorder)
@@ -420,22 +545,22 @@ namespace GiiGa
                         SetBaseColorTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::BaseColor));
                         break;
                     case TexturesOrder::Metallic:
-                        SetMetallicTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Metallic), D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0);
+                        SetMetallicTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Specular:
-                        SetSpecularTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Specular), D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0);
+                        SetSpecularTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Roughness:
-                        SetRoughnessTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Roughness), D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0);
+                        SetRoughnessTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Anisotropy:
-                        SetAnisotropyTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Anisotropy), D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0);
+                        SetAnisotropyTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::EmissiveColor:
                         SetEmissiveTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::EmissiveColor));
                         break;
                     case TexturesOrder::Opacity:
-                        SetOpacityTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Opacity), D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0);
+                        SetOpacityTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Normal:
                         SetNormalTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Normal));
@@ -457,7 +582,38 @@ namespace GiiGa
 
         RequiredTexturesMask GetRequiredTextures() const
         {
-            return BlendModeRequiredTextures.at(materialMask_.GetBlendMode()) | ShadingModelRequiredTextures.at(materialMask_.GetShadingModel());
+            static const std::unordered_map<ShadingModel, RequiredTexturesMask> ShadingModelRequiredTextures =
+            {
+                {
+                    ShadingModel::None, {}
+                },
+                {
+                    ShadingModel::DefaultLit, RequiredTexturesMask(toUnderlying(
+                        TexturesIndex::BaseColor
+                        | TexturesIndex::Metallic
+                        | TexturesIndex::Specular
+                        | TexturesIndex::Roughness
+                        | TexturesIndex::Anisotropy
+                        | TexturesIndex::EmissiveColor
+                        | TexturesIndex::Normal))
+                },
+                {
+                    ShadingModel::Unlit, RequiredTexturesMask(toUnderlying(
+                        TexturesIndex::EmissiveColor))
+                }
+            };
+
+            static const std::unordered_map<BlendMode, RequiredTexturesMask> BlendModeRequiredTextures =
+            {
+                {BlendMode::None, {}},
+                {BlendMode::Masked, RequiredTexturesMask(toUnderlying(TexturesIndex::Opacity))},
+                {BlendMode::Opaque, RequiredTexturesMask()},
+                {BlendMode::Translucent, RequiredTexturesMask(toUnderlying(TexturesIndex::Opacity))}
+            };
+
+            BlendMode bm = materialMask_.GetBlendMode();
+            ShadingModel sm = materialMask_.GetShadingModel();
+            return BlendModeRequiredTextures.at(bm) | ShadingModelRequiredTextures.at(sm);
         }
     };
 }

@@ -22,5 +22,7 @@ namespace GiiGa
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000007").value(), 0};
         export const AssetHandle Normal =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000008").value(), 0};
+        export const AssetHandle DefaultMaterial =
+            AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000009").value(), 0};
     }
 }

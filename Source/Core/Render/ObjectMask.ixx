@@ -100,13 +100,15 @@ namespace GiiGa
         // Gets the current blend mode
         BlendMode GetBlendMode() const
         {
-            return FromBitset<BlendModeMask, BlendMode>(GetRegion<BlendModeRegionSize>(BlendModeOffset));
+            auto t = GetRegion<BlendModeRegionSize>(BlendModeOffset);
+            return FromBitset<BlendModeMask, BlendMode>(t);
         }
 
         // Gets the current shading model
         ShadingModel GetShadingModel() const
         {
-            return FromBitset<ShadingModelMask, ShadingModel>(GetRegion<ShadingModelRegionSize>(ShadingModelOffset));
+            auto t = GetRegion<ShadingModelRegionSize>(ShadingModelOffset);
+            return FromBitset<ShadingModelMask, ShadingModel>(t);
         }
 
         bool any()
