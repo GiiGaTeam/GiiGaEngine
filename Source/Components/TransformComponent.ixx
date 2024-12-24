@@ -242,8 +242,9 @@ namespace GiiGa
 
         void AddRotation(const Vector3& rotation)
         {
-            const auto new_quat = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
-            SetRotation(new_quat);
+            auto rot = GetRotation() + rotation;
+            //const auto rot = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            SetRotation(rot);
         }
 
         Vector3 GetScale() const { return transform_.scale_; }
@@ -391,7 +392,7 @@ namespace GiiGa
 
         void CalcWorldTransformMatrix()
         {
-            auto rootComp =std::dynamic_pointer_cast<TransformComponent>(shared_from_this());
+            auto rootComp = std::dynamic_pointer_cast<TransformComponent>(shared_from_this());
             world_matrix_ = rootComp->local_matrix_;
 
             auto parentComp = rootComp->parent_.lock();

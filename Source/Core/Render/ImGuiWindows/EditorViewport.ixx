@@ -1,3 +1,4 @@
+#include <imgui_internal.h>
 #include<directxtk12/SimpleMath.h>
 
 export module EditorViewport;
@@ -17,6 +18,8 @@ import CameraComponent;
 import GameObject;
 import SpectatorMovementComponent;
 import GBuffer;
+import Input;
+import Logger;
 
 namespace GiiGa
 {
@@ -48,10 +51,15 @@ namespace GiiGa
         void Execute(RenderContext& context) override
         {
             if (camera_.expired()) return;
+            if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
+            {
+                movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+            }
 
             UpdateCameraInfo(context);
 
             ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
+
 
             auto current_size = ImGui::GetWindowSize();
 
