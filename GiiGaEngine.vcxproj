@@ -171,6 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
+    <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\ShaderHeader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />

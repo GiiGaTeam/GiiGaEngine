@@ -118,5 +118,17 @@
 			"path" : "DefaultMaterial.mat",
 			"type" : "Material"
 		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "00000000-0000-0000-0000-00000000000a",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"path" : "DefaultLitMaterial.mat",
+			"type" : "Material"
+		}
 	}
 ]

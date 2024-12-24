@@ -17,6 +17,7 @@ namespace GiiGa
     export const LPCWSTR VertexPositionShader = L"Shaders/VertexPositionShader.hlsl";
     export const LPCWSTR VertexPNTBTShader = L"Shaders/VertexPNTBTShader.hlsl";
     export const LPCWSTR GBufferOpaqueUnlitShader = L"Shaders/GBufferOpaqueUnlitPixelShader.hlsl";
+    export const LPCWSTR GBufferOpaqueDefaultLitShader = L"Shaders/GBufferOpaqueDefaultLitPixelShader.hlsl";
     
     export class ShaderManager
     {
@@ -40,13 +41,13 @@ namespace GiiGa
         
         static D3D12_SHADER_BYTECODE GetShaderByName(const LPCWSTR& name)
         {
-            
             std::map<std::pair<LPCWSTR, ShaderTypes>, std::shared_ptr<Shader>>::iterator it;
             for (auto const& [key, val] : GetInstance().shaderMap_)
             {
                 if (key.first == name)
                     return val->GetShaderBC();
             }
+            throw std::runtime_error("Shader not found: ");
         }
         static D3D12_SHADER_BYTECODE GetShaderByNameAndType(const LPCWSTR& name, ShaderTypes shader_type)
         {
@@ -92,6 +93,10 @@ namespace GiiGa
             shader->CompileShader(&shaderMap_);
 
             shader = std::make_shared<Shader>(GBufferOpaqueUnlitShader, "PSMain", "ps_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_shared<Shader>(GBufferOpaqueDefaultLitShader, "PSMain", "ps_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }
