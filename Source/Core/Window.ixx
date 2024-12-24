@@ -5,6 +5,7 @@ import <SDL2/SDL.h>;
 import <SDL2/SDL_syswm.h>;
 import <SDL2/SDL_events.h>;
 import <imgui_impl_sdl2.h>;
+import <filesystem>;
 import <windows.h>;  // Для типа HWND
 
 export import WindowSettings;
@@ -234,6 +235,11 @@ export struct WindowResizeEvent
     int height;
 };
 
+export struct DropFileEvent
+{
+    std::filesystem::path path;
+};
+
 static std::array<KeyCode, SDL_NUM_SCANCODES> SCANCODE_TO_BUTTON_MAP;
 void InitializeScancodeMap();
 // todo we should split window on Editor and Game modes
@@ -380,6 +386,12 @@ public:
                         OnGamepadRemoved.Invoke(t);
                     }
                     break;
+                case SDL_DROPFILE: 
+                    {
+                        DropFileEvent t{ event.drop.file };
+                        OnDropFile.Invoke(t);
+                    }
+                    break;
             }
         }
     }
@@ -414,6 +426,7 @@ public:
     EventDispatcher<GamepadAddedEvent> OnGamepadAdded;
     EventDispatcher<GamepadRemovedEvent> OnGamepadRemoved;
     EventDispatcher<WindowResizeEvent> OnWindowResize;
+    EventDispatcher<DropFileEvent> OnDropFile;
 
 private:
     SDL_Window* window_;

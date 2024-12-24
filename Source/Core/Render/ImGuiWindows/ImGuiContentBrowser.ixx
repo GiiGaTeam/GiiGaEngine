@@ -8,6 +8,8 @@ import <unordered_map>;
 import <directxtk12/WICTextureLoader.h>;
 import <directxtk12/ResourceUploadBatch.h>;
 
+import <iostream>;
+
 import Engine;
 import ResourceManager;
 import IImGuiWindow;
@@ -17,6 +19,9 @@ import RenderDevice;
 
 import AssetHandle;
 import AssetType;
+
+import EventSystem;
+import Window;
 
 namespace GiiGa
 {
@@ -38,7 +43,12 @@ namespace GiiGa
         float padding = 16.0f;
         float thumbnail_size = 128.0f;
 
+        EventHandle<DropFileEvent> drop_file_evt_ = EventHandle<DropFileEvent>::Null();
+
     public:
+        ImGuiContentBrowser(const ImGuiContentBrowser& obj) = delete;
+        ImGuiContentBrowser& operator=(const ImGuiContentBrowser& obj) = delete;
+
         ImGuiContentBrowser()
         {
             database_ = Engine::Instance().ResourceManager()->Database();
@@ -101,6 +111,10 @@ namespace GiiGa
 
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
+
+            drop_file_evt_ = Engine::Instance().Window()->OnDropFile.Register([this](const auto& evt) {
+                std::filesystem::copy(evt.path, current_path_);
+                });
         }
 
         void RecordImGui() override
@@ -144,6 +158,14 @@ namespace GiiGa
                     {
                         current_path_ /= path.filename();
                     }
+
+                    if (ImGui::BeginPopupContextItem(filename.c_str())) {
+                        if (ImGui::MenuItem("Remove")) {
+                            std::filesystem::remove_all(path);
+                        }
+                        ImGui::EndPopup();
+                    }
+
                     ImGui::TextWrapped(filename.c_str());
 
                     ImGui::NextColumn();
@@ -159,6 +181,13 @@ namespace GiiGa
                         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                             ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
                             ImGui::EndDragDropSource();
+                        }
+
+                        if (ImGui::BeginPopupContextItem(filename.c_str())) {
+                            if (ImGui::MenuItem("Remove")) {
+                                std::filesystem::remove(path);
+                            }
+                            ImGui::EndPopup();
                         }
 
                         ImGui::TextWrapped(filename.c_str());

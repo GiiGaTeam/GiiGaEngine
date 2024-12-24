@@ -78,6 +78,11 @@ namespace GiiGa
             return asset_database_;
         }
 
+        std::shared_ptr<Window> Window()
+        {
+            return window_;
+        }
+
         virtual ~Engine()
         {
         }
