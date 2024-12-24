@@ -15,6 +15,7 @@ import BaseAssetDatabase;
 import GPULocalResource;
 import RenderDevice;
 
+import AssetHandle;
 import AssetType;
 
 namespace GiiGa
@@ -115,6 +116,7 @@ namespace GiiGa
             }
 
             ImGui::Columns(column_count, nullptr, false);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             if (current_path_ != database_->AssetPath()) 
             {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
@@ -148,11 +150,17 @@ namespace GiiGa
                 }
                 else 
                 {
-                    auto ty = database_->IsRegisteredPath(relative_path);
-                    if (ty != AssetType::Unknown) 
+                    auto [handle, meta] = database_->IsRegisteredPath(relative_path);
+                    if (meta.type != AssetType::Unknown) 
                     {
-                        auto& icon = icons_srv_[ty]->getDescriptor();
+                        auto& icon = icons_srv_[meta.type]->getDescriptor();
                         ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                            ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
+                            ImGui::EndDragDropSource();
+                        }
+
                         ImGui::TextWrapped(filename.c_str());
 
                         ImGui::NextColumn();
@@ -160,6 +168,7 @@ namespace GiiGa
                 }
             }
 
+            ImGui::PopStyleColor();
             ImGui::Columns(1);
 
             ImGui::End();

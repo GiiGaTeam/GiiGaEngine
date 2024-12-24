@@ -100,15 +100,17 @@ namespace GiiGa
             return asset_path_;
         }
 
-        AssetType IsRegisteredPath(const std::filesystem::path& path) const {
+        std::tuple<AssetHandle, AssetMeta> IsRegisteredPath(const std::filesystem::path& path) const {
             auto it = assets_to_path_.find(path);
             if (it != assets_to_path_.end()) {
                 auto handle_it = registry_map_.find(it->second);
                 if (handle_it != registry_map_.end()) {
-                    return handle_it->second.type;
+                    AssetHandle handle = handle_it->first;
+                    AssetMeta meta = handle_it->second;
+                    return std::make_tuple<AssetHandle, AssetMeta>(std::move(handle), std::move(meta));
                 }
             }
-            return AssetType::Unknown;
+            return std::make_tuple<AssetHandle, AssetMeta>({}, {});
         }
     private:
         virtual void _MakeVirtual()
