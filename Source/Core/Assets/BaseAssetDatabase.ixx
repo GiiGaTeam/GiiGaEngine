@@ -29,8 +29,8 @@ namespace GiiGa
         std::filesystem::path registry_path_;
         std::filesystem::path asset_path_;
 
-        // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
+        std::unordered_map<std::filesystem::path, AssetHandle> assets_to_path_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
         std::unordered_map<AssetType, std::shared_ptr<AssetLoader>> asset_savers_;
@@ -134,6 +134,9 @@ namespace GiiGa
                 AssetHandle handle = AssetHandle::FromJson(entry["id"]);
                 AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
 
+                auto handle_temp = handle;
+                handle.subresource = 0;
+                assets_to_path_.emplace(meta.path, handle);
                 registry_map_.emplace(handle, meta);
             }
         }
