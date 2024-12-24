@@ -100,8 +100,15 @@ namespace GiiGa
             return asset_path_;
         }
 
-        bool IsRegisteredPath(const std::filesystem::path& path) const {
-            return assets_to_path_.contains(path);
+        AssetType IsRegisteredPath(const std::filesystem::path& path) const {
+            auto it = assets_to_path_.find(path);
+            if (it != assets_to_path_.end()) {
+                auto handle_it = registry_map_.find(it->second);
+                if (handle_it != registry_map_.end()) {
+                    return handle_it->second.type;
+                }
+            }
+            return AssetType::Unknown;
         }
     private:
         virtual void _MakeVirtual()
