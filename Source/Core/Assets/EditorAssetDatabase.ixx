@@ -237,7 +237,15 @@ namespace GiiGa
                         if (!IsFileInRegistry(relative_path))
                         {
                             el::Loggers::getLogger(LogResourceManager)->debug("Found new file: %v", relative_path);
-                            ImportAsset(relative_path);
+
+                            try
+                            {
+                                ImportAsset(relative_path);
+                            }
+                            catch (std::runtime_error& err)
+                            {
+                                el::Loggers::getLogger(LogResourceManager)->warn("Failed to add new file: %v", err.what());
+                            }
                         }
                     }
                 }

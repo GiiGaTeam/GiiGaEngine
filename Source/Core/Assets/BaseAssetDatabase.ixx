@@ -38,8 +38,6 @@ namespace GiiGa
 
     public:
         friend class ResourceManager;
-        // todo: temp
-        friend class ImGuiContentBrowser; 
 
         BaseAssetDatabase(const std::filesystem::path& registry_path)
             : registry_path_(registry_path / registry_name)
@@ -98,6 +96,13 @@ namespace GiiGa
             asset_loader_by_uuid_.emplace(loader_ptr->Id(), loader_ptr);
         }
 
+        const std::filesystem::path& AssetPath() const {
+            return asset_path_;
+        }
+
+        bool IsRegisteredPath(const std::filesystem::path& path) const {
+            return assets_to_path_.contains(path);
+        }
     private:
         virtual void _MakeVirtual()
         {

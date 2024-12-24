@@ -1,28 +1,63 @@
 export module ImGuiContentBrowser;
 
-import<memory>;
+import <memory>;
+import <filesystem>;
 import <imgui.h>;
 
 import Engine;
 import ResourceManager;
 import IImGuiWindow;
+import BaseAssetDatabase;
 
 namespace GiiGa
 {
     export class ImGuiContentBrowser : public IImGuiWindow
     {
+    private:
+        std::shared_ptr<BaseAssetDatabase> database_;
+        std::filesystem::path current_path_;
+
     public:
         ImGuiContentBrowser()
         {
+            database_ = Engine::Instance().ResourceManager()->Database();
+            assert(database_);
+            current_path_ = database_->AssetPath();
         }
 
         void RecordImGui() override
         {
             ImGui::Begin("Content Browser");
 
-            auto database = Engine::Instance().ResourceManager()->database_;
+            if (current_path_ != database_->AssetPath()) 
+            {
+                if (ImGui::Button("<=")) 
+                {
+                    current_path_ = current_path_.parent_path();
+                }
+            }
 
-            if (database)
+            for (auto& entry : std::filesystem::directory_iterator(current_path_))
+            {
+                const auto& path = entry.path();
+                auto relative_path = std::filesystem::relative(path, database_->AssetPath());
+                std::string filename = path.filename().string();
+
+                if (entry.is_directory()) 
+                {
+                    if (ImGui::Button(filename.c_str()))
+                    {
+                        current_path_ /= path.filename();
+                    }
+                }
+                else 
+                {
+                    if (database_->IsRegisteredPath(relative_path)) {
+                        ImGui::Text(filename.c_str());
+                    }
+                }
+            }
+            /*if (database)
             {
                 // Display registry path
                 ImGui::Text("Registry Path: %s", database->registry_path_.string().c_str());
@@ -54,7 +89,7 @@ namespace GiiGa
             else
             {
                 ImGui::Text("No asset database available.");
-            }
+            }*/
 
             ImGui::End();
         }

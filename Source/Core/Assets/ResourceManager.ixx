@@ -20,8 +20,6 @@ namespace GiiGa
     {
     protected:
         friend class AssetBase;
-        // todo: temp
-        friend class ImGuiContentBrowser; 
 
         std::shared_ptr<BaseAssetDatabase> database_;
 
@@ -50,6 +48,9 @@ namespace GiiGa
             database_ = database;
         }
 
+        std::shared_ptr<BaseAssetDatabase> Database() const {
+            return database_;
+        }
     private:
         template <typename T>
         std::shared_ptr<T> FindAsset(AssetHandle handle) {
