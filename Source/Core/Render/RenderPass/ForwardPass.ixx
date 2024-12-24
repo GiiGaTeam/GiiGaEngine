@@ -55,10 +55,12 @@ namespace GiiGa
 
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat.Transpose());
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(0, cam_info.viewDescriptor);
+
+            //if (visibles.size() > 0) el::Loggers::getLogger(LogRendering)->debug("some rendering visibles %v", visibles.size());
 
             for (auto& visible : visibles)
             {

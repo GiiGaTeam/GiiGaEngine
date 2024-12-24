@@ -1,8 +1,10 @@
-﻿export module SpectatorMovementComponent;
+﻿#include <imgui_internal.h>
+export module SpectatorMovementComponent;
 
 import <memory>;
 import <directxtk12/SimpleMath.h>;
 import <json/value.h>;
+import <imgui.h>;
 import Component;
 import GameObject;
 import TransformComponent;
@@ -40,6 +42,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            if (!active_) return;
             TryDoLocationMove(dt);
             TryDoRotationMove(dt);
         }
@@ -70,17 +73,19 @@ namespace GiiGa
 
             if (Input::IsKeyHeld(KeyCode::KeyControl))
                 cameraSensitivity_ += Input::GetMouseWhell().y;
-            cameraSensitivity_ = std::clamp(cameraSensitivity_, 0.01f, 100.0f);
+            cameraSensitivity_ = std::clamp(cameraSensitivity_, 0.01f, 1000.0f);
 
             const auto mouseDelta = Input::GetMouseDelta();
             velocity.x -= mouseDelta.dy * cameraSensitivity_;
             velocity.y -= mouseDelta.dx * cameraSensitivity_;
-            velocity = Vector3(velocity.x, velocity.y, 0)*dt;
+            velocity = Vector3(velocity.x, velocity.y, 0) * dt;
             transf->AddRotation(velocity);
         }
 
         float speed_ = 1.0f;
-        float cameraSensitivity_ = 10.0f;
+        float cameraSensitivity_ = 50.0f;
+
+        bool active_ = false;
 
     protected:
         std::weak_ptr<TransformComponent> transformOwner_;
