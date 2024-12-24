@@ -35,3 +35,8 @@ struct PS_INPUT
     float3 BitangentVS : TEXCOORD7;
     float2 Tex : TEXCOORD8;
 };
+
+float3 GetCameraPos()
+{
+    return View[3];
+}

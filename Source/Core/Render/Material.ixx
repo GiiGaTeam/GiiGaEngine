@@ -292,7 +292,7 @@ namespace GiiGa
             {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
 
-                shaderResource_->MaterialCBV_ = Context.AllocateDynamicConstantView(MaterialSpan, 0, desc);
+                shaderResource_->MaterialCBV_ = Context.AllocateDynamicConstantView(MaterialSpan, desc);
             }
         }
 

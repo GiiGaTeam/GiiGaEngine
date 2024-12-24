@@ -1,7 +1,9 @@
 module;
 
+#define NOMINMAX
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
+#include <directxtk12/SimpleMath.h>
 
 export module PointLightComponent;
 
@@ -9,6 +11,7 @@ import <memory>;
 import <json/value.h>;
 import <bitset>;
 import <filesystem>;
+import <algorithm>;
 
 import Engine;
 import Component;
@@ -26,30 +29,56 @@ import StubTexturesHandles;
 import IUpdateGPUData;
 import ViewTypes;
 import BufferView;
+import GPULocalResource;
 
 namespace GiiGa
 {
+    struct alignas(256) PointLightData
+    {
+        alignas(16) DirectX::SimpleMath::Vector3 posWS;
+        alignas(16) DirectX::SimpleMath::Vector3 color = {1, 0, 0};
+        float radius = 10;
+        float max_intensity = 1;
+        float falloff = 1;
+    };
+
     export class PointLightShaderResource : public IObjectShaderResource
     {
+        friend class PointLightComponent;
 
     public:
         std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
         {
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result;
+            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
+            result[0] = PointLightCBV_->getDescriptor().getGPUHandle();
             return result;
         }
 
     private:
         std::shared_ptr<BufferView<Constant>> PointLightCBV_;
     };
-    
+
     export class PointLightComponent : public Component, public IRenderable, public IUpdateGPUData
     {
     public:
-        PointLightComponent()
+        PointLightComponent():
+            pointLightShaderRes_(std::make_shared<PointLightShaderResource>())
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
-            pointLightShaderRes_ = std::make_shared<PointLightShaderResource>();
+
+            auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
+            auto& context = Engine::Instance().RenderSystem()->GetRenderContext();
+
+            if (isStatic_)
+            {
+                UINT SizeInBytes = sizeof(PointLightData);
+
+                const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
+                poinLightRes = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+                poinLightRes->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(poinLightRes->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
+                pointLightShaderRes_->PointLightCBV_ = poinLightRes->CreateConstantBufferView(desc);
+            }
         }
 
         ~PointLightComponent()
@@ -92,7 +121,7 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire), .shaderResource = pointLightShaderRes_};
+            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire).SetLightType(LightType::Point), .shaderResource = pointLightShaderRes_};
         }
 
         void Restore(const Json::Value&) override
@@ -108,14 +137,56 @@ namespace GiiGa
 
         void UpdateGPUData(RenderContext& context) override
         {
+            if (!isDirty)
+                return;
+
             if (!perObjectData_)
                 perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
+
+            UINT SizeInBytes = sizeof(PointLightData);
+
+            const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
+
+            if (isStatic_)
+            {
+                poinLightRes->UpdateContentsImmediate(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            }
+            else
+            {
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
+                pointLightShaderRes_->PointLightCBV_ = context.AllocateDynamicConstantView(span, desc);
+            }
         }
 
         PerObjectData& GetPerObjectData() override
         {
             return *perObjectData_;
+        }
+
+        void SetColor(const DirectX::SimpleMath::Vector3& color)
+        {
+            data_.color = color;
+            isDirty = true;
+        }
+
+        void SetRadius(float radius)
+        {
+            data_.radius = radius;
+            std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->SetScale({radius, radius, radius});
+            isDirty = true;
+        }
+
+        void SetIntensity(float max_intensity)
+        {
+            data_.max_intensity = max_intensity;
+            isDirty = true;
+        }
+
+        void SetFallOff(float falloff)
+        {
+            data_.falloff = falloff;
+            isDirty = true;
         }
 
     private:
@@ -124,10 +195,12 @@ namespace GiiGa
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
         std::weak_ptr<TransformComponent> transform_;
         std::shared_ptr<PerObjectData> perObjectData_;
+        std::unique_ptr<GPULocalResource> poinLightRes;
         std::shared_ptr<PointLightShaderResource> pointLightShaderRes_;
-        //TODO
-        //Добавить возможность делать статик меши статическими или динамическими
+        PointLightData data_;
+
         bool isStatic_ = false;
+        bool isDirty = true;
 
         void RegisterInVisibility()
         {
@@ -144,6 +217,10 @@ namespace GiiGa
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
+
+                    data_.posWS = trans.location_;
+                    data_.radius = std::max(trans.scale_.x, std::max(trans.scale_.y, trans.scale_.z));
+                    isDirty = true;
 
                     visibilityEntry_->Update(origaabb);
                 });

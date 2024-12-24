@@ -19,6 +19,7 @@ namespace GiiGa
     export const LPCWSTR GBufferOpaqueUnlitShader = L"Shaders/GBufferOpaqueUnlitPixelShader.hlsl";
     export const LPCWSTR GBufferOpaqueDefaultLitShader = L"Shaders/GBufferOpaqueDefaultLitPixelShader.hlsl";
     export const LPCWSTR GBufferWireframeShader = L"Shaders/GBufferWireframeShader.hlsl";
+    export const LPCWSTR GPointLight = L"Shaders/GPointLight.hlsl";
     
     export class ShaderManager
     {
@@ -102,6 +103,10 @@ namespace GiiGa
             shader->CompileShader(&shaderMap_);
 
             shader = std::make_shared<Shader>(GBufferWireframeShader, "PSMain", "ps_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_shared<Shader>(GPointLight, "PSMain", "ps_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }

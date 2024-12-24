@@ -12,6 +12,7 @@ import <iostream>;
 export import Viewport;
 import RenderDevice;
 import GBufferPass;
+import GLightPass;
 import RenderGraph;
 import World;
 import CameraComponent;
@@ -37,6 +38,7 @@ namespace GiiGa
             renderGraph_ = std::make_shared<RenderGraph>();
 
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
@@ -115,7 +117,7 @@ namespace GiiGa
 
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
 
-            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, 1, desc);
+            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
         }
     };
 }

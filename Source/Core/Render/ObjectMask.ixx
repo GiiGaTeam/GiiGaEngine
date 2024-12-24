@@ -14,19 +14,23 @@ namespace GiiGa
 
     constexpr uint16_t BlendModeRegionSize = 4;
     constexpr uint16_t ShadingModelRegionSize = 4;
-    
+
     constexpr uint16_t MaterialRegionSize = ShadingModelRegionSize + BlendModeRegionSize;
     constexpr uint16_t MaterialRegionOffset = VertexTypeRegionSize;
-    
+
     constexpr uint16_t ShadingModelOffset = 0 + MaterialRegionOffset;
     constexpr uint16_t BlendModeOffset = ShadingModelRegionSize + MaterialRegionOffset;
 
     constexpr uint16_t FillModeRegionSize = 2;
     constexpr uint16_t FillModeOffset = MaterialRegionSize + MaterialRegionOffset;
 
+    constexpr uint16_t LigthTypeRegionSize = 2;
+    constexpr uint16_t LigthTypeOffset = FillModeRegionSize + FillModeOffset;
+
     using ShadingModelMask = std::bitset<ShadingModelRegionSize>;
     using BlendModeMask = std::bitset<BlendModeRegionSize>;
     using FillModeMask = std::bitset<FillModeRegionSize>;
+    using LigthTypeMask = std::bitset<FillModeRegionSize>;
 
     export enum class VertexTypes
     {
@@ -43,6 +47,15 @@ namespace GiiGa
         Solid = 1,
         Wire = 2,
         All = Solid | Wire,
+    };
+
+    export enum class LightType
+    {
+        None = 0,
+        Point = 1,
+        Direction = 2,
+        Spot = 4,
+        All = Point | Direction | Spot,
     };
 
     export enum class BlendMode
@@ -103,10 +116,15 @@ namespace GiiGa
             return *this;
         }
 
-        // Sets the blend mode, ensuring valid input
         ObjectMask& SetFillMode(FillMode fillMode)
         {
             SetRegion(ToBitset<FillModeMask>(fillMode), FillModeOffset);
+            return *this;
+        }
+
+        ObjectMask& SetLightType(LightType light)
+        {
+            SetRegion(ToBitset<LigthTypeMask>(light), LigthTypeOffset);
             return *this;
         }
 

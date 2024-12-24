@@ -57,7 +57,7 @@ namespace GiiGa
                 .MaxLOD = D3D12_FLOAT32_MAX
             };
 
-            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT};
+            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT};
 
             D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = {
                 .DepthEnable = TRUE,
@@ -90,7 +90,7 @@ namespace GiiGa
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
                 .set_rasterizer_state(rast_desc)
                 .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 4)
+                .set_rtv_format(g_format_array, 5)
                 .set_dsv_format(GBuffer::DS_FORMAT_DSV)
                 .set_depth_stencil_state(depth_stencil_desc)
                 .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
@@ -115,7 +115,7 @@ namespace GiiGa
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
                 .set_rasterizer_state(rast_desc)
                 .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 4)
+                .set_rtv_format(g_format_array, 5)
                 .set_dsv_format(GBuffer::DS_FORMAT_DSV)
                 .set_depth_stencil_state(depth_stencil_desc)
                 .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
@@ -142,6 +142,8 @@ namespace GiiGa
             rast_desc.CullMode = D3D12_CULL_MODE_NONE;
             rast_desc.FrontCounterClockwise = TRUE;
 
+            depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+
             mask_to_pso[ObjectMask()
                         .SetVertexType(VertexTypes::VertexPNTBT)
                         .SetFillMode(FillMode::Wire)]
@@ -149,7 +151,7 @@ namespace GiiGa
                 .set_ps(ShaderManager::GetShaderByName(GBufferWireframeShader))
                 .set_rasterizer_state(rast_desc)
                 .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 4)
+                .set_rtv_format(g_format_array, 5)
                 .set_dsv_format(GBuffer::DS_FORMAT_DSV)
                 .set_depth_stencil_state(depth_stencil_desc)
                 .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
@@ -172,7 +174,8 @@ namespace GiiGa
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalVS, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
             gbuffer_->BindAllAsRTV(context);
 
@@ -200,7 +203,8 @@ namespace GiiGa
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalVS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
     private:
@@ -210,7 +214,6 @@ namespace GiiGa
                                                    .SetFillMode(FillMode::All);
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
-        DirectX::SimpleMath::Vector2 view_size = {100, 100};
         std::shared_ptr<GBuffer> gbuffer_;
     };
 }

@@ -21,7 +21,8 @@ namespace GiiGa
      *      LightAccum          R       G       B    depth(copy)
      *      Diffuse             R       G       B      NU
      *      MatProps         Metal    Spec    Rough    Aniso
-     *      NormalVS            X       Y       Z      NU
+     *      NormalWS            X       Y       Z      NU
+     *      PostionWS           X       Y       Z      NU
      *      
      **** Depth/Stencil              D24_UNORM     S8_UINT
      */
@@ -34,10 +35,11 @@ namespace GiiGa
             LightAccumulation,
             Diffuse,
             Material,
-            NormalVS
+            NormalWS,
+            PositionWS
         };
 
-        static inline const uint8_t NUM_GBUFFERS = 4;
+        static inline const uint8_t NUM_GBUFFERS = 5;
         static inline const DXGI_FORMAT G_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
         static inline const D3D12_CLEAR_VALUE G_CLEAR_VALUE = {.Format = G_FORMAT, .Color = {0.0f, 0.0f, 0.0f, 1.0f}};
         static inline const DXGI_FORMAT DS_FORMAT_RES = DXGI_FORMAT_R24G8_TYPELESS;
@@ -92,7 +94,7 @@ namespace GiiGa
             return SRVs_[static_cast<int>(buffer)]->getDescriptor().getGPUHandle();
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthRTV(GBufferOrder buffer)
+        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthRTV()
         {
             return DSV_->getDescriptor().GetCpuHandle();
         }
