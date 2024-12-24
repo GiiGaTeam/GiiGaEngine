@@ -266,9 +266,8 @@ namespace GiiGa
                 if (!std::filesystem::exists(absolute_path))
                 {
                     el::Loggers::getLogger(LogResourceManager)->debug("File missing, removing from registry: %v", relative_path);
-                    it = registry_map_.erase(it);
-
                     assets_to_path_.erase(it->second.path);
+                    it = registry_map_.erase(it);
                 }
                 else
                 {
