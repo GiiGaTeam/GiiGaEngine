@@ -1,134 +1,122 @@
 [
 	{
-		"id" : 
-		{
-			"id" : "1778fe99-26e1-41e0-af1f-d01e2bf5d75a",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000b",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "cube.fbx",
-			"type" : "Mesh"
+		"meta": {
+			"path": "cube.fbx",
+			"type": "Mesh"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000001",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000c",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "base_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "sphere.fbx",
+			"type": "Mesh"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000002",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000001",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "metal_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "base_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000003",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000002",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "spec_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "metal_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000004",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000003",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "roug_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "spec_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000005",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000004",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "aniso_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "roug_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000006",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000005",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "emiss_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "aniso_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000007",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000006",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "opaci_stub.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "emiss_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000008",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000007",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "norm_stab.png",
-			"type" : "Texture2D"
+		"meta": {
+			"path": "opaci_stub.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-000000000009",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000008",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "DefaultMaterial.mat",
-			"type" : "Material"
+		"meta": {
+			"path": "norm_stab.png",
+			"type": "Texture2D"
 		}
 	},
 	{
-		"id" : 
-		{
-			"id" : "00000000-0000-0000-0000-00000000000a",
-			"subresource" : 0
+		"id": {
+			"id": "00000000-0000-0000-0000-000000000009",
+			"subresource": 0
 		},
-		"meta" : 
-		{
-			"path" : "DefaultLitMaterial.mat",
-			"type" : "Material"
+		"meta": {
+			"path": "DefaultMaterial.mat",
+			"type": "Material"
+		}
+	},
+	{
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000a",
+			"subresource": 0
+		},
+		"meta": {
+			"path": "DefaultLitMaterial.mat",
+			"type": "Material"
 		}
 	}
 ]

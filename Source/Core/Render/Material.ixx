@@ -522,7 +522,7 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask materialMask_ = ObjectMask();
+        ObjectMask materialMask_ = ObjectMask().SetFillMode(FillMode::Solid);
 
         MaterialData data_;
         bool isStatic_ = true;
@@ -550,28 +550,28 @@ namespace GiiGa
                     switch (inorder)
                     {
                     case TexturesOrder::BaseColor:
-                        SetBaseColorTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::BaseColor));
+                        SetBaseColorTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
                         break;
                     case TexturesOrder::Metallic:
-                        SetMetallicTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetMetallicTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Specular:
-                        SetSpecularTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetSpecularTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Roughness:
-                        SetRoughnessTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetRoughnessTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Anisotropy:
-                        SetAnisotropyTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetAnisotropyTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::EmissiveColor:
-                        SetEmissiveTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::EmissiveColor));
+                        SetEmissiveTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
                         break;
                     case TexturesOrder::Opacity:
-                        SetOpacityTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetOpacityTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Normal:
-                        SetNormalTexture(rm->GetAsset<TextureAsset>(StubTexturesHandles::Normal));
+                        SetNormalTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
                         break;
                     }
                 }

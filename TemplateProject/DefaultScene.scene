@@ -6,8 +6,15 @@
     "RootGameObjects":
     [
         {
-            "Name":"GO Hello",
+            "Name":"Cube",
             "Uuid": "42a43292-4b41-46a3-b514-0732ee9bf3b9",
+            "Parent": "00000000-0000-0000-0000-000000000000",
+            "Components": [],
+			"Children":[]
+        },
+        {
+            "Name":"Point Light",
+            "Uuid": "42a43292-4b41-46a3-b514-0732ee5bf3b9",
             "Parent": "00000000-0000-0000-0000-000000000000",
             "Components": [],
 			"Children":[]

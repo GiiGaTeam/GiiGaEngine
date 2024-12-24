@@ -81,7 +81,11 @@ namespace GiiGa
             };
 
 
-            mask_to_pso[ObjectMask().SetVertexType(VertexTypes::VertexPNTBT).SetShadingModel(ShadingModel::Unlit).SetBlendMode(BlendMode::Opaque)]
+            mask_to_pso[ObjectMask().
+                        SetVertexType(VertexTypes::VertexPNTBT)
+                        .SetShadingModel(ShadingModel::Unlit)
+                        .SetBlendMode(BlendMode::Opaque)
+                        .SetFillMode(FillMode::Solid)]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
                 .set_rasterizer_state(rast_desc)
@@ -102,7 +106,11 @@ namespace GiiGa
                 .add_static_samplers(sampler_desc)
                 .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
 
-            mask_to_pso[ObjectMask().SetVertexType(VertexTypes::VertexPNTBT).SetShadingModel(ShadingModel::DefaultLit).SetBlendMode(BlendMode::Opaque)]
+            mask_to_pso[ObjectMask()
+                        .SetVertexType(VertexTypes::VertexPNTBT)
+                        .SetShadingModel(ShadingModel::DefaultLit)
+                        .SetBlendMode(BlendMode::Opaque).
+                        SetFillMode(FillMode::Solid)]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
                 .set_rasterizer_state(rast_desc)
@@ -125,6 +133,31 @@ namespace GiiGa
                     context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Anisotropy), descs[5]);
                     context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[6]);
                     context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Normal), descs[7]);
+                })
+                .add_static_samplers(sampler_desc)
+                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+
+            rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            rast_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
+            rast_desc.FrontCounterClockwise = TRUE;
+
+            mask_to_pso[ObjectMask()
+                        .SetVertexType(VertexTypes::VertexPNTBT)
+                        .SetFillMode(FillMode::Wire)]
+                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                .set_ps(ShaderManager::GetShaderByName(GBufferWireframeShader))
+                .set_rasterizer_state(rast_desc)
+                .set_input_layout(VertexPNTBT::InputLayout)
+                .set_rtv_format(g_format_array, 4)
+                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                .set_depth_stencil_state(depth_stencil_desc)
+                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                {
+                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                })
+                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                {
                 })
                 .add_static_samplers(sampler_desc)
                 .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
@@ -173,7 +206,8 @@ namespace GiiGa
     private:
         ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
                                                    .SetShadingModel(ShadingModel::All)
-                                                   .SetVertexType(VertexTypes::All);
+                                                   .SetVertexType(VertexTypes::All)
+                                                   .SetFillMode(FillMode::All);
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
         DirectX::SimpleMath::Vector2 view_size = {100, 100};

@@ -4,7 +4,7 @@ import AssetHandle;
 
 namespace GiiGa
 {
-    namespace StubTexturesHandles
+    namespace DefaultAssetsHandles
     {
         export const AssetHandle BaseColor =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000001").value(), 0};
@@ -24,5 +24,11 @@ namespace GiiGa
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000008").value(), 0};
         export const AssetHandle DefaultMaterial =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000009").value(), 0};
+        export const AssetHandle DefaultLitMaterial =
+            AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000a").value(), 0};
+        export const AssetHandle Cube =
+            AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000b").value(), 0};
+        export const AssetHandle Sphere =
+            AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000c").value(), 0};
     }
 }

@@ -3,7 +3,7 @@ module;
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
 
-export module StaticMeshComponent;
+export module PointLightComponent;
 
 import <memory>;
 import <json/value.h>;
@@ -24,18 +24,35 @@ import IObjectShaderResource;
 import PerObjectData;
 import StubTexturesHandles;
 import IUpdateGPUData;
+import ViewTypes;
+import BufferView;
 
 namespace GiiGa
 {
-    export class StaticMeshComponent : public Component, public IRenderable, public IUpdateGPUData
+    export class PointLightShaderResource : public IObjectShaderResource
     {
+
     public:
-        StaticMeshComponent()
+        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
         {
-            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result;
+            return result;
         }
 
-        ~StaticMeshComponent()
+    private:
+        std::shared_ptr<BufferView<Constant>> PointLightCBV_;
+    };
+    
+    export class PointLightComponent : public Component, public IRenderable, public IUpdateGPUData
+    {
+    public:
+        PointLightComponent()
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+            pointLightShaderRes_ = std::make_shared<PointLightShaderResource>();
+        }
+
+        ~PointLightComponent()
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
@@ -52,16 +69,13 @@ namespace GiiGa
         void Init() override
         {
             transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
-            if (mesh_)
+            if (!mesh_)
             {
-                if (!material_)
-                {
-                    auto rm = Engine::Instance().ResourceManager();
+                auto rm = Engine::Instance().ResourceManager();
 
-                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-                }
-                if (!visibilityEntry_)
-                    RegisterInVisibility();
+                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Sphere);
+
+                RegisterInVisibility();
             }
         }
 
@@ -78,7 +92,7 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask() | material_->GetMaterialMask(), .shaderResource = material_->GetShaderResource()};
+            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire), .shaderResource = pointLightShaderRes_};
         }
 
         void Restore(const Json::Value&) override
@@ -90,53 +104,6 @@ namespace GiiGa
         {
             Todo();
             return {};
-        }
-
-        Uuid GetMeshUuid()
-        {
-            if (mesh_)
-                return mesh_->GetId().id;
-            else
-                return Uuid::Null();
-        }
-
-        void SetMeshUuid(const Uuid& newUuid)
-        {
-            // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
-            {
-                mesh_.reset();
-                visibilityEntry_.reset();
-            }
-            else
-            {
-                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
-                RegisterInVisibility();
-
-                if (!material_)
-                {
-                    auto rm = Engine::Instance().ResourceManager();
-
-                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-                }
-            }
-        }
-
-        Uuid GetMaterialUuid() const
-        {
-            if (material_)
-                return material_->GetId().id;
-            else
-                return Uuid::Null();
-        }
-
-        void SetMaterialUuid(const Uuid& newUuid)
-        {
-            // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
-                material_.reset();
-            else
-                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
         }
 
         void UpdateGPUData(RenderContext& context) override
@@ -153,11 +120,11 @@ namespace GiiGa
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
-        std::shared_ptr<Material> material_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
         std::weak_ptr<TransformComponent> transform_;
         std::shared_ptr<PerObjectData> perObjectData_;
+        std::shared_ptr<PointLightShaderResource> pointLightShaderRes_;
         //TODO
         //Добавить возможность делать статик меши статическими или динамическими
         bool isStatic_ = false;

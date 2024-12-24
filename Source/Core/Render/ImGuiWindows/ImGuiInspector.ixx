@@ -10,6 +10,7 @@ import EditorContext;
 import World;
 import CameraComponent;
 import StaticMeshComponent;
+import PointLightComponent;
 
 namespace GiiGa
 {
@@ -159,6 +160,15 @@ namespace GiiGa
                         if (auto l_go = editorContext_->selectedGameObject.lock())
                         {
                             l_go->CreateComponent<StaticMeshComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::MenuItem("Point Light Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<PointLightComponent>();
                         }
                         ImGui::CloseCurrentPopup();
                     }
