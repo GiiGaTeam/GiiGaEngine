@@ -19,5 +19,6 @@ namespace GiiGa
     {
         DirectX::SimpleMath::Matrix ViewProjMat;
         D3D12_GPU_DESCRIPTOR_HANDLE viewDescriptor;
+        DirectX::SimpleMath::Vector2 viewDimensions;
     };
 }

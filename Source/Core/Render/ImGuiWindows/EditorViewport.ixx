@@ -10,12 +10,13 @@ import <iostream>;
 
 export import Viewport;
 import RenderDevice;
-import ForwardPass;
+import GBufferPass;
 import RenderGraph;
 import World;
 import CameraComponent;
 import GameObject;
 import SpectatorMovementComponent;
+import GBuffer;
 
 namespace GiiGa
 {
@@ -31,7 +32,8 @@ namespace GiiGa
         void Init(RenderContext& context) override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
+
+            renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
@@ -56,13 +58,6 @@ namespace GiiGa
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
 
-            resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-            const float clear_color_with_alpha[4] = {1, 0, 0, 1};
-
-            const auto RTHandle = resultRTV_->getDescriptor().GetCpuHandle();
-            context.ClearRenderTargetView(RTHandle, clear_color_with_alpha);
-            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &RTHandle, true, nullptr);
             // draw here
             D3D12_VIEWPORT viewport = {};
             viewport.TopLeftX = 0.0f;
@@ -80,14 +75,15 @@ namespace GiiGa
             scissorRect.bottom = current_size.y;
             context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
 
+            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
             renderGraph_->Draw(context);
             // draw here - end
 
-            resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
             //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-            ImGui::Image((ImTextureID)resultSRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            ImGui::Image((ImTextureID)gbuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation).ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             ImGui::End();
         }

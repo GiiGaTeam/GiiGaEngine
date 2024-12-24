@@ -171,7 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
-    <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\ShaderHeader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />
     <None Include="Shaders\VertexPNTBTShader.hlsl" />
@@ -213,6 +213,7 @@
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
     <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx" />
+    <ClCompile Include="Source\Core\Render\GBuffer.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorContext.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorViewport.ixx">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>

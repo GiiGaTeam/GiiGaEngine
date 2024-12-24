@@ -60,7 +60,7 @@ namespace GiiGa
 
             fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         }
-        
+
         void SetFrameLatencyWaitableObject(HANDLE FrameLatencyWaitableObject)
         {
             frameLatencyWaitableObject_ = FrameLatencyWaitableObject;
@@ -154,9 +154,14 @@ namespace GiiGa
             graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
         }
 
-        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const float color[4])
+        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, D3D12_CLEAR_VALUE clearValue)
         {
-            graphics_command_list_->ClearRenderTargetView(rtv, color, 0, nullptr);
+            graphics_command_list_->ClearRenderTargetView(rtv, clearValue.Color, 0, nullptr);
+        }
+
+        void ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE dsv, D3D12_CLEAR_FLAGS flags, D3D12_CLEAR_VALUE clearValue)
+        {
+            graphics_command_list_->ClearDepthStencilView(dsv, flags, clearValue.DepthStencil.Depth, clearValue.DepthStencil.Stencil, 0, nullptr);
         }
 
         void EndFrame()
@@ -202,12 +207,12 @@ namespace GiiGa
             WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
         }
 
-        void BindPSO(ID3D12PipelineState *pPipelineState)
+        void BindPSO(ID3D12PipelineState* pPipelineState)
         {
             graphics_command_list_->SetPipelineState(pPipelineState);
         }
 
-        void SetSignature(ID3D12RootSignature *pRootSignature)
+        void SetSignature(ID3D12RootSignature* pRootSignature)
         {
             graphics_command_list_->SetGraphicsRootSignature(pRootSignature);
         }

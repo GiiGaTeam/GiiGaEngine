@@ -36,7 +36,7 @@ namespace GiiGa
 
             mask_to_pso[ObjectMask().SetVertexType(VertexTypes::VertexPNTBT).SetShadingModel(ShadingModel::Unlit).SetBlendMode(BlendMode::Opaque)]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
+                .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
                 .set_rasterizer_state(rast_desc)
                 .set_input_layout(VertexPNTBT::InputLayout)
                 .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)

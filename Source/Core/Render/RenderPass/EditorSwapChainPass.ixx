@@ -85,9 +85,7 @@ namespace GiiGa
             swapChain_->Reset(context);
 
             // Render Dear ImGui graphics
-            const float clear_color_with_alpha[4] = {0, 0, 0, 1};
-
-            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), clear_color_with_alpha);
+            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), {.Color = {0, 0, 0, 1}});
 
             D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_->getRTVDescriptorHandle();
 

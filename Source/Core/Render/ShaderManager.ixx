@@ -16,7 +16,7 @@ namespace GiiGa
 {
     export const LPCWSTR VertexPositionShader = L"Shaders/VertexPositionShader.hlsl";
     export const LPCWSTR VertexPNTBTShader = L"Shaders/VertexPNTBTShader.hlsl";
-    export const LPCWSTR OpaqueUnlitShader = L"Shaders/OpaqueUnlitPixelShader.hlsl";
+    export const LPCWSTR GBufferOpaqueUnlitShader = L"Shaders/GBufferOpaqueUnlitPixelShader.hlsl";
     
     export class ShaderManager
     {
@@ -91,7 +91,7 @@ namespace GiiGa
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
 
-            shader = std::make_shared<Shader>(OpaqueUnlitShader, "PSMain", "ps_5_1" );
+            shader = std::make_shared<Shader>(GBufferOpaqueUnlitShader, "PSMain", "ps_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }

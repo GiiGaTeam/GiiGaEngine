@@ -83,7 +83,7 @@ namespace GiiGa
         {
             // todo: actually we can cache this allocation by adding setters here
             std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result;
-            result.reserve(MaxTextureCount);
+            result.reserve(1 + MaxTextureCount);
             result.push_back(MaterialCBV_->getDescriptor().getGPUHandle());
             for (auto texture_srv : texture_srvs_)
             {
@@ -103,8 +103,8 @@ namespace GiiGa
     public:
         struct alignas(256) MaterialData
         {
-            DirectX::SimpleMath::Vector3 BaseColorTint_ = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
-            DirectX::SimpleMath::Vector3 EmissiveColorTint_ = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f);
+            alignas(16) DirectX::SimpleMath::Vector3 BaseColorTint_ = DirectX::SimpleMath::Vector3(1);
+            alignas(16) DirectX::SimpleMath::Vector3 EmissiveColorTint_ = DirectX::SimpleMath::Vector3(1);
             float MetallicScale_ = 1.0f;
             float SpecularScale_ = 1.0f;
             float RoughnessScale_ = 1.0f;
@@ -153,7 +153,7 @@ namespace GiiGa
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
         }
 
-                Material(AssetHandle handle, const BlendMode& blendMode, const ShadingModel& shadingModel,
+        Material(AssetHandle handle, const BlendMode& blendMode, const ShadingModel& shadingModel,
                  const MaterialData& data, const std::array<std::shared_ptr<TextureAsset>, MaxTextureCount>& textures,
                  const std::array<ComponentMapping, MaxTextureCount>& component_mappings) :
             AssetBase(handle),
@@ -162,7 +162,7 @@ namespace GiiGa
             textures_(textures)
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
-            
+
             for (int i = 0; i < textures_.size(); ++i)
             {
                 if (textures_[i])
@@ -532,7 +532,7 @@ namespace GiiGa
 
         std::array<std::shared_ptr<TextureAsset>, MaxTextureCount> textures_;
         std::shared_ptr<GPULocalResource> MaterialCB_;
-        
+
         void CheckAndLoadRequirededTextures_()
         {
             // Define required texture indices based on the blend mode and shading model

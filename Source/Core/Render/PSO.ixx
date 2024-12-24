@@ -23,15 +23,6 @@ import RenderContext;
 
 namespace GiiGa
 {
-    export typedef enum
-    {
-        Wrap = 0x1,
-        Mirror = 0x2,
-        Clamp = 0x4,
-        Border = 0x8,
-        MirrorOnce = 0x10,
-    } SamplerAddressMode;
-
     export class PSO
     {
     public:
@@ -81,8 +72,8 @@ namespace GiiGa
             D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
             rootSigDesc.NumParameters = static_cast<UINT>(rootParameters.size());
             rootSigDesc.pParameters = rootParameters.data();
-            rootSigDesc.NumStaticSamplers = 0;
-            rootSigDesc.pStaticSamplers = nullptr;
+            rootSigDesc.NumStaticSamplers = static_samplers_.size();
+            rootSigDesc.pStaticSamplers = static_samplers_.data();
             rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
             // create a root signature with a single slot which points to a
             // descriptor range consisting of a single constant buffer.
@@ -108,9 +99,15 @@ namespace GiiGa
 
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{
                 mRootSignature.get(), VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
-                rasterizer_state_, depth_stencil_state_, input_layout_, strip_cut_value_, primitive_topology_type_, NumRenderTargets_, {*RTVFormat_},
+                rasterizer_state_, depth_stencil_state_, input_layout_, strip_cut_value_, primitive_topology_type_, NumRenderTargets_, {},
                 DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_
             };
+
+            for (UINT i = 0; i < psoDesc.NumRenderTargets; ++i)
+            {
+                psoDesc.RTVFormats[i] = RTVFormat_[i];
+            }
+
             state_ = device.CreateGraphicsPipelineState(psoDesc);
         }
 
@@ -233,26 +230,17 @@ namespace GiiGa
             return *this;
         }
 
-        PSO& add_simple_samplers(SamplerAddressMode address_mode)
+        PSO& add_static_samplers(D3D12_STATIC_SAMPLER_DESC desc)
         {
-            if (address_mode & Wrap)
-                push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-            if (address_mode & Mirror)
-                push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_MIRROR);
-            if (address_mode & Clamp)
-                push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
-            if (address_mode & Border)
-                push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_BORDER);
-            if (address_mode & MirrorOnce)
-                push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE);
+            static_samplers_.push_back(desc);
             return *this;
         }
 
-        PSO& add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
-        {
-            samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
-            return *this;
-        }
+        //PSO& add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
+        //{
+        //    samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
+        //    return *this;
+        //}
 
         PSO& SetPerObjectDataFunction(const std::function<void(RenderContext& context, PerObjectData& per_obj)>& per_object_data_function)
         {
@@ -284,15 +272,6 @@ namespace GiiGa
         }
 
     private:
-        void push_back_simple_samplers(D3D12_TEXTURE_ADDRESS_MODE address_mode)
-        {
-            D3D12_STATIC_SAMPLER_DESC sampler;
-            sampler.AddressU = address_mode;
-            sampler.AddressV = address_mode;
-            sampler.AddressW = address_mode;
-            samplers_.push_back(sampler);
-        }
-
         D3D12_SHADER_BYTECODE VS_ = {};
         D3D12_SHADER_BYTECODE PS_ = {};
         D3D12_SHADER_BYTECODE DS_ = {};
@@ -321,7 +300,7 @@ namespace GiiGa
 
         std::function<void(RenderContext& context, IObjectShaderResource& resource)> set_obj_shared_res_fn_;
 
-        std::vector<D3D12_STATIC_SAMPLER_DESC> samplers_;
+        std::vector<D3D12_STATIC_SAMPLER_DESC> static_samplers_;
 
         std::shared_ptr<ID3D12RootSignature> mRootSignature;
 
