@@ -23,7 +23,7 @@ namespace GiiGa
 
     export Vector3 RadFromDeg(const Vector3& vec)
     {
-        return vec * Pi / 180; 
+        return vec * Pi / 180;
     }
 
     export Vector3 DegFromRad(const Vector3& vec)
@@ -57,37 +57,39 @@ namespace GiiGa
     export std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
     {
         std::vector<Plane> planes(6);
+        std::array<Vector3, 8> corners;
+        const auto inv = viewProjMatrix.Invert();
+        int i = 0;
 
-        // Left plane
-        planes[0] = Plane(viewProjMatrix._14 + viewProjMatrix._11,
-                          viewProjMatrix._24 + viewProjMatrix._21,
-                          viewProjMatrix._34 + viewProjMatrix._31,
-                          viewProjMatrix._44 + viewProjMatrix._41);
-        // Right plane
-        planes[1] = Plane(viewProjMatrix._14 - viewProjMatrix._11,
-                          viewProjMatrix._24 - viewProjMatrix._21,
-                          viewProjMatrix._34 - viewProjMatrix._31,
-                          viewProjMatrix._44 - viewProjMatrix._41);
-        // Top plane
-        planes[2] = Plane(viewProjMatrix._14 - viewProjMatrix._12,
-                          viewProjMatrix._24 - viewProjMatrix._22,
-                          viewProjMatrix._34 - viewProjMatrix._32,
-                          viewProjMatrix._44 - viewProjMatrix._42);
-        // Bottom plane
-        planes[3] = Plane(viewProjMatrix._14 + viewProjMatrix._12,
-                          viewProjMatrix._24 + viewProjMatrix._22,
-                          viewProjMatrix._34 + viewProjMatrix._32,
-                          viewProjMatrix._44 + viewProjMatrix._42);
-        // Near plane
-        planes[4] = Plane(viewProjMatrix._13,
-                          viewProjMatrix._23,
-                          viewProjMatrix._33,
-                          viewProjMatrix._43);
-        // Far plane
-        planes[5] = Plane(viewProjMatrix._14 - viewProjMatrix._13,
-                          viewProjMatrix._24 - viewProjMatrix._23,
-                          viewProjMatrix._34 - viewProjMatrix._33,
-                          -(viewProjMatrix._44 - viewProjMatrix._43));
+        for (int32_t x = 0; x < 2; ++x)
+        {
+            for (int32_t y = 0; y < 2; ++y)
+            {
+                for (int32_t z = 0; z < 2; ++z)
+                {
+                    Vector4 pt = Vector4::Transform(Vector4(
+                                                        2.0f * static_cast<float>(x) - 1.0f,
+                                                        2.0f * static_cast<float>(y) - 1.0f,
+                                                        static_cast<float>(z),
+                                                        1.0f), inv);
+                    pt = (pt / pt.w);
+                    corners[i++] = Vector3{pt.x, pt.y, pt.z};
+                }
+            }
+        }
+
+        // near
+        planes[0] = DirectX::SimpleMath::Plane(corners[0], corners[6], corners[4]);
+        // far
+        planes[1] = DirectX::SimpleMath::Plane(corners[1], corners[7], corners[3]);
+        // left
+        planes[2] = DirectX::SimpleMath::Plane(corners[0], corners[1], corners[2]);
+        //right
+        planes[3] = DirectX::SimpleMath::Plane(corners[5], corners[4], corners[6]);
+        //top
+        planes[4] = DirectX::SimpleMath::Plane(corners[6], corners[2], corners[3]);
+        //bottom
+        planes[5] = DirectX::SimpleMath::Plane(corners[1], corners[0], corners[4]);
 
         // Normalize the planes
         for (int i = 0; i < 6; ++i)

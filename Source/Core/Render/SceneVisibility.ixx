@@ -29,6 +29,57 @@ namespace GiiGa
         {
         }
 
+        static std::vector<OrthoTree::index_t> CheckInsidePlanesOrth(std::vector<OrthoTree::Plane3D> planes)
+        {
+            auto result = std::vector<OrthoTree::index_t>();
+            for (auto& element : GetInstance()->visibility_to_renderable_)
+            {
+                bool is_inside = true;
+                OrthoTree::BoundingBox3D ortho_box = GetInstance()->quadtree.Get(element.first);
+                for (const auto& plane : planes)
+                {
+                    auto rel = OrthoTree::AdaptorGeneralBase<3, OrthoTree::Vector3D, OrthoTree::BoundingBox3D,
+                                                             OrthoTree::Ray3D, OrthoTree::Plane3D, OrthoTree::BaseGeometryType,
+                                                             OrthoTree::AdaptorGeneralBasics<3, OrthoTree::Vector3D, OrthoTree::BoundingBox3D,
+                                                                                             OrthoTree::Ray3D, OrthoTree::Plane3D, OrthoTree::BaseGeometryType>>::
+                        GetBoxPlaneRelation(ortho_box, plane.OrigoDistance, plane.Normal, 0.1);
+                    if (rel == OrthoTree::PlaneRelation::Negative)
+                    {
+                        is_inside = false;
+                    }
+                }
+                if (is_inside)
+                {
+                    result.push_back(element.first);
+                }
+            }
+            return result;
+        }
+
+        static std::vector<OrthoTree::index_t> CheckInsidePlanes(std::vector<DirectX::SimpleMath::Plane> planes)
+        {
+            auto result = std::vector<OrthoTree::index_t>();
+            for (auto& element : GetInstance()->visibility_to_renderable_)
+            {
+                bool is_inside = true;
+                OrthoTree::BoundingBox3D ortho_box = GetInstance()->quadtree.Get(element.first);
+                auto max = DirectX::SimpleMath::Vector3{static_cast<float>(ortho_box.Max[0]), static_cast<float>(ortho_box.Max[1]), static_cast<float>(ortho_box.Max[2])};
+                auto min = DirectX::SimpleMath::Vector3{static_cast<float>(ortho_box.Min[0]), static_cast<float>(ortho_box.Min[1]), static_cast<float>(ortho_box.Min[2])};
+                for (const auto& plane : planes)
+                {
+                    if (plane.DotCoordinate(max) < 0 && plane.DotCoordinate(min) < 0)
+                    {
+                        is_inside = false;
+                    }
+                }
+                if (is_inside)
+                {
+                    result.push_back(element.first);
+                }
+            }
+            return result;
+        }
+
         //virtual ~SceneVisibility() = default;
 
         // Extract visible objects matching a filter and organize them into draw packets.
@@ -54,7 +105,8 @@ namespace GiiGa
             }
 
             // Perform frustum culling to get IDs of visible entities.
-            auto ent_ids = GetInstance()->quadtree.FrustumCulling(otplanes, 0.1);
+            auto ent_ids = CheckInsidePlanes(dxplanes); //CheckInsidePlanes(otplanes); //GetInstance()->quadtree.FrustumCulling(otplanes, 0.1); //CheckInsidePlanes(dxplanes); 
+
 
             // Map to store draw packets grouped by object mask.
             std::unordered_map<ObjectMask, DrawPacket> mask_to_draw_packets;

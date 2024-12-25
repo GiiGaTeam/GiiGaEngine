@@ -195,6 +195,7 @@ namespace GiiGa
                     {
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
                         renderable.lock()->Draw(context);
+                        el::Loggers::getLogger(LogWorld)->debug("I See");
                     }
                 }
             }
