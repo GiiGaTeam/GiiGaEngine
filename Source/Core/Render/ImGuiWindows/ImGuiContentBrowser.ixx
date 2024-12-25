@@ -113,7 +113,12 @@ namespace GiiGa
             future.wait();
 
             drop_file_evt_ = Engine::Instance().Window()->OnDropFile.Register([this](const auto& evt) {
-                std::filesystem::copy(evt.path, current_path_);
+                try {
+                    std::filesystem::copy(evt.path, current_path_);
+                }
+                catch (...) {
+
+                }
                 });
         }
 
