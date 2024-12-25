@@ -29,6 +29,7 @@ namespace GiiGa
         {
         }
 
+        /*
         static std::vector<OrthoTree::index_t> CheckInsidePlanesOrth(std::vector<OrthoTree::Plane3D> planes)
         {
             auto result = std::vector<OrthoTree::index_t>();
@@ -78,7 +79,7 @@ namespace GiiGa
                 }
             }
             return result;
-        }
+        }*/
 
         //virtual ~SceneVisibility() = default;
 
@@ -105,7 +106,7 @@ namespace GiiGa
             }
 
             // Perform frustum culling to get IDs of visible entities.
-            auto ent_ids = CheckInsidePlanes(dxplanes); //CheckInsidePlanes(otplanes); //GetInstance()->quadtree.FrustumCulling(otplanes, 0.1); //CheckInsidePlanes(dxplanes); 
+            auto ent_ids = GetInstance()->quadtree.FrustumCulling(otplanes, 0.1);
 
 
             // Map to store draw packets grouped by object mask.

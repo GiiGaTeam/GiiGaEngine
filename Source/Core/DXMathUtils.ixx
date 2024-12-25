@@ -53,11 +53,11 @@ namespace GiiGa
         return vec;
     }
 
-    // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf
-    export std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
+    // note:
+    // Do NOT change order of points
+    export std::array<Vector3, 8> ExtractFrustumWorldCorners(const Matrix& viewProjMatrix)
     {
-        std::vector<Plane> planes(6);
-        std::array<Vector3, 8> corners;
+        std::array<Vector3, 8> corners_world;
         const auto inv = viewProjMatrix.Invert();
         int i = 0;
 
@@ -67,36 +67,53 @@ namespace GiiGa
             {
                 for (int32_t z = 0; z < 2; ++z)
                 {
-                    Vector4 pt = Vector4::Transform(Vector4(
-                                                        2.0f * static_cast<float>(x) - 1.0f,
-                                                        2.0f * static_cast<float>(y) - 1.0f,
-                                                        static_cast<float>(z),
-                                                        1.0f), inv);
+                    Vector4 point_ndc = Vector4(
+                        2.0f * static_cast<float>(x) - 1.0f,
+                        2.0f * static_cast<float>(y) - 1.0f,
+                        static_cast<float>(z),
+                        1.0f);
+                    Vector4 pt = Vector4::Transform(point_ndc, inv);
                     pt = (pt / pt.w);
-                    corners[i++] = Vector3{pt.x, pt.y, pt.z};
+                    corners_world[i++] = Vector3{pt.x, pt.y, pt.z};
                 }
             }
         }
 
+        return corners_world;
+    }
+
+    export std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
+    {
+        std::vector<Plane> planes_world(6);
+
+        auto corners_world = ExtractFrustumWorldCorners(viewProjMatrix);
+
+        // XMPlaneFromPoints negates D result
         // near
-        planes[0] = DirectX::SimpleMath::Plane(corners[0], corners[6], corners[4]);
+        planes_world[0] = DirectX::SimpleMath::Plane(corners_world[0], corners_world[6], corners_world[4]);
+        planes_world[0].w *= -1;
         // far
-        planes[1] = DirectX::SimpleMath::Plane(corners[1], corners[7], corners[3]);
+        planes_world[1] = DirectX::SimpleMath::Plane(corners_world[1], corners_world[7], corners_world[3]);
+        planes_world[1].w *= -1;
         // left
-        planes[2] = DirectX::SimpleMath::Plane(corners[0], corners[1], corners[2]);
+        planes_world[2] = DirectX::SimpleMath::Plane(corners_world[0], corners_world[1], corners_world[2]);
+        planes_world[2].w *= -1;
         //right
-        planes[3] = DirectX::SimpleMath::Plane(corners[5], corners[4], corners[6]);
+        planes_world[3] = DirectX::SimpleMath::Plane(corners_world[5], corners_world[4], corners_world[6]);
+        planes_world[3].w *= -1;
         //top
-        planes[4] = DirectX::SimpleMath::Plane(corners[6], corners[2], corners[3]);
+        planes_world[4] = DirectX::SimpleMath::Plane(corners_world[6], corners_world[2], corners_world[3]);
+        planes_world[4].w *= -1;
         //bottom
-        planes[5] = DirectX::SimpleMath::Plane(corners[1], corners[0], corners[4]);
+        planes_world[5] = DirectX::SimpleMath::Plane(corners_world[1], corners_world[0], corners_world[4]);
+        planes_world[5].w *= -1;
 
         // Normalize the planes
         for (int i = 0; i < 6; ++i)
         {
-            planes[i].Normalize();
+            planes_world[i].Normalize();
         }
 
-        return planes;
+        return planes_world;
     }
 }
