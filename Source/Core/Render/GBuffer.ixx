@@ -44,7 +44,7 @@ namespace GiiGa
         static inline const D3D12_CLEAR_VALUE G_CLEAR_VALUE = {.Format = G_FORMAT, .Color = {0.0f, 0.0f, 0.0f, 1.0f}};
         static inline const DXGI_FORMAT DS_FORMAT_RES = DXGI_FORMAT_R24G8_TYPELESS;
         static inline const DXGI_FORMAT DS_FORMAT_DSV = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        static inline const D3D12_CLEAR_VALUE DS_CLEAR_VALUE = {.Format = DS_FORMAT_DSV, .DepthStencil = {.Depth = 1, .Stencil = 0}};
+        static inline const D3D12_CLEAR_VALUE DS_CLEAR_VALUE = {.Format = DS_FORMAT_DSV, .DepthStencil = {.Depth = 1, .Stencil = 1}};
 
         GBuffer(RenderDevice& device, DirectX::SimpleMath::Vector2 size):
             device_(device)
@@ -97,6 +97,11 @@ namespace GiiGa
         D3D12_CPU_DESCRIPTOR_HANDLE GetDepthRTV()
         {
             return DSV_->getDescriptor().GetCpuHandle();
+        }
+
+        void ClearStencil(RenderContext& context, uint8_t value)
+        {
+            context.ClearDepthStencilView(DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_STENCIL, D3D12_CLEAR_VALUE{.DepthStencil = {.Depth = 0, .Stencil = value}});
         }
 
         void Resize(DirectX::SimpleMath::Vector2 new_size)

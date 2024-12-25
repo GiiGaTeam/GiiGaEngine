@@ -38,5 +38,5 @@ struct PS_INPUT
 
 float3 GetCameraPos()
 {
-    return View[3];
+    return -View[3];
 }

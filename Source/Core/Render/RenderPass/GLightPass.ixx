@@ -43,9 +43,7 @@ namespace GiiGa
             getCamInfoDataFunction_(getCamDescFn),
             gbuffer_(gbuffer)
         {
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_BACK;
-            rast_desc.FrontCounterClockwise = TRUE;
+            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT};
 
             auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
                 .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
@@ -57,52 +55,141 @@ namespace GiiGa
                 .MaxLOD = D3D12_FLOAT32_MAX
             };
 
-            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT};
+            //unmark PSOs
+            {
+                D3D12_RASTERIZER_DESC unmark_rs = CD3DX12_RASTERIZER_DESC(
+                    D3D12_FILL_MODE_SOLID,
+                    D3D12_CULL_MODE_BACK,
+                    TRUE,
+                    D3D12_DEFAULT_DEPTH_BIAS,
+                    D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
+                    TRUE,
+                    FALSE,
+                    FALSE,
+                    0,
+                    D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
+                );
 
-            D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = {
-                .DepthEnable = TRUE,
-                .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL,
-                .DepthFunc = D3D12_COMPARISON_FUNC_LESS,
-                .StencilEnable = FALSE,
-                .StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK,
-                .StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK,
-                .FrontFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS,
-                },
-                .BackFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
-                }
-            };
-
-
-            mask_to_pso[ObjectMask()
-                        .SetVertexType(VertexTypes::VertexPNTBT)
-                        .SetLightType(LightType::Point)]
-
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(GPointLight))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 1)
-                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                .set_depth_stencil_state(depth_stencil_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                D3D12_DEPTH_STENCIL_DESC unmark_ds
                 {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+                    .DepthEnable = TRUE,
+                    .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
+                    .DepthFunc = D3D12_COMPARISON_FUNC_GREATER,
+                    .StencilEnable = TRUE,
+                    .StencilReadMask = 0xff,
+                    .StencilWriteMask = 0xff,
+                    .FrontFace = {
+                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilPassOp = D3D12_STENCIL_OP_DECR_SAT,
+                        .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
+                    },
+                    .BackFace = {
+                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilPassOp = D3D12_STENCIL_OP_DECR_SAT,
+                        .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
+                    }
+                };
+
+                unmark_pso
+                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                    .set_input_layout(VertexPNTBT::InputLayout)
+                    .set_rtv_format(g_format_array, 1)
+                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                    .set_depth_stencil_state(unmark_ds)
+                    .set_rasterizer_state(unmark_rs)
+                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                    {
+                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                    })
+                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                    {
+                    })
+                    .add_static_samplers(sampler_desc)
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+            }
+
+            // shade PSOs
+            {
+                D3D12_RASTERIZER_DESC shade_rs = {
+                    .FillMode = D3D12_FILL_MODE_SOLID,
+                    .CullMode = D3D12_CULL_MODE_FRONT,
+                    .FrontCounterClockwise = TRUE,
+                    .DepthBias = D3D12_DEFAULT_DEPTH_BIAS,
+                    .DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                    .SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
+                    .DepthClipEnable = FALSE,
+                    .MultisampleEnable = FALSE,
+                    .AntialiasedLineEnable = FALSE,
+                    .ForcedSampleCount = 0,
+                    .ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
+                };
+
+                D3D12_DEPTH_STENCIL_DESC shade_ds = {
+                    .DepthEnable = TRUE,
+                    .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
+                    .DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL,
+                    .StencilEnable = TRUE,
+                    .StencilReadMask = 0xff,
+                    .StencilWriteMask = 0xff,
+                    .FrontFace = D3D12_DEPTH_STENCILOP_DESC{
+                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilPassOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilFunc = D3D12_COMPARISON_FUNC_EQUAL
+                    },
+                    .BackFace = {
+                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilPassOp = D3D12_STENCIL_OP_KEEP,
+                        .StencilFunc = D3D12_COMPARISON_FUNC_EQUAL
+                    },
+                };
+
+                D3D12_BLEND_DESC blendDesc = {};
+                blendDesc.AlphaToCoverageEnable = FALSE;
+                blendDesc.IndependentBlendEnable = FALSE;
+
+                D3D12_RENDER_TARGET_BLEND_DESC renderTargetDesc = {
+                    .BlendEnable = TRUE,
+                    .SrcBlend = D3D12_BLEND_ONE,
+                    .DestBlend = D3D12_BLEND_ONE,
+                    .BlendOp = D3D12_BLEND_OP_ADD,
+                    .SrcBlendAlpha = D3D12_BLEND_ONE,
+                    .DestBlendAlpha = D3D12_BLEND_ZERO,
+                    .BlendOpAlpha = D3D12_BLEND_OP_ADD,
+                    .RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL
+                };
+
+                blendDesc.RenderTarget[0] = renderTargetDesc;
+
+
+                shade_mask_to_pso[ObjectMask()
+                                  .SetVertexType(VertexTypes::VertexPNTBT)
+                                  .SetLightType(LightType::Point)]
+
+                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                    .set_ps(ShaderManager::GetShaderByName(GPointLight))
+                    .set_rasterizer_state(shade_rs)
+                    .set_input_layout(VertexPNTBT::InputLayout)
+                    .set_rtv_format(g_format_array, 1)
+                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                    .set_depth_stencil_state(shade_ds)
+                    .set_blend_state(blendDesc)
+                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                    {
+                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                    })
+                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                    {
+                        const auto& descs = resource.GetDescriptors();
+                        context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
+                    })
+                    .add_static_samplers(sampler_desc)
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+            }
         }
 
         void Draw(RenderContext& context) override
@@ -111,7 +198,7 @@ namespace GiiGa
 
             const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
 
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
+            context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
 
             auto accum = gbuffer_->GetRTV(GBuffer::GBufferOrder::LightAccumulation);
@@ -127,17 +214,30 @@ namespace GiiGa
 
             for (auto& visible : visibles)
             {
-                PSO& pso = mask_to_pso.at(visible.first);
-                context.BindPSO(pso.GetState().get());
+                PSO& pso = shade_mask_to_pso.at(visible.first);
                 context.SetSignature(pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
                 {
-                    auto CRG = common_resource_group.second;
-                    pso.SetShaderResources(context, *CRG.shaderResource);
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
+                        gbuffer_->ClearStencil(context, 1);
+                        pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                        renderable.lock()->Draw(context);
+
+                        {
+                            // unmar
+                            context.BindPSO(unmark_pso.GetState().get());
+                            context.GetGraphicsCommandList()->OMSetStencilRef(1);
+                            renderable.lock()->Draw(context);
+                        }
+
+                        {
+                            // shade
+                            PSO& shade_pso = shade_mask_to_pso.at(visible.first);
+                            context.BindPSO(shade_pso.GetState().get());
+                            context.GetGraphicsCommandList()->OMSetStencilRef(1);
+                            renderable.lock()->Draw(context);
+                        }
                     }
                 }
             }
@@ -149,7 +249,8 @@ namespace GiiGa
         ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
                                                   .SetLightType(LightType::All);
 
-        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;
+        PSO unmark_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
         std::shared_ptr<GBuffer> gbuffer_;
     };
