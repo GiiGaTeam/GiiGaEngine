@@ -142,8 +142,6 @@ namespace GiiGa
             rast_desc.CullMode = D3D12_CULL_MODE_NONE;
             rast_desc.FrontCounterClockwise = TRUE;
 
-            depth_stencil_desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-
             mask_to_pso[ObjectMask()
                         .SetVertexType(VertexTypes::VertexPNTBT)
                         .SetFillMode(FillMode::Wire)]
@@ -169,7 +167,7 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -209,9 +207,13 @@ namespace GiiGa
 
     private:
         ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                   .SetShadingModel(ShadingModel::All)
-                                                   .SetVertexType(VertexTypes::All)
-                                                   .SetFillMode(FillMode::All);
+                                                   .SetFillMode(FillMode::Wire);
+
+        ObjectMask renderpass_unite = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
+                                                  .SetShadingModel(ShadingModel::All)
+                                                  .SetVertexType(VertexTypes::All)
+                                                  .SetFillMode(FillMode::All);
+
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
         std::shared_ptr<GBuffer> gbuffer_;

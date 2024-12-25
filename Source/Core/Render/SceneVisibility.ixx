@@ -32,7 +32,7 @@ namespace GiiGa
         //virtual ~SceneVisibility() = default;
 
         // Extract visible objects matching a filter and organize them into draw packets.
-        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, DirectX::SimpleMath::Matrix viewproj)
+        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, ObjectMask unite_mask, DirectX::SimpleMath::Matrix viewproj)
         {
             // Extract frustum planes from the view-projection matrix.
             auto dxplanes = ExtractFrustumPlanesPointInside(viewproj);
@@ -69,19 +69,19 @@ namespace GiiGa
                     auto sort_data = renderable->GetSortData();
 
                     // Apply render filter to the object mask.
-                    ObjectMask mask_with_filter = sort_data.object_mask & render_filter_type;
-
                     // If the object matches the filter, process it.
-                    if (mask_with_filter.any())
+                    if ((sort_data.object_mask & render_filter_type).any())
                     {
+                        ObjectMask mask_with_unite = sort_data.object_mask & unite_mask;
+
                         // Check if a draw packet already exists for this mask.
-                        auto drawPacket = mask_to_draw_packets.find(mask_with_filter);
+                        auto drawPacket = mask_to_draw_packets.find(mask_with_unite);
 
                         // Create a new draw packet if one doesn't exist.
                         if (drawPacket == mask_to_draw_packets.end())
-                            mask_to_draw_packets.emplace(mask_with_filter, DrawPacket{mask_with_filter});
+                            mask_to_draw_packets.emplace(mask_with_unite, DrawPacket{mask_with_unite});
 
-                        drawPacket = mask_to_draw_packets.find(mask_with_filter);
+                        drawPacket = mask_to_draw_packets.find(mask_with_unite);
 
                         // Find or create a resource group for the object's shader resource.
                         auto t = sort_data.shaderResource.get();

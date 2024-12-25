@@ -82,7 +82,8 @@ namespace GiiGa
 
 
             mask_to_pso[ObjectMask()
-                    .SetLightType(LightType::Point)]
+                        .SetVertexType(VertexTypes::VertexPNTBT)
+                        .SetLightType(LightType::Point)]
 
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GPointLight))
@@ -108,7 +109,7 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
@@ -144,6 +145,9 @@ namespace GiiGa
 
     private:
         ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::All);
+
+        ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
+                                                  .SetLightType(LightType::All);
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

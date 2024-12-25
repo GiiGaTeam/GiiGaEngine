@@ -55,7 +55,7 @@ namespace GiiGa
 
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, cam_info.ViewProjMat.Transpose());
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat.Transpose());
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(0, cam_info.viewDescriptor);
@@ -82,8 +82,13 @@ namespace GiiGa
 
     private:
         ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                   .SetShadingModel(ShadingModel::All)
-                                                   .SetVertexType(VertexTypes::All);
+                                                   .SetFillMode(FillMode::Wire);
+
+        ObjectMask renderpass_unite = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
+                                                  .SetShadingModel(ShadingModel::All)
+                                                  .SetVertexType(VertexTypes::All)
+                                                  .SetFillMode(FillMode::All);
+
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
     };
