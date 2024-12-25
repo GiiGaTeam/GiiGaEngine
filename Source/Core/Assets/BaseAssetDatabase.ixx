@@ -6,6 +6,9 @@ import <string>;
 import <filesystem>;
 import <fstream>;
 import <iostream>;
+import <ranges>;
+import <tuple>;
+import <utility>;
 import <json/json.h>;
 
 import Logger;
@@ -100,7 +103,7 @@ namespace GiiGa
             return asset_path_;
         }
 
-        std::tuple<AssetHandle, AssetMeta> IsRegisteredPath(const std::filesystem::path& path) const {
+        /*std::tuple<AssetHandle, AssetMeta> IsRegisteredPath(const std::filesystem::path& path) const {
             auto it = assets_to_path_.find(path);
             if (it != assets_to_path_.end()) {
                 auto handle_it = registry_map_.find(it->second);
@@ -111,6 +114,24 @@ namespace GiiGa
                 }
             }
             return std::make_tuple<AssetHandle, AssetMeta>({}, {});
+        }*/
+
+        // TODO: Return iterator
+        std::vector<std::tuple<AssetHandle, AssetMeta>> GetHandlesByPath(const std::filesystem::path& path) const {
+            std::vector<std::tuple<AssetHandle, AssetMeta>> results;
+
+            auto it = assets_to_path_.find(path);
+            if (it != assets_to_path_.end()) {
+                const AssetHandle& baseHandle = it->second;
+
+                for (const auto& [handle, meta] : registry_map_) {
+                    if (handle.id == baseHandle.id) {
+                        results.emplace_back(handle, meta);
+                    }
+                }
+            }
+
+            return results;
         }
     private:
         virtual void _MakeVirtual()

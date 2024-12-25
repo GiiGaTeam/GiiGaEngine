@@ -154,6 +154,8 @@ namespace GiiGa
                 const auto& path = entry.path();
                 auto relative_path = std::filesystem::relative(path, database_->AssetPath());
                 std::string filename = path.filename().string();
+                auto stem = path.stem();
+                auto extension = path.extension();
 
                 if (entry.is_directory()) 
                 {
@@ -177,27 +179,41 @@ namespace GiiGa
                 }
                 else 
                 {
-                    auto [handle, meta] = database_->IsRegisteredPath(relative_path);
-                    if (meta.type != AssetType::Unknown) 
-                    {
-                        auto& icon = icons_srv_[meta.type]->getDescriptor();
-                        ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                    auto range = database_->GetHandlesByPath(relative_path);
 
-                        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                            ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
-                            ImGui::EndDragDropSource();
-                        }
 
-                        if (ImGui::BeginPopupContextItem(filename.c_str())) {
-                            if (ImGui::MenuItem("Remove")) {
-                                std::filesystem::remove(path);
+
+                    for (const auto& [handle, meta] : range) {
+                        if (meta.type != AssetType::Unknown)
+                        {
+                            auto& icon = icons_srv_[meta.type]->getDescriptor();
+                            ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                            const char* raw_name = filename.c_str();
+
+                            std::string name;
+
+                            if (range.size() > 1) {
+                                name = stem.string() + std::to_string(handle.subresource) + extension.string();
+                                raw_name = name.c_str();
                             }
-                            ImGui::EndPopup();
+
+                            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                                ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
+                                ImGui::EndDragDropSource();
+                            }
+
+                            if (ImGui::BeginPopupContextItem(raw_name)) {
+                                if (ImGui::MenuItem("Remove")) {
+                                    std::filesystem::remove(path);
+                                }
+                                ImGui::EndPopup();
+                            }
+
+                            ImGui::TextWrapped(raw_name);
+
+                            ImGui::NextColumn();
                         }
-
-                        ImGui::TextWrapped(filename.c_str());
-
-                        ImGui::NextColumn();
                     }
                 }
             }
