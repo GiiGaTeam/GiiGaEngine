@@ -18,5 +18,7 @@ namespace GiiGa
         virtual Uuid GetUuid() const =0;
 
         virtual Json::Value ToJson() const =0;
+
+        virtual void Destroy() =0;
     };
 }

@@ -32,7 +32,7 @@ namespace GiiGa
             auto p_level = std::make_shared<Level>(level_settings);
             GetInstance().AddLevel(p_level);
         }
-        
+
         static void DeInitialize()
         {
             instance_.reset();
@@ -46,6 +46,12 @@ namespace GiiGa
                 auto comp_to_init = instance.comp_init_queue_.front();
                 instance.comp_init_queue_.pop();
                 comp_to_init->Init();
+            }
+            while (!instance.gameobject_destroy_queue_.empty())
+            {
+                auto go_to_destroy = instance.gameobject_destroy_queue_.front();
+                instance.gameobject_destroy_queue_.pop();
+                go_to_destroy->Destroy();
             }
             for (auto& level : GetLevels())
             {

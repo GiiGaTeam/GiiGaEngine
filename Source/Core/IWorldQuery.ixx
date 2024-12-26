@@ -36,6 +36,11 @@ namespace GiiGa
             GetInstance().uuid_to_any_.insert({uuid, value});
         }
 
+        static void EmplaceGOToDestroy(std::shared_ptr<IGameObject> go)
+        {
+            GetInstance().gameobject_destroy_queue_.emplace(go);
+        }
+
         static void RemoveAnyWithUuid(const Uuid& uuid)
         {
             GetInstance().uuid_to_any_.erase(uuid);
@@ -101,8 +106,9 @@ namespace GiiGa
         static inline std::shared_ptr<WorldQuery> instance_;
         std::unordered_map<std::type_index, std::vector<std::shared_ptr<IComponent>>> type_to_components_;
         std::unordered_map<Uuid, std::any> uuid_to_any_;
-
         std::queue<std::shared_ptr<IComponent>> comp_init_queue_;
+        std::queue<std::shared_ptr<IGameObject>> gameobject_destroy_queue_;
+
 
         virtual std::shared_ptr<ILevelRootGameObjects> GetPersistentLevel_Impl()
         {
