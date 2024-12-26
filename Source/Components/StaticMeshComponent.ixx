@@ -164,6 +164,7 @@ namespace GiiGa
 
         void RegisterInVisibility()
         {
+            visibilityEntry_.reset();
             visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<IRenderable>(shared_from_this()), mesh_->GetAABB());
             if (cashed_event_.isValid())
             {

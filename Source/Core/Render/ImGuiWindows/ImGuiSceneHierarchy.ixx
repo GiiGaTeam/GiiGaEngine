@@ -2,10 +2,12 @@ export module ImGuiSceneHierarchy;
 
 import <imgui.h>;
 import <memory>;
+import <ranges>;
 
 import IImGuiWindow;
 import World;
 import EditorContext;
+import Logger;
 
 namespace GiiGa
 {
@@ -57,11 +59,23 @@ namespace GiiGa
 
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.467f, 0.686f, 1.0f, 1.0f));
 
+            auto level_lable = "Level: " + level->GetLevelName();
+
             const bool opened = ImGui::TreeNodeEx(
-                level->GetLevelName().c_str(),
-                flags);
+                level_lable.c_str(),
+                flags, level_lable.c_str());
 
             ImGui::PopStyleColor();
+
+            if (ImGui::BeginPopupContextItem(level_lable.c_str()))
+            {
+                if (ImGui::Button("Add GameObject"))
+                {
+                    GameObject::CreateEmptyGameObject({.LevelOverride = level});
+                }
+                ImGui::EndPopup();
+            }
+
 
             if (opened)
             {
@@ -75,15 +89,33 @@ namespace GiiGa
 
         void RecursiveDrawGameObject(const std::shared_ptr<GameObject> gameObject)
         {
-            const ImGuiTreeNodeFlags flags =
-                //(selected_ == enttity ? ImGuiTreeNodeFlags_Selected : 0) |
+            ImGuiTreeNodeFlags flags =
                 (!gameObject->GetChildrenCount() != 0 ? ImGuiTreeNodeFlags_Leaf : 0)
                 | ImGuiTreeNodeFlags_OpenOnArrow;
 
+            if (!editorContext_->selectedGameObject.expired())
+                flags |= (editorContext_->selectedGameObject.lock() == gameObject ? ImGuiTreeNodeFlags_Selected : 0);
+            
             const bool opened = ImGui::TreeNodeEx(
                 gameObject->GetUuid().ToString().c_str(),
                 flags,
                 gameObject->name.c_str());
+
+            if (ImGui::BeginPopupContextItem(gameObject->GetUuid().ToString().c_str()))
+            {
+                if (ImGui::Button("Add Child"))
+                {
+                    auto kid = GameObject::CreateEmptyGameObject({.Owner = gameObject});
+                    kid->SetParent(gameObject);
+                }
+
+                if (ImGui::Button("Remove GameObject"))
+                {
+                    gameObject->Destroy();
+                }
+                
+                ImGui::EndPopup();
+            }
 
             if (ImGui::IsItemClicked())
             {
@@ -99,7 +131,7 @@ namespace GiiGa
 
             if (opened)
             {
-                for (auto&& [_,kid] : gameObject->GetChildren())
+                for (auto [_,kid] : gameObject->GetChildren())
                 {
                     RecursiveDrawGameObject(kid);
                 }
