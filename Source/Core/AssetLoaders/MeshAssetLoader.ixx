@@ -39,25 +39,27 @@ namespace GiiGa
             type_ = AssetType::Mesh;
         }
 
-        virtual std::vector<AssetHandle> Preprocess(const std::filesystem::path& path)
-        {
+        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
             if (!std::filesystem::exists(path))
                 throw std::runtime_error("File does not exist: " + path.string());
 
             Assimp::Importer importer;
-            const aiScene* scene = importer.ReadFile(path.string(), 0);
+            const aiScene* scene = importer.ReadFile(absolute_path.string(), 0);
 
-            if (!scene || !scene->HasMeshes())
-            {
+            if (!scene || !scene->HasMeshes()) {
                 throw std::runtime_error("Failed to load mesh from file: " + path.string());
             }
 
-            std::vector<AssetHandle> handles;
+            std::vector<std::pair<AssetHandle, AssetMeta>> handles;
 
             auto uuid = Uuid::New();
-            for (int i = 0; i < scene->mNumMeshes; ++i)
-            {
-                handles.push_back(AssetHandle(uuid, i));
+            for (int i = 0; i < scene->mNumMeshes; ++i) {
+                handles.push_back(std::make_pair(AssetHandle(uuid, i), AssetMeta{
+                    type_,
+                    relative_path,
+                    id_,
+                    scene->mMeshes[i]->mName.C_Str()
+                    }));
             }
 
             return handles;

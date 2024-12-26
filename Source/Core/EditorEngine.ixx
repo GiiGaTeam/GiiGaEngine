@@ -58,9 +58,7 @@ namespace GiiGa
         {
             Engine::Initialize(proj);
             World::Initialize();
-            render_system_ = std::make_shared<EditorRenderSystem>(*window_);
-            render_system_->Initialize();
-
+           
             editor_asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
             asset_database_ = editor_asset_database_;
 
@@ -71,6 +69,9 @@ namespace GiiGa
 
             editor_asset_database_->StartProjectWatcher();
             resource_manager_->SetDatabase(editor_asset_database_);
+
+            render_system_ = std::make_shared<EditorRenderSystem>(*window_);
+            render_system_->Initialize();
 
             //todo
             auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();

@@ -28,6 +28,17 @@ namespace GiiGa
             type_ = AssetType::Texture2D;
         }
 
+        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
+            return {
+                std::make_pair(AssetHandle { Uuid::New(), 0}, AssetMeta{
+                    type_,
+                    relative_path,
+                    id_,
+                    relative_path.stem().string()
+                    })
+            };
+        }
+
         std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) override {
             if (!std::filesystem::exists(path))
                 throw std::runtime_error("File does not exist: " + path.string());

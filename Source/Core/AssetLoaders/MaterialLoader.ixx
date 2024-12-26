@@ -24,6 +24,27 @@ namespace GiiGa
         }
 
         virtual ~MaterialLoader() = default;
+virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
+            return {
+                std::make_pair(AssetHandle { Uuid::New(), 0}, AssetMeta{
+                    type_,
+                    relative_path,
+                    id_,
+                    relative_path.stem().string()
+                    })
+            };
+        }
+        
+        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
+            return {
+                std::make_pair(AssetHandle { Uuid::New(), 0}, AssetMeta{
+                    type_,
+                    relative_path,
+                    id_,
+                    relative_path.stem().string()
+                    })
+            };
+        }
 
         /* Material Json Structure:
          * {

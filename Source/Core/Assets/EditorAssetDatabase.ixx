@@ -150,17 +150,16 @@ namespace GiiGa
                 throw std::runtime_error("No asset loader found for the file path: " + path.string());
             }
 
-            auto handles = selected_loader->Preprocess(asset_path_ / path);
+            auto handles = selected_loader->Preprocess(asset_path_ / path, path);
 
-            for (auto& handle : handles)
+            for (auto& [handle, meta] : handles)
             {
-                AssetMeta meta;
-                meta.path = path;
-                meta.type = asset_type;
-                meta.loader_id = selected_loader->Id();
-
                 registry_map_.emplace(handle, std::move(meta));
             }
+
+            auto handle = handles[0];
+            handle.first.subresource = 0;
+            assets_to_path_.emplace(path, handle.first);
         }
 
         void RemoveAsset(const std::filesystem::path& path)
@@ -173,6 +172,8 @@ namespace GiiGa
                 if (asset_path.string().compare(0, path.string().size(), path.string()) == 0)
                 {
                     el::Loggers::getLogger(LogResourceManager)->debug("File removed: %v", asset_path);
+
+                    assets_to_path_.erase(it->second.path);
                     it = registry_map_.erase(it);
                 }
                 else
@@ -196,11 +197,21 @@ namespace GiiGa
                     {
                         asset_path = new_path;
 
+                        assets_to_path_.erase(old_path);
+                        auto handle_temp = handle;
+                        handle_temp.subresource = 0;
+                        assets_to_path_.emplace(asset_path, handle);
+
                         el::Loggers::getLogger(LogResourceManager)->debug("Updated path: %v -> %v", old_path, asset_path);
                     }
                     else
                     {
                         asset_path = new_path / relative_path;
+
+                        assets_to_path_.erase(old_path / relative_path);
+                        auto handle_temp = handle;
+                        handle_temp.subresource = 0;
+                        assets_to_path_.emplace(asset_path, handle);
 
                         el::Loggers::getLogger(LogResourceManager)->debug("Updated path: %v -> %v", old_path / relative_path, asset_path);
                     }
@@ -221,7 +232,15 @@ namespace GiiGa
                         if (!IsFileInRegistry(relative_path))
                         {
                             el::Loggers::getLogger(LogResourceManager)->debug("Found new file: %v", relative_path);
-                            ImportAsset(relative_path);
+
+                            try
+                            {
+                                ImportAsset(relative_path);
+                            }
+                            catch (std::runtime_error& err)
+                            {
+                                el::Loggers::getLogger(LogResourceManager)->warn("Failed to add new file: %v", err.what());
+                            }
                         }
                     }
                 }
@@ -242,6 +261,7 @@ namespace GiiGa
                 if (!std::filesystem::exists(absolute_path))
                 {
                     el::Loggers::getLogger(LogResourceManager)->debug("File missing, removing from registry: %v", relative_path);
+                    assets_to_path_.erase(it->second.path);
                     it = registry_map_.erase(it);
                 }
                 else

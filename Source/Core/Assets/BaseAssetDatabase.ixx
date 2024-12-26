@@ -6,6 +6,9 @@ import <string>;
 import <filesystem>;
 import <fstream>;
 import <iostream>;
+import <ranges>;
+import <tuple>;
+import <utility>;
 import <json/json.h>;
 
 import Logger;
@@ -29,8 +32,8 @@ namespace GiiGa
         std::filesystem::path registry_path_;
         std::filesystem::path asset_path_;
 
-        // key - AssetHandle, value - Asset meta
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
+        std::unordered_map<std::filesystem::path, AssetHandle> assets_to_path_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
         std::unordered_map<AssetType, std::shared_ptr<AssetLoader>> asset_savers_;
@@ -38,8 +41,6 @@ namespace GiiGa
 
     public:
         friend class ResourceManager;
-        // todo: temp
-        friend class ImGuiContentBrowser; 
 
         BaseAssetDatabase(const std::filesystem::path& registry_path)
             : registry_path_(registry_path / registry_name)
@@ -98,6 +99,27 @@ namespace GiiGa
             asset_loader_by_uuid_.emplace(loader_ptr->Id(), loader_ptr);
         }
 
+        const std::filesystem::path& AssetPath() const {
+            return asset_path_;
+        }
+
+        // TODO: Return iterator
+        std::vector<std::tuple<AssetHandle, AssetMeta>> GetHandlesByPath(const std::filesystem::path& path) const {
+            std::vector<std::tuple<AssetHandle, AssetMeta>> results;
+
+            auto it = assets_to_path_.find(path);
+            if (it != assets_to_path_.end()) {
+                const AssetHandle& baseHandle = it->second;
+
+                for (const auto& [handle, meta] : registry_map_) {
+                    if (handle.id == baseHandle.id) {
+                        results.emplace_back(handle, meta);
+                    }
+                }
+            }
+
+            return results;
+        }
     private:
         virtual void _MakeVirtual()
         {
@@ -134,6 +156,9 @@ namespace GiiGa
                 AssetHandle handle = AssetHandle::FromJson(entry["id"]);
                 AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
 
+                auto handle_temp = handle;
+                handle_temp.subresource = 0;
+                assets_to_path_.emplace(meta.path, handle_temp);
                 registry_map_.emplace(handle, meta);
             }
         }

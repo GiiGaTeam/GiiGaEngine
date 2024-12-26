@@ -8,6 +8,6 @@ namespace GiiGa
     {
     public:
         virtual ~IImGuiWindow() = default;
-        virtual void RecordImGui() =0;
+        virtual void RecordImGui() = 0;
     };
 }

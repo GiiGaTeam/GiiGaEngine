@@ -19,7 +19,7 @@ namespace GiiGa
         Material,
     };
 
-    export std::string AssetTypeToString(AssetType type)
+    export const char* AssetTypeToStaticString(AssetType type)
     {
         switch (type)
         {
@@ -33,6 +33,11 @@ namespace GiiGa
         case AssetType::Material: return "Material";
             default: throw std::invalid_argument("Unknown AssetType");
         }
+    }
+
+    export std::string AssetTypeToString(AssetType type)
+    {
+        return AssetTypeToStaticString(type);
     }
 
     export AssetType StringToAssetType(const std::string& str)

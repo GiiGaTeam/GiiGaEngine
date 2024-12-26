@@ -11,6 +11,7 @@ import <vector>;
 
 import AssetHandle;
 import AssetType;
+import AssetMeta;
 import Uuid;
 import Misc;
 
@@ -28,10 +29,7 @@ namespace GiiGa
         Uuid id_ = Uuid::Null();
 
     public:
-        virtual std::vector<AssetHandle> Preprocess(const std::filesystem::path& path) {
-            return { AssetHandle(Uuid::New(), 0) };
-        }
-
+        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) = 0;
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(AssetBase& asset, std::filesystem::path& path) = 0;
 
