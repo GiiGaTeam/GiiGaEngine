@@ -6,7 +6,8 @@
 		},
 		"meta": {
 			"path": "cube.fbx",
-			"type": "Mesh"
+			"type": "Mesh",
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac"
 		}
 	},
 	{
@@ -16,7 +17,8 @@
 		},
 		"meta": {
 			"path": "sphere.fbx",
-			"type": "Mesh"
+			"type": "Mesh",
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac"
 		}
 	},
 	{
@@ -26,7 +28,8 @@
 		},
 		"meta": {
 			"path": "base_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -36,7 +39,8 @@
 		},
 		"meta": {
 			"path": "metal_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -46,7 +50,8 @@
 		},
 		"meta": {
 			"path": "spec_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -56,7 +61,8 @@
 		},
 		"meta": {
 			"path": "roug_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -66,7 +72,8 @@
 		},
 		"meta": {
 			"path": "aniso_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -76,7 +83,8 @@
 		},
 		"meta": {
 			"path": "emiss_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -86,7 +94,8 @@
 		},
 		"meta": {
 			"path": "opaci_stub.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -96,7 +105,8 @@
 		},
 		"meta": {
 			"path": "norm_stab.png",
-			"type": "Texture2D"
+			"type": "Texture2D",
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -106,7 +116,8 @@
 		},
 		"meta": {
 			"path": "DefaultMaterial.mat",
-			"type": "Material"
+			"type": "Material",
+			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c"
 		}
 	},
 	{
@@ -116,7 +127,8 @@
 		},
 		"meta": {
 			"path": "DefaultLitMaterial.mat",
-			"type": "Material"
+			"type": "Material",
+			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c"
 		}
 	}
 ]

@@ -18,6 +18,7 @@ namespace GiiGa
     public:
         MaterialLoader()
         {
+            id_ = Uuid::FromString("a2227623-70bb-4b66-bab0-1d92d292a75c").value();
             pattern_ = R"((.+)\.(mat))";
             type_ = AssetType::Material;
         }

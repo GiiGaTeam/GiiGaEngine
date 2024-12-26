@@ -6,6 +6,7 @@ namespace GiiGa
 {
     namespace DefaultAssetsHandles
     {
+        ////////////////// TEXTURES //////////////////////////////
         export const AssetHandle BaseColor =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000001").value(), 0};
         export const AssetHandle Metallic =
@@ -22,10 +23,16 @@ namespace GiiGa
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000007").value(), 0};
         export const AssetHandle Normal =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000008").value(), 0};
+
+        ////////////////// MATERIALS //////////////////////////////
+        
         export const AssetHandle DefaultMaterial =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-000000000009").value(), 0};
         export const AssetHandle DefaultLitMaterial =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000a").value(), 0};
+
+        ////////////////// MESHES //////////////////////////////
+
         export const AssetHandle Cube =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000b").value(), 0};
         export const AssetHandle Sphere =
