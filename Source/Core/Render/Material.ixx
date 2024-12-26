@@ -72,7 +72,7 @@ namespace GiiGa
 
     export constexpr uint8_t MaxTextureCount = 8;
 
-    using RequiredTexturesMask = std::bitset<MaxTextureCount>;
+    export using RequiredTexturesMask = std::bitset<MaxTextureCount>;
 
     export class MaterialShaderResource : public IObjectShaderResource
     {
@@ -100,6 +100,9 @@ namespace GiiGa
 
     export class Material : public AssetBase, public IUpdateGPUData, public std::enable_shared_from_this<Material>
     {
+        //todo: temp
+        friend class ImGuiInspector;
+
     public:
         struct alignas(256) MaterialData
         {
@@ -320,31 +323,14 @@ namespace GiiGa
 
         //=============================SETTING MATERIAL TEXTURES & PARAMETERS=============================
 
-        // todo: add shading model / blend mode check
-        void SetBaseColorTexture(std::shared_ptr<TextureAsset> BaseColorTexture)
+        void SetTexture(TexturesOrder texture_order, std::shared_ptr<TextureAsset> texture_asset, ComponentMapping Channel = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING)
         {
-            auto texture_index = static_cast<int>(TexturesOrder::BaseColor) - 1;
-            textures_[texture_index] = BaseColorTexture;
+            auto texture_index = static_cast<int>(texture_order) - 1;
+            auto req_tex = GetRequiredTextures();
+            if (!req_tex[texture_index])
+                return;
 
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetMetallicTexture(std::shared_ptr<TextureAsset> MetallicTexture,
-                                ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::Metallic) - 1;
-            textures_[texture_index] = MetallicTexture;
+            textures_[texture_index] = texture_asset;
 
             auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
@@ -356,15 +342,19 @@ namespace GiiGa
             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
             srvDesc.Shader4ComponentMapping = Channel;
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
+            shaderResource_->texture_srvs_[texture_index] = textures_[static_cast<int>(texture_order) - 1]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
-        // todo: add shading model / blend mode check
-        void SetSpecularTexture(std::shared_ptr<TextureAsset> SpecularTexture,
-                                ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
+        void SetTexture(TexturesOrder texture_order, AssetHandle texture_uuid, ComponentMapping Channel = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING)
         {
-            auto texture_index = static_cast<int>(TexturesOrder::Specular) - 1;
-            textures_[texture_index] = SpecularTexture;
+            auto texture_index = static_cast<int>(texture_order) - 1;
+            auto req_tex = GetRequiredTextures();
+            if (!req_tex[texture_index])
+                return;
+
+            auto texture_asset = Engine::Instance().ResourceManager()->GetAsset<TextureAsset>(texture_uuid);
+
+            textures_[texture_index] = texture_asset;
 
             auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
 
@@ -376,105 +366,7 @@ namespace GiiGa
             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
             srvDesc.Shader4ComponentMapping = Channel;
 
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetRoughnessTexture(std::shared_ptr<TextureAsset> RoughnessTexture,
-                                 ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::Roughness) - 1;
-            textures_[texture_index] = RoughnessTexture;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = Channel;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetAnisotropyTexture(std::shared_ptr<TextureAsset> AnisotropyTexture,
-                                  ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::Anisotropy) - 1;
-            textures_[texture_index] = AnisotropyTexture;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = Channel;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetEmissiveTexture(std::shared_ptr<TextureAsset> EmissiveTexture)
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::EmissiveColor) - 1;
-            textures_[texture_index] = EmissiveTexture;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetOpacityTexture(std::shared_ptr<TextureAsset> OpacityTexture,
-                               ComponentMapping Channel = static_cast<D3D12_SHADER_COMPONENT_MAPPING>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING))
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::Opacity) - 1;
-            textures_[texture_index] = OpacityTexture;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = Channel;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
-        }
-
-        // todo: add shading model / blend mode check
-        void SetNormalTexture(std::shared_ptr<TextureAsset> NormalTexture)
-        {
-            auto texture_index = static_cast<int>(TexturesOrder::Normal) - 1;
-            textures_[texture_index] = NormalTexture;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[texture_index]->EmplaceShaderResourceBufferView(srvDesc);
+            shaderResource_->texture_srvs_[texture_index] = textures_[static_cast<int>(texture_order) - 1]->EmplaceShaderResourceBufferView(srvDesc);
         }
 
         //=============================SETTING MATERIAL PARAMETERS=============================
@@ -543,35 +435,34 @@ namespace GiiGa
             // Safety check: Ensure required textures are present
             for (size_t i = 1; i <= MaxTextureCount; ++i)
             {
-                TexturesOrder t = static_cast<TexturesOrder>(i);
                 if (requiredTextures[i - 1] && !textures_[i - 1])
                 {
                     TexturesOrder inorder = static_cast<TexturesOrder>(i);
                     switch (inorder)
                     {
                     case TexturesOrder::BaseColor:
-                        SetBaseColorTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
                         break;
                     case TexturesOrder::Metallic:
-                        SetMetallicTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Specular:
-                        SetSpecularTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Roughness:
-                        SetRoughnessTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Anisotropy:
-                        SetAnisotropyTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::EmissiveColor:
-                        SetEmissiveTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
                         break;
                     case TexturesOrder::Opacity:
-                        SetOpacityTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Normal:
-                        SetNormalTexture(rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
+                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
                         break;
                     }
                 }

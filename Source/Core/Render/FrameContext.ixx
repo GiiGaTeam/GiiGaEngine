@@ -54,7 +54,7 @@ namespace GiiGa
         UploadBuffer& CreateUploadBuffer(RenderDevice& device, size_t size)
         {
             upload_buffers.push_back(UploadBuffer(device, size));
-            return *upload_buffers.end()--;
+            return upload_buffers.back();
         }
 
         UploadBuffer::Allocation AllocateCopyDynamic(RenderDevice& device, std::span<uint8_t> data, size_t alignment)

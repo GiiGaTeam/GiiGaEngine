@@ -4,6 +4,7 @@ import <imgui.h>;
 import <imgui_internal.h>;
 import <memory>;
 import <directxtk12/SimpleMath.h>;
+import <unordered_map>;
 
 import IImGuiWindow;
 import EditorContext;
@@ -13,6 +14,7 @@ import StaticMeshComponent;
 import PointLightComponent;
 import DirectionLightComponent;
 import LightComponent;
+import Material;
 
 namespace GiiGa
 {
@@ -137,33 +139,117 @@ namespace GiiGa
                                     static_mesh_comp->SetMeshUuid(newUuid.value());
                             }
 
-                            // Get and display the Material UUID
-                            Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
-                            char materialUuidStr[37];
-                            snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
-                            if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
-                            {
-                                auto newUuid = Uuid::FromString(materialUuidStr);
-                                if (newUuid.has_value())
-                                    static_mesh_comp->SetMaterialUuid(newUuid.value());
-                            }
+                            auto material = static_mesh_comp->material_;
 
-                            ImGui::TreePop();
-                        }
-                    }                    
-                    else if (auto light_comp = std::dynamic_pointer_cast<LightComponent>(comp))
-                    {
-                        if (ImGui::TreeNodeEx("LightComponent", ImGuiTreeNodeFlags_DefaultOpen))
-                        {
-                            auto rot_deg = light_comp->GetColor();
-                            auto intensity = light_comp->GetIntensity();
-                            if (drawColorControl("Color", rot_deg))
+                            if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
                             {
-                                light_comp->SetColor(rot_deg);
-                            }
-                            if (ImGui::InputFloat("Far Plane", &intensity, 1.0f, 10.0f))
-                            {
-                                light_comp->SetIntensity(intensity);
+                                // Material UUID
+                                Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
+                                char materialUuidStr[37];
+                                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
+                                if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
+                                {
+                                    auto newUuid = Uuid::FromString(materialUuidStr);
+                                    if (newUuid.has_value())
+                                        static_mesh_comp->SetMaterialUuid(newUuid.value());
+                                }
+
+                                // Shading Model
+                                static const char* shadingModelNames[] = {
+                                    "None", "DefaultLit", "Unlit"
+                                };
+                                int currentShadingModel = static_cast<int>(material->GetMaterialMask().GetShadingModel());
+                                if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModelNames, IM_ARRAYSIZE(shadingModelNames)))
+                                {
+                                    material->SetShadingModel(static_cast<ShadingModel>(currentShadingModel));
+                                }
+
+                                // Blend Mode
+                                static const char* blendModeNames[] = {
+                                    "None", "Opaque", "Masked", "Translucent"
+                                };
+                                int currentBlendMode = static_cast<int>(material->GetMaterialMask().GetBlendMode());
+                                if (ImGui::Combo("Blend Mode", &currentBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames)))
+                                {
+                                    material->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
+                                }
+
+                                // Define required texture indices based on the blend mode and shading model
+                                RequiredTexturesMask requiredTextures = material->GetRequiredTextures();
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::BaseColor;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
+                                        if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
+                                            material->SetBaseColorTint(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set BaseColor");
+                                }
+
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::EmissiveColor;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
+                                        if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
+                                            material->SetEmissiveTint(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set EmissiveColor");
+                                }
+
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::Metallic;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        float val = material->data_.MetallicScale_;
+                                        if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                                            material->SetMetallicScale(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set Metallic");
+                                }
                             }
 
                             ImGui::TreePop();
@@ -292,92 +378,6 @@ namespace GiiGa
 
             ImGui::PopID();
 
-            return edited;
-        }
-
-        static bool drawColorControl(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
-                                    float columnWidth = 100.0f)
-        {
-            ImGuiIO& io = ImGui::GetIO();
-            auto boldFont = io.Fonts->Fonts[0];
-            bool edited = false;
-
-            ImGui::PushID(label.c_str());
-
-            ImGui::Columns(3);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text(label.c_str());
-            ImGui::NextColumn();
-
-            ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-            const float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-            const ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("R", buttonSize))
-            {
-                values.x = resetValue;
-                edited = true;
-            }
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##R", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
-                edited = true;
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("G", buttonSize))
-            {
-                values.y = resetValue;
-                edited = true;
-            }
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##G", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
-                edited = true;
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("B", buttonSize))
-            {
-                values.z = resetValue;
-                edited = true;
-            }
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            if (ImGui::DragFloat("##B", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
-                edited = true;
-            ImGui::PopItemWidth();
-
-            ImGui::PopStyleVar();
-
-            ImGui::NextColumn();
-            ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4{values.x, values.y, values.z, 1.0f});
-            ImGui::({0, 0}, {1, 1}, 45);
-            ImGui::PopStyleColor();
-            
-            ImGui::Columns(2);
-            ImGui::PopID();
             return edited;
         }
     };
