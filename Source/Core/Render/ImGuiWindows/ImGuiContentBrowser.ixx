@@ -126,6 +126,8 @@ namespace GiiGa
         {
             ImGui::Begin("Content Browser");
 
+            ImGui::TextWrapped("Current path: %s", current_path_.string().c_str());
+
             float cell_size = padding + thumbnail_size;
             float panel_width = ImGui::GetContentRegionAvail().x;
 
