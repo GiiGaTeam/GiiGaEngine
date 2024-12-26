@@ -20,6 +20,7 @@ import IImGuiWindow;
 import ImGuiSceneHierarchy;
 import ImGuiInspector;
 import ImGuiContentBrowser;
+import SceneVisibility;
 
 namespace GiiGa
 {
@@ -68,6 +69,9 @@ namespace GiiGa
                 {
                     window->RecordImGui();
                 }
+
+                // Tick scene visibility in case it was changed in imgui
+                SceneVisibility::Tick();
 
                 for (auto viewport : viewports_)
                 {

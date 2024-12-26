@@ -106,7 +106,8 @@ namespace GiiGa
             }
 
             // Perform frustum culling to get IDs of visible entities.
-            auto ent_ids = GetInstance()->quadtree.FrustumCulling(otplanes, 0.1);
+            auto& inst = GetInstance();
+            auto ent_ids = inst->quadtree.FrustumCulling(otplanes, 0.1, inst->visibility_to_geometry_);
 
 
             // Map to store draw packets grouped by object mask.
@@ -116,7 +117,7 @@ namespace GiiGa
             for (auto ent_id : ent_ids)
             {
                 // Attempt to lock and retrieve the renderable object.
-                if (std::shared_ptr<IRenderable> renderable = GetInstance()->visibility_to_renderable_[ent_id].lock())
+                if (std::shared_ptr<IRenderable> renderable = inst->visibility_to_renderable_[ent_id].lock())
                 {
                     // Get sorting data (e.g., mask and shader resource).
                     auto sort_data = renderable->GetSortData();
@@ -156,31 +157,55 @@ namespace GiiGa
             return mask_to_draw_packets;
         }
 
+        static void Tick()
+        {
+            GetInstance()->quadtree = OrthoTree::OctreeBoxMap
+            {
+                GetInstance()->visibility_to_geometry_,
+                10,
+                OrthoTree::BoundingBox3D{
+                    {
+                        -std::numeric_limits<float>::max(),
+                        -std::numeric_limits<float>::max(),
+                        -std::numeric_limits<float>::max()
+                    },
+                    {
+                        std::numeric_limits<float>::max(),
+                        std::numeric_limits<float>::max(),
+                        std::numeric_limits<float>::max()
+                    }
+                },
+                20
+            };
+        }
+
         static std::unique_ptr<SceneVisibility>& GetInstance()
         {
             if (instance_) return instance_;
-            else return instance_ = std::make_unique<SceneVisibility>();
+            else
+            {
+                instance_ = std::make_unique<SceneVisibility>();
+                return instance_;
+            }
         }
 
         static OrthoTree::index_t Register(std::shared_ptr<IRenderable> renderable, OrthoTree::BoundingBox3D box)
         {
             auto ent_id = current_free_id_++;
-            if (!GetInstance()->quadtree.Add(ent_id, box, true))
-                throw std::runtime_error("SceneVisibility::Register(): failed to add quadtree");
             GetInstance()->visibility_to_renderable_[ent_id] = renderable;
+            GetInstance()->visibility_to_geometry_[ent_id] = box;
             return ent_id;
         }
 
         static void Unregister(OrthoTree::index_t ent_id)
         {
-            if (!GetInstance()->quadtree.Erase(ent_id))
-                throw std::runtime_error("SceneVisibility::Unregister(): failed to remove quadtree");
             GetInstance()->visibility_to_renderable_.erase(ent_id);
+            GetInstance()->visibility_to_geometry_.erase(ent_id);
         }
 
         static void Update(OrthoTree::index_t ent_id, OrthoTree::BoundingBox3D newBox)
         {
-            GetInstance()->instance_->quadtree.Update(ent_id, newBox);
+            GetInstance()->visibility_to_geometry_[ent_id] = newBox;
         }
 
     protected:
@@ -188,25 +213,9 @@ namespace GiiGa
         static inline OrthoTree::index_t current_free_id_ = 0;
 
         std::unordered_map<OrthoTree::index_t, std::weak_ptr<IRenderable>> visibility_to_renderable_;
+        std::unordered_map<OrthoTree::index_t, OrthoTree::BoundingBox3D> visibility_to_geometry_;
 
-        OrthoTree::TreeBoxContainerND<3, 2, OrthoTree::BaseGeometryType, std::unordered_map<OrthoTree::index_t, OrthoTree::BoundingBox3D>> quadtree
-        {
-            {},
-            10,
-            OrthoTree::BoundingBox3D{
-                {
-                    -std::numeric_limits<float>::max(),
-                    -std::numeric_limits<float>::max(),
-                    -std::numeric_limits<float>::max()
-                },
-                {
-                    std::numeric_limits<float>::max(),
-                    std::numeric_limits<float>::max(),
-                    std::numeric_limits<float>::max()
-                }
-            },
-            20
-        };
+        OrthoTree::OctreeBoxMap quadtree;
     };
 
     // todo: create DirectX::Math to OrthoTree conversions or adapter
