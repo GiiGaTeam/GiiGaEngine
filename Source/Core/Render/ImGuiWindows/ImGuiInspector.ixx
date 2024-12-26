@@ -86,7 +86,7 @@ namespace GiiGa
                             {
                                 if (ImGui::SliderFloat("FOV", &camera.FOV_, 1.0f, 179.0f))
                                 {
-                                    camera_comp->SetFOV(camera.FOV_);
+                                    camera_comp->SetFOVinDeg(camera.FOV_);
                                 }
                                 if (ImGui::InputFloat("Aspect Ratio", &camera.aspect_, 0.01f, 0.1f))
                                 {

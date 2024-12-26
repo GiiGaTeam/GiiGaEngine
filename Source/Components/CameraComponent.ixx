@@ -83,14 +83,14 @@ namespace GiiGa
     export class CameraComponent : public Component
     {
     public:
-        CameraComponent(CameraType type = Perspective, float FOV = 90, float aspect = 16 / 9, float width = 1280, float height = 720, float Near = 0.01, float Far = 100)
+        CameraComponent(CameraType type = Perspective, float FOV = DirectX::XMConvertToRadians(90), float aspect = 16 / 9, float width = 1280, float height = 720, float Near = 0.01, float Far = 100)
         {
             camera_ = Camera{type, FOV, aspect, width, height, Near, Far};
         };
 
         void SetType(CameraType type) { camera_.type_ = type; }
 
-        void SetFOV(float FOV) { camera_.FOV_ = FOV; }
+        void SetFOVinDeg(float FOV) { camera_.FOV_ = DirectX::XMConvertToRadians(FOV); }
 
         void SetAspect(float aspect) { camera_.aspect_ = aspect; }
 
