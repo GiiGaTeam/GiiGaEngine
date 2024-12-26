@@ -55,6 +55,7 @@ namespace GiiGa
         Point = 1,
         Direction = 2,
         Spot = 4,
+        NoDirection = Point | Spot,
         All = Point | Direction | Spot,
     };
 

@@ -11,6 +11,8 @@ import World;
 import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
+import DirectionLightComponent;
+import LightComponent;
 
 namespace GiiGa
 {
@@ -84,9 +86,10 @@ namespace GiiGa
                             // Perspective settings
                             if (camera.type_ == Perspective)
                             {
-                                if (ImGui::SliderFloat("FOV", &camera.FOV_, 1.0f, 179.0f))
+                                auto fov = camera.FOV_;
+                                if (ImGui::SliderFloat("FOV", &fov, 1.0f, 179.0f))
                                 {
-                                    camera_comp->SetFOV(camera.FOV_);
+                                    camera_comp->SetFOV(fov);
                                 }
                                 if (ImGui::InputFloat("Aspect Ratio", &camera.aspect_, 0.01f, 0.1f))
                                 {
@@ -147,6 +150,24 @@ namespace GiiGa
 
                             ImGui::TreePop();
                         }
+                    }                    
+                    else if (auto light_comp = std::dynamic_pointer_cast<LightComponent>(comp))
+                    {
+                        if (ImGui::TreeNodeEx("LightComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                        {
+                            auto rot_deg = light_comp->GetColor();
+                            auto intensity = light_comp->GetIntensity();
+                            if (drawColorControl("Color", rot_deg))
+                            {
+                                light_comp->SetColor(rot_deg);
+                            }
+                            if (ImGui::InputFloat("Far Plane", &intensity, 1.0f, 10.0f))
+                            {
+                                light_comp->SetIntensity(intensity);
+                            }
+
+                            ImGui::TreePop();
+                        }
                     }
                 }
 
@@ -169,6 +190,15 @@ namespace GiiGa
                         if (auto l_go = editorContext_->selectedGameObject.lock())
                         {
                             l_go->CreateComponent<PointLightComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::MenuItem("Direction Light Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<DirectionLightComponent>();
                         }
                         ImGui::CloseCurrentPopup();
                     }
@@ -262,6 +292,92 @@ namespace GiiGa
 
             ImGui::PopID();
 
+            return edited;
+        }
+
+        static bool drawColorControl(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
+                                    float columnWidth = 100.0f)
+        {
+            ImGuiIO& io = ImGui::GetIO();
+            auto boldFont = io.Fonts->Fonts[0];
+            bool edited = false;
+
+            ImGui::PushID(label.c_str());
+
+            ImGui::Columns(3);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+
+            ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
+            const float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+            const ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+            ImGui::PushFont(boldFont);
+            if (ImGui::Button("R", buttonSize))
+            {
+                values.x = resetValue;
+                edited = true;
+            }
+            ImGui::PopFont();
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##R", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+                edited = true;
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+            ImGui::PushFont(boldFont);
+            if (ImGui::Button("G", buttonSize))
+            {
+                values.y = resetValue;
+                edited = true;
+            }
+            ImGui::PopFont();
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##G", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+                edited = true;
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+            ImGui::PushFont(boldFont);
+            if (ImGui::Button("B", buttonSize))
+            {
+                values.z = resetValue;
+                edited = true;
+            }
+            ImGui::PopFont();
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            if (ImGui::DragFloat("##B", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+                edited = true;
+            ImGui::PopItemWidth();
+
+            ImGui::PopStyleVar();
+
+            ImGui::NextColumn();
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4{values.x, values.y, values.z, 1.0f});
+            ImGui::({0, 0}, {1, 1}, 45);
+            ImGui::PopStyleColor();
+            
+            ImGui::Columns(2);
+            ImGui::PopID();
             return edited;
         }
     };

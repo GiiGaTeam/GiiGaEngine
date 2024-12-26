@@ -108,7 +108,6 @@ namespace GiiGa
             // Perform frustum culling to get IDs of visible entities.
             auto ent_ids = GetInstance()->quadtree.FrustumCulling(otplanes, 0.1);
 
-
             // Map to store draw packets grouped by object mask.
             std::unordered_map<ObjectMask, DrawPacket> mask_to_draw_packets;
 
@@ -155,6 +154,46 @@ namespace GiiGa
 
             return mask_to_draw_packets;
         }
+
+        static void Extract(ObjectMask render_filter_type, ObjectMask unite_mask, std::unordered_map<ObjectMask, DrawPacket>& mask_to_draw_packets)
+        {
+            // Iterate through each entity ID from frustum culling.
+            for (const auto& [ent_id, renderable] : GetInstance()->visibility_to_renderable_)
+            {
+                // Attempt to lock and retrieve the renderable object.
+
+                // Get sorting data (e.g., mask and shader resource).
+                auto sort_data = renderable.lock()->GetSortData();
+
+                // Apply render filter to the object mask.
+                // If the object matches the filter, process it.
+                if ((sort_data.object_mask & render_filter_type).any())
+                {
+                    ObjectMask mask_with_unite = sort_data.object_mask & unite_mask;
+
+                    // Check if a draw packet already exists for this mask.
+                    auto drawPacket = mask_to_draw_packets.find(mask_with_unite);
+
+                    // Create a new draw packet if one doesn't exist.
+                    if (drawPacket == mask_to_draw_packets.end())
+                        mask_to_draw_packets.emplace(mask_with_unite, DrawPacket{mask_with_unite});
+
+                    drawPacket = mask_to_draw_packets.find(mask_with_unite);
+
+                    // Find or create a resource group for the object's shader resource.
+                    auto t = sort_data.shaderResource.get();
+                    auto CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
+                    if (CMR == drawPacket->second.common_resource_renderables.end())
+                        drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
+
+                    CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
+
+                    // Add the renderable to the resource group's renderables list.
+                    CMR->second.renderables.push_back(renderable);
+                }
+            }
+        }
+
 
         static std::unique_ptr<SceneVisibility>& GetInstance()
         {
