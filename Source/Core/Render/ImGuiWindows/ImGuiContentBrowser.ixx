@@ -225,6 +225,10 @@ namespace GiiGa
                                 if (ImGui::MenuItem("Remove")) {
                                     std::filesystem::remove(path);
                                 }
+
+                                ImGui::InputText("UUID:", const_cast<char*>(handle.id.ToString().c_str()), handle.id.ToString().length(), ImGuiInputTextFlags_ReadOnly);
+
+                                
                                 ImGui::EndPopup();
                             }
 
