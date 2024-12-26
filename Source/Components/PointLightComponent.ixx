@@ -60,6 +60,9 @@ namespace GiiGa
 
     export class PointLightComponent : public Component, public IRenderable, public IUpdateGPUData
     {
+        // todo: temp
+        friend class ImGuiInspector;
+
     public:
         PointLightComponent():
             pointLightShaderRes_(std::make_shared<PointLightShaderResource>())

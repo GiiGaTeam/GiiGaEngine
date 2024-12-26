@@ -252,6 +252,42 @@ namespace GiiGa
                             ImGui::TreePop();
                         }
                     }
+                    else if(auto point_light = std::dynamic_pointer_cast<PointLightComponent>(comp))
+                    {
+                        if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                        {
+                            // Edit Color
+                            DirectX::SimpleMath::Vector3 color = point_light->data_.color;
+                            float colorArray[3] = { color.x, color.y, color.z };
+                            if (ImGui::ColorEdit3("Color", colorArray))
+                            {
+                                point_light->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+                            }
+
+                            // Edit Radius
+                            float radius = point_light->data_.radius;
+                            if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
+                            {
+                                point_light->SetRadius(radius);
+                            }
+
+                            // Edit Intensity
+                            float intensity = point_light->data_.max_intensity;
+                            if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
+                            {
+                                point_light->SetIntensity(intensity);
+                            }
+
+                            // Edit Falloff
+                            float falloff = point_light->data_.falloff;
+                            if (ImGui::DragFloat("Falloff", &falloff, 0.01f, 0.0f, 10.0f))
+                            {
+                                point_light->SetFallOff(falloff);
+                            }
+
+                            ImGui::TreePop();
+                        }
+                    }
                 }
 
                 if (ImGui::Button("Add Component"))
