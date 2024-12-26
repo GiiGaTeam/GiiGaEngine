@@ -103,19 +103,6 @@ namespace GiiGa
             return asset_path_;
         }
 
-        /*std::tuple<AssetHandle, AssetMeta> IsRegisteredPath(const std::filesystem::path& path) const {
-            auto it = assets_to_path_.find(path);
-            if (it != assets_to_path_.end()) {
-                auto handle_it = registry_map_.find(it->second);
-                if (handle_it != registry_map_.end()) {
-                    AssetHandle handle = handle_it->first;
-                    AssetMeta meta = handle_it->second;
-                    return std::make_tuple<AssetHandle, AssetMeta>(std::move(handle), std::move(meta));
-                }
-            }
-            return std::make_tuple<AssetHandle, AssetMeta>({}, {});
-        }*/
-
         // TODO: Return iterator
         std::vector<std::tuple<AssetHandle, AssetMeta>> GetHandlesByPath(const std::filesystem::path& path) const {
             std::vector<std::tuple<AssetHandle, AssetMeta>> results;
@@ -170,8 +157,8 @@ namespace GiiGa
                 AssetMeta meta = AssetMeta::FromJson(entry["meta"]);
 
                 auto handle_temp = handle;
-                handle.subresource = 0;
-                assets_to_path_.emplace(meta.path, handle);
+                handle_temp.subresource = 0;
+                assets_to_path_.emplace(meta.path, handle_temp);
                 registry_map_.emplace(handle, meta);
             }
         }

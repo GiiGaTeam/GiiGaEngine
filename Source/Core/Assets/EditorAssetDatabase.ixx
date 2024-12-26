@@ -150,21 +150,16 @@ namespace GiiGa
                 throw std::runtime_error("No asset loader found for the file path: " + path.string());
             }
 
-            auto handles = selected_loader->Preprocess(asset_path_ / path);
+            auto handles = selected_loader->Preprocess(asset_path_ / path, path);
 
-            for (auto& handle : handles)
+            for (auto& [handle, meta] : handles)
             {
-                AssetMeta meta;
-                meta.path = path;
-                meta.type = asset_type;
-                meta.loader_id = selected_loader->Id();
-
                 registry_map_.emplace(handle, std::move(meta));
             }
 
             auto handle = handles[0];
-            handle.subresource = 0;
-            assets_to_path_.emplace(path, handle);
+            handle.first.subresource = 0;
+            assets_to_path_.emplace(path, handle.first);
         }
 
         void RemoveAsset(const std::filesystem::path& path)

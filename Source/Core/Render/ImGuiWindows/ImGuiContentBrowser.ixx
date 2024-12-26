@@ -194,7 +194,7 @@ namespace GiiGa
                             std::string name;
 
                             if (range.size() > 1) {
-                                name = stem.string() + std::to_string(handle.subresource) + extension.string();
+                                name = stem.string() + "_" + meta.name + extension.string();
                                 raw_name = name.c_str();
                             }
 

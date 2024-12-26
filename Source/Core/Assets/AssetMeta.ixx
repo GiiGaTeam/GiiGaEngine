@@ -15,6 +15,7 @@ namespace GiiGa
         AssetType type;
         std::filesystem::path path;
         Uuid loader_id = Uuid::Null();
+        std::string name;
 
         Json::Value ToJson() const
         {
@@ -23,6 +24,7 @@ namespace GiiGa
             json["path"] = path.string();
             json["type"] = AssetTypeToString(type);
             json["loader_id"] = loader_id.ToString();
+            json["name"] = name;
 
             return json;
         }
@@ -48,11 +50,17 @@ namespace GiiGa
                 throw std::invalid_argument("Invalid JSON: Missing or invalid 'loader_id'");
             }
 
+            if (!json.isMember("name") || !json["name"].isString())
+            {
+                throw std::invalid_argument("Invalid JSON: Missing or invalid 'name'");
+            }
+
             AssetMeta meta;
 
             meta.path = json["path"].asString();
             meta.type = StringToAssetType(json["type"].asString());
             meta.loader_id = Uuid::FromString(json["loader_id"].asString()).value_or(Uuid::Null());
+            meta.name = json["name"].asString();
 
             return meta;
         }
