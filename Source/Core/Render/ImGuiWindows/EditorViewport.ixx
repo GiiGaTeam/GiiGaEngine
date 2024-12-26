@@ -33,6 +33,16 @@ namespace GiiGa
             Resize(viewport_size_);
         }
 
+        void Resize(DirectX::SimpleMath::Vector2 new_size)
+        {
+            Viewport::Resize(new_size);
+
+            if (auto l_camera = camera_.lock())
+            {
+                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x/new_size.y);
+            }
+        }
+
         void Init(RenderContext& context) override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
