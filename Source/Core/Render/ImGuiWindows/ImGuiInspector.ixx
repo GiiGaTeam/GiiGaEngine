@@ -4,6 +4,7 @@ import <imgui.h>;
 import <imgui_internal.h>;
 import <memory>;
 import <directxtk12/SimpleMath.h>;
+import <unordered_map>;
 
 import IImGuiWindow;
 import EditorContext;
@@ -11,6 +12,7 @@ import World;
 import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
+import Material;
 
 namespace GiiGa
 {
@@ -134,15 +136,117 @@ namespace GiiGa
                                     static_mesh_comp->SetMeshUuid(newUuid.value());
                             }
 
-                            // Get and display the Material UUID
-                            Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
-                            char materialUuidStr[37];
-                            snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
-                            if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
+                            auto material = static_mesh_comp->material_;
+
+                            if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
                             {
-                                auto newUuid = Uuid::FromString(materialUuidStr);
-                                if (newUuid.has_value())
-                                    static_mesh_comp->SetMaterialUuid(newUuid.value());
+                                // Material UUID
+                                Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
+                                char materialUuidStr[37];
+                                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
+                                if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
+                                {
+                                    auto newUuid = Uuid::FromString(materialUuidStr);
+                                    if (newUuid.has_value())
+                                        static_mesh_comp->SetMaterialUuid(newUuid.value());
+                                }
+
+                                // Shading Model
+                                static const char* shadingModelNames[] = {
+                                    "None", "DefaultLit", "Unlit"
+                                };
+                                int currentShadingModel = static_cast<int>(material->GetMaterialMask().GetShadingModel());
+                                if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModelNames, IM_ARRAYSIZE(shadingModelNames)))
+                                {
+                                    material->SetShadingModel(static_cast<ShadingModel>(currentShadingModel));
+                                }
+
+                                // Blend Mode
+                                static const char* blendModeNames[] = {
+                                    "None", "Opaque", "Masked", "Translucent"
+                                };
+                                int currentBlendMode = static_cast<int>(material->GetMaterialMask().GetBlendMode());
+                                if (ImGui::Combo("Blend Mode", &currentBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames)))
+                                {
+                                    material->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
+                                }
+
+                                // Define required texture indices based on the blend mode and shading model
+                                RequiredTexturesMask requiredTextures = material->GetRequiredTextures();
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::BaseColor;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
+                                        if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
+                                            material->SetBaseColorTint(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set BaseColor");
+                                }
+
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::EmissiveColor;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
+                                        if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
+                                            material->SetEmissiveTint(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set EmissiveColor");
+                                }
+
+                                {
+                                    TexturesOrder texture_order = TexturesOrder::Metallic;
+                                    int texture_index = static_cast<int>(texture_order) - 1;
+                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                                    {
+                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
+                                        char textureUuidStr[37];
+                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
+                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        {
+                                            auto newUuid = Uuid::FromString(textureUuidStr);
+                                            if (newUuid.has_value())
+                                            {
+                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
+                                            }
+                                        }
+
+                                        float val = material->data_.MetallicScale_;
+                                        if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                                            material->SetMetallicScale(val);
+                                    }
+                                    else
+                                        ImGui::Text("You Can't Set Metallic");
+                                }
                             }
 
                             ImGui::TreePop();

@@ -29,6 +29,8 @@ namespace GiiGa
 {
     export class StaticMeshComponent : public Component, public IRenderable, public IUpdateGPUData
     {
+        //todo: temp
+        friend class ImGuiInspector;
     public:
         StaticMeshComponent()
         {
