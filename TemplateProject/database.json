@@ -7,7 +7,8 @@
 		"meta": {
 			"path": "cube.fbx",
 			"type": "Mesh",
-			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac"
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name":"Cube"
 		}
 	},
 	{
@@ -18,7 +19,8 @@
 		"meta": {
 			"path": "sphere.fbx",
 			"type": "Mesh",
-			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac"
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name":"Sphere"
 		}
 	},
 	{
@@ -29,7 +31,8 @@
 		"meta": {
 			"path": "base_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"BaseColor"
 		}
 	},
 	{
@@ -40,7 +43,8 @@
 		"meta": {
 			"path": "metal_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Metallic"
 		}
 	},
 	{
@@ -51,7 +55,8 @@
 		"meta": {
 			"path": "spec_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Specular"
 		}
 	},
 	{
@@ -62,7 +67,8 @@
 		"meta": {
 			"path": "roug_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Roughness"
 		}
 	},
 	{
@@ -73,7 +79,8 @@
 		"meta": {
 			"path": "aniso_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Anisotropy"
 		}
 	},
 	{
@@ -84,7 +91,8 @@
 		"meta": {
 			"path": "emiss_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Emissive"
 		}
 	},
 	{
@@ -95,7 +103,8 @@
 		"meta": {
 			"path": "opaci_stub.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Opacity"
 		}
 	},
 	{
@@ -106,7 +115,8 @@
 		"meta": {
 			"path": "norm_stab.png",
 			"type": "Texture2D",
-			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name":"Normal"
 		}
 	},
 	{
@@ -117,7 +127,8 @@
 		"meta": {
 			"path": "DefaultMaterial.mat",
 			"type": "Material",
-			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name":"DefaultUnlitOpaque"
 		}
 	},
 	{
@@ -128,7 +139,8 @@
 		"meta": {
 			"path": "DefaultLitMaterial.mat",
 			"type": "Material",
-			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c"
+			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name":"DefaultLitOpaque"
 		}
 	}
 ]

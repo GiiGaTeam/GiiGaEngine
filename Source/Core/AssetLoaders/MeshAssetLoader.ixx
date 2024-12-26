@@ -19,6 +19,7 @@ import MeshAsset;
 import Engine;
 import VertexTypes;
 import Misc;
+import AssetMeta;
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -40,14 +41,14 @@ namespace GiiGa
         }
 
         virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
-            if (!std::filesystem::exists(path))
-                throw std::runtime_error("File does not exist: " + path.string());
+            if (!std::filesystem::exists(absolute_path))
+                throw std::runtime_error("File does not exist: " + absolute_path.string());
 
             Assimp::Importer importer;
             const aiScene* scene = importer.ReadFile(absolute_path.string(), 0);
 
             if (!scene || !scene->HasMeshes()) {
-                throw std::runtime_error("Failed to load mesh from file: " + path.string());
+                throw std::runtime_error("Failed to load mesh from file: " + absolute_path.string());
             }
 
             std::vector<std::pair<AssetHandle, AssetMeta>> handles;
