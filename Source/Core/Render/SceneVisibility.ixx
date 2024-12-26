@@ -17,6 +17,7 @@ import IRenderable;
 import ITickable;
 export import ObjectMask;
 import MathUtils;
+import Logger;
 
 namespace GiiGa
 {
@@ -28,10 +29,62 @@ namespace GiiGa
         {
         }
 
+        /*
+        static std::vector<OrthoTree::index_t> CheckInsidePlanesOrth(std::vector<OrthoTree::Plane3D> planes)
+        {
+            auto result = std::vector<OrthoTree::index_t>();
+            for (auto& element : GetInstance()->visibility_to_renderable_)
+            {
+                bool is_inside = true;
+                OrthoTree::BoundingBox3D ortho_box = GetInstance()->quadtree.Get(element.first);
+                for (const auto& plane : planes)
+                {
+                    auto rel = OrthoTree::AdaptorGeneralBase<3, OrthoTree::Vector3D, OrthoTree::BoundingBox3D,
+                                                             OrthoTree::Ray3D, OrthoTree::Plane3D, OrthoTree::BaseGeometryType,
+                                                             OrthoTree::AdaptorGeneralBasics<3, OrthoTree::Vector3D, OrthoTree::BoundingBox3D,
+                                                                                             OrthoTree::Ray3D, OrthoTree::Plane3D, OrthoTree::BaseGeometryType>>::
+                        GetBoxPlaneRelation(ortho_box, plane.OrigoDistance, plane.Normal, 0.1);
+                    if (rel == OrthoTree::PlaneRelation::Negative)
+                    {
+                        is_inside = false;
+                    }
+                }
+                if (is_inside)
+                {
+                    result.push_back(element.first);
+                }
+            }
+            return result;
+        }
+
+        static std::vector<OrthoTree::index_t> CheckInsidePlanes(std::vector<DirectX::SimpleMath::Plane> planes)
+        {
+            auto result = std::vector<OrthoTree::index_t>();
+            for (auto& element : GetInstance()->visibility_to_renderable_)
+            {
+                bool is_inside = true;
+                OrthoTree::BoundingBox3D ortho_box = GetInstance()->quadtree.Get(element.first);
+                auto max = DirectX::SimpleMath::Vector3{static_cast<float>(ortho_box.Max[0]), static_cast<float>(ortho_box.Max[1]), static_cast<float>(ortho_box.Max[2])};
+                auto min = DirectX::SimpleMath::Vector3{static_cast<float>(ortho_box.Min[0]), static_cast<float>(ortho_box.Min[1]), static_cast<float>(ortho_box.Min[2])};
+                for (const auto& plane : planes)
+                {
+                    if (plane.DotCoordinate(max) < 0 && plane.DotCoordinate(min) < 0)
+                    {
+                        is_inside = false;
+                    }
+                }
+                if (is_inside)
+                {
+                    result.push_back(element.first);
+                }
+            }
+            return result;
+        }*/
+
         //virtual ~SceneVisibility() = default;
 
         // Extract visible objects matching a filter and organize them into draw packets.
-        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, DirectX::SimpleMath::Matrix viewproj)
+        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, ObjectMask unite_mask, DirectX::SimpleMath::Matrix viewproj)
         {
             // Extract frustum planes from the view-projection matrix.
             auto dxplanes = ExtractFrustumPlanesPointInside(viewproj);
@@ -40,12 +93,21 @@ namespace GiiGa
             // Convert DirectX frustum planes to OrthoTree's Plane3D format.
             for (int i = 0; i < 6; i++)
             {
-                OrthoTree::Vector3D normal = {dxplanes[i].Normal().x, dxplanes[i].Normal().y, dxplanes[i].Normal().z};
+                auto dxnorm = dxplanes[i].Normal();
+
+                if (!(std::abs(dxnorm.LengthSquared() - 1.0) < 0.000001))
+                {
+                    el::Loggers::getLogger(LogWorld)->error("Length %v", dxnorm.LengthSquared());
+                    throw std::runtime_error("Plane Normal Length error");
+                }
+
+                OrthoTree::Vector3D normal = {dxnorm.x, dxnorm.y, dxnorm.z};
                 otplanes[i] = OrthoTree::Plane3D(dxplanes[i].D(), normal);
             }
 
             // Perform frustum culling to get IDs of visible entities.
             auto ent_ids = GetInstance()->quadtree.FrustumCulling(otplanes, 0.1);
+
 
             // Map to store draw packets grouped by object mask.
             std::unordered_map<ObjectMask, DrawPacket> mask_to_draw_packets;
@@ -60,19 +122,19 @@ namespace GiiGa
                     auto sort_data = renderable->GetSortData();
 
                     // Apply render filter to the object mask.
-                    ObjectMask mask_with_filter = sort_data.object_mask & render_filter_type;
-
                     // If the object matches the filter, process it.
-                    if (mask_with_filter.any())
+                    if ((sort_data.object_mask & render_filter_type).any())
                     {
+                        ObjectMask mask_with_unite = sort_data.object_mask & unite_mask;
+
                         // Check if a draw packet already exists for this mask.
-                        auto drawPacket = mask_to_draw_packets.find(mask_with_filter);
+                        auto drawPacket = mask_to_draw_packets.find(mask_with_unite);
 
                         // Create a new draw packet if one doesn't exist.
                         if (drawPacket == mask_to_draw_packets.end())
-                            mask_to_draw_packets.emplace(mask_with_filter, DrawPacket{mask_with_filter});
+                            mask_to_draw_packets.emplace(mask_with_unite, DrawPacket{mask_with_unite});
 
-                        drawPacket = mask_to_draw_packets.find(mask_with_filter);
+                        drawPacket = mask_to_draw_packets.find(mask_with_unite);
 
                         // Find or create a resource group for the object's shader resource.
                         auto t = sort_data.shaderResource.get();
@@ -81,7 +143,7 @@ namespace GiiGa
                             drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
 
                         CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
-                        
+
                         // Add the renderable to the resource group's renderables list.
                         CMR->second.renderables.push_back(renderable);
                     }

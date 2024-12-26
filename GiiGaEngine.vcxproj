@@ -29,28 +29,32 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <VCToolsVersion>14.42.34433</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -100,6 +104,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,6 +122,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -165,9 +171,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\CameraComponent.ixx" />
-    <None Include="Shaders\SimpleVertexShader.hlsl" />
+    <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
+    <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\GBufferWireframeShader.hlsl" />
+    <None Include="Shaders\GPointLight.hlsl" />
+    <None Include="Shaders\ShaderHeader.hlsl" />
+    <None Include="Shaders\VertexPositionShader.hlsl" />
+    <None Include="Shaders\VertexPNTBTShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
-    <ClCompile Include="Source\Components\LightComponent.ixx" />
+    <ClCompile Include="Source\Components\PointLightComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
@@ -204,6 +216,7 @@
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
     <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx" />
+    <ClCompile Include="Source\Core\Render\GBuffer.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorContext.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorViewport.ixx">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -285,6 +298,7 @@
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.ixx" />
     <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.ixx" />
+    <ClCompile Include="Source\Core\Render\Interfaces\IUpdateGPUData.ixx" />
     <ClCompile Include="Source\Core\Render\IObjectShaderResource.ixx" />
     <ClCompile Include="Source\Core\Render\ObjectMask.ixx" />
     <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
@@ -474,6 +488,7 @@
     <ClCompile Include="Source\Core\Render\Viewport.ixx" />
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
+    <ClCompile Include="Source\Core\DefaultAssetsHandles.ixx" />
     <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\unique_any.ixx" />
@@ -498,7 +513,6 @@
     <Content Include=".gitmodules" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Shaders\" />
     <Folder Include="TemplateProject\Assets\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

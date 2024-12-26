@@ -1,9 +1,14 @@
+module;
+
+#include <directx/d3dx12.h>
+#include <DirectXCollision.h>
+
 export module StaticMeshComponent;
 
-import <DirectXCollision.h>;
 import <memory>;
 import <json/value.h>;
 import <bitset>;
+import <filesystem>;
 
 import Engine;
 import Component;
@@ -16,17 +21,23 @@ import EventSystem;
 import GameObject;
 import Misc;
 import IObjectShaderResource;
-
+import PerObjectData;
+import StubTexturesHandles;
+import IUpdateGPUData;
 
 namespace GiiGa
 {
-    export class StaticMeshComponent : public Component, public IRenderable
+    export class StaticMeshComponent : public Component, public IRenderable, public IUpdateGPUData
     {
     public:
-        StaticMeshComponent() = default;
+        StaticMeshComponent()
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+        }
 
         ~StaticMeshComponent()
         {
+            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
             {
                 if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
@@ -40,11 +51,14 @@ namespace GiiGa
 
         void Init() override
         {
+            transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
                 if (!material_)
                 {
-                    
+                    auto rm = Engine::Instance().ResourceManager();
+
+                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
                 }
                 if (!visibilityEntry_)
                     RegisterInVisibility();
@@ -59,13 +73,12 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
-            Todo();
+            mesh_->Draw(context.GetGraphicsCommandList());
         }
 
         SortData GetSortData() override
         {
-            // todo: material shader resource, actually there should not be empty material, we need create default one
-            return {.object_mask = mesh_->GetObjectMask(), .shaderResource = nullptr};
+            return {.object_mask = mesh_->GetObjectMask() | material_->GetMaterialMask(), .shaderResource = material_->GetShaderResource()};
         }
 
         void Restore(const Json::Value&) override
@@ -97,15 +110,22 @@ namespace GiiGa
             }
             else
             {
-                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset>({newUuid, 0});
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
                 RegisterInVisibility();
+
+                if (!material_)
+                {
+                    auto rm = Engine::Instance().ResourceManager();
+
+                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
+                }
             }
         }
 
         Uuid GetMaterialUuid() const
         {
             if (material_)
-                return mesh_->GetId().id;
+                return material_->GetId().id;
             else
                 return Uuid::Null();
         }
@@ -119,11 +139,28 @@ namespace GiiGa
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
         }
 
+        void UpdateGPUData(RenderContext& context) override
+        {
+            if (!perObjectData_)
+                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
+            perObjectData_->UpdateGPUData(context);
+        }
+
+        PerObjectData& GetPerObjectData() override
+        {
+            return *perObjectData_;
+        }
+
     private:
-        std::shared_ptr<MeshAsset> mesh_;
+        std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::shared_ptr<Material> material_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+        std::weak_ptr<TransformComponent> transform_;
+        std::shared_ptr<PerObjectData> perObjectData_;
+        //TODO
+        //Добавить возможность делать статик меши статическими или динамическими
+        bool isStatic_ = false;
 
         void RegisterInVisibility()
         {

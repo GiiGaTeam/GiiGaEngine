@@ -14,6 +14,7 @@ namespace GiiGa
     class BufferView
     {
         typename ViewType::ViewHolder holder_;
+        typename ViewType::ViewDesc create_desc_;
 
     public:
         BufferView() = default;
@@ -23,14 +24,18 @@ namespace GiiGa
         BufferView& operator=(const BufferView& other) = delete;
         BufferView& operator=(BufferView&& other) noexcept = default;
 
-        BufferView(typename ViewType::ViewHolder&& descriptor_holder): holder_(std::move(descriptor_holder))
+        BufferView(typename ViewType::ViewHolder&& descriptor_holder, typename ViewType::ViewDesc create_desc): holder_(std::move(descriptor_holder)), create_desc_(create_desc)
         {
-
         }
 
         const typename ViewType::ViewHolder& getDescriptor()
         {
             return holder_;
+        }
+
+        typename ViewType::ViewDesc getCreationDescriptor()
+        {
+            return create_desc_;
         }
     };
 }

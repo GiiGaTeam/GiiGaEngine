@@ -1,4 +1,4 @@
-﻿cbuffer WorldMatricies : register( b0 )
+cbuffer WorldMatricies : register( b0 )
 {
     matrix World;  
     matrix invWorld;
@@ -14,7 +14,7 @@ cbuffer WorldMatricies : register( b1 )
 
 struct VS_INPUT                   
 {
-    float4 Pos : POSITION;;         
+    float4 Pos : POSITION;         
 };
 
 struct PS_INPUT                   

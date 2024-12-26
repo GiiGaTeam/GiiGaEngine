@@ -26,7 +26,7 @@ namespace GiiGa
         }
 
         GPULocalResource(RenderDevice& device, D3D12_RESOURCE_DESC desc,
-                         D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COPY_DEST, D3D12_CLEAR_VALUE* clearValue = nullptr):
+                         D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON, D3D12_CLEAR_VALUE* clearValue = nullptr):
             device_(device),
             current_state_(initialState)
         {

@@ -14,14 +14,23 @@ namespace GiiGa
 
     constexpr uint16_t BlendModeRegionSize = 4;
     constexpr uint16_t ShadingModelRegionSize = 4;
+
     constexpr uint16_t MaterialRegionSize = ShadingModelRegionSize + BlendModeRegionSize;
     constexpr uint16_t MaterialRegionOffset = VertexTypeRegionSize;
 
     constexpr uint16_t ShadingModelOffset = 0 + MaterialRegionOffset;
     constexpr uint16_t BlendModeOffset = ShadingModelRegionSize + MaterialRegionOffset;
 
+    constexpr uint16_t FillModeRegionSize = 2;
+    constexpr uint16_t FillModeOffset = MaterialRegionSize + MaterialRegionOffset;
+
+    constexpr uint16_t LigthTypeRegionSize = 2;
+    constexpr uint16_t LigthTypeOffset = FillModeRegionSize + FillModeOffset;
+
     using ShadingModelMask = std::bitset<ShadingModelRegionSize>;
     using BlendModeMask = std::bitset<BlendModeRegionSize>;
+    using FillModeMask = std::bitset<FillModeRegionSize>;
+    using LigthTypeMask = std::bitset<FillModeRegionSize>;
 
     export enum class VertexTypes
     {
@@ -31,7 +40,24 @@ namespace GiiGa
         VertexBoned = 4,
         All = VertexPosition | VertexPNTBT | VertexBoned,
     };
-    
+
+    export enum class FillMode
+    {
+        None = 0,
+        Solid = 1,
+        Wire = 2,
+        All = Solid | Wire,
+    };
+
+    export enum class LightType
+    {
+        None = 0,
+        Point = 1,
+        Direction = 2,
+        Spot = 4,
+        All = Point | Direction | Spot,
+    };
+
     export enum class BlendMode
     {
         None = 0,
@@ -76,22 +102,51 @@ namespace GiiGa
     export class ObjectMask
     {
     public:
-        ObjectMask& SetShadingModel(const ShadingModel& shadingMode)
+        // Sets the shading model, ensuring valid input
+        ObjectMask& SetShadingModel(ShadingModel shadingModel)
         {
-            SetRegion(ShadingModelMask(static_cast<int>(shadingMode)), BlendModeOffset);
+            SetRegion(ToBitset<ShadingModelMask>(shadingModel), ShadingModelOffset);
             return *this;
         }
 
-        ObjectMask& SetBlendMode(const BlendMode& blendMode)
+        // Sets the blend mode, ensuring valid input
+        ObjectMask& SetBlendMode(BlendMode blendMode)
         {
-            SetRegion(BlendModeMask(static_cast<int>(blendMode)), BlendModeOffset);
+            SetRegion(ToBitset<BlendModeMask>(blendMode), BlendModeOffset);
             return *this;
         }
 
-        ObjectMask& SetVertexType(const VertexTypes& in_vertex_type)
+        ObjectMask& SetFillMode(FillMode fillMode)
         {
-            SetRegion(VertexTypeMask(static_cast<int>(in_vertex_type)), VertexTypeRegionOffset);
+            SetRegion(ToBitset<FillModeMask>(fillMode), FillModeOffset);
             return *this;
+        }
+
+        ObjectMask& SetLightType(LightType light)
+        {
+            SetRegion(ToBitset<LigthTypeMask>(light), LigthTypeOffset);
+            return *this;
+        }
+
+        // Sets the vertex type, ensuring valid input
+        ObjectMask& SetVertexType(VertexTypes vertexType)
+        {
+            SetRegion(ToBitset<VertexTypeMask>(vertexType), VertexTypeRegionOffset);
+            return *this;
+        }
+
+        // Gets the current blend mode
+        BlendMode GetBlendMode() const
+        {
+            auto t = GetRegion<BlendModeRegionSize>(BlendModeOffset);
+            return FromBitset<BlendModeMask, BlendMode>(t);
+        }
+
+        // Gets the current shading model
+        ShadingModel GetShadingModel() const
+        {
+            auto t = GetRegion<ShadingModelRegionSize>(ShadingModelOffset);
+            return FromBitset<ShadingModelMask, ShadingModel>(t);
         }
 
         bool any()
@@ -173,19 +228,42 @@ namespace GiiGa
     private:
         std::bitset<BitMaskSize> mask_;
 
-        // Utility function to set a region in a larger bitset
+        // Converts an enum to a bitset
+        template <typename BitMask, typename Enum>
+        static BitMask ToBitset(Enum value)
+        {
+            return BitMask(static_cast<int>(value));
+        }
+
+        // Converts a bitset back to an enum
+        template <typename BitMask, typename Enum>
+        static Enum FromBitset(const BitMask& bitset)
+        {
+            return static_cast<Enum>(bitset.to_ulong());
+        }
+
+        // Sets a specific region in the mask
         template <size_t RegionSize>
-        void SetRegion(std::bitset<RegionSize> region_mask, size_t offset)
+        void SetRegion(std::bitset<RegionSize> regionMask, size_t offset)
         {
             static_assert(RegionSize <= BitMaskSize, "Region size must be less than or equal to the full size");
 
-            // Clear the target region in the full mask
-            std::bitset<BitMaskSize> region_clear_mask = (~(std::bitset<BitMaskSize>((1ULL << RegionSize) - 1) << offset));
-            mask_ &= region_clear_mask;
+            // Clear the target region
+            mask_ &= ~(std::bitset<BitMaskSize>((1ULL << RegionSize) - 1) << offset);
 
             // Set the new region bits
-            std::bitset<BitMaskSize> shifted_region_mask = (std::bitset<BitMaskSize>(region_mask.to_ullong()) << offset);
-            mask_ |= shifted_region_mask;
+            mask_ |= (std::bitset<BitMaskSize>(regionMask.to_ullong()) << offset);
+        }
+
+        // Gets a specific region from the mask
+        template <size_t RegionSize>
+        std::bitset<RegionSize> GetRegion(size_t offset) const
+        {
+            static_assert(RegionSize <= BitMaskSize, "Region size must be less than or equal to the full size");
+
+            // Extract the region and convert it to the correct bitset size
+            auto extracted = (mask_ >> offset) & std::bitset<BitMaskSize>((1ULL << RegionSize) - 1);
+            return std::bitset<RegionSize>(extracted.to_ullong());
         }
     };
 }

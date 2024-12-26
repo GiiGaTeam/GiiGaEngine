@@ -3,7 +3,7 @@ export module Mesh;
 import <DirectXCollision.h>;
 import <span>;
 import <vector>;
-import<directx/d3dx12.h>;
+import <directx/d3dx12.h>;
 
 import AssetBase;
 import RenderDevice;
@@ -14,10 +14,11 @@ export import ObjectMask;
 
 namespace GiiGa
 {
-    export class Mesh
+    export template <typename VertexType>
+    class Mesh
     {
     public:
-        using VertexType = VertexPNTBT;
+        //using VertexType = VertexPNTBT;
 
         Mesh(IRenderContext& render_context, RenderDevice& device,
              const std::vector<VertexType>& vertices,
@@ -50,7 +51,7 @@ namespace GiiGa
 
             auto indexDesc = indexView_->getDescriptor();
             cmd_list->IASetIndexBuffer(&indexDesc);
-
+            
             cmd_list->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
         }
 
@@ -63,8 +64,8 @@ namespace GiiGa
         {
             return vertex_type_mask_;
         }
-
-    private:
+    protected:
+        Mesh();
         std::shared_ptr<GPULocalResource> vertexBuffer_;
         std::shared_ptr<BufferView<Vertex>> vertexView_;
         UINT indexCount;

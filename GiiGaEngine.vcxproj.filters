@@ -207,9 +207,6 @@
     <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\Render\ObjectShaderResource.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Core\Render\GPULocalResource.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -336,13 +333,28 @@
     <ClCompile Include="Source\Core\Render\Shader.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Core\Render\IObjectShaderResource.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Render\ObjectMask.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Render\RenderPassViewData.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\StubTexturesHandles.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
     <None Include="README.md" />
     <None Include=".gitignore" />
     <None Include="TemplateProject\project.giga" />
-    <None Include="Shaders\SimpleVertexShader.hlsl" />
+    <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\ShaderHeader.hlsl" />
+    <None Include="Shaders\VertexPositionShader.hlsl" />
+    <None Include="Shaders\VertexPNTBTShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\FileWatch.hpp">

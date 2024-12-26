@@ -88,16 +88,14 @@ namespace GiiGa
             return upload_buffer.Allocate(size, 1);
         }
 
-        std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(std::span<uint8_t> data, size_t alignment,
-                                                                          D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+        std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(std::span<uint8_t> data, D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
         {
-            return current_frame->AllocateDynamicConstantView(device_, data, alignment, desc);
+            return current_frame->AllocateDynamicConstantView(device_, data, 256, desc);
         }
 
-        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, size_t alignment,
-                                                                                      const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
         {
-            return current_frame->AllocateDynamicShaderResourceView(device_, data, alignment, desc);
+            return current_frame->AllocateDynamicShaderResourceView(device_, data, 16, desc);
         }
 
         void ResourceBarrier(UINT NumBarriers, const D3D12_RESOURCE_BARRIER& pBarriers)
@@ -154,9 +152,14 @@ namespace GiiGa
             graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
         }
 
-        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const float color[4])
+        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, D3D12_CLEAR_VALUE clearValue)
         {
-            graphics_command_list_->ClearRenderTargetView(rtv, color, 0, nullptr);
+            graphics_command_list_->ClearRenderTargetView(rtv, clearValue.Color, 0, nullptr);
+        }
+
+        void ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE dsv, D3D12_CLEAR_FLAGS flags, D3D12_CLEAR_VALUE clearValue)
+        {
+            graphics_command_list_->ClearDepthStencilView(dsv, flags, clearValue.DepthStencil.Depth, clearValue.DepthStencil.Stencil, 0, nullptr);
         }
 
         void EndFrame()
@@ -201,6 +204,24 @@ namespace GiiGa
 
             WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
         }
+
+        void BindPSO(ID3D12PipelineState* pPipelineState)
+        {
+            graphics_command_list_->SetPipelineState(pPipelineState);
+        }
+
+        void SetSignature(ID3D12RootSignature* pRootSignature)
+        {
+            graphics_command_list_->SetGraphicsRootSignature(pRootSignature);
+        }
+
+        void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)
+        {
+            graphics_command_list_->SetGraphicsRootDescriptorTable(root_index, handle);
+        }
+
+        RenderDevice& GetDevice() { return device_; }
+        std::shared_ptr<ID3D12GraphicsCommandList> GetGraphicsCommandList() { return graphics_command_list_; }
 
     private:
         RenderDevice& device_;

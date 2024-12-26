@@ -30,7 +30,7 @@ namespace GiiGa
             Json::Value level_settings;
             level_settings["Name"] = "PersistentLevel";
             auto p_level = std::make_shared<Level>(level_settings);
-            GetInstance().levels_.push_back(p_level);
+            GetInstance().AddLevel(p_level);
         }
         
         static void DeInitialize()
@@ -40,7 +40,7 @@ namespace GiiGa
 
         static void Tick(float dt)
         {
-            auto instance = GetInstance();
+            auto& instance = GetInstance();
             while (!instance.comp_init_queue_.empty())
             {
                 auto comp_to_init = instance.comp_init_queue_.front();

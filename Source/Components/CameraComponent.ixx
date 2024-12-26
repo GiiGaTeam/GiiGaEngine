@@ -4,11 +4,13 @@ import <algorithm>;
 import <directxtk12/SimpleMath.h>;
 import <json/value.h>;
 import <memory>;
+import <directx/d3dx12_core.h>;
 
 import Component;
 import TransformComponent;
 import GameObject;
 import Misc;
+import IObjectShaderResource;
 
 using namespace DirectX::SimpleMath;
 
@@ -19,6 +21,26 @@ namespace GiiGa
         Perspective,
         Orthographic
     };
+
+    /*
+    export class CameraShaderResource : public IObjectShaderResource
+    {
+        friend struct Camera;
+
+    public:
+        
+        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
+        {
+            // todo: actually we can cache this allocation by adding setters here
+            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result; 
+            result.reserve(1);
+            result.push_back(CameraCBV_->getDescriptor().getGPUHandle());
+            return result;
+        }
+
+    private:
+        std::shared_ptr<BufferView<Constant>> CameraCBV_;
+    };*/
 
     export struct Camera
     {
@@ -111,11 +133,12 @@ namespace GiiGa
             const auto transform = ownerGO_.lock()->GetTransformComponent().lock().get();
             if (!transform) return;
 
-            const Vector3 position = transform->GetLocation();
-            const Vector3 target = position + transform->GetTransform().GetForward();
-            const Vector3 up = transform->GetTransform().GetUp();
+            const Vector3 position = transform->GetWorldLocation();
+            const Vector3 target = position + transform->GetWorldTransform().GetForward();
+            const Vector3 up = transform->GetWorldTransform().GetUp();
 
             camera_.view_ = Matrix::CreateLookAt(position, target, up);
+            //camera_.view_ = transform->GetInverseWorldMatrix();
         }
 
     protected:

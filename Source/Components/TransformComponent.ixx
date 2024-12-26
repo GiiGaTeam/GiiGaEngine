@@ -97,7 +97,7 @@ namespace GiiGa
             Json::Value res;
 
             res["Location"] = Vector3ToJson(location_);
-            res["Rotation"] = Vector3ToJson(rotate_.ToEuler());
+            res["Rotation"] = Vector3ToJson(GetRotation());
             res["Scale"] = Vector3ToJson(scale_);
 
             return res;
@@ -242,8 +242,9 @@ namespace GiiGa
 
         void AddRotation(const Vector3& rotation)
         {
-            const auto new_quat = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
-            SetRotation(new_quat);
+            auto rot = GetRotation() + rotation;
+            //const auto rot = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            SetRotation(rot);
         }
 
         Vector3 GetScale() const { return transform_.scale_; }
@@ -391,10 +392,10 @@ namespace GiiGa
 
         void CalcWorldTransformMatrix()
         {
-            const TransformComponent* rootComp = this;
+            auto rootComp = std::dynamic_pointer_cast<TransformComponent>(shared_from_this());
             world_matrix_ = rootComp->local_matrix_;
 
-            const TransformComponent* parentComp = rootComp->parent_.lock().get();
+            auto parentComp = rootComp->parent_.lock();
             while (parentComp)
             {
                 if (rootComp->attach_translation && rootComp->attach_rotate && rootComp->attach_scale)
@@ -430,7 +431,7 @@ namespace GiiGa
                 }
 
                 rootComp = parentComp;
-                parentComp = rootComp->parent_.lock().get();
+                parentComp = rootComp->parent_.lock();
             }
         }
 

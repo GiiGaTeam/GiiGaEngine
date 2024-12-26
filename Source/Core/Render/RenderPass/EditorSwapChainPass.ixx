@@ -41,7 +41,7 @@ namespace GiiGa
             imgui_srv_desc_heap_allocation_ = descriptor_heap.Allocate(1);
 
             // Setup Platform/Renderer backends
-            ImGui_ImplDX12_Init(device.GetDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
+            ImGui_ImplDX12_Init(device.GetDxDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
                                 DXGI_FORMAT_R8G8B8A8_UNORM, descriptor_heap.GetDescriptorHeap().get(),
                                 imgui_srv_desc_heap_allocation_.GetCpuHandle(),
                                 imgui_srv_desc_heap_allocation_.GetGpuHandle());
@@ -85,9 +85,7 @@ namespace GiiGa
             swapChain_->Reset(context);
 
             // Render Dear ImGui graphics
-            const float clear_color_with_alpha[4] = {0, 0, 0, 1};
-
-            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), clear_color_with_alpha);
+            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), {.Color = {0, 0, 0, 1}});
 
             D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_->getRTVDescriptorHandle();
 

@@ -24,6 +24,17 @@ namespace GiiGa
             upload_buffers.emplace_back(UploadBuffer(device));
         }
 
+        FrameContext(const FrameContext& other) = delete;
+        FrameContext(FrameContext&& other) noexcept = default;
+        FrameContext& operator=(const FrameContext& other) = delete;
+        FrameContext& operator=(FrameContext&& other) noexcept = delete;
+
+        ~FrameContext()
+        {
+            common_allocator_.ReleaseAllocations(0);
+            sampler_allocator_.ReleaseAllocations(0);
+        }
+
         void Reset(std::shared_ptr<ID3D12GraphicsCommandList>& command_list)
         {
             command_allocator->Reset();
@@ -55,7 +66,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(RenderDevice& device, std::span<uint8_t> data, size_t alignment,
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+                                                                          D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
         {
             UploadBuffer::Allocation res_alloc = AllocateCopyDynamic(device, data, alignment);
 
@@ -65,7 +76,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(RenderDevice& device, std::span<uint8_t> data, size_t alignment,
-            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+                                                                                      const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
         {
             UploadBuffer::Allocation res_alloc = AllocateCopyDynamic(device, data, alignment);
 
@@ -81,6 +92,5 @@ namespace GiiGa
         DynamicSuballocationsManager common_allocator_;
         DynamicSuballocationsManager sampler_allocator_;
         std::vector<UploadBuffer> upload_buffers;
-
     };
 }

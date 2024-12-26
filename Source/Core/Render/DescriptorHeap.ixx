@@ -34,7 +34,8 @@ namespace GiiGa
         virtual ~IDescriptorAllocator() = default;
         // Allocate Count descriptors
         virtual DescriptorHeapAllocation Allocate(uint32_t Count) = 0;
-        virtual void Free(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) = 0;
+        virtual void FreeDeffered(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) = 0;
+        virtual void FreeImmidiate(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) = 0;
         virtual uint32_t GetDescriptorSize() const = 0;
     };
 
@@ -137,7 +138,7 @@ namespace GiiGa
         ~DescriptorHeapAllocation()
         {
             if (!IsNull() && m_pAllocator)
-                m_pAllocator->Free(std::move(*this), ~uint64_t{0});
+                m_pAllocator->FreeDeffered(std::move(*this), ~uint64_t{0});
             // Allocation must have been disposed by the allocator
             assert(IsNull()); //"Non-null descriptor is being destroyed");
         }
@@ -609,7 +610,7 @@ namespace GiiGa
             return Allocation;
         }
 
-        virtual void Free(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
+        virtual void FreeDeffered(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
         {
             struct StaleAllocation
             {
@@ -647,6 +648,45 @@ namespace GiiGa
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
+        void FreeImmidiate(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override
+        {
+            struct StaleAllocation
+            {
+                DescriptorHeapAllocation Allocation;
+                CPUDescriptorHeap* Heap;
+
+                // clang-format off
+                StaleAllocation(DescriptorHeapAllocation&& _Allocation, CPUDescriptorHeap& _Heap) noexcept :
+                    Allocation{std::move(_Allocation)},
+                    Heap{&_Heap}
+                {
+                }
+
+                StaleAllocation(const StaleAllocation&) = delete;
+                StaleAllocation& operator=(const StaleAllocation&) = delete;
+                StaleAllocation& operator=(StaleAllocation&&) = default;
+
+                StaleAllocation(StaleAllocation&& rhs) noexcept :
+                    Allocation{std::move(rhs.Allocation)},
+                    Heap{rhs.Heap}
+                {
+                    rhs.Heap = nullptr;
+                }
+
+                // clang-format on
+
+                ~StaleAllocation()
+                {
+                    if (Heap != nullptr)
+                        Heap->FreeAllocation(std::move(Allocation));
+                }
+            };
+            StaleAllocation{std::move(Allocation), *this};
+            // todo review here should be enqueueing
+            //m_DeviceD3D12Impl.KeepAliveForFramesInFlight(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
+            //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
+        }
+
         virtual uint32_t GetDescriptorSize() const override final { return m_DescriptorSize; }
 
 #ifdef DILIGENT_DEVELOPMENT
@@ -663,8 +703,9 @@ namespace GiiGa
             // Return the manager to the pool of available managers
             assert(m_HeapPool[ManagerId].GetNumAvailableDescriptors() > 0);
             m_AvailableHeaps.insert(ManagerId);
-        }
+        }        
 
+    private:
         IRenderDevice& m_DeviceD3D12Impl;
 
         // Pool of descriptor heap managers
@@ -786,7 +827,7 @@ namespace GiiGa
             return m_HeapAllocationManager.Allocate(Count);
         }
 
-        virtual void Free(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
+        virtual void FreeDeffered(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
         {
             struct StaleAllocation
             {
@@ -834,6 +875,58 @@ namespace GiiGa
             // todo review here should be enqueueing
             //StaleAllocation{std::move(Allocation), *this};
             m_DeviceD3D12Impl.KeepAliveForFramesInFlight(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
+            //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
+        }
+
+        virtual void FreeImmidiate(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
+        {
+            struct StaleAllocation
+            {
+                DescriptorHeapAllocation Allocation;
+                GPUDescriptorHeap* Heap;
+
+                // clang-format off
+                StaleAllocation(DescriptorHeapAllocation&& _Allocation, GPUDescriptorHeap& _Heap) noexcept :
+                    Allocation{std::move(_Allocation)},
+                    Heap{&_Heap}
+                {
+                }
+
+                StaleAllocation(const StaleAllocation&) = delete;
+                StaleAllocation& operator=(const StaleAllocation&) = delete;
+                StaleAllocation& operator=(StaleAllocation&&) = delete;
+
+                StaleAllocation(StaleAllocation&& rhs) noexcept :
+                    Allocation{std::move(rhs.Allocation)},
+                    Heap{rhs.Heap}
+                {
+                    rhs.Heap = nullptr;
+                }
+
+                // clang-format on
+
+                ~StaleAllocation()
+                {
+                    if (Heap != nullptr)
+                    {
+                        auto MgrId = Allocation.GetAllocationManagerId();
+                        assert(MgrId == 0 || MgrId == 1); //, "Unexpected allocation manager ID"
+
+                        if (MgrId == 0)
+                        {
+                            Heap->m_HeapAllocationManager.FreeAllocation(std::move(Allocation));
+                        }
+                        else
+                        {
+                            Heap->m_DynamicAllocationsManager.FreeAllocation(std::move(Allocation));
+                        }
+                    }
+                }
+            };
+            StaleAllocation{std::move(Allocation), *this};
+            // todo review here should be enqueueing
+            //StaleAllocation{std::move(Allocation), *this};
+            //m_DeviceD3D12Impl.KeepAliveForFramesInFlight(unique_any(std::move(StaleAllocation{std::move(Allocation), *this})));
             //m_DeviceD3D12Impl.SafeReleaseDeviceObject(StaleAllocation{std::move(Allocation), *this}, CmdQueueMask);
         }
 
@@ -920,7 +1013,7 @@ namespace GiiGa
             // parent GPU heap.
             for (auto& Allocation : m_Suballocations)
             {
-                m_ParentGPUHeap.Free(std::move(Allocation), CmdQueueMask);
+                m_ParentGPUHeap.FreeImmidiate(std::move(Allocation), CmdQueueMask);
                 m_Suballocations.clear();
             }
             m_CurrDescriptorCount = 0;
@@ -941,6 +1034,7 @@ namespace GiiGa
                 auto NewDynamicSubAllocation = m_ParentGPUHeap.AllocateDynamic(SuballocationSize);
                 if (NewDynamicSubAllocation.IsNull())
                 {
+                    assert(false);
                     //LOG_ERROR("Dynamic space in ", GetD3D12DescriptorHeapTypeLiteralName(m_ParentGPUHeap.GetHeapDesc().Type),
                     //    " GPU descriptor heap is exhausted.");
                     return DescriptorHeapAllocation();
@@ -971,10 +1065,15 @@ namespace GiiGa
             return Allocation;
         }
 
-        virtual void Free(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
+        virtual void FreeDeffered(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override final
         {
             // Do nothing. Dynamic allocations are not disposed individually, but as whole chunks
             // at the end of the frame by ReleaseAllocations()
+            Allocation.Reset();
+        }
+
+        void FreeImmidiate(DescriptorHeapAllocation&& Allocation, uint64_t CmdQueueMask) override
+        {
             Allocation.Reset();
         }
 

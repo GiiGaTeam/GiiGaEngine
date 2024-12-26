@@ -1,3 +1,4 @@
+#include <imgui_internal.h>
 #include<directxtk12/SimpleMath.h>
 
 export module EditorViewport;
@@ -10,12 +11,16 @@ import <iostream>;
 
 export import Viewport;
 import RenderDevice;
-import ForwardPass;
+import GBufferPass;
+import GLightPass;
 import RenderGraph;
 import World;
 import CameraComponent;
 import GameObject;
 import SpectatorMovementComponent;
+import GBuffer;
+import Input;
+import Logger;
 
 namespace GiiGa
 {
@@ -28,10 +33,12 @@ namespace GiiGa
             Resize(viewport_size_);
         }
 
-        void Init() override
+        void Init(RenderContext& context) override
         {
             renderGraph_ = std::make_shared<RenderGraph>();
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(std::bind(&EditorViewport::GetCameraInfo, this)));
+
+            renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
@@ -40,40 +47,53 @@ namespace GiiGa
 
         RenderPassViewData GetCameraInfo() override
         {
-            DirectX::SimpleMath::Matrix viewProjMatrix;
-
-            auto camera_go = camera_.lock();
-
-            // do we need view mat in camera?
-            viewProjMatrix = camera_go->GetTransformComponent().lock()->GetInverseLocalMatrix() * camera_go->GetComponent<CameraComponent>()->GetCamera().GetProj();
-
-            return {.viewProjMatrix = viewProjMatrix, .camera_gpu_handle = {}};
+            return RenderPassViewData{.ViewProjMat = ViewProjectionMatrix, .viewDescriptor = ViewInfoConstBuffer->getDescriptor().getGPUHandle()};
         }
 
         void Execute(RenderContext& context) override
         {
             if (camera_.expired()) return;
+            if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
+            {
+                movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+            }
+
+            UpdateCameraInfo(context);
 
             ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
+
 
             auto current_size = ImGui::GetWindowSize();
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
 
-            resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-            const float clear_color_with_alpha[4] = {1, 0, 0, 1};
-
-            context.ClearRenderTargetView(resultRTV_->getDescriptor().GetCpuHandle(), clear_color_with_alpha);
-
             // draw here
+            D3D12_VIEWPORT viewport = {};
+            viewport.TopLeftX = 0.0f;
+            viewport.TopLeftY = 0.0f;
+            viewport.Width = current_size.x;
+            viewport.Height = current_size.y;
+            viewport.MinDepth = 0.0f;
+            viewport.MaxDepth = 1.0f;
+            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
+
+            D3D12_RECT scissorRect = {};
+            scissorRect.left = 0;
+            scissorRect.top = 0;
+            scissorRect.right = current_size.x;
+            scissorRect.bottom = current_size.y;
+            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
+
+            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
             renderGraph_->Draw(context);
             // draw here - end
 
-            resultResource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-            ImGui::Image((ImTextureID)resultSRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            ImGui::Image((ImTextureID)gbuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation).ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             ImGui::End();
         }
@@ -81,5 +101,23 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
+        std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
+        DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+
+        void UpdateCameraInfo(RenderContext& context)
+        {
+            auto camera_go = camera_.lock();
+            auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
+
+            ViewProjectionMatrix = camera.GetViewProj();
+
+            RenderPassViewMatricies const_buf_data = {camera.view_.Transpose(), camera.GetProj().Transpose()};
+
+            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
+
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
+
+            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+        }
     };
 }
