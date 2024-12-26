@@ -156,7 +156,6 @@ namespace GiiGa
 
             return mask_to_draw_packets;
         }
-        
         static void Extract(ObjectMask render_filter_type, ObjectMask unite_mask, std::unordered_map<ObjectMask, DrawPacket>& mask_to_draw_packets)
         {
             // Iterate through each entity ID from frustum culling.
