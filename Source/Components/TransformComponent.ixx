@@ -191,7 +191,7 @@ namespace GiiGa
             auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
 
             if (parentUuid != Uuid::Null())
-                AttachTo(WorldQuery::GetWithUUID<std::shared_ptr<TransformComponent>>(parentUuid));
+                AttachTo(WorldQuery::GetWithUUID<TransformComponent>(parentUuid));
         }
 
         void Tick(float dt) override

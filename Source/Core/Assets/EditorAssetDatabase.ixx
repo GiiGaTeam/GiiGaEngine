@@ -125,7 +125,8 @@ namespace GiiGa
             }
 
             AssetLoader* saver = saverIt->second.get();
-            saver->Save(asset, meta_it->second.path);
+            auto absolute_path = asset_path_ / meta_it->second.path;
+            saver->Save(asset, absolute_path);
         }
 
         void ImportAsset(const std::filesystem::path& path)

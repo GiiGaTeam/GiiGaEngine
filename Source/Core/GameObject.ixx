@@ -37,6 +37,8 @@ namespace GiiGa
      */
     export class GameObject final : public IGameObject
     {
+        friend void CreateComponentsForGameObject(std::shared_ptr<GameObject> gameObject, const Json::Value& go_js, bool roll_id);
+
     public:
         std::string name = "GameObject";
 
@@ -132,43 +134,57 @@ namespace GiiGa
 
             newGameObject->RegisterInWorld();
 
-            newGameObject->CreateComponents(json, roll_id);
-
-            newGameObject->CreateChildren(json, roll_id);
-
             return newGameObject;
         }
 
-        Json::Value ToJson() const override
+        Json::Value ToJson() const
         {
             Json::Value this_json;
 
             this_json["Name"] = name;
             this_json["Uuid"] = uuid_.ToString();
 
+            if (!parent_.expired())
+                this_json["Parent"] = parent_.lock()->GetUuid().ToString();
+            else
+                this_json["Parent"] = Uuid::Null().ToString();
+
             for (auto&& [_,component] : components_)
             {
                 this_json["Components"].append(component->ToJson());
             }
 
-            for (auto&& [_, kid] : children_)
+            return this_json;
+        }
+
+        std::vector<Json::Value> ToJsonWithKids() const override
+        {
+            std::vector<Json::Value> jsons;
+
+            jsons.push_back(ToJson());
+
+            for (auto&& [_,kid] : children_)
             {
-                this_json["Children"].append(kid->ToJson());
+                jsons.push_back(kid->ToJson());
             }
 
-            return this_json;
+            return jsons;
         }
 
         void Restore(const Json::Value& json)
         {
-            for (auto&& comp_js : json["Components"])
+            auto parent_uuid = Uuid::FromString(json["Parent"].asString()).value();
+
+            if (parent_uuid != Uuid::Null())
             {
-                components_.at(Uuid::FromString(comp_js["Uuid"].asString()).value())->Restore(comp_js);
+                SetParent(WorldQuery::GetWithUUID<GameObject>(parent_uuid));
             }
 
-            for (auto&& kid_js : json["Children"])
+            for (auto&& comp_js : json["Components"])
             {
-                children_.at(Uuid::FromString(kid_js["Uuid"].asString()).value())->Restore(kid_js);
+                std::string comp_id_str = comp_js["Uuid"].asString();
+                Uuid comp_id = Uuid::FromString(comp_id_str).value();
+                components_.at(comp_id)->Restore(comp_js);
             }
         }
 
@@ -300,7 +316,7 @@ namespace GiiGa
          * Name:
          * Uuid:
          * Components:[...]
-         * Children: [...]
+         * Parent: UUID
         */
         GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, bool roll_id = false):
             level_root_gos_(level_rgo)
@@ -324,21 +340,6 @@ namespace GiiGa
         void RegisterInWorld()
         {
             WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
-        }
-
-        void CreateComponents(const Json::Value& json, bool roll_id = false)
-        {
-            for (auto&& comp_js : json["Components"])
-            {
-                if (comp_js["Type"].asString() == typeid(TransformComponent).name())
-                {
-                    transform_ = CreateComponent<TransformComponent>(comp_js, roll_id);
-                }
-                else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
-                {
-                    CreateComponent<ConsoleComponent>(comp_js, roll_id);
-                }
-            }
         }
 
         void CreateChildren(const Json::Value& json, bool roll_id = false)

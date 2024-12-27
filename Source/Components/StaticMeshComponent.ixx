@@ -31,15 +31,44 @@ namespace GiiGa
     {
         //todo: temp
         friend class ImGuiInspector;
+
     public:
         StaticMeshComponent()
         {
-            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+        }
+
+        StaticMeshComponent(Json::Value json, bool roll_id = false):
+            Component(json, roll_id)
+        {
+            StaticMeshComponent();
+
+            auto mesh_handle = AssetHandle::FromJson(json["Mesh"]);
+            auto material_handle = AssetHandle::FromJson(json["Material"]);
+
+            if (mesh_handle != AssetHandle{})
+            {
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(mesh_handle);
+
+                if (material_handle != AssetHandle{})
+                {
+                    material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(material_handle);
+                }
+            }
+        }
+
+        Json::Value DerivedToJson() override
+        {
+            Json::Value result;
+            result["Type"] = typeid(StaticMeshComponent).name();
+            result["Mesh"] = mesh_ ? mesh_->GetId().ToJson() : AssetHandle{}.ToJson();
+            result["Material"] = material_ ? material_->GetId().ToJson() : AssetHandle{}.ToJson();
+            return result;
         }
 
         ~StaticMeshComponent()
         {
-            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            if (perObjectData_)
+                Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
             {
                 if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
@@ -65,6 +94,12 @@ namespace GiiGa
                 if (!visibilityEntry_)
                     RegisterInVisibility();
             }
+
+            if (!perObjectData_)
+            {
+                Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+                perObjectData_ = std::make_shared<PerObjectData>(Engine::Instance().RenderSystem()->GetRenderContext(), transform_.lock(), isStatic_);
+            }
         }
 
         ::std::shared_ptr<IComponent> Clone() override
@@ -85,13 +120,7 @@ namespace GiiGa
 
         void Restore(const Json::Value&) override
         {
-            Todo();
-        }
-
-        Json::Value DerivedToJson() override
-        {
-            Todo();
-            return {};
+            //nothing to do
         }
 
         Uuid GetMeshUuid()
@@ -143,8 +172,6 @@ namespace GiiGa
 
         void UpdateGPUData(RenderContext& context) override
         {
-            if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
         }
 

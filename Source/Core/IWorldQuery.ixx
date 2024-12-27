@@ -31,11 +31,12 @@ namespace GiiGa
             }
         }
 
-        static void AddAnyWithUuid(const Uuid& uuid, std::any value)
+        static void AddAnyWithUuid(const Uuid& uuid, std::shared_ptr<void> value)
         {
+            el::Loggers::getLogger(LogWorldQuery)->debug("Registering any with uuid %v", uuid.ToString());
             if (GetInstance().uuid_to_any_.contains(uuid))
                 throw std::runtime_error("Failed to AddAnyWithUuid, duplicated uuid!");
-            
+
             GetInstance().uuid_to_any_.insert({uuid, value});
         }
 
@@ -46,13 +47,27 @@ namespace GiiGa
 
         static void RemoveAnyWithUuid(const Uuid& uuid)
         {
+            el::Loggers::getLogger(LogWorldQuery)->debug("RemoveAnyWithUuid any with uuid %v", uuid.ToString());
             GetInstance().uuid_to_any_.erase(uuid);
         }
 
         template <typename T>
-        static T GetWithUUID(const Uuid& uuid)
+        static std::shared_ptr<T> GetWithUUID(const Uuid& uuid)
         {
-            return std::any_cast<T>(GetInstance().uuid_to_any_.at(uuid));
+            auto inst = GetInstance();
+            auto any = inst.uuid_to_any_.at(uuid);
+
+            std::shared_ptr<void> ptr;
+            try
+            {
+                ptr = std::any_cast<std::shared_ptr<void>>(any);
+            }
+            catch (const std::exception& e)
+            {
+                el::Loggers::getLogger(LogWorldQuery)->fatal("Failed to get any of type %v", e.what());
+            }
+
+            return std::static_pointer_cast<T>(ptr);
         }
 
         template <typename T>
@@ -108,7 +123,7 @@ namespace GiiGa
     protected:
         static inline std::shared_ptr<WorldQuery> instance_;
         std::unordered_map<std::type_index, std::vector<std::shared_ptr<IComponent>>> type_to_components_;
-        std::unordered_map<Uuid, std::any> uuid_to_any_;
+        std::unordered_map<Uuid, std::shared_ptr<void>> uuid_to_any_;
         std::queue<std::shared_ptr<IComponent>> comp_init_queue_;
         std::queue<std::shared_ptr<IGameObject>> gameobject_destroy_queue_;
 

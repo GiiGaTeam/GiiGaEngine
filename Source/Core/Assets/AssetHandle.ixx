@@ -22,7 +22,12 @@ namespace GiiGa
 
         bool operator==(const AssetHandle& other) const
         {
-            return id == other.id;
+            return id == other.id && subresource == other.subresource;
+        }
+
+        bool operator!=(const AssetHandle& other) const
+        {
+            return !(*this == other);
         }
 
         Json::Value ToJson() const
@@ -38,7 +43,7 @@ namespace GiiGa
             AssetHandle handle;
 
             auto uuid = Uuid::FromString(json["id"].asString());
-            
+
             if (!uuid)
             {
                 throw std::invalid_argument("Invalid JSON: Wrong UUID");

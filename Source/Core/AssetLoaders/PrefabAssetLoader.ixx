@@ -33,6 +33,7 @@ namespace GiiGa
 
         std::shared_ptr<AssetBase> Load(::GiiGa::AssetHandle handle, const ::std::filesystem::path& path) override
         {
+            /*
             if (!std::filesystem::exists(path))
             {
                 auto msg = "Prefab file not found in: " + path.string();
@@ -56,10 +57,13 @@ namespace GiiGa
                 throw std::runtime_error("Failed to parse Prefab file: " + errs);
 
             return std::make_shared<PrefabAsset>(handle, GameObject::CreateGameObjectFromJson(prefab_js, nullptr, true));
+            */
+            return nullptr;
         }
 
         void Save(std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override
         {
+            /*
             auto prefab = std::dynamic_pointer_cast<PrefabAsset>(asset);
 
             el::Loggers::getLogger(LogWorld)->info("Saving Prefab %v in %v", prefab->GetId().id.ToString(), path);
@@ -72,7 +76,7 @@ namespace GiiGa
             }
 
             // Ensure ToJson() works correctly
-            Json::Value json = prefab->root->ToJson();
+            Json::Value json = prefab->root->ToJsonWithKids();
             if (json.isNull())
             {
                 throw std::runtime_error("Failed to convert object to JSON");
@@ -90,7 +94,7 @@ namespace GiiGa
                 throw std::runtime_error("Failed to write to file: " + path.string());
             }
 
-            file.close();
+            file.close();*/
         }
     };
 }
