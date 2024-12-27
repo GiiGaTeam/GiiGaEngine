@@ -186,6 +186,7 @@
     <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MeshAssetLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\PrefabAssetLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
@@ -212,6 +213,7 @@
     <ClCompile Include="Source\Core\Level.ixx" />
     <ClCompile Include="Source\Core\Logger.ixx" />
     <ClCompile Include="Source\Core\MeshAsset.ixx" />
+    <ClCompile Include="Source\Core\PrefabAsset.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />

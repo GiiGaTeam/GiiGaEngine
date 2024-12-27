@@ -126,16 +126,15 @@ namespace GiiGa
             return newGameObject;
         }
 
-        static std::shared_ptr<GameObject> CreateGameObjectFromJson(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr)
+        static std::shared_ptr<GameObject> CreateGameObjectFromJson(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, bool roll_id = false)
         {
-            std::shared_ptr<GameObject> newGameObject = std::shared_ptr<GameObject>(new GameObject(json, level_rgo));
-
-            if (!newGameObject->GetComponent<TransformComponent>())
-                newGameObject->transform_ = newGameObject->CreateComponent<TransformComponent>();
+            std::shared_ptr<GameObject> newGameObject = std::shared_ptr<GameObject>(new GameObject(json, level_rgo, roll_id));
 
             newGameObject->RegisterInWorld();
 
-            newGameObject->CreateComponents(json);
+            newGameObject->CreateComponents(json, roll_id);
+
+            newGameObject->CreateChildren(json, roll_id);
 
             return newGameObject;
         }
@@ -303,7 +302,7 @@ namespace GiiGa
          * Components:[...]
          * Children: [...]
         */
-        GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr):
+        GameObject(const Json::Value& json, std::shared_ptr<ILevelRootGameObjects> level_rgo = nullptr, bool roll_id = false):
             level_root_gos_(level_rgo)
         {
             name = json["Name"].asString();
@@ -315,7 +314,10 @@ namespace GiiGa
                 throw std::runtime_error("Invalid UUID");
             }
 
-            uuid_ = js_uuid.value();
+            if (!roll_id)
+                uuid_ = js_uuid.value();
+            else
+                uuid_ = Uuid::New();
         }
 
         // does not register children
@@ -324,26 +326,26 @@ namespace GiiGa
             WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
         }
 
-        void CreateComponents(const Json::Value& json)
+        void CreateComponents(const Json::Value& json, bool roll_id = false)
         {
             for (auto&& comp_js : json["Components"])
             {
                 if (comp_js["Type"].asString() == typeid(TransformComponent).name())
                 {
-                    transform_ = CreateComponent<TransformComponent>(comp_js);
+                    transform_ = CreateComponent<TransformComponent>(comp_js, roll_id);
                 }
                 else if (comp_js["Type"].asString() == typeid(ConsoleComponent).name())
                 {
-                    CreateComponent<ConsoleComponent>(comp_js);
+                    CreateComponent<ConsoleComponent>(comp_js, roll_id);
                 }
             }
         }
 
-        void CreateChildren(const Json::Value& json)
+        void CreateChildren(const Json::Value& json, bool roll_id = false)
         {
             for (auto&& kid_js : json["Children"])
             {
-                auto kid_go = CreateGameObjectFromJson(kid_js, this->level_root_gos_.lock());
+                auto kid_go = CreateGameObjectFromJson(kid_js, this->level_root_gos_.lock(), roll_id);
                 this->AddChild(kid_go);
             }
         }

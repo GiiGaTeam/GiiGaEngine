@@ -33,6 +33,9 @@ namespace GiiGa
 
         static void AddAnyWithUuid(const Uuid& uuid, std::any value)
         {
+            if (GetInstance().uuid_to_any_.contains(uuid))
+                throw std::runtime_error("Failed to AddAnyWithUuid, duplicated uuid!");
+            
             GetInstance().uuid_to_any_.insert({uuid, value});
         }
 
