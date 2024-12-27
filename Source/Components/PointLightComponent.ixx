@@ -37,7 +37,7 @@ namespace GiiGa
     {
         alignas(16) DirectX::SimpleMath::Vector3 posWS;
         alignas(16) DirectX::SimpleMath::Vector3 color = {1, 0, 0};
-        float radius = 10;
+        float radius = 1;
         float max_intensity = 1;
         float falloff = 1;
     };

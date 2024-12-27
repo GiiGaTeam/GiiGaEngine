@@ -181,7 +181,7 @@ namespace GiiGa
                                         Uuid textureUuid = material->textures_[texture_index]->GetId().id;
                                         char textureUuidStr[37];
                                         snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        if (ImGui::InputText("BaseColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
                                         {
                                             auto newUuid = Uuid::FromString(textureUuidStr);
                                             if (newUuid.has_value())
@@ -206,7 +206,7 @@ namespace GiiGa
                                         Uuid textureUuid = material->textures_[texture_index]->GetId().id;
                                         char textureUuidStr[37];
                                         snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        if (ImGui::InputText("EmissiveColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
                                         {
                                             auto newUuid = Uuid::FromString(textureUuidStr);
                                             if (newUuid.has_value())
@@ -231,7 +231,7 @@ namespace GiiGa
                                         Uuid textureUuid = material->textures_[texture_index]->GetId().id;
                                         char textureUuidStr[37];
                                         snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
+                                        if (ImGui::InputText("Metallic Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
                                         {
                                             auto newUuid = Uuid::FromString(textureUuidStr);
                                             if (newUuid.has_value())
