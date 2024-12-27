@@ -107,7 +107,7 @@ namespace GiiGa
             return std::make_shared<MeshAsset<VertexType>>(handle, rs->GetRenderContext(), rs->GetRenderDevice(), vertices, indices, aabb);
         }
 
-        void Save(AssetBase& asset, std::filesystem::path& path) override
+        void Save(std::shared_ptr<AssetBase> asset, std::filesystem::path& path) override
         {
             throw std::runtime_error("Saving Mesh is not supported.");
         }
