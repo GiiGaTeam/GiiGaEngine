@@ -11,6 +11,7 @@ import Material;
 import TextureAsset;
 import Logger;
 import AssetMeta;
+import Misc;
 
 namespace GiiGa
 {
@@ -121,8 +122,9 @@ namespace GiiGa
             return result;
         }
 
-        void Save(AssetBase& asset, ::std::filesystem::path& path) override
+        void Save(std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override
         {
+            Todo();
         }
 
         const char* GetName() override
