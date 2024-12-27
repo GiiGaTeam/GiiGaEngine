@@ -125,6 +125,22 @@ namespace GiiGa
                 icons_srv_.emplace(AssetType::Material, srv);
             }
 
+            {
+                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/level.png");
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+                ZeroMemory(&srvDesc, sizeof(srvDesc));
+                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Texture2D.MipLevels = 1;
+                srvDesc.Texture2D.MostDetailedMip = 0;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
+
+                icons_.emplace(AssetType::Level, std::move(icon));
+                icons_srv_.emplace(AssetType::Level, srv);
+            }
+
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 

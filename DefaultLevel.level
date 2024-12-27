@@ -1,0 +1,17 @@
+{
+	"LevelSettings" : 
+	{
+		"Name" : "Hello World"
+	},
+	"RootGameObjects" : 
+	[
+		{
+			"Name" : "Point Light",
+			"Uuid" : "42a43292-4b41-46a3-b514-0732ee5bf3b9"
+		},
+		{
+			"Name" : "Cube",
+			"Uuid" : "42a43292-4b41-46a3-b514-0732ee9bf3b9"
+		}
+	]
+}

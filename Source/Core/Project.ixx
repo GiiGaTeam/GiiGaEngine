@@ -7,13 +7,15 @@ import <stdexcept>;
 import <iostream>;
 import <json/json.h>;
 
+import Uuid;
+
 namespace GiiGa
 {
     export class Project : public std::enable_shared_from_this<Project>
     {
     private:
         std::filesystem::path project_path_;
-        std::filesystem::path default_level_path_;
+        Uuid default_level_id_ = Uuid::Null();
 
         Json::Value project_settings_;
 
@@ -35,7 +37,10 @@ namespace GiiGa
 
             if (project_settings_.isMember("DefaultLevel"))
             {
-                default_level_path_ = project_settings_["DefaultLevel"].asString();
+                auto opt_uuid = Uuid::FromString(project_settings_["DefaultLevel"].asString());
+                if (!opt_uuid.has_value())
+                    throw std::runtime_error("Failed to parse level id in file: " + path.string());
+                default_level_id_ = opt_uuid.value();
             }
             else
             {
@@ -62,6 +67,7 @@ namespace GiiGa
         {
             OpenProject(path);
         }
+
     public:
         Project() = delete;
         Project(const Project&) = delete;
@@ -69,8 +75,8 @@ namespace GiiGa
 
         Project(Project&& other) noexcept
             : project_path_(std::move(other.project_path_)),
-            default_level_path_(std::move(other.default_level_path_)),
-            project_settings_(std::move(other.project_settings_))
+              default_level_id_(std::move(other.default_level_id_)),
+              project_settings_(std::move(other.project_settings_))
         {
         }
 
@@ -79,7 +85,7 @@ namespace GiiGa
             if (this != &other)
             {
                 project_path_ = std::move(other.project_path_);
-                default_level_path_ = std::move(other.default_level_path_);
+                default_level_id_ = std::move(other.default_level_id_);
                 project_settings_ = std::move(other.project_settings_);
             }
             return *this;
@@ -108,10 +114,10 @@ namespace GiiGa
             }
         }
 
-        void SetDefaultLevelPath(const std::string& path)
+        void SetDefaultLevelUuid(const Uuid& uuid)
         {
-            default_level_path_ = path;
-            project_settings_["DefaultLevelPath"] = default_level_path_.c_str();
+            default_level_id_ = uuid;
+            project_settings_["DefaultLevelPath"] = default_level_id_.ToString();
         }
 
         void SaveProjectSettings() const
@@ -127,8 +133,9 @@ namespace GiiGa
             project_file << Json::writeString(writer_builder, project_settings_);
         }
 
-        const std::filesystem::path& GetDefaultLevelPath() const {
-            return default_level_path_;
+        const Uuid& GetDefaultLevelUuid() const
+        {
+            return default_level_id_;
         };
 
         const std::filesystem::path& GetProjectPath() const

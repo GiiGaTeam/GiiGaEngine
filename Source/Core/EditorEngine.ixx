@@ -18,6 +18,8 @@ import MeshAssetLoader;
 import VertexTypes;
 import MaterialLoader;
 import MaterialLoader;
+import LevelAssetLoader;
+import PrefabAssetLoader;
 
 namespace GiiGa
 {
@@ -73,9 +75,7 @@ namespace GiiGa
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
             render_system_->Initialize();
 
-            //todo
-            auto&& level_path = project_->GetProjectPath() / project_->GetDefaultLevelPath();
-            World::AddLevelFromAbsolutePath(level_path);
+            World::AddLevelFromUuid(project_->GetDefaultLevelUuid());
         }
 
         void DeInitialize() override
@@ -97,6 +97,10 @@ namespace GiiGa
             editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPNTBT>>();
             editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPosition>>();
             editor_asset_database_->RegisterLoader<MaterialLoader>();
+            editor_asset_database_->RegisterLoader<LevelAssetLoader>();
+            editor_asset_database_->RegisterLoader<PrefabAssetLoader>();
+
+            editor_asset_database_->RegisterSaver<LevelAssetLoader>();
         }
     };
 } // namespace GiiGa

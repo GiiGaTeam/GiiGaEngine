@@ -1,30 +1,6 @@
 [
 	{
 		"id": {
-			"id": "00000000-0000-0000-0000-00000000000b",
-			"subresource": 0
-		},
-		"meta": {
-			"path": "cube.fbx",
-			"type": "Mesh",
-			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
-			"name":"Cube"
-		}
-	},
-	{
-		"id": {
-			"id": "00000000-0000-0000-0000-00000000000c",
-			"subresource": 0
-		},
-		"meta": {
-			"path": "sphere.fbx",
-			"type": "Mesh",
-			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
-			"name":"Sphere"
-		}
-	},
-	{
-		"id": {
 			"id": "00000000-0000-0000-0000-000000000001",
 			"subresource": 0
 		},
@@ -32,7 +8,7 @@
 			"path": "base_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"BaseColor"
+			"name": "BaseColor"
 		}
 	},
 	{
@@ -44,7 +20,7 @@
 			"path": "metal_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Metallic"
+			"name": "Metallic"
 		}
 	},
 	{
@@ -56,7 +32,7 @@
 			"path": "spec_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Specular"
+			"name": "Specular"
 		}
 	},
 	{
@@ -68,7 +44,7 @@
 			"path": "roug_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Roughness"
+			"name": "Roughness"
 		}
 	},
 	{
@@ -80,7 +56,7 @@
 			"path": "aniso_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Anisotropy"
+			"name": "Anisotropy"
 		}
 	},
 	{
@@ -92,7 +68,7 @@
 			"path": "emiss_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Emissive"
+			"name": "Emissive"
 		}
 	},
 	{
@@ -104,7 +80,7 @@
 			"path": "opaci_stub.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Opacity"
+			"name": "Opacity"
 		}
 	},
 	{
@@ -116,7 +92,7 @@
 			"path": "norm_stab.png",
 			"type": "Texture2D",
 			"loader_id": "a2227622-70bb-4b66-bab0-1d92d292a75c",
-			"name":"Normal"
+			"name": "Normal"
 		}
 	},
 	{
@@ -128,7 +104,7 @@
 			"path": "DefaultMaterial.mat",
 			"type": "Material",
 			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c",
-			"name":"DefaultUnlitOpaque"
+			"name": "DefaultUnlitOpaque"
 		}
 	},
 	{
@@ -140,7 +116,43 @@
 			"path": "DefaultLitMaterial.mat",
 			"type": "Material",
 			"loader_id": "a2227623-70bb-4b66-bab0-1d92d292a75c",
-			"name":"DefaultLitOpaque"
+			"name": "DefaultLitOpaque"
+		}
+	},
+	{
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000b",
+			"subresource": 0
+		},
+		"meta": {
+			"path": "cube.fbx",
+			"type": "Mesh",
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name": "Cube"
+		}
+	},
+	{
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000c",
+			"subresource": 0
+		},
+		"meta": {
+			"path": "sphere.fbx",
+			"type": "Mesh",
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name": "Sphere"
+		}
+	},
+	{
+		"id": {
+			"id": "00000000-0000-0000-0000-00000000000d",
+			"subresource": 0
+		},
+		"meta": {
+			"path": "DefaultLevel.level",
+			"type": "Level",
+			"loader_id": "a2227623-70bb-4b66-bab0-1d92d492a75c",
+			"name": "DefaultLevel"
 		}
 	}
 ]

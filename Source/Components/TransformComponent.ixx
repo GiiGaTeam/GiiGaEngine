@@ -144,7 +144,7 @@ namespace GiiGa
             if (parent) AttachTo(parent);
         }
 
-        TransformComponent(const Json::Value& json):
+        TransformComponent(const Json::Value& json, bool roll_id = false):
             Component(json)
         {
             transform_ = Transform(json["Transform"]);

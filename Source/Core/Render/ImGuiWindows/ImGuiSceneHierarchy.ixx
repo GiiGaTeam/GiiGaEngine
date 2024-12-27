@@ -8,6 +8,9 @@ import IImGuiWindow;
 import World;
 import EditorContext;
 import Logger;
+import Engine;
+import EditorAssetDatabase;
+import AssetBase;
 
 namespace GiiGa
 {
@@ -66,12 +69,17 @@ namespace GiiGa
                 flags, level_lable.c_str());
 
             ImGui::PopStyleColor();
-
+            
             if (ImGui::BeginPopupContextItem(level_lable.c_str()))
             {
-                if (ImGui::Button("Add GameObject"))
+                if (ImGui::MenuItem("Add GameObject"))
                 {
                     GameObject::CreateEmptyGameObject({.LevelOverride = level});
+                }
+                if (ImGui::MenuItem("Save"))
+                {
+                    auto database = Engine::Instance().ResourceManager()->Database();
+                    std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(std::dynamic_pointer_cast<AssetBase>(level));
                 }
                 ImGui::EndPopup();
             }
@@ -95,7 +103,7 @@ namespace GiiGa
 
             if (!editorContext_->selectedGameObject.expired())
                 flags |= (editorContext_->selectedGameObject.lock() == gameObject ? ImGuiTreeNodeFlags_Selected : 0);
-            
+
             const bool opened = ImGui::TreeNodeEx(
                 gameObject->GetUuid().ToString().c_str(),
                 flags,
@@ -103,17 +111,17 @@ namespace GiiGa
 
             if (ImGui::BeginPopupContextItem(gameObject->GetUuid().ToString().c_str()))
             {
-                if (ImGui::Button("Add Child"))
+                if (ImGui::MenuItem("Add Child"))
                 {
                     auto kid = GameObject::CreateEmptyGameObject({.Owner = gameObject});
                     kid->SetParent(gameObject);
                 }
 
-                if (ImGui::Button("Remove GameObject"))
+                if (ImGui::MenuItem("Remove GameObject"))
                 {
                     gameObject->Destroy();
                 }
-                
+
                 ImGui::EndPopup();
             }
 

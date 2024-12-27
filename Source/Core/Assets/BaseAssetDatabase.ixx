@@ -50,7 +50,7 @@ namespace GiiGa
 
         std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle)
         {
-            el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v",handle.id.ToString());
+            el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v", handle.id.ToString());
 
             auto it = registry_map_.find(handle);
 
@@ -99,20 +99,35 @@ namespace GiiGa
             asset_loader_by_uuid_.emplace(loader_ptr->Id(), loader_ptr);
         }
 
-        const std::filesystem::path& AssetPath() const {
+        template <IsAssetLoader T>
+        void RegisterSaver()
+        {
+            auto saver_ptr = std::make_shared<T>();
+
+            el::Loggers::getLogger(LogResourceManager)->debug("Registered saver: %v", saver_ptr->GetName());
+
+            asset_savers_[saver_ptr->Type()] = saver_ptr;
+        }
+
+        const std::filesystem::path& AssetPath() const
+        {
             return asset_path_;
         }
 
         // TODO: Return iterator
-        std::vector<std::tuple<AssetHandle, AssetMeta>> GetHandlesByPath(const std::filesystem::path& path) const {
+        std::vector<std::tuple<AssetHandle, AssetMeta>> GetHandlesByPath(const std::filesystem::path& path) const
+        {
             std::vector<std::tuple<AssetHandle, AssetMeta>> results;
 
             auto it = assets_to_path_.find(path);
-            if (it != assets_to_path_.end()) {
+            if (it != assets_to_path_.end())
+            {
                 const AssetHandle& baseHandle = it->second;
 
-                for (const auto& [handle, meta] : registry_map_) {
-                    if (handle.id == baseHandle.id) {
+                for (const auto& [handle, meta] : registry_map_)
+                {
+                    if (handle.id == baseHandle.id)
+                    {
                         results.emplace_back(handle, meta);
                     }
                 }
@@ -120,6 +135,7 @@ namespace GiiGa
 
             return results;
         }
+
     private:
         virtual void _MakeVirtual()
         {

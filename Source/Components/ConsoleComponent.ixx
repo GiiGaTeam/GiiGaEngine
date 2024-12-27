@@ -12,7 +12,8 @@ namespace GiiGa
     export class ConsoleComponent final : public Component
     {
     public:
-        ConsoleComponent(Json::Value json)
+        ConsoleComponent(Json::Value json, bool roll_id = false):
+            Component(json, roll_id)
         {
         }
 

@@ -11,6 +11,7 @@ export import Level;
 export import GameObject;
 export import IWorldQuery;
 import Logger;
+import Engine;
 
 import TransformComponent;
 
@@ -29,7 +30,7 @@ namespace GiiGa
         {
             Json::Value level_settings;
             level_settings["Name"] = "PersistentLevel";
-            auto p_level = std::make_shared<Level>(level_settings);
+            auto p_level = std::make_shared<Level>(AssetHandle{Uuid::New(), 0}, level_settings);
             GetInstance().AddLevel(p_level);
         }
 
@@ -72,10 +73,10 @@ namespace GiiGa
             return GetInstance().levels_;
         }
 
-        static void AddLevelFromAbsolutePath(const std::filesystem::path& absolutePath, bool setIsActive = true)
+        static void AddLevelFromUuid(const Uuid& uuid, bool setIsActive = true)
         {
-            el::Loggers::getLogger(LogWorld)->info("Loading level with path: %v", absolutePath);
-            AddLevel(Level::FromAbsolutePath(absolutePath), setIsActive);
+            el::Loggers::getLogger(LogWorld)->info("Loading level with uuid: %v", uuid.ToString());
+            AddLevel(Engine::Instance().ResourceManager()->GetAsset<Level>({uuid, 0}), setIsActive);
         }
 
         static void AddLevel(std::shared_ptr<Level> level, bool setIsActive = true)

@@ -15,10 +15,11 @@ import IWorldQuery;
 import Component;
 import Misc;
 import Logger;
+import AssetBase;
 
 namespace GiiGa
 {
-    export class Level : public ILevelRootGameObjects
+    export class Level : public ILevelRootGameObjects, public AssetBase
     {
     public:
         /*  Level Json:
@@ -39,11 +40,17 @@ namespace GiiGa
          *  }
          */
 
-        Level(const Json::Value& level_settings)
+        Level(const AssetHandle& handle, const Json::Value& level_settings):
+            AssetBase(handle)
         {
             SetIsActive(false);
 
             name_ = level_settings["Name"].asString();
+        }
+
+        AssetType GetType() override
+        {
+            return AssetType::Level;
         }
 
         const auto& GetRootGameObjects() const
@@ -89,66 +96,13 @@ namespace GiiGa
             return result;
         }
 
-        void SaveToAbsolutePath(const std::filesystem::path& level_path)
+        static std::shared_ptr<Level> LevelFromJson(const AssetHandle& handle,const Json::Value& json)
         {
-            el::Loggers::getLogger(LogWorld)->info("Saving Level %v in %v", this->name_, level_path);
-
-            std::ofstream level_file(level_path, std::ios::out | std::ios::trunc);
-
-            if (!level_file.is_open())
-            {
-                throw std::runtime_error("Failed to open project file for writing: " + level_path.string());
-            }
-
-            // Ensure ToJson() works correctly
-            Json::Value json = ToJson();
-            if (json.isNull())
-            {
-                throw std::runtime_error("Failed to convert object to JSON");
-            }
-
-            Json::StreamWriterBuilder writer_builder;
-            std::string jsonString = Json::writeString(writer_builder, json);
-
-            // Writing JSON string to the file
-            level_file << jsonString;
-
-            // Check if the file stream has any errors
-            if (level_file.fail())
-            {
-                throw std::runtime_error("Failed to write to file: " + level_path.string());
-            }
-
-            level_file.close();
-        }
-
-        static std::shared_ptr<Level> FromAbsolutePath(const std::filesystem::path& level_path)
-        {
-            if (!std::filesystem::exists(level_path))
-            {
-                throw std::runtime_error("Level file not found in: " + level_path.string());
-            }
-
-            std::ifstream level_file(level_path);
-            if (!level_file.is_open())
-            {
-                throw std::runtime_error("Failed to open level file: " + level_path.string());
-            }
-
-            Json::CharReaderBuilder reader_builder;
-            Json::Value level_json;
-            std::string errs;
-
-            if (!Json::parseFromStream(reader_builder, level_file, &level_json, &errs))
-            {
-                throw std::runtime_error("Failed to parse level file: " + errs);
-            }
-
-            auto level = std::make_shared<Level>(level_json["LevelSettings"]);
+            auto level = std::make_shared<Level>(handle, json["LevelSettings"]);
 
             // creates game objects only
             el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
-            auto&& level_root_gos = level_json["RootGameObjects"];
+            auto&& level_root_gos = json["RootGameObjects"];
             for (auto&& gameobject_js : level_root_gos)
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);

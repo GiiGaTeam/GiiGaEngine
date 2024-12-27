@@ -21,7 +21,7 @@ namespace GiiGa
     public:
         Component() = default;
 
-        Component(const Json::Value& json)
+        Component(const Json::Value& json, bool roll_id = false)
         {
             auto js_uuid = Uuid::FromString(json["Uuid"].asString());
 
@@ -30,7 +30,10 @@ namespace GiiGa
                 throw std::runtime_error("Invalid UUID");
             }
 
-            uuid_ = js_uuid.value();
+            if (!roll_id)
+                uuid_ = js_uuid.value();
+            else
+                uuid_ = Uuid::New();
         }
 
         void RegisterInWorld() override

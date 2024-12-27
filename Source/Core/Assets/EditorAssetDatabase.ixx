@@ -81,9 +81,9 @@ namespace GiiGa
         }
 
         template <IsAssetBase T>
-        AssetHandle CreateAsset(T& asset, std::filesystem::path& path)
+        AssetHandle CreateAsset(std::shared_ptr<T> asset, std::filesystem::path& path)
         {
-            AssetHandle handle = asset.GetId();
+            AssetHandle handle = asset->GetId();
 
             AssetMeta meta;
             meta.path = path;
@@ -102,6 +102,30 @@ namespace GiiGa
             loader->Save(asset, path);
 
             return handle;
+        }
+
+        template <IsAssetBase T>
+        void SaveAsset(std::shared_ptr<T> asset)
+        {
+            auto meta_it = registry_map_.find(asset->GetId());
+
+            if (meta_it == registry_map_.end())
+            {
+                throw std::runtime_error("Asset Was not registered");
+            }
+
+            AssetHandle handle = asset->GetId();
+            AssetType asset_type = meta_it->second.type;
+
+            auto saverIt = asset_savers_.find(asset_type);
+
+            if (saverIt == asset_savers_.end())
+            {
+                throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset_type));
+            }
+
+            AssetLoader* saver = saverIt->second.get();
+            saver->Save(asset, meta_it->second.path);
         }
 
         void ImportAsset(const std::filesystem::path& path)
@@ -253,7 +277,7 @@ namespace GiiGa
 
         void RemoveMissingFilesFromRegistry()
         {
-            for (auto it = registry_map_.begin(); it != registry_map_.end(); )
+            for (auto it = registry_map_.begin(); it != registry_map_.end();)
             {
                 const auto& relative_path = it->second.path;
                 auto absolute_path = asset_path_ / relative_path;
@@ -271,17 +295,17 @@ namespace GiiGa
             }
         }
 
-        private:
-            bool IsFileInRegistry(const std::filesystem::path& relative_path) const
+    private:
+        bool IsFileInRegistry(const std::filesystem::path& relative_path) const
+        {
+            for (const auto& [handle, meta] : registry_map_)
             {
-                for (const auto& [handle, meta] : registry_map_)
+                if (meta.path == relative_path)
                 {
-                    if (meta.path == relative_path)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
-                return false;
             }
+            return false;
+        }
     };
 } // namespace GiiGa

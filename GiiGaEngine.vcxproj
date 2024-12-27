@@ -184,6 +184,7 @@
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\LevelAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MeshAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\PrefabAssetLoader.ixx" />
