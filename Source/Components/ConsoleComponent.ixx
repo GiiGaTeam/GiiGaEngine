@@ -51,6 +51,11 @@ namespace GiiGa
         {
         }
 
+        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        {
+            return {};
+        }
+
     private:
         float time_sum_ = 0;
     };

@@ -29,9 +29,10 @@ namespace GiiGa
         Uuid id_ = Uuid::Null();
 
     public:
+        virtual ~AssetLoader() = default;
         virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) = 0;
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
-        virtual void Save(std::shared_ptr<AssetBase> asset, std::filesystem::path& path) = 0;
+        virtual void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) = 0;
 
         void LoadAsync(AssetHandle handle, const std::filesystem::path& path, LoadCallback&& callback) {
              std::thread([this, handle, path, callback = std::move(callback)]() {

@@ -63,7 +63,7 @@ namespace GiiGa
             return Level::LevelFromJson(handle, level_json);
         }
 
-        void Save(::std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override
+        void Save(::std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
             auto level = std::dynamic_pointer_cast<Level>(asset);
 

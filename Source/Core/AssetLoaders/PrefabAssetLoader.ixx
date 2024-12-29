@@ -86,9 +86,8 @@ namespace GiiGa
             return std::make_shared<PrefabAsset>(handle, root_go);
         }
 
-        void Save(std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override
+        void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
-            /*
             auto prefab = std::dynamic_pointer_cast<PrefabAsset>(asset);
 
             el::Loggers::getLogger(LogWorld)->info("Saving Prefab %v in %v", prefab->GetId().id.ToString(), path);
@@ -101,7 +100,7 @@ namespace GiiGa
             }
 
             // Ensure ToJson() works correctly
-            Json::Value json = prefab->root->ToJsonWithKids();
+            Json::Value json = prefab->ToJson();
             if (json.isNull())
             {
                 throw std::runtime_error("Failed to convert object to JSON");
@@ -119,7 +118,7 @@ namespace GiiGa
                 throw std::runtime_error("Failed to write to file: " + path.string());
             }
 
-            file.close();*/
+            file.close();
         }
     };
 }

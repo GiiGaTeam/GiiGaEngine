@@ -159,6 +159,12 @@ namespace GiiGa
             return this;
         }
 
+        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        {
+            Todo();
+            return {};
+        }
+
         bool operator==(const TransformComponent* rhs) const
         {
             return transform_ == rhs->transform_;

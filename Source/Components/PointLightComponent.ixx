@@ -120,6 +120,12 @@ namespace GiiGa
         {
         }
 
+        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        {
+            Todo();
+            return {};
+        }
+
         void Draw(RenderContext& context) override
         {
             mesh_->Draw(context.GetGraphicsCommandList());

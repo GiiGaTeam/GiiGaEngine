@@ -23,6 +23,8 @@ namespace GiiGa
         virtual void Restore(const ::Json::Value&) =0;
         
         virtual void Restore(std::shared_ptr<IComponent> original, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
+
+        virtual std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const = 0;
         
         virtual void Init() = 0;
         

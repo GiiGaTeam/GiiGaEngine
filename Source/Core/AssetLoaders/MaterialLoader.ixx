@@ -122,7 +122,7 @@ namespace GiiGa
             return result;
         }
 
-        void Save(std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override
+        void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
             Todo();
         }
