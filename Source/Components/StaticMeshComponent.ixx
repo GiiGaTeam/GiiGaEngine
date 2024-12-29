@@ -102,10 +102,13 @@ namespace GiiGa
             }
         }
 
-        ::std::shared_ptr<IComponent> Clone() override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
-            Todo();
             return {};
+        }
+
+        void Restore(std::shared_ptr<IComponent> original, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
         }
 
         void Draw(RenderContext& context) override

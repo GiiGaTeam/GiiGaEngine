@@ -17,6 +17,7 @@ import Misc;
 import Logger;
 import AssetBase;
 import PrefabAsset;
+import CreateComponentsForGameObject;
 
 namespace GiiGa
 {
@@ -89,10 +90,10 @@ namespace GiiGa
 
             for (auto&& [_,root_go] : root_game_objects_)
             {
-                auto go_with_kids = root_go->ToJsonWithKids();
-                
                 result["RootGameObjects"].append(root_go->GetUuid().ToString());
 
+                std::vector<Json::Value> go_with_kids = RecurGOToJsonWithKids(std::dynamic_pointer_cast<GameObject>(root_go));
+                
                 for (auto&& go : go_with_kids)
                 {
                     result["GameObjects"].append(go);
@@ -100,6 +101,30 @@ namespace GiiGa
             }
 
             return result;
+        }
+
+        static std::vector<Json::Value> RecurGOToJsonWithKids(std::shared_ptr<GameObject> go)
+        {
+            std::vector<Json::Value> jsons;
+
+            //if (go->GetPrefabHandle() == AssetHandle{})
+            //{
+                jsons.push_back(go->ToJsonWithComponents());
+
+                for (auto&& [_,kid] : go->GetChildren())
+                {
+                    for (auto kid_kid_js : RecurGOToJsonWithKids(kid))
+                    {
+                        jsons.push_back(kid_kid_js);
+                    }
+                }
+            //}
+            //else
+            //{
+            //    
+            //}
+
+            return jsons;
         }
 
         static std::shared_ptr<Level> LevelFromJson(const AssetHandle& handle, const Json::Value& json)
@@ -114,7 +139,7 @@ namespace GiiGa
             for (auto&& gameobject_js : all_gos)
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
-                CreateComponentsForGameObject(new_go, gameobject_js, false);
+                CreateComponentsForGameObject::Create(new_go, gameobject_js, false);
                 created_game_objects.push_back(new_go);
             }
 

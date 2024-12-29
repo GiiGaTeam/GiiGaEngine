@@ -33,7 +33,10 @@ namespace GiiGa
             if (!roll_id)
                 uuid_ = js_uuid.value();
             else
+            {
+                inprefab_uuid_ = js_uuid.value();
                 uuid_ = Uuid::New();
+            }
         }
 
         void RegisterInWorld() override
@@ -50,8 +53,6 @@ namespace GiiGa
 
         virtual ~Component() override = default;
 
-        virtual std::shared_ptr<IComponent> Clone() = 0;
-
         virtual void SetOwner(std::shared_ptr<IGameObject> go) override
         {
             owner_ = go;
@@ -60,6 +61,11 @@ namespace GiiGa
         Uuid GetUuid() const override
         {
             return uuid_;
+        }
+
+        Uuid GetInPrefabUuid() const override
+        {
+            return inprefab_uuid_;
         }
 
         virtual Json::Value ToJson() override
@@ -85,6 +91,7 @@ namespace GiiGa
 
     protected:
         Uuid uuid_ = Uuid::New();
+        Uuid inprefab_uuid_ = Uuid::Null();
         bool enabled = true;
         std::weak_ptr<IGameObject> owner_;
     };

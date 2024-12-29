@@ -37,7 +37,7 @@ namespace GiiGa
      */
     export class GameObject final : public IGameObject
     {
-        friend void CreateComponentsForGameObject(std::shared_ptr<GameObject> gameObject, const Json::Value& go_js, bool roll_id);
+        friend struct CreateComponentsForGameObject;
 
     public:
         std::string name = "GameObject";
@@ -137,7 +137,7 @@ namespace GiiGa
             return newGameObject;
         }
 
-        Json::Value ToJson() const
+        Json::Value ToJsonWithComponents() const override
         {
             Json::Value this_json;
 
@@ -155,20 +155,6 @@ namespace GiiGa
             }
 
             return this_json;
-        }
-
-        std::vector<Json::Value> ToJsonWithKids() const override
-        {
-            std::vector<Json::Value> jsons;
-
-            jsons.push_back(ToJson());
-
-            for (auto&& [_,kid] : children_)
-            {
-                jsons.push_back(kid->ToJson());
-            }
-
-            return jsons;
         }
 
         void Restore(const Json::Value& json)
@@ -285,6 +271,11 @@ namespace GiiGa
             return uuid_;
         }
 
+        Uuid GetInprefabUuid() const
+        {
+            return inprefab_uuid_;
+        }
+
         std::shared_ptr<GameObject> GetParent()
         {
             return parent_.lock();
@@ -292,6 +283,7 @@ namespace GiiGa
 
     private:
         Uuid uuid_ = Uuid::New();
+        Uuid inprefab_uuid_ = Uuid::Null();
         std::weak_ptr<GameObject> parent_;
         std::unordered_map<Uuid, std::shared_ptr<IComponent>> components_;
         std::unordered_map<Uuid, std::shared_ptr<GameObject>> children_;
@@ -333,7 +325,10 @@ namespace GiiGa
             if (!roll_id)
                 uuid_ = js_uuid.value();
             else
+            {
+                inprefab_uuid_ = js_uuid.value();
                 uuid_ = Uuid::New();
+            }
         }
 
         // does not register children
@@ -350,6 +345,7 @@ namespace GiiGa
                 this->AddChild(kid_go);
             }
         }
+        
     };
 } // namespace GiiGa
 

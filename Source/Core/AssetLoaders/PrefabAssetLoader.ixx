@@ -11,12 +11,21 @@ import AssetHandle;
 import PrefabAsset;
 import GameObject;
 import Logger;
+import CreateComponentsForGameObject;
+import IWorldQuery;
 
 namespace GiiGa
 {
     export class PrefabAssetLoader : public AssetLoader
     {
     public:
+        PrefabAssetLoader()
+        {
+            id_ = Uuid::FromString("a3227723-70bb-4b66-bab0-1d92d492a75c").value();
+            pattern_ = R"((.+)\.(prefab))";
+            type_ = AssetType::Prefab;
+        }
+
         virtual ~PrefabAssetLoader() = default;
 
         virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
@@ -33,7 +42,6 @@ namespace GiiGa
 
         std::shared_ptr<AssetBase> Load(::GiiGa::AssetHandle handle, const ::std::filesystem::path& path) override
         {
-            /*
             if (!std::filesystem::exists(path))
             {
                 auto msg = "Prefab file not found in: " + path.string();
@@ -56,9 +64,26 @@ namespace GiiGa
             if (!Json::parseFromStream(reader_builder, prefab_file, &prefab_js, &errs))
                 throw std::runtime_error("Failed to parse Prefab file: " + errs);
 
-            return std::make_shared<PrefabAsset>(handle, GameObject::CreateGameObjectFromJson(prefab_js, nullptr, true));
-            */
-            return nullptr;
+            std::unordered_map<Uuid, Uuid> prefab_uuid_to_world_uuid;
+            std::vector<std::shared_ptr<GameObject>> created_game_objects;
+
+            for (const auto& go_js : prefab_js["GameObjects"])
+            {
+                auto new_go = GameObject::CreateGameObjectFromJson(go_js, nullptr, true);
+                CreateComponentsForGameObject::Create(new_go, go_js, prefab_uuid_to_world_uuid);
+                prefab_uuid_to_world_uuid[new_go->GetInprefabUuid()] = new_go->GetUuid();
+            }
+
+            //todo: restore prefab refs.
+
+            auto opt_root_js = Uuid::FromString(prefab_js["RootGameObject"].asString());
+
+            if (!opt_root_js.has_value())
+                throw std::runtime_error("Failed to parse Prefab root id");
+
+            auto root_go = WorldQuery::GetWithUUID<GameObject>(opt_root_js.value());
+
+            return std::make_shared<PrefabAsset>(handle, root_go);
         }
 
         void Save(std::shared_ptr<AssetBase> asset, ::std::filesystem::path& path) override

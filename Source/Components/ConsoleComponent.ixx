@@ -27,11 +27,6 @@ namespace GiiGa
         {
         }
 
-        std::shared_ptr<IComponent> Clone() override
-        {
-            return std::make_shared<ConsoleComponent>(*this);
-        }
-
         virtual void Restore(const ::Json::Value&) override
         {
         }
@@ -45,6 +40,15 @@ namespace GiiGa
             json["Properties"] = Json::Value();
 
             return json;
+        }
+
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
+            return {};
+        }
+
+        void Restore(std::shared_ptr<IComponent> original, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
         }
 
     private:
