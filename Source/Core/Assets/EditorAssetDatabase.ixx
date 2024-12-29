@@ -81,25 +81,26 @@ namespace GiiGa
         }
 
         template <IsAssetBase T>
-        AssetHandle CreateAsset(std::shared_ptr<T> asset, std::filesystem::path& path)
+        AssetHandle CreateAsset(std::shared_ptr<T> asset, const std::filesystem::path& path)
         {
             AssetHandle handle = asset->GetId();
 
             AssetMeta meta;
             meta.path = path;
+            meta.type = asset->GetType();
 
             registry_map_.emplace(handle, std::move(meta));
 
-            AssetType asset_type = handle.type;
-            auto loaderIt = asset_savers_.find(asset_type);
+            auto loaderIt = asset_savers_.find(asset->GetType());
 
             if (loaderIt == asset_savers_.end())
             {
-                throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset_type));
+                throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset->GetType()));
             }
 
-            AssetLoader* loader = loaderIt->second;
-            loader->Save(asset, path);
+            AssetLoader* loader = loaderIt->second.get();
+            auto absolute_path = asset_path_ / path;
+            loader->Save(asset, absolute_path);
 
             return handle;
         }

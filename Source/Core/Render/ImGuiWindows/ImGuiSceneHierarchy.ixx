@@ -11,6 +11,7 @@ import Logger;
 import Engine;
 import EditorAssetDatabase;
 import AssetBase;
+import PrefabAsset;
 
 namespace GiiGa
 {
@@ -81,6 +82,7 @@ namespace GiiGa
                     auto database = Engine::Instance().ResourceManager()->Database();
                     std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(std::dynamic_pointer_cast<AssetBase>(level));
                 }
+                
                 ImGui::EndPopup();
             }
 
@@ -120,6 +122,13 @@ namespace GiiGa
                 if (ImGui::MenuItem("Remove GameObject"))
                 {
                     gameObject->Destroy();
+                }
+
+                if (ImGui::MenuItem("Save as Prefab"))
+                {
+                    auto database = Engine::Instance().ResourceManager()->Database();
+                    auto prefab = std::make_shared<PrefabAsset>(AssetHandle{Uuid::New(), 0}, gameObject);
+                    std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
                 }
 
                 ImGui::EndPopup();
