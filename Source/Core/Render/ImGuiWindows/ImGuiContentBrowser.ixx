@@ -199,11 +199,10 @@ namespace GiiGa
                 {
                     auto range = database_->GetHandlesByPath(relative_path);
 
-
-
                     for (const auto& [handle, meta] : range) {
                         if (meta.type != AssetType::Unknown)
                         {
+                            ImGui::PushID(static_cast<int>(handle.id.Hash()));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
                             ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
 
@@ -216,10 +215,12 @@ namespace GiiGa
                                 raw_name = name.c_str();
                             }
 
-                            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                            if (ImGui::IsItemActive() && ImGui::BeginDragDropSource()) {
                                 ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
                                 ImGui::EndDragDropSource();
                             }
+
+                            ImGui::PopID();
 
                             if (ImGui::BeginPopupContextItem(raw_name)) {
                                 if (ImGui::MenuItem("Remove")) {
