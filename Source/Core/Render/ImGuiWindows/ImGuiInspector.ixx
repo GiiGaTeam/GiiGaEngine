@@ -52,11 +52,13 @@ namespace GiiGa
 
                 if (auto l_transfrom = transform.lock())
                 {
+                    ImGui::PushID(l_transfrom->GetUuid().ToString().c_str());
                     if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
                     {
                         DrawTransformComponent(l_transfrom);
                         ImGui::TreePop();
                     }
+                    ImGui::PopID();
                 }
 
                 for (auto&& [_,comp] : gameobject->GetComponents())
@@ -339,6 +341,7 @@ namespace GiiGa
 
         void ImGuiComponentWidgetFactory(std::shared_ptr<IComponent> comp)
         {
+            ImGui::PushID(comp->GetUuid().ToString().c_str());
             if (auto camera_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
             {
 
@@ -365,6 +368,7 @@ namespace GiiGa
                     ImGui::TreePop();
                 }
             }
+            ImGui::PopID();
         }
 
         static bool DrawVec3Control(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
