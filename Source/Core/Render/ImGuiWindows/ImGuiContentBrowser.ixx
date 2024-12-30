@@ -220,18 +220,21 @@ namespace GiiGa
                                 ImGui::EndDragDropSource();
                             }
 
-                            ImGui::PopID();
+                            if (ImGui::BeginPopupContextItem()) {
+                                ImGui::Text(
+                                    "UUID: %s Subresource: %d",
+                                    const_cast<char*>(handle.id.ToString().c_str()),
+                                    handle.subresource
+                                );
 
-                            if (ImGui::BeginPopupContextItem(raw_name)) {
                                 if (ImGui::MenuItem("Remove")) {
                                     std::filesystem::remove(path);
                                 }
-
-                                ImGui::InputText("UUID:", const_cast<char*>(handle.id.ToString().c_str()), handle.id.ToString().length(), ImGuiInputTextFlags_ReadOnly);
-
                                 
                                 ImGui::EndPopup();
                             }
+
+                            ImGui::PopID();
 
                             ImGui::TextWrapped(raw_name);
 
