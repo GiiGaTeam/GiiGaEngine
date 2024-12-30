@@ -13,6 +13,8 @@ import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
 import Material;
+import AssetType;
+import AssetHandle;
 
 namespace GiiGa
 {
@@ -134,6 +136,15 @@ namespace GiiGa
                                 auto newUuid = Uuid::FromString(meshUuidStr);
                                 if (newUuid.has_value())
                                     static_mesh_comp->SetMeshUuid(newUuid.value());
+                            }
+
+                            if (ImGui::BeginDragDropTarget()) {
+                                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh))) {
+                                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                                    static_mesh_comp->SetMeshHandle(*handle);
+                                }
+
+                                ImGui::EndDragDropTarget();
                             }
 
                             auto material = static_mesh_comp->material_;

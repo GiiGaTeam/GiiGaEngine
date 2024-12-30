@@ -24,6 +24,7 @@ import IObjectShaderResource;
 import PerObjectData;
 import StubTexturesHandles;
 import IUpdateGPUData;
+import AssetHandle;
 
 namespace GiiGa
 {
@@ -94,6 +95,7 @@ namespace GiiGa
             return {};
         }
 
+        //[[deprecated]]
         Uuid GetMeshUuid()
         {
             if (mesh_)
@@ -102,6 +104,7 @@ namespace GiiGa
                 return Uuid::Null();
         }
 
+        //[[deprecated]]
         void SetMeshUuid(const Uuid& newUuid)
         {
             // what a fuck is subresource?
@@ -113,6 +116,36 @@ namespace GiiGa
             else
             {
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
+                RegisterInVisibility();
+
+                if (!material_)
+                {
+                    auto rm = Engine::Instance().ResourceManager();
+
+                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
+                }
+            }
+        }
+
+        AssetHandle GetMeshHandle()
+        {
+            if (mesh_)
+                return mesh_->GetId();
+            else
+                return {};
+        }
+
+        void SetMeshHandle(const AssetHandle& new_handle)
+        {
+            // what a fuck is subresource?
+            if (new_handle.id == Uuid::Null())
+            {
+                mesh_.reset();
+                visibilityEntry_.reset();
+            }
+            else
+            {
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_handle);
                 RegisterInVisibility();
 
                 if (!material_)
