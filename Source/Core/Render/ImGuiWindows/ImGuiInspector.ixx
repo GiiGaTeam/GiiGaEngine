@@ -169,16 +169,13 @@ namespace GiiGa
 
         void DrawStaticMeshComponent(std::shared_ptr<StaticMeshComponent> comp)
         {
-            // Get and display the Mesh UUID
-            Uuid meshUuid = comp->GetMeshUuid();
-            char meshUuidStr[37];
-            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", meshUuid.ToString().c_str());
-            if (ImGui::InputText("Mesh UUID", meshUuidStr, sizeof(meshUuidStr)))
-            {
-                auto newUuid = Uuid::FromString(meshUuidStr);
-                if (newUuid.has_value())
-                    comp->SetMeshUuid(newUuid.value());
-            }
+            auto mesh_handle = comp->GetMeshHandle();
+            std::string text_handle = mesh_handle.id.ToString() + " " + std::to_string(mesh_handle.subresource);
+
+            char meshUuidStr[512];
+            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", text_handle.c_str());
+
+            ImGui::InputText("Mesh Handle", meshUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh))) {
@@ -193,15 +190,20 @@ namespace GiiGa
 
             if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                // Material UUID
-                Uuid materialUuid = comp->GetMaterialUuid();
-                char materialUuidStr[37];
-                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
-                if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
-                {
-                    auto newUuid = Uuid::FromString(materialUuidStr);
-                    if (newUuid.has_value())
-                        comp->SetMaterialUuid(newUuid.value());
+                auto material_handle = comp->GetMaterialHandle();
+                std::string text_handle = material_handle.id.ToString() + " " + std::to_string(material_handle.subresource);
+
+                char materialUuidStr[512];
+                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", text_handle.c_str());
+                ImGui::InputText("Material Handle", materialUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material))) {
+                        AssetHandle* handle = (AssetHandle*)payload->Data;
+                        comp->SetMaterialHandle(*handle);
+                    }
+
+                    ImGui::EndDragDropTarget();
                 }
 
                 // Shading Model
@@ -231,24 +233,32 @@ namespace GiiGa
                     int texture_index = static_cast<int>(texture_order) - 1;
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
-                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                        char textureUuidStr[37];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                        if (ImGui::InputText("BaseColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                        {
-                            auto newUuid = Uuid::FromString(textureUuidStr);
-                            if (newUuid.has_value())
-                            {
-                                material->SetTexture(texture_order, AssetHandle{ newUuid.value(), 0 });
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                        ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
                             }
+
+                            ImGui::EndDragDropTarget();
                         }
 
                         DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
                         if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
+                        {
                             material->SetBaseColorTint(val);
+                        } 
                     }
                     else
+                    {
                         ImGui::Text("You Can't Set BaseColor");
+                    }  
                 }
 
                 {
@@ -256,24 +266,33 @@ namespace GiiGa
                     int texture_index = static_cast<int>(texture_order) - 1;
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
-                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                        char textureUuidStr[37];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                        if (ImGui::InputText("EmissiveColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                        {
-                            auto newUuid = Uuid::FromString(textureUuidStr);
-                            if (newUuid.has_value())
-                            {
-                                material->SetTexture(texture_order, AssetHandle{ newUuid.value(), 0 });
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
                             }
+
+                            ImGui::EndDragDropTarget();
                         }
 
                         DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
                         if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
+                        {
                             material->SetEmissiveTint(val);
+                        }  
                     }
                     else
+                    {
                         ImGui::Text("You Can't Set EmissiveColor");
+                    }
                 }
 
                 {
@@ -281,21 +300,28 @@ namespace GiiGa
                     int texture_index = static_cast<int>(texture_order) - 1;
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
-                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                        char textureUuidStr[37];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                        if (ImGui::InputText("Metallic Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                        {
-                            auto newUuid = Uuid::FromString(textureUuidStr);
-                            if (newUuid.has_value())
-                            {
-                                material->SetTexture(texture_order, AssetHandle{ newUuid.value(), 0 });
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("Metallic Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
                             }
+
+                            ImGui::EndDragDropTarget();
                         }
 
                         float val = material->data_.MetallicScale_;
                         if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                        {
                             material->SetMetallicScale(val);
+                        }  
                     }
                     else
                     {

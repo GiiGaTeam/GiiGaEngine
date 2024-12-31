@@ -95,38 +95,6 @@ namespace GiiGa
             return {};
         }
 
-        //[[deprecated]]
-        Uuid GetMeshUuid()
-        {
-            if (mesh_)
-                return mesh_->GetId().id;
-            else
-                return Uuid::Null();
-        }
-
-        //[[deprecated]]
-        void SetMeshUuid(const Uuid& newUuid)
-        {
-            // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
-            {
-                mesh_.reset();
-                visibilityEntry_.reset();
-            }
-            else
-            {
-                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
-                RegisterInVisibility();
-
-                if (!material_)
-                {
-                    auto rm = Engine::Instance().ResourceManager();
-
-                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-                }
-            }
-        }
-
         AssetHandle GetMeshHandle()
         {
             if (mesh_)
@@ -157,21 +125,20 @@ namespace GiiGa
             }
         }
 
-        Uuid GetMaterialUuid() const
+        AssetHandle GetMaterialHandle() const
         {
             if (material_)
-                return material_->GetId().id;
+                return material_->GetId();
             else
-                return Uuid::Null();
+                return {};
         }
 
-        void SetMaterialUuid(const Uuid& newUuid)
+        void SetMaterialHandle(const AssetHandle& handle)
         {
-            // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
+            if (handle.id == Uuid::Null())
                 material_.reset();
             else
-                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
+                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(handle);
         }
 
         void UpdateGPUData(RenderContext& context) override
