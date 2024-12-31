@@ -62,16 +62,20 @@ namespace GiiGa
 
         void Execute(RenderContext& context) override
         {
+            // TODO: Check simulation mode or editor mode
+
             if (camera_.expired()) return;
-            if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
-            {
-                movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+
+            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str())) {
+                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+                    if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
+                    {
+                        movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+                    }
+                }
             }
 
             UpdateCameraInfo(context);
-
-            ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
-
 
             auto current_size = ImGui::GetWindowSize();
 
