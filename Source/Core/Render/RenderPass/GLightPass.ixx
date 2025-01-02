@@ -189,6 +189,30 @@ namespace GiiGa
                     })
                     .add_static_samplers(sampler_desc)
                     .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+
+                shade_mask_to_pso[ObjectMask()
+                                  .SetVertexType(VertexTypes::VertexPNTBT)
+                                  .SetLightType(LightType::Direction)]
+
+                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                    .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
+                    .set_rasterizer_state(shade_rs)
+                    .set_input_layout(VertexPNTBT::InputLayout)
+                    .set_rtv_format(g_format_array, 1)
+                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                    .set_depth_stencil_state(shade_ds)
+                    .set_blend_state(blendDesc)
+                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                    {
+                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                    })
+                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                    {
+                        const auto& descs = resource.GetDescriptors();
+                        context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
+                    })
+                    .add_static_samplers(sampler_desc)
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
             }
         }
 
@@ -196,7 +220,8 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+            SceneVisibility::Extract(renderpass_direction_filter, renderpass_unite, visibles);
 
             context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
@@ -224,7 +249,7 @@ namespace GiiGa
                         pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        {
+                        if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any()){
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);
@@ -244,7 +269,8 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::All);
+        ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::NoDirection);
+        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Direction);
 
         ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
                                                   .SetLightType(LightType::All);

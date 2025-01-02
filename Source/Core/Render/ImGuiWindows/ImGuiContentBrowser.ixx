@@ -157,7 +157,7 @@ namespace GiiGa
             if (current_path_ != database_->AssetPath()) 
             {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("##Button_1", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     current_path_ = current_path_.parent_path();
@@ -178,7 +178,7 @@ namespace GiiGa
                 if (entry.is_directory()) 
                 {
                     auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                    ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+                    ImGui::ImageButton("##Button_2", (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
                         current_path_ /= path.filename();
@@ -204,7 +204,7 @@ namespace GiiGa
                         {
                             ImGui::PushID(static_cast<int>(handle.id.Hash()));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
-                            ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            ImGui::ImageButton("##Button_3", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
 
                             const char* raw_name = filename.c_str();
 

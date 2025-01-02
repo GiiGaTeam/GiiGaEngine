@@ -1,31 +1,5 @@
 #include "ShaderHeader.hlsl"
-
-struct MaterialData
-{
-    float3 BaseColorTint_;
-    float3 EmissiveColorTint_;
-    float MetallicScale_;
-    float SpecularScale_;
-    float RoughnessScale_;
-    float AnisotropyScale_;
-    float OpacityScale_;
-};
-
-cbuffer Material : register(b2)
-{
-    MaterialData material;
-}
-
-Texture2D BaseColor : register(t0);
-Texture2D Metallic : register(t1);
-Texture2D Specular : register(t2);
-Texture2D Roughness : register(t3);
-Texture2D Anisotropy : register(t4);
-Texture2D EmissiveColor : register(t5);
-Texture2D Opacity : register(t6);
-Texture2D Normal : register(t7);
-
-SamplerState sampl : register(s0);
+#include "MaterialHeader.hlsl"
 
 /*
  *  GBuffer Structure:
@@ -67,14 +41,14 @@ PixelShaderOutput PSMain(PS_INPUT input)
     // Sample normal map and unpack normal
     float3 normalMap = Normal.Sample(sampl, input.Tex).xyz * 2.0f - 1.0f;
 
-    // Transform normal map from tangent space to View space
+    // Transform normal map from tangent space to World space
     float3x3 TBN = float3x3(input.TangentWS, input.BitangentWS, input.NormWS);
-    float3 normalVS = normalize(mul(normalMap, TBN));
+    float3 normalWS = normalize(mul(normalMap, TBN));
 
-    // Write normal in view space to output
-    output.NormalWS.xyz = normalVS;
+    // Write normal in world space to output
+    output.NormalWS.xyz = normalWS;
 
-    // Write normal in view space to output
+    // Write normal in world space to output
     output.PositionWS.xyz = input.PosWS;
 
     return output;

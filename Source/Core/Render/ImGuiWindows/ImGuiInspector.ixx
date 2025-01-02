@@ -13,6 +13,8 @@ import Component;
 import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
+import DirectionLightComponent;
+import LightComponent;
 import TransformComponent;
 import Material;
 
@@ -83,6 +85,15 @@ namespace GiiGa
                         if (auto l_go = editorContext_->selectedGameObject.lock())
                         {
                             l_go->CreateComponent<PointLightComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
+                    if (ImGui::MenuItem("Direction Light Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<DirectionLightComponent>();
                         }
                         ImGui::CloseCurrentPopup();
                     }
@@ -334,7 +345,7 @@ namespace GiiGa
         void DrawPointLightComponent(std::shared_ptr<PointLightComponent> comp)
         {
             // Edit Color
-            DirectX::SimpleMath::Vector3 color = comp->data_.color;
+            DirectX::SimpleMath::Vector3 color = comp->GetData().color;
             float colorArray[3] = { color.x, color.y, color.z };
             if (ImGui::ColorEdit3("Color", colorArray))
             {
@@ -342,24 +353,42 @@ namespace GiiGa
             }
 
             // Edit Radius
-            float radius = comp->data_.radius;
+            float radius = comp->GetData().radius;
             if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
             {
                 comp->SetRadius(radius);
             }
 
             // Edit Intensity
-            float intensity = comp->data_.max_intensity;
+            float intensity = comp->GetData().max_intensity;
             if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
             {
                 comp->SetIntensity(intensity);
             }
 
             // Edit Falloff
-            float falloff = comp->data_.falloff;
+            float falloff = comp->GetData().falloff;
             if (ImGui::DragFloat("Falloff", &falloff, 0.01f, 0.0f, 10.0f))
             {
                 comp->SetFallOff(falloff);
+            }
+        }
+
+        void DrawDirectionLightComponent(std::shared_ptr<DirectionLightComponent> comp)
+        {
+            // Edit Color
+            DirectX::SimpleMath::Vector3 color = comp->GetData().color;
+            float colorArray[3] = { color.x, color.y, color.z };
+            if (ImGui::ColorEdit3("Color", colorArray))
+            {
+                comp->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+            }
+
+            // Edit Intensity
+            float intensity = comp->GetData().max_intensity;
+            if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
+            {
+                comp->SetIntensity(intensity);
             }
         }
 
@@ -389,6 +418,14 @@ namespace GiiGa
                 if (ImGui::TreeNodeEx("PointLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     DrawPointLightComponent(point_light);
+                    ImGui::TreePop();
+                }
+            }
+            else if (auto direction_light = std::dynamic_pointer_cast<DirectionLightComponent>(comp))
+            {
+                if (ImGui::TreeNodeEx("DirectionLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawDirectionLightComponent(direction_light);
                     ImGui::TreePop();
                 }
             }
