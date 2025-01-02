@@ -27,15 +27,15 @@ struct PixelShaderOutput
 //https://lisyarus.github.io/blog/graphics/2022/07/30/point-light-attenuation.html
 
 
-float3 CalcDirectionLight(float3 surf_col, float3 normal, float3 fragPos, float3 viewDir, float shininess)
+float3 CalcDirectionLight(float3 surf_col, float3 normal, float3 viewDir, float shininess)
 {
     float3 lightDir = directionLight.dirWS;
     // diffuse shading
-    float diff = max(dot(normal, lightDir), 0.0);
+    float diff = max(dot(lightDir, normal), 0.0);
     // specular shading
     float3 reflectDir = reflect(-lightDir, normal);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), shininess);
     // combine results
     return directionLight.max_intensity * directionLight.color * (diff + spec) * surf_col;
 }
@@ -62,7 +62,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float3 surfColor = DiffuseColor.rgb;
 
     // Calculate the light accumulation
-    float3 lightAccum = CalcDirectionLight(surfColor, normalWS, fragPosWS, viewDir, MatProps.z);
+    float3 lightAccum = CalcDirectionLight(surfColor, normalWS, viewDir, MatProps.z);
 
     // Output the light accumulation
     output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed

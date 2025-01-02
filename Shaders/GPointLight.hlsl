@@ -31,10 +31,10 @@ float3 CalcPointLight(float3 surf_col, float3 lightPos, float3 normal, float3 fr
 {
     float3 lightDir = normalize(lightPos - fragPos);
     // diffuse shading
-    float diff = max(dot(normal, lightDir), 0.0);
+    float diff = max(dot(lightDir, normal), 0.0);
     // specular shading
     float3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), shininess);
     // attenuation
     float distance = length(lightPos - fragPos);
     // combine results

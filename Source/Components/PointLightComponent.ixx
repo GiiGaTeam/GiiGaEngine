@@ -62,7 +62,6 @@ namespace GiiGa
     export class PointLightComponent : public LightComponent
     {
         // todo: temp
-        friend class ImGuiInspector;
 
     public:
         PointLightComponent():
@@ -192,6 +191,8 @@ namespace GiiGa
             data_.falloff = falloff;
             isDirty = true;
         }
+
+        PointLightData GetData() const {return data_;}
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;

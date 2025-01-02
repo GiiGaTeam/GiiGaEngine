@@ -43,10 +43,10 @@ PixelShaderOutput PSMain(PS_INPUT input)
 
     // Transform normal map from tangent space to World space
     float3x3 TBN = float3x3(input.TangentWS, input.BitangentWS, input.NormWS);
-    float3 normalVS = normalize(mul(normalMap, TBN));
+    float3 normalWS = normalize(mul(normalMap, TBN));
 
     // Write normal in world space to output
-    output.NormalWS.xyz = normalVS;
+    output.NormalWS.xyz = normalWS;
 
     // Write normal in world space to output
     output.PositionWS.xyz = input.PosWS;

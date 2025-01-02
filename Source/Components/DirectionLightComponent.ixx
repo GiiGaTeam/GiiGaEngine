@@ -101,7 +101,7 @@ namespace GiiGa
             {
                 auto rm = Engine::Instance().ResourceManager();
 
-                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Sphere);
+                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Cube);
 
                 RegisterInVisibility();
             }
@@ -175,6 +175,8 @@ namespace GiiGa
             isDirty = true;
         }
 
+        DirectionLightData GetData() const {return data_;}
+
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
@@ -203,7 +205,7 @@ namespace GiiGa
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
 
-                    data_.dirWS = trans.GetRotation();
+                    data_.dirWS = trans.GetForward();
                     isDirty = true;
 
                     visibilityEntry_->Update(origaabb);

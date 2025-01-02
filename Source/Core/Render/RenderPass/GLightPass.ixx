@@ -195,7 +195,7 @@ namespace GiiGa
                                   .SetLightType(LightType::Direction)]
 
                     .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                    .set_ps(ShaderManager::GetShaderByName(GPointLight))
+                    .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
                     .set_rasterizer_state(shade_rs)
                     .set_input_layout(VertexPNTBT::InputLayout)
                     .set_rtv_format(g_format_array, 1)
@@ -249,7 +249,7 @@ namespace GiiGa
                         pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        {
+                        if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any()){
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);
