@@ -86,7 +86,9 @@ namespace GiiGa
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
 
-            PreViewportDrawWidgets();
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::AllowAxisFlip(false);
+            ImGuizmo::SetDrawlist();
 
             // draw here
             D3D12_VIEWPORT viewport = {};
@@ -129,34 +131,31 @@ namespace GiiGa
 
         std::shared_ptr<EditorContext> editorContext_;
 
-        void PreViewportDrawWidgets() {
-
-        }
-
-        void PostViewportDrawWidgets() {
+        void PostViewportDrawWidgets() 
+        {
             auto current_size = ImGui::GetWindowSize();
-
-            ImGuizmo::SetOrthographic(false);
-            ImGuizmo::SetDrawlist();
 
             const float header_h = ImGui::GetTextLineHeightWithSpacing();
             ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + header_h, current_size.x, current_size.y);
 
-            if (auto l_camera = camera_.lock())
+            auto l_camera = camera_.lock();
+
+            auto cmp = l_camera->GetComponent<CameraComponent>()->GetCamera();
+
+            auto view = cmp.GetView();
+            auto proj = cmp.GetProj();
+
+            auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
+
+            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);
+
+            if (auto go = editorContext_->selectedGameObject.lock())
             {
-                auto cmp = l_camera->GetComponent<CameraComponent>()->GetCamera();
-
-                auto view = cmp.GetView();
-                auto proj = cmp.GetProj();
-
-                if (auto go = editorContext_->selectedGameObject.lock())
+                auto transform = go->GetTransformComponent().lock();
+                auto transform_matrix = transform->GetTransform().GetMatrix();
+                if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::OPERATION::UNIVERSAL, ImGuizmo::MODE::WORLD, (float*)transform_matrix.m))
                 {
-                    auto transform = go->GetTransformComponent().lock();
-                    auto trans = transform->GetTransform().GetMatrix();
-                    if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::OPERATION::UNIVERSAL, ImGuizmo::MODE::LOCAL, (float*)trans.m))
-                    {
-                        transform->SetTransform(Transform::TransformFromMatrix(trans));
-                    }
+                    transform->SetTransform(Transform::TransformFromMatrix(transform_matrix));
                 }
             }
         }
