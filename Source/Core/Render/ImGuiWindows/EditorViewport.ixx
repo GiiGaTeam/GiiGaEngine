@@ -1,5 +1,7 @@
 #include <imgui_internal.h>
+
 #include<directxtk12/SimpleMath.h>
+#include <ImGuizmo.h>
 
 export module EditorViewport;
 
@@ -21,14 +23,16 @@ import SpectatorMovementComponent;
 import GBuffer;
 import Input;
 import Logger;
+import EditorContext;
 
 namespace GiiGa
 {
     export class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
-        EditorViewport(RenderDevice& device):
+        EditorViewport(RenderDevice& device, std::shared_ptr<EditorContext> editor_ctx):
             Viewport(device)
+            , editorContext_(editor_ctx)
         {
             Resize(viewport_size_);
         }
@@ -82,6 +86,8 @@ namespace GiiGa
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
 
+            PreViewportDrawWidgets();
+
             // draw here
             D3D12_VIEWPORT viewport = {};
             viewport.TopLeftX = 0.0f;
@@ -109,6 +115,9 @@ namespace GiiGa
             //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
             ImGui::Image((ImTextureID)gbuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation).ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
+            // Widgets on viewport
+            PostViewportDrawWidgets();
+
             ImGui::End();
         }
 
@@ -117,6 +126,40 @@ namespace GiiGa
         std::weak_ptr<GameObject> camera_;
         std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
         DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+
+        std::shared_ptr<EditorContext> editorContext_;
+
+        void PreViewportDrawWidgets() {
+
+        }
+
+        void PostViewportDrawWidgets() {
+            auto current_size = ImGui::GetWindowSize();
+
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::SetDrawlist();
+
+            const float header_h = ImGui::GetTextLineHeightWithSpacing();
+            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + header_h, current_size.x, current_size.y);
+
+            if (auto l_camera = camera_.lock())
+            {
+                auto cmp = l_camera->GetComponent<CameraComponent>()->GetCamera();
+
+                auto view = cmp.GetView();
+                auto proj = cmp.GetProj();
+
+                if (auto go = editorContext_->selectedGameObject.lock())
+                {
+                    auto transform = go->GetTransformComponent().lock();
+                    auto trans = transform->GetTransform().GetMatrix();
+                    if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::OPERATION::UNIVERSAL, ImGuizmo::MODE::LOCAL, (float*)trans.m))
+                    {
+                        transform->SetTransform(Transform::TransformFromMatrix(trans));
+                    }
+                }
+            }
+        }
 
         void UpdateCameraInfo(RenderContext& context)
         {

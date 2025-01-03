@@ -57,6 +57,11 @@ namespace GiiGa
 
         Matrix view_;
 
+        Matrix GetView() const
+        {
+            return view_;
+        };
+
         Matrix GetProj() const
         {
             switch (type_)

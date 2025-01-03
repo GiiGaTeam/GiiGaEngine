@@ -20,6 +20,7 @@
     "jsoncpp",
     "sdl2",
     "directxtk12",
-    "easyloggingpp"
+    "easyloggingpp",
+    "imguizmo"
   ]
 }

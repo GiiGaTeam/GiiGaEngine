@@ -27,7 +27,7 @@ namespace GiiGa
             editorSwapChainPass_ = tempEditorSCP;
             root_.AddPass(tempEditorSCP);
             
-            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_));
+            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_, editorSwapChainPass_.lock()->editorContext_));
             for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
             {
                 viewport->Init(context_);
