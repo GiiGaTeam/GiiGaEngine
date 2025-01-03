@@ -131,8 +131,65 @@ namespace GiiGa
 
         std::shared_ptr<EditorContext> editorContext_;
 
+        void DrawToolbar()
+        {
+            if (ImGui::IsKeyPressed(ImGuiKey_W) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_E) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_R) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALEU;
+
+            const float header_h = ImGui::GetTextLineHeightWithSpacing();
+
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + 10.0f, ImGui::GetWindowPos().y + header_h + 10.0f));
+
+            ImGui::BeginChild("ToolBar");
+
+            bool translate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::TRANSLATE;
+            bool rotate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::ROTATE;
+            bool scale = editorContext_->currentOperation_ & ImGuizmo::OPERATION::SCALEU;
+
+            if (ImGui::Checkbox("Translate", &translate)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(translate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::TRANSLATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::TRANSLATE);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: W");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Checkbox("Rotate", &rotate)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(rotate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::ROTATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::ROTATE);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: E");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Checkbox("Scale", &scale)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(scale ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::SCALEU : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::SCALEU);
+            } 
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: S");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD)) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
+            }
+            ImGui::SameLine();
+
+            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL)) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
+            }
+
+            ImGui::EndChild();
+        }
+
         void PostViewportDrawWidgets() 
         {
+            DrawToolbar();
+
             auto current_size = ImGui::GetWindowSize();
 
             const float header_h = ImGui::GetTextLineHeightWithSpacing();
@@ -153,11 +210,35 @@ namespace GiiGa
             {
                 auto transform = go->GetTransformComponent().lock();
                 auto transform_matrix = transform->GetTransform().GetMatrix();
-                if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, ImGuizmo::OPERATION::UNIVERSAL, ImGuizmo::MODE::WORLD, (float*)transform_matrix.m))
+                if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, editorContext_->currentOperation_, editorContext_->currentMode_, (float*)transform_matrix.m))
                 {
                     transform->SetTransform(Transform::TransformFromMatrix(transform_matrix));
                 }
             }
+
+            /*ImGui::Begin("Viewport Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+            if (ImGui::Button("Translate")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Rotate")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Scale")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALE;
+            }
+
+            if (ImGui::Button("World")) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Local")) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
+            }
+
+            ImGui::End();*/
         }
 
         void UpdateCameraInfo(RenderContext& context)
