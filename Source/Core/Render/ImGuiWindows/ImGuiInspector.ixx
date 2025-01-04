@@ -67,7 +67,7 @@ namespace GiiGa
                     }
                 }
 
-                for (auto&& [_,comp] : gameobject->GetComponents())
+                for (auto&& comp : gameobject->GetComponents())
                 {
                     if (auto camera_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
                     {

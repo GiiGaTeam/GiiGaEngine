@@ -111,7 +111,7 @@ namespace GiiGa
             //{
                 jsons.push_back(go->ToJsonWithComponents());
 
-                for (auto&& [_,kid] : go->GetChildren())
+                for (auto&& kid : go->GetChildren())
                 {
                     for (auto kid_kid_js : RecurGOToJsonWithKids(kid))
                     {

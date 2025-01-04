@@ -166,7 +166,7 @@ namespace GiiGa
 
             if (opened)
             {
-                for (auto [_,kid] : gameObject->GetChildren())
+                for (auto kid : gameObject->GetChildren())
                 {
                     RecursiveDrawGameObject(kid);
                 }

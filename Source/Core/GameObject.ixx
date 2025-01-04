@@ -59,12 +59,12 @@ namespace GiiGa
 
             WorldQuery::RemoveAnyWithUuid(uuid_);
 
-            for (auto&& [_,kid] : children_)
+            for (auto&& kid : children_)
             {
                 kid->Destroy();
             }
 
-            for (auto&& [_,component] : components_)
+            for (auto&& component : components_)
             {
                 component->Destroy();
             }
@@ -86,7 +86,7 @@ namespace GiiGa
             if (parent_.expired())
                 level_rgo->AddRootGameObject(shared_from_this());
 
-            for (auto&& [_,kid] : children_)
+            for (auto&& kid : children_)
             {
                 kid->level_root_gos_ = level_rgo;
             }
@@ -146,10 +146,10 @@ namespace GiiGa
             std::unordered_map<Uuid, Uuid> kids_prefab_uuid_to_current;
             std::unordered_map<Uuid, Uuid> components_prefab_uuid_to_current;
 
-            auto prefab_kids_uuids = prefab_other->GetKidsByPrefabUuid();
-            auto prefab_components_uuids = prefab_other->GetComponentsByPrefabUuid();
+            const auto& prefab_kids_uuids = prefab_other->GetKidsByPrefabUuid();
+            const auto& prefab_components_uuids = prefab_other->GetComponentsByPrefabUuid();
 
-            for (auto&& [_,comp] : components_)
+            for (auto&& comp : components_)
             {
                 if (!prefab_components_uuids.contains(comp->GetInPrefabUuid()))
                 {
@@ -160,12 +160,12 @@ namespace GiiGa
                 }
                 else
                 {
-                    auto comp_mods = comp->GetModifications(prefab_components_uuids[comp->GetInPrefabUuid()]);
+                    auto comp_mods = comp->GetModifications(prefab_components_uuids.at(comp->GetInPrefabUuid()));
                     result.insert(result.end(), comp_mods.begin(), comp_mods.end());
                 }
             }
 
-            for (auto&& [_, kid] : children_)
+            for (auto&& kid : children_)
             {
                 if (!prefab_kids_uuids.contains(kid->inprefab_uuid_))
                 {
@@ -176,7 +176,7 @@ namespace GiiGa
                 }
                 else
                 {
-                    auto kid_modifications = kid->FindModifications(prefab_kids_uuids[kid->inprefab_uuid_]);
+                    auto kid_modifications = kid->FindModifications(prefab_kids_uuids.at(kid->inprefab_uuid_));
                     result.insert(result.end(), kid_modifications.begin(), kid_modifications.end());
                 }
             }
@@ -187,7 +187,7 @@ namespace GiiGa
         std::unordered_map<Uuid, std::shared_ptr<GameObject>> GetKidsByPrefabUuid()
         {
             std::unordered_map<Uuid, std::shared_ptr<GameObject>> result;
-            for (auto&& [_, kid] : children_)
+            for (auto&& kid : children_)
             {
                 result.emplace(std::pair{kid->inprefab_uuid_, kid});
             }
@@ -198,9 +198,31 @@ namespace GiiGa
         std::unordered_map<Uuid, std::shared_ptr<IComponent>> GetComponentsByPrefabUuid()
         {
             std::unordered_map<Uuid, std::shared_ptr<IComponent>> result;
-            for (auto&& [_, comp] : components_)
+            for (auto&& comp : components_)
             {
                 result.emplace(std::pair{comp->GetInPrefabUuid(), comp});
+            }
+
+            return result;
+        }
+
+        std::unordered_map<Uuid, std::shared_ptr<GameObject>> GetKidsByWorldUuid()
+        {
+            std::unordered_map<Uuid, std::shared_ptr<GameObject>> result;
+            for (auto&& kid : children_)
+            {
+                result.emplace(std::pair{kid->GetUuid(), kid});
+            }
+
+            return result;
+        }
+
+        std::unordered_map<Uuid, std::shared_ptr<IComponent>> GetComponentsByWorldUuid()
+        {
+            std::unordered_map<Uuid, std::shared_ptr<IComponent>> result;
+            for (auto&& comp : components_)
+            {
+                result.emplace(std::pair{comp->GetUuid(), comp});
             }
 
             return result;
@@ -218,7 +240,7 @@ namespace GiiGa
             else
                 this_json["Parent"] = Uuid::Null().ToString();
 
-            for (auto&& [_,component] : components_)
+            for (auto&& component : components_)
             {
                 this_json["Components"].append(component->ToJson());
             }
@@ -235,11 +257,12 @@ namespace GiiGa
                 SetParent(WorldQuery::GetWithUUID<GameObject>(parent_uuid));
             }
 
+            const auto& comps_by_uuid = GetComponentsByWorldUuid();
             for (auto&& comp_js : json["Components"])
             {
                 std::string comp_id_str = comp_js["Uuid"].asString();
                 Uuid comp_id = Uuid::FromString(comp_id_str).value();
-                components_.at(comp_id)->Restore(comp_js);
+                comps_by_uuid.at(comp_id)->Restore(comp_js);
             }
         }
 
@@ -253,15 +276,15 @@ namespace GiiGa
                 SetParent(WorldQuery::GetWithUUID<GameObject>(world_parent));
             }
 
-            auto prefab_components_uuids = this->GetComponentsByPrefabUuid();
+            const auto& prefab_components_uuids = this->GetComponentsByPrefabUuid();
+            const auto& comps_by_uuid = GetComponentsByWorldUuid();
 
-            //todo: here we should lookup modifications if comp was removed
             for (auto&& comp_js : go_js["Components"])
             {
                 std::string comp_prefab_id_str = comp_js["Uuid"].asString();
                 Uuid comp_prefab_id = Uuid::FromString(comp_prefab_id_str).value();
                 Uuid comp_world_id = prefab_uuid_to_world.at(comp_prefab_id);
-                components_.at(comp_world_id)->RestoreAsPrefab(comp_js, prefab_uuid_to_world);
+                comps_by_uuid.at(comp_world_id)->RestoreAsPrefab(comp_js, prefab_uuid_to_world);
             }
         }
 
@@ -275,39 +298,37 @@ namespace GiiGa
                 SetParent(parent_inwold);
             }
 
-            auto prefab_kids_uuids = original->GetKidsByPrefabUuid();
-            auto prefab_components_uuids = original->GetComponentsByPrefabUuid();
+            const auto& prefab_kids_uuids = original->GetKidsByPrefabUuid();
+            const auto& prefab_components_uuids = original->GetComponentsByPrefabUuid();
 
             for (const auto& prefabKidsUuid : prefab_kids_uuids)
             {
-                el::Loggers::getLogger(LogWorld)->debug("key: %v, value: %v",prefabKidsUuid.first.ToString(),prefabKidsUuid.second->GetUuid().ToString());
-            }
-            
-            for (auto&& [id_kid_orig, kid_orig] : prefab_kids_uuids)
-            {
-                el::Loggers::getLogger(LogWorld)->debug("Request %v from prefab_uuid_to_world",id_kid_orig.ToString());
-                auto kid_world_uuid = prefab_uuid_to_world.at(id_kid_orig);
-                children_.at(kid_world_uuid)->RestoreFromOriginal(kid_orig, prefab_uuid_to_world);
+                el::Loggers::getLogger(LogWorld)->debug("key: %v, value: %v", prefabKidsUuid.first.ToString(), prefabKidsUuid.second->GetUuid().ToString());
             }
 
+            const auto& kids_by_world_uuid = original->GetKidsByWorldUuid();
+            for (auto&& [id_kid_orig, kid_orig] : prefab_kids_uuids)
+            {
+                el::Loggers::getLogger(LogWorld)->debug("Request %v from prefab_uuid_to_world", id_kid_orig.ToString());
+                auto kid_world_uuid = prefab_uuid_to_world.at(id_kid_orig);
+                kids_by_world_uuid.at(kid_world_uuid)->RestoreFromOriginal(kid_orig, prefab_uuid_to_world);
+            }
+
+            const auto& comps_by_world_uuid = original->GetComponentsByWorldUuid();
             for (auto&& [id, comp_orig] : prefab_components_uuids)
             {
                 auto comp_world_uuid = prefab_uuid_to_world.at(id);
-                components_.at(comp_world_uuid)->RestoreForClone(comp_orig, prefab_uuid_to_world);
+                comps_by_world_uuid.at(comp_world_uuid)->RestoreForClone(comp_orig, prefab_uuid_to_world);
             }
         }
 
         void Tick(float dt) override
         {
-            for (auto&& [_,component] : components_)
-            {
-                component->Tick(dt);
-            }
+            for (int i = 0; i < components_.size(); ++i)
+                components_[i]->Tick(dt);
 
-            for (auto&& [_,kid] : children_)
-            {
-                kid->Tick(dt);
-            }
+            for (int i = 0; i < children_.size(); ++i)
+                children_[i]->Tick(dt);
         }
 
         template <typename T, typename... Args>
@@ -316,7 +337,7 @@ namespace GiiGa
             if (std::shared_ptr<T> newComp = std::make_shared<T>(args...))
             {
                 newComp->SetOwner(std::static_pointer_cast<GameObject>(shared_from_this()));
-                components_.insert({newComp->GetUuid(), newComp});
+                components_.push_back(newComp);
                 newComp->RegisterInWorld();
                 return newComp;
             }
@@ -326,7 +347,7 @@ namespace GiiGa
         template <typename T>
         std::shared_ptr<T> GetComponent()
         {
-            for (auto&& [_,component] : components_)
+            for (auto&& component : components_)
             {
                 if (std::shared_ptr<T> comp = std::dynamic_pointer_cast<T>(component))
                     return comp;
@@ -342,8 +363,8 @@ namespace GiiGa
         void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom = false)
         {
             TryRemoveFromLevelRoot();
-
-            if (!parent->children_.contains(this->uuid_))
+            const auto& kids_by_world_uuid = parent->GetKidsByWorldUuid();
+            if (!kids_by_world_uuid.contains(this->uuid_))
             {
                 parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
                 parent_ = parent;
@@ -360,18 +381,18 @@ namespace GiiGa
             newGameObject->inprefab_uuid_ = this->inprefab_uuid_;
 
             el::Loggers::getLogger(LogWorld)->debug("Clone: Add key: %v, value: %v to prefab_uuid_to_world_uuid",
-                this->GetUuid(), newGameObject->GetUuid().ToString());
+                                                    this->GetUuid().ToString(), newGameObject->GetUuid().ToString());
 
             original_uuid_to_world_uuid[this->GetUuid()] = newGameObject->GetUuid();
 
             newGameObject->RegisterInWorld();
 
-            for (auto&& [_,component] : components_)
+            for (auto&& component : components_)
             {
                 newGameObject->AddComponent(component->Clone(original_uuid_to_world_uuid));
             }
 
-            for (auto&& [_,kid] : children_)
+            for (auto&& kid : children_)
             {
                 auto kid_clone = kid->Clone(original_uuid_to_world_uuid);
                 kid_clone->SetParent(newGameObject);
@@ -397,13 +418,13 @@ namespace GiiGa
 
         void AddChild(std::shared_ptr<GameObject> child)
         {
-            children_.insert({child->GetUuid(), child});
+            children_.push_back(child);
             child->SetParent(std::static_pointer_cast<GameObject>(shared_from_this()));
         }
 
         void RemoveChild(std::shared_ptr<GameObject> child)
         {
-            children_.erase(child->GetUuid());
+            children_.erase(std::find(children_.begin(), children_.end(), child));
         }
 
         Uuid GetUuid() const override
@@ -431,8 +452,8 @@ namespace GiiGa
         Uuid inprefab_uuid_ = Uuid::Null();
         AssetHandle prefab_handle_;
         std::weak_ptr<GameObject> parent_;
-        std::unordered_map<Uuid, std::shared_ptr<IComponent>> components_;
-        std::unordered_map<Uuid, std::shared_ptr<GameObject>> children_;
+        std::vector<std::shared_ptr<IComponent>> components_;
+        std::vector<std::shared_ptr<GameObject>> children_;
         std::weak_ptr<ILevelRootGameObjects> level_root_gos_;
 
         std::shared_ptr<TransformComponent> transform_;
@@ -495,7 +516,7 @@ namespace GiiGa
         void AddComponent(std::shared_ptr<IComponent> newComp)
         {
             newComp->SetOwner(std::static_pointer_cast<GameObject>(shared_from_this()));
-            components_.insert({newComp->GetUuid(), newComp});
+            components_.push_back(newComp);
         }
     };
 } // namespace GiiGa
