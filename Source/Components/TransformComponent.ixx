@@ -145,7 +145,7 @@ namespace GiiGa
         }
 
         TransformComponent(const Json::Value& json, bool roll_id = false):
-            Component(json)
+            Component(json, roll_id)
         {
             transform_ = Transform(json["Transform"]);
         }
@@ -188,13 +188,33 @@ namespace GiiGa
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
-            return {};
+            auto clone = std::make_shared<TransformComponent>();
+            clone->inprefab_uuid_ = this->inprefab_uuid_;
+            clone->transform_ = transform_;
+            clone->RegisterInWorld();
+            prefab_uuid_to_world_uuid[this->GetUuid()] = clone->GetUuid();
+            return clone;
         }
 
-        void Restore(std::shared_ptr<IComponent> original, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreForClone(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
+            auto orig_trans = std::static_pointer_cast<TransformComponent>(original);
+            auto parentUuid = !orig_trans->parent_.expired() ? prefab_uuid_to_world_uuid.at(orig_trans->parent_.lock()->GetUuid()) : Uuid::Null();
+            if (parentUuid != Uuid::Null())
+                AttachTo(WorldQuery::GetWithUUID<TransformComponent>(parentUuid));
         }
 
+        void RestoreAsPrefab(const Json::Value& json, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
+            auto prefab_parentUuid = Uuid::FromString(json["Parent"].asString()).value();
+            
+            if (prefab_parentUuid != Uuid::Null())
+            {
+                auto world_parentUuid = WorldQuery::GetWithUUID<TransformComponent>(prefab_parentUuid);
+                AttachTo(world_parentUuid);
+            }
+        }
+        
         void Restore(const Json::Value& json) override
         {
             auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();

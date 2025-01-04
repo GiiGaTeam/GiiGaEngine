@@ -24,7 +24,7 @@ namespace GiiGa
             Json::Value result;
             result["RootGameObject"] = root->GetUuid().ToString();
 
-            std::vector<Json::Value> go_with_kids = RecurGOToJsonWithKids(std::dynamic_pointer_cast<GameObject>(root));
+            std::vector<Json::Value> go_with_kids = RecurGOToJsonWithKids(std::dynamic_pointer_cast<GameObject>(root), true);
 
             for (auto&& go : go_with_kids)
             {
@@ -33,7 +33,7 @@ namespace GiiGa
 
             return result;
         }
-        
+
         static Json::Value GameObjectAsPrefabRoot(std::shared_ptr<PrefabAsset> prefab, std::shared_ptr<GameObject> gameObject)
         {
             Json::Value root;
@@ -52,17 +52,19 @@ namespace GiiGa
         std::shared_ptr<GameObject> Clone()
         {
             std::unordered_map<Uuid, Uuid> prefab_uuid_to_world;
-            return root->Clone(prefab_uuid_to_world);
+            auto new_go = root->Clone(prefab_uuid_to_world);
+            new_go->RestoreFromOriginal(root, prefab_uuid_to_world);
+            return new_go;
         }
 
-        std::vector<Json::Value> RecurGOToJsonWithKids(std::shared_ptr<GameObject> go)
+        std::vector<Json::Value> RecurGOToJsonWithKids(std::shared_ptr<GameObject> go, bool is_root = false)
         {
             std::vector<Json::Value> jsons;
-            
+
             if (go->GetPrefabHandle() == AssetHandle{} || go->GetPrefabHandle() == GetId())
             {
-                jsons.push_back(go->ToJsonWithComponents());
-
+                jsons.push_back(go->ToJsonWithComponents(is_root));
+                
                 for (auto&& [_,kid] : go->GetChildren())
                 {
                     for (auto kid_kid_js : RecurGOToJsonWithKids(kid))

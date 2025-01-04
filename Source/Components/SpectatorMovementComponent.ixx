@@ -1,5 +1,4 @@
-﻿#include <imgui_internal.h>
-export module SpectatorMovementComponent;
+﻿export module SpectatorMovementComponent;
 
 import <memory>;
 import <directxtk12/SimpleMath.h>;
@@ -33,8 +32,13 @@ namespace GiiGa
             return {};
         }
 
-        void Restore(std::shared_ptr<IComponent> original, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreForClone(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
+        }
+
+        void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
+            
         }
 
         std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override

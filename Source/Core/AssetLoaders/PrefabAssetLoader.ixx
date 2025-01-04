@@ -71,17 +71,24 @@ namespace GiiGa
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(go_js, nullptr, true);
                 CreateComponentsForGameObject::Create(new_go, go_js, prefab_uuid_to_world_uuid);
+                created_game_objects.push_back(new_go);
                 prefab_uuid_to_world_uuid[new_go->GetInprefabUuid()] = new_go->GetUuid();
             }
 
-            //todo: restore prefab refs.
+            for (int i=0; i < created_game_objects.size(); i++)
+            {
+                created_game_objects[i]->RestoreAsPrefab(prefab_js["GameObjects"][i], prefab_uuid_to_world_uuid);
+            }
 
             auto opt_root_js = Uuid::FromString(prefab_js["RootGameObject"].asString());
 
             if (!opt_root_js.has_value())
                 throw std::runtime_error("Failed to parse Prefab root id");
 
-            auto root_go = WorldQuery::GetWithUUID<GameObject>(opt_root_js.value());
+            Uuid prefab_root_uuid = opt_root_js.value();
+            Uuid world_root_uuid = prefab_uuid_to_world_uuid[prefab_root_uuid];
+            
+            auto root_go = WorldQuery::GetWithUUID<GameObject>(world_root_uuid);
 
             return std::make_shared<PrefabAsset>(handle, root_go);
         }

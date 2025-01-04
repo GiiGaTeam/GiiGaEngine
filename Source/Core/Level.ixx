@@ -159,6 +159,18 @@ namespace GiiGa
             return level;
         }
 
+        void AddGameObjectFromPrefab(std::shared_ptr<PrefabAsset> prefab, std::shared_ptr<GameObject> parent = nullptr)
+        {
+            if (!parent)
+            {
+                AddRootGameObject(prefab->Clone());
+            }
+            else
+            {
+                Todo();
+            }
+        }
+
     private:
         std::string name_;
         bool isActive_ = false;
