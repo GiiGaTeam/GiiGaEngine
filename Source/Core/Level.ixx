@@ -18,6 +18,7 @@ import Logger;
 import AssetBase;
 import PrefabAsset;
 import CreateComponentsForGameObject;
+import Engine;
 
 namespace GiiGa
 {
@@ -93,7 +94,7 @@ namespace GiiGa
                 result["RootGameObjects"].append(root_go->GetUuid().ToString());
 
                 std::vector<Json::Value> go_with_kids = RecurGOToJsonWithKids(std::dynamic_pointer_cast<GameObject>(root_go));
-                
+
                 for (auto&& go : go_with_kids)
                 {
                     result["GameObjects"].append(go);
@@ -107,8 +108,9 @@ namespace GiiGa
         {
             std::vector<Json::Value> jsons;
 
-            //if (go->GetPrefabHandle() == AssetHandle{})
-            //{
+            // current game object is part of level 
+            if (go->prefab_handle_ == AssetHandle{})
+            {
                 jsons.push_back(go->ToJsonWithComponents());
 
                 for (auto&& kid : go->GetChildren())
@@ -118,11 +120,12 @@ namespace GiiGa
                         jsons.push_back(kid_kid_js);
                     }
                 }
-            //}
-            //else
-            //{
-            //    
-            //}
+            }
+            else // current game object is part of prefab -> save as prefab in level 
+            {
+                auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(go->prefab_handle_);
+                jsons.push_back(PrefabAsset::GameObjectAsPrefabRoot(prefab, go));
+            }
 
             return jsons;
         }
@@ -133,7 +136,7 @@ namespace GiiGa
 
             // creates game objects only
             el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
-            
+
             auto&& all_gos = json["GameObjects"];
             std::vector<std::shared_ptr<GameObject>> created_game_objects;
             for (auto&& gameobject_js : all_gos)

@@ -355,6 +355,7 @@ namespace GiiGa
         {
             auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
 
+            newGameObject->prefab_handle_ = this->prefab_handle_;
             newGameObject->name = this->name;
             newGameObject->inprefab_uuid_ = this->inprefab_uuid_;
 
@@ -426,20 +427,16 @@ namespace GiiGa
             return inprefab_uuid_;
         }
 
-        AssetHandle GetPrefabHandle()
-        {
-            return prefab_handle_;
-        }
-
         std::shared_ptr<GameObject> GetParent()
         {
             return parent_.lock();
         }
 
+        AssetHandle prefab_handle_;
+
     private:
         Uuid uuid_ = Uuid::New();
         Uuid inprefab_uuid_ = Uuid::Null();
-        AssetHandle prefab_handle_;
         std::weak_ptr<GameObject> parent_;
         std::vector<std::shared_ptr<IComponent>> components_;
         std::vector<std::shared_ptr<GameObject>> children_;

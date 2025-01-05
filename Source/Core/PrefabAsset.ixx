@@ -8,6 +8,7 @@ import GameObject;
 import TransformComponent;
 import ConsoleComponent;
 import StaticMeshComponent;
+import Engine;
 
 namespace GiiGa
 {
@@ -61,10 +62,11 @@ namespace GiiGa
         {
             std::vector<Json::Value> jsons;
 
-            if (go->GetPrefabHandle() == AssetHandle{} || go->GetPrefabHandle() == GetId())
+            // saving new prefab OR editing/saving existing prefab with mod
+            if (go->prefab_handle_ == AssetHandle{} || go->prefab_handle_ == GetId())
             {
                 jsons.push_back(go->ToJsonWithComponents(is_root));
-                
+
                 for (auto&& kid : go->GetChildren())
                 {
                     for (auto kid_kid_js : RecurGOToJsonWithKids(kid))
@@ -73,9 +75,10 @@ namespace GiiGa
                     }
                 }
             }
-            else
+            else // current go is part of other prefab -- save as sub prefab
             {
-                jsons.push_back(GameObjectAsPrefabRoot(shared_from_this(), go));
+                auto sub_prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(go->prefab_handle_);
+                jsons.push_back(GameObjectAsPrefabRoot(sub_prefab, go));
             }
 
             return jsons;
