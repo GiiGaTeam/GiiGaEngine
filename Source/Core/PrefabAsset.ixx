@@ -2,6 +2,7 @@ export module PrefabAsset;
 
 import <json/value.h>;
 import <memory>;
+import <optional>;
 
 import AssetBase;
 import GameObject;
@@ -9,6 +10,7 @@ import TransformComponent;
 import ConsoleComponent;
 import StaticMeshComponent;
 import Engine;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -40,20 +42,18 @@ namespace GiiGa
             Json::Value root;
 
             root["Prefab"] = prefab->GetId().ToJson();
-            auto modifications = gameObject->FindModifications(prefab->root);
-
-            for (const auto& modification : modifications)
-            {
-                root["Modifications"].append(modification);
-            }
+            
+            PrefabModifications modifications;
+            gameObject->FindModifications(modifications, prefab->root);
+            root["Modifications"] = modifications.ToJson();
 
             return root;
         }
 
-        std::shared_ptr<GameObject> Clone()
+        std::shared_ptr<GameObject> Clone(std::optional<PrefabModifications> modifications)
         {
             std::unordered_map<Uuid, Uuid> prefab_uuid_to_world;
-            auto new_go = root->Clone(prefab_uuid_to_world);
+            auto new_go = root->Clone(prefab_uuid_to_world, modifications);
             new_go->RestoreFromOriginal(root, prefab_uuid_to_world);
             return new_go;
         }

@@ -8,6 +8,7 @@ import <json/json.h>;
 import <unordered_set>;
 import <iostream>;
 import <optional>;
+import <variant>;
 
 export import IGameObject;
 import IComponent;
@@ -21,6 +22,7 @@ import ILevelRootGameObjects;
 import PerObjectData;
 import AssetHandle;
 import Logger;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -139,49 +141,57 @@ namespace GiiGa
             return newGameObject;
         }
 
-        std::vector<Json::Value> FindModifications(std::shared_ptr<GameObject> prefab_other)
+        void FindModifications(PrefabModifications& modifications, std::shared_ptr<GameObject> prefab_other)
         {
-            std::vector<Json::Value> result;
-
-            std::unordered_map<Uuid, Uuid> kids_prefab_uuid_to_current;
-            std::unordered_map<Uuid, Uuid> components_prefab_uuid_to_current;
-
-            const auto& prefab_kids_uuids = prefab_other->GetKidsByPrefabUuid();
-            const auto& prefab_components_uuids = prefab_other->GetComponentsByPrefabUuid();
-
-            for (auto&& comp : components_)
             {
-                if (!prefab_components_uuids.contains(comp->GetInPrefabUuid()))
+                const auto& prefab_components_prefab_uuids = prefab_other->GetComponentsByPrefabUuid();
+
+                // traverse this components if comp has inprefab uuid == null, it was added
+                //for (const auto& this_comp : components_)
+                //{
+                //    if (this_comp->GetInPrefabUuid() == Uuid::Null())
+                //    {
+                //        modifications.Added_Comps.insert({this->GetInPrefabUuid(), this_comp->ToJson()});
+                //    }
+                //}
+
+                const auto& this_components_prefab_uuids = this->GetComponentsByPrefabUuid();
+                // traverse prefab components if comp not in this_components_prefab_uuids -- it was removed
+                for (const auto& prefab_comp : prefab_other->components_)
                 {
-                    Json::Value modification;
-                    modification["Target"] = comp->GetInPrefabUuid().ToString();
-                    modification["Modification"] = "Remove";
-                    result.push_back(modification);
+                    if (!this_components_prefab_uuids.contains(prefab_comp->GetInPrefabUuid()))
+                    {
+                        modifications.Removed_GOs_Comps.insert(prefab_comp->GetInPrefabUuid());
+                    }
                 }
-                else
+
+                for (auto&& comp : components_)
                 {
-                    auto comp_mods = comp->GetModifications(prefab_components_uuids.at(comp->GetInPrefabUuid()));
-                    result.insert(result.end(), comp_mods.begin(), comp_mods.end());
+                    if (prefab_components_prefab_uuids.contains(comp->GetInPrefabUuid()))
+                    {
+                        std::vector<std::pair<PropertyModificationKey, PropertyValue>> comp_mods = comp->GetModifications(prefab_components_prefab_uuids.at(comp->GetInPrefabUuid()));
+                        modifications.Modifications.insert(comp_mods.begin(), comp_mods.end());
+                    }
                 }
             }
 
-            for (auto&& kid : children_)
             {
-                if (!prefab_kids_uuids.contains(kid->inprefab_uuid_))
+                const auto& prefab_kids_prefab_uuids = prefab_other->GetKidsByPrefabUuid();
+                //for (const auto& this_kid : children_)
+                //{
+                //    if (this_kid->inprefab_uuid_ == Uuid::Null())
+                //    {
+                //        modifications.Added_GOs.insert(this->GetInPrefabUuid(),this_kid->ToJsonWithComponents())
+                //    }
+                //}
+                for (auto&& kid : children_)
                 {
-                    Json::Value modification;
-                    modification["Target"] = kid->inprefab_uuid_.ToString();
-                    modification["Modification"] = "Remove";
-                    result.push_back(modification);
-                }
-                else
-                {
-                    auto kid_modifications = kid->FindModifications(prefab_kids_uuids.at(kid->inprefab_uuid_));
-                    result.insert(result.end(), kid_modifications.begin(), kid_modifications.end());
+                    if (prefab_kids_prefab_uuids.contains(kid->inprefab_uuid_))
+                    {
+                        kid->FindModifications(modifications, prefab_kids_prefab_uuids.at(kid->inprefab_uuid_));
+                    }
                 }
             }
-
-            return result;
         }
 
         std::unordered_map<Uuid, std::shared_ptr<GameObject>> GetKidsByPrefabUuid()
@@ -189,7 +199,8 @@ namespace GiiGa
             std::unordered_map<Uuid, std::shared_ptr<GameObject>> result;
             for (auto&& kid : children_)
             {
-                result.emplace(std::pair{kid->inprefab_uuid_, kid});
+                if (kid->GetInPrefabUuid() != Uuid::Null())
+                    result.emplace(std::pair{kid->inprefab_uuid_, kid});
             }
 
             return result;
@@ -200,7 +211,8 @@ namespace GiiGa
             std::unordered_map<Uuid, std::shared_ptr<IComponent>> result;
             for (auto&& comp : components_)
             {
-                result.emplace(std::pair{comp->GetInPrefabUuid(), comp});
+                if (comp->GetInPrefabUuid() != Uuid::Null())
+                    result.emplace(std::pair{comp->GetInPrefabUuid(), comp});
             }
 
             return result;
@@ -351,41 +363,43 @@ namespace GiiGa
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());
         }
 
-        std::shared_ptr<GameObject> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid)
+        std::shared_ptr<GameObject> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications)
         {
             auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
 
+            original_uuid_to_world_uuid[this->GetUuid()] = newGameObject->GetUuid();
+            newGameObject->RegisterInWorld();
+
             newGameObject->prefab_handle_ = this->prefab_handle_;
-            newGameObject->name = this->name;
             newGameObject->inprefab_uuid_ = this->inprefab_uuid_;
 
-            el::Loggers::getLogger(LogWorld)->debug("Clone: Add key: %v, value: %v to prefab_uuid_to_world_uuid",
-                                                    this->GetUuid().ToString(), newGameObject->GetUuid().ToString());
-
-            original_uuid_to_world_uuid[this->GetUuid()] = newGameObject->GetUuid();
-
-            newGameObject->RegisterInWorld();
+            if (modifications.has_value() && modifications->Modifications.contains({this->GetInPrefabUuid(), "Name"}))
+            {
+                auto new_val_js = modifications->Modifications.at({this->GetInPrefabUuid(), "Name"});
+                auto new_name = new_val_js["Name"].asString();
+                newGameObject->name = new_name;
+            }
+            else
+                newGameObject->name = this->name;
 
             for (auto&& component : components_)
             {
-                newGameObject->AddComponent(component->Clone(original_uuid_to_world_uuid));
+                if (!modifications.has_value() || !modifications->Removed_GOs_Comps.contains(component->GetInPrefabUuid()))
+                    newGameObject->AddComponent(component->Clone(original_uuid_to_world_uuid, modifications));
             }
 
-            auto trans_comp_it = std::find_if(newGameObject->components_.begin(), newGameObject->components_.end(),
-                                              [](std::shared_ptr<IComponent> comp)
-                                              {
-                                                  return typeid(*comp).hash_code() == typeid(TransformComponent).hash_code();
-                                              });
-
-            if (trans_comp_it != newGameObject->components_.end())
-                newGameObject->transform_ = std::dynamic_pointer_cast<TransformComponent>(*trans_comp_it);
+            if (auto opt_trans_comp = newGameObject->GetComponent<TransformComponent>())
+                newGameObject->transform_ = opt_trans_comp;
             else
                 throw std::exception("Failed to find transform component");
 
             for (auto&& kid : children_)
             {
-                auto kid_clone = kid->Clone(original_uuid_to_world_uuid);
-                kid_clone->SetParent(newGameObject);
+                if (!modifications.has_value() || !modifications->Removed_GOs_Comps.contains(kid->GetInPrefabUuid()))
+                {
+                    auto kid_clone = kid->Clone(original_uuid_to_world_uuid, modifications);
+                    kid_clone->SetParent(newGameObject);
+                }
             }
 
             return newGameObject;
@@ -422,7 +436,7 @@ namespace GiiGa
             return uuid_;
         }
 
-        Uuid GetInprefabUuid() const
+        Uuid GetInPrefabUuid() const
         {
             return inprefab_uuid_;
         }

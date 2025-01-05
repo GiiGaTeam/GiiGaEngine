@@ -3,6 +3,7 @@
 import <directxtk12/SimpleMath.h>;
 import <memory>;
 import <json/json.h>;
+import <optional>;
 
 import MathUtils;
 import Component;
@@ -10,6 +11,7 @@ import EventSystem;
 import Misc;
 import IWorldQuery;
 import Logger;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -67,6 +69,11 @@ namespace GiiGa
         bool operator==(const Transform& rhs) const
         {
             return location_ == rhs.location_ && rotate_ == rhs.rotate_ && scale_ == rhs.scale_;
+        }
+
+        bool operator!=(const Transform& rhs) const
+        {
+            return !(*this == rhs);
         }
 
         Vector3 GetUp() const
@@ -160,10 +167,18 @@ namespace GiiGa
             return this;
         }
 
-        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            Todo();
-            return {};
+            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
+
+            auto prefab_trans = std::static_pointer_cast<TransformComponent>(prefab_comp);
+
+            if (this->transform_ != prefab_trans->transform_)
+                result.push_back({{this->inprefab_uuid_, "Transform"}, this->transform_.ToJson()});
+
+            // todo: reparenting?
+            
+            return result;
         }
 
         bool operator==(const TransformComponent* rhs) const
@@ -190,7 +205,7 @@ namespace GiiGa
             return result;
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<TransformComponent>();
             this->CloneBase(clone, original_uuid_to_world_uuid);

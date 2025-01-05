@@ -96,6 +96,14 @@
 			"Name" : "Sphere",
 			"Parent" : "e96c756a-b1ee-4763-8a37-0651c1d504c7",
 			"Uuid" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
+		},
+		{
+			"Modifications" : null,
+			"Prefab" : 
+			{
+				"id" : "3b540163-9752-4141-84be-787d7d6d8a5a",
+				"subresource" : 0
+			}
 		}
 	],
 	"LevelSettings" : 
@@ -104,6 +112,7 @@
 	},
 	"RootGameObjects" : 
 	[
-		"e96c756a-b1ee-4763-8a37-0651c1d504c7"
+		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
+		"624dc7f3-b5ab-42b7-8516-8e71580dca35"
 	]
 }

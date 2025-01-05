@@ -216,6 +216,7 @@
     <ClCompile Include="Source\Core\Logger.ixx" />
     <ClCompile Include="Source\Core\MeshAsset.ixx" />
     <ClCompile Include="Source\Core\PrefabAsset.ixx" />
+    <ClCompile Include="Source\Core\PrefabModifications.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />

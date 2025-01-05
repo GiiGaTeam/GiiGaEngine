@@ -2,6 +2,8 @@ module;
 
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
+#include <variant>
+#include <vector>
 
 export module StaticMeshComponent;
 
@@ -9,6 +11,7 @@ import <memory>;
 import <json/value.h>;
 import <bitset>;
 import <filesystem>;
+import <optional>;
 
 import Engine;
 import Component;
@@ -24,6 +27,7 @@ import IObjectShaderResource;
 import PerObjectData;
 import StubTexturesHandles;
 import IUpdateGPUData;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -102,7 +106,7 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<StaticMeshComponent>();
             this->CloneBase(clone, original_uuid_to_world_uuid);
@@ -117,13 +121,20 @@ namespace GiiGa
 
         void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
-            
         }
 
-        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            Todo();
-            return {};
+            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
+            auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
+
+            if (this->mesh_ != prefab_mesh->mesh_)
+                result.push_back({{this->inprefab_uuid_, "Mesh"}, this->mesh_->GetId().ToJson()});
+
+            if (this->material_ != prefab_mesh->material_)
+                result.push_back({{this->inprefab_uuid_, "Material"}, this->material_->GetId().ToJson()});
+
+            return result;
         }
 
         void Draw(RenderContext& context) override

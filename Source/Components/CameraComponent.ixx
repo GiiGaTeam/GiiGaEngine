@@ -5,12 +5,14 @@ import <directxtk12/SimpleMath.h>;
 import <json/value.h>;
 import <memory>;
 import <directx/d3dx12_core.h>;
+import <optional>;
 
 import Component;
 import TransformComponent;
 import GameObject;
 import Misc;
 import IObjectShaderResource;
+import PrefabModifications;
 
 using namespace DirectX::SimpleMath;
 
@@ -114,7 +116,7 @@ namespace GiiGa
             Todo();
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             Todo();
             return {};
@@ -129,7 +131,7 @@ namespace GiiGa
             
         }
 
-        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};

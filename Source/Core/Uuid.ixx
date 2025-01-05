@@ -125,14 +125,11 @@ namespace GiiGa
     };
 }
 
-namespace std
+export template <>
+struct std::hash<GiiGa::Uuid>
 {
-    template <>
-    struct hash<GiiGa::Uuid>
+    size_t operator()(const GiiGa::Uuid& id) const noexcept
     {
-        size_t operator()(const GiiGa::Uuid& id) const
-        {
-            return id.Hash();
-        }
-    };
-}
+        return id.Hash();
+    }
+};

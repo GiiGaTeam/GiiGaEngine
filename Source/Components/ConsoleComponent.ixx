@@ -2,10 +2,12 @@ export module ConsoleComponent;
 
 import <iostream>;
 import <json/json.h>;
+import <optional>;
 
 import Component;
 import Time;
 import IWorldQuery;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -42,7 +44,7 @@ namespace GiiGa
             return json;
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             return {};
         }
@@ -56,7 +58,7 @@ namespace GiiGa
             
         }
 
-        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
         {
             return {};
         }

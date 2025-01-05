@@ -137,9 +137,9 @@ namespace GiiGa
             // creates game objects only
             el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
 
-            auto&& all_gos = json["GameObjects"];
+            auto&& all_gos_jsons = json["GameObjects"];
             std::vector<std::shared_ptr<GameObject>> created_game_objects;
-            for (auto&& gameobject_js : all_gos)
+            for (auto&& gameobject_js : all_gos_jsons)
             {
                 auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
                 CreateComponentsForGameObject::Create(new_go, gameobject_js, false);
@@ -156,7 +156,7 @@ namespace GiiGa
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");
             for (int i = 0; i < created_game_objects.size(); ++i)
             {
-                std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos[i]);
+                std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
             }
 
             return level;
@@ -166,7 +166,7 @@ namespace GiiGa
         {
             if (!parent)
             {
-                AddRootGameObject(prefab->Clone());
+                AddRootGameObject(prefab->Clone(std::nullopt));
             }
             else
             {

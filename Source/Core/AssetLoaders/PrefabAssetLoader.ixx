@@ -73,7 +73,7 @@ namespace GiiGa
                 CreateComponentsForGameObject::Create(new_go, go_js, prefab_uuid_to_world_uuid);
                 created_game_objects.push_back(new_go);
                 new_go->prefab_handle_ = handle;
-                prefab_uuid_to_world_uuid[new_go->GetInprefabUuid()] = new_go->GetUuid();
+                prefab_uuid_to_world_uuid[new_go->GetInPrefabUuid()] = new_go->GetUuid();
             }
 
             for (int i=0; i < created_game_objects.size(); i++)

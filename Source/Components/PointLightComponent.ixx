@@ -3,6 +3,8 @@ module;
 #define NOMINMAX
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
+#include <variant>
+#include <vector>
 #include <directxtk12/SimpleMath.h>
 
 export module PointLightComponent;
@@ -12,6 +14,7 @@ import <json/value.h>;
 import <bitset>;
 import <filesystem>;
 import <algorithm>;
+import <optional>;
 
 import Engine;
 import Component;
@@ -30,6 +33,7 @@ import IUpdateGPUData;
 import ViewTypes;
 import BufferView;
 import GPULocalResource;
+import PrefabModifications;
 
 namespace GiiGa
 {
@@ -111,7 +115,7 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             Todo();
             return {};
@@ -127,7 +131,7 @@ namespace GiiGa
             Todo();
         }
 
-        std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
