@@ -106,16 +106,16 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<StaticMeshComponent>();
-            this->CloneBase(clone, original_uuid_to_world_uuid);
+            this->CloneBaseAsPrefab(clone, original_uuid_to_world_uuid);
             clone->mesh_ = mesh_;
             clone->material_ = material_;
             return clone;
         }
 
-        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
         }
 

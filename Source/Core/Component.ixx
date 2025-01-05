@@ -95,11 +95,11 @@ namespace GiiGa
         bool enabled = true;
         std::weak_ptr<IGameObject> owner_;
 
-        void CloneBase(std::shared_ptr<Component> derived_clone, std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) const
+        void CloneBaseAsPrefab(std::shared_ptr<Component> derived_clone, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) const
         {
             derived_clone->inprefab_uuid_ = this->inprefab_uuid_;
             derived_clone->RegisterInWorld();
-            original_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();
+            prefab_uuid_to_world_uuid[this->GetInPrefabUuid()] = derived_clone->GetUuid();
         }
     };
 } // namespace GiiGa

@@ -3,6 +3,7 @@ export module ImGuiSceneHierarchy;
 import <imgui.h>;
 import <memory>;
 import <ranges>;
+import <optional>;
 
 import IImGuiWindow;
 import World;
@@ -94,7 +95,8 @@ namespace GiiGa
                         {
                             auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(AssetHandle{newUuid.value(), 0});
                             el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", newUuid.value().ToString());
-                            level->AddGameObjectFromPrefab(prefab);
+                            auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
+                            new_go->AttachToLevelRoot(level);
                         }
                     }
 

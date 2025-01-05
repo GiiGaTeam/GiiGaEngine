@@ -30,13 +30,15 @@ namespace GiiGa
 
         virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
         {
+            auto asset_meta = AssetMeta{
+                type_,
+                relative_path,
+                id_,
+                relative_path.stem().string()
+            };
+            
             return {
-                std::make_pair(AssetHandle{Uuid::New(), 0}, AssetMeta{
-                                   type_,
-                                   relative_path,
-                                   id_,
-                                   relative_path.stem().string()
-                               })
+                std::make_pair(AssetHandle{Uuid::New(), 0}, asset_meta)
             };
         }
 

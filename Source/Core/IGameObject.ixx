@@ -20,5 +20,7 @@ namespace GiiGa
         virtual Json::Value ToJsonWithComponents(bool is_prefab_root = false) const =0;
 
         virtual void Destroy() =0;
+
+        virtual Uuid GetInPrefabUuid() const=0;
     };
 }

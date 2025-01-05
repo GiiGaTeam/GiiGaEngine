@@ -308,7 +308,7 @@ namespace GiiGa
 
             for (int i = 0; i < original->components_.size(); ++i)
             {
-                this->components_[i]->RestoreFromOriginal(original->components_[i], original_uuid_to_world);
+                this->components_[i]->RestoreFromPrefab(original->components_[i], original_uuid_to_world);
             }
         }
 
@@ -363,11 +363,15 @@ namespace GiiGa
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());
         }
 
-        std::shared_ptr<GameObject> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications)
+        std::shared_ptr<GameObject> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications,
+                                                  std::optional<std::vector<std::shared_ptr<GameObject>>> created_game_objects)
         {
             auto newGameObject = std::shared_ptr<GameObject>(new GameObject());
 
-            original_uuid_to_world_uuid[this->GetUuid()] = newGameObject->GetUuid();
+            if (created_game_objects)
+                created_game_objects->push_back(newGameObject);
+
+            prefab_uuid_to_world_uuid[this->GetInPrefabUuid()] = newGameObject->GetUuid();
             newGameObject->RegisterInWorld();
 
             newGameObject->prefab_handle_ = this->prefab_handle_;
@@ -385,7 +389,7 @@ namespace GiiGa
             for (auto&& component : components_)
             {
                 if (!modifications.has_value() || !modifications->Removed_GOs_Comps.contains(component->GetInPrefabUuid()))
-                    newGameObject->AddComponent(component->Clone(original_uuid_to_world_uuid, modifications));
+                    newGameObject->AddComponent(component->CloneAsPrefab(prefab_uuid_to_world_uuid, modifications));
             }
 
             if (auto opt_trans_comp = newGameObject->GetComponent<TransformComponent>())
@@ -397,7 +401,7 @@ namespace GiiGa
             {
                 if (!modifications.has_value() || !modifications->Removed_GOs_Comps.contains(kid->GetInPrefabUuid()))
                 {
-                    auto kid_clone = kid->Clone(original_uuid_to_world_uuid, modifications);
+                    auto kid_clone = kid->CloneAsPrefab(prefab_uuid_to_world_uuid, modifications, created_game_objects);
                     kid_clone->SetParent(newGameObject);
                 }
             }
@@ -436,7 +440,7 @@ namespace GiiGa
             return uuid_;
         }
 
-        Uuid GetInPrefabUuid() const
+        Uuid GetInPrefabUuid() const override
         {
             return inprefab_uuid_;
         }

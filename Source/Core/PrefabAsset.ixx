@@ -42,7 +42,7 @@ namespace GiiGa
             Json::Value root;
 
             root["Prefab"] = prefab->GetId().ToJson();
-            
+
             PrefabModifications modifications;
             gameObject->FindModifications(modifications, prefab->root);
             root["Modifications"] = modifications.ToJson();
@@ -50,10 +50,17 @@ namespace GiiGa
             return root;
         }
 
-        std::shared_ptr<GameObject> Clone(std::optional<PrefabModifications> modifications)
+        std::shared_ptr<GameObject> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world, std::optional<PrefabModifications> modifications, std::optional<std::vector<std::shared_ptr<GameObject>>> created_game_objects)
+        {
+            auto new_go = root->CloneAsPrefab(prefab_uuid_to_world, modifications, created_game_objects);
+            new_go->RestoreFromOriginal(root, prefab_uuid_to_world);
+            return new_go;
+        }
+        
+        std::shared_ptr<GameObject> Instantiate(std::optional<PrefabModifications> modifications, std::optional<std::vector<std::shared_ptr<GameObject>>> created_game_objects)
         {
             std::unordered_map<Uuid, Uuid> prefab_uuid_to_world;
-            auto new_go = root->Clone(prefab_uuid_to_world, modifications);
+            auto new_go = root->CloneAsPrefab(prefab_uuid_to_world, modifications, created_game_objects);
             new_go->RestoreFromOriginal(root, prefab_uuid_to_world);
             return new_go;
         }

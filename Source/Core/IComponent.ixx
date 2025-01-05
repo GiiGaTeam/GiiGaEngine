@@ -20,13 +20,13 @@ namespace GiiGa
 
         virtual void RegisterInWorld()=0;
 
-        virtual std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) =0;
+        virtual std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) =0;
         
         virtual void Restore(const ::Json::Value&) =0;
         
         virtual void RestoreAsPrefab(const ::Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
         
-        virtual void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
+        virtual void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
 
         virtual std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const = 0;
         

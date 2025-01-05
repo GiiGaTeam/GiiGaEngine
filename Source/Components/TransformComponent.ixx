@@ -205,22 +205,22 @@ namespace GiiGa
             return result;
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<TransformComponent>();
-            this->CloneBase(clone, original_uuid_to_world_uuid);
+            this->CloneBaseAsPrefab(clone, original_uuid_to_world_uuid);
             clone->transform_ = transform_;
             return clone;
         }
 
-        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
+        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
         {
             auto orig_trans = std::static_pointer_cast<TransformComponent>(original);
             auto parentUuid = Uuid::Null();
             if (!orig_trans->parent_.expired())
             {
                 el::Loggers::getLogger(LogWorld)->debug("TrasformComp::RestoreFromOriginal() Request %v from original_uuid_to_world_uuid", orig_trans->parent_.lock()->GetUuid().ToString());
-                parentUuid = original_uuid_to_world_uuid.at(orig_trans->parent_.lock()->GetUuid());
+                parentUuid = original_uuid_to_world_uuid.at(orig_trans->parent_.lock()->GetInPrefabUuid());
             }
             if (parentUuid != Uuid::Null())
                 AttachTo(WorldQuery::GetWithUUID<TransformComponent>(parentUuid));
