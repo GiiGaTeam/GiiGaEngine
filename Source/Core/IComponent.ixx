@@ -14,7 +14,7 @@ namespace GiiGa
     {
         virtual ~IComponent() override = default;
         
-        virtual Json::Value ToJson() =0;
+        virtual Json::Value ToJson(bool is_prefab_root = false) =0;
 
         virtual void RegisterInWorld()=0;
 
@@ -24,7 +24,7 @@ namespace GiiGa
         
         virtual void RestoreAsPrefab(const ::Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
         
-        virtual void RestoreForClone(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
+        virtual void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
 
         virtual std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const = 0;
         

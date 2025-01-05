@@ -70,7 +70,7 @@ namespace GiiGa
                 flags, level_lable.c_str());
 
             ImGui::PopStyleColor();
-            
+
             if (ImGui::BeginPopupContextItem(level_lable.c_str()))
             {
                 if (ImGui::MenuItem("Add GameObject"))
@@ -87,7 +87,7 @@ namespace GiiGa
                 {
                     char prefabUuidStr[37];
                     snprintf(prefabUuidStr, sizeof(prefabUuidStr), "%s", Uuid::Null().ToString().c_str());
-                    if (ImGui::InputText("UUID", prefabUuidStr, sizeof(prefabUuidStr)))
+                    if (ImGui::InputText("UUID", prefabUuidStr, sizeof(prefabUuidStr), ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         auto newUuid = Uuid::FromString(prefabUuidStr);
                         if (newUuid.has_value() && newUuid.value() != Uuid::Null())
@@ -100,7 +100,7 @@ namespace GiiGa
 
                     ImGui::EndMenu();
                 }
-                
+
                 ImGui::EndPopup();
             }
 

@@ -68,14 +68,14 @@ namespace GiiGa
             return inprefab_uuid_;
         }
 
-        virtual Json::Value ToJson() override
+        virtual Json::Value ToJson(bool is_prefab_root = false) override
         {
             Json::Value json;
 
             json["Uuid"] = uuid_.ToString();
 
             // Combining json with the result of DerivedToJson
-            Json::Value derivedJson = DerivedToJson();
+            Json::Value derivedJson = DerivedToJson(is_prefab_root);
             for (Json::Value::const_iterator it = derivedJson.begin(); it != derivedJson.end(); ++it)
             {
                 json[it.key().asString()] = *it;
@@ -85,7 +85,7 @@ namespace GiiGa
         }
 
 
-        virtual Json::Value DerivedToJson() =0;
+        virtual Json::Value DerivedToJson(bool is_prefab_root = false) =0;
 
         void Tick(float dt) override =0;
 

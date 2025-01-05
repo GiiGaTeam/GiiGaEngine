@@ -242,7 +242,7 @@ namespace GiiGa
 
             for (auto&& component : components_)
             {
-                this_json["Components"].append(component->ToJson());
+                this_json["Components"].append(component->ToJson(is_prefab_root));
             }
 
             return this_json;
@@ -276,7 +276,6 @@ namespace GiiGa
                 SetParent(WorldQuery::GetWithUUID<GameObject>(world_parent));
             }
 
-            const auto& prefab_components_uuids = this->GetComponentsByPrefabUuid();
             const auto& comps_by_uuid = GetComponentsByWorldUuid();
 
             for (auto&& comp_js : go_js["Components"])
@@ -288,37 +287,16 @@ namespace GiiGa
             }
         }
 
-        void RestoreFromOriginal(std::shared_ptr<GameObject> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world)
+        void RestoreFromOriginal(std::shared_ptr<GameObject> original, const std::unordered_map<Uuid, Uuid>& original_uuid_to_world)
         {
-            if (!original->parent_.expired())
+            for (int i = 0; i < original->children_.size(); ++i)
             {
-                auto parent_prefab_uuid = original->parent_.lock()->GetUuid();
-                auto parent_world_uuid = prefab_uuid_to_world.at(parent_prefab_uuid);
-                auto parent_inwold = WorldQuery::GetWithUUID<GameObject>(parent_world_uuid);
-                SetParent(parent_inwold);
+                this->children_[i]->RestoreFromOriginal(original->children_[i], original_uuid_to_world);
             }
 
-            const auto& prefab_kids_uuids = original->GetKidsByPrefabUuid();
-            const auto& prefab_components_uuids = original->GetComponentsByPrefabUuid();
-
-            for (const auto& prefabKidsUuid : prefab_kids_uuids)
+            for (int i = 0; i < original->components_.size(); ++i)
             {
-                el::Loggers::getLogger(LogWorld)->debug("key: %v, value: %v", prefabKidsUuid.first.ToString(), prefabKidsUuid.second->GetUuid().ToString());
-            }
-
-            const auto& kids_by_world_uuid = original->GetKidsByWorldUuid();
-            for (auto&& [id_kid_orig, kid_orig] : prefab_kids_uuids)
-            {
-                el::Loggers::getLogger(LogWorld)->debug("Request %v from prefab_uuid_to_world", id_kid_orig.ToString());
-                auto kid_world_uuid = prefab_uuid_to_world.at(id_kid_orig);
-                kids_by_world_uuid.at(kid_world_uuid)->RestoreFromOriginal(kid_orig, prefab_uuid_to_world);
-            }
-
-            const auto& comps_by_world_uuid = original->GetComponentsByWorldUuid();
-            for (auto&& [id, comp_orig] : prefab_components_uuids)
-            {
-                auto comp_world_uuid = prefab_uuid_to_world.at(id);
-                comps_by_world_uuid.at(comp_world_uuid)->RestoreForClone(comp_orig, prefab_uuid_to_world);
+                this->components_[i]->RestoreFromOriginal(original->components_[i], original_uuid_to_world);
             }
         }
 
@@ -391,6 +369,17 @@ namespace GiiGa
             {
                 newGameObject->AddComponent(component->Clone(original_uuid_to_world_uuid));
             }
+
+            auto trans_comp_it = std::find_if(newGameObject->components_.begin(), newGameObject->components_.end(),
+                                              [](std::shared_ptr<IComponent> comp)
+                                              {
+                                                  return typeid(*comp).hash_code() == typeid(TransformComponent).hash_code();
+                                              });
+
+            if (trans_comp_it != newGameObject->components_.end())
+                newGameObject->transform_ = std::dynamic_pointer_cast<TransformComponent>(*trans_comp_it);
+            else
+                throw std::exception("Failed to find transform component");
 
             for (auto&& kid : children_)
             {
