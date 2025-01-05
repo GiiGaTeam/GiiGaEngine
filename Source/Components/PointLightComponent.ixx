@@ -113,16 +113,18 @@ namespace GiiGa
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
+            Todo();
             return {};
         }
 
         void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
+            Todo();
         }
 
         void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
-            
+            Todo();
         }
 
         std::vector<Json::Value> GetModifications(std::shared_ptr<IComponent>) const override

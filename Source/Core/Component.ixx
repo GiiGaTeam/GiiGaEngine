@@ -94,5 +94,12 @@ namespace GiiGa
         Uuid inprefab_uuid_ = Uuid::Null();
         bool enabled = true;
         std::weak_ptr<IGameObject> owner_;
+
+        void CloneBase(std::shared_ptr<Component> derived_clone, std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) const
+        {
+            derived_clone->inprefab_uuid_ = this->inprefab_uuid_;
+            derived_clone->RegisterInWorld();
+            original_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();
+        }
     };
 } // namespace GiiGa

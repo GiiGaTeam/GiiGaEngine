@@ -105,10 +105,9 @@ namespace GiiGa
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
         {
             auto clone = std::make_shared<StaticMeshComponent>();
-            clone->inprefab_uuid_ = this->inprefab_uuid_;
+            this->CloneBase(clone, original_uuid_to_world_uuid);
             clone->mesh_ = mesh_;
             clone->material_ = material_;
-            original_uuid_to_world_uuid[this->GetUuid()] = clone->GetUuid();
             return clone;
         }
 

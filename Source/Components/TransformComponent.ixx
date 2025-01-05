@@ -193,11 +193,8 @@ namespace GiiGa
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
         {
             auto clone = std::make_shared<TransformComponent>();
-            clone->inprefab_uuid_ = this->inprefab_uuid_;
+            this->CloneBase(clone, original_uuid_to_world_uuid);
             clone->transform_ = transform_;
-            clone->RegisterInWorld();
-            el::Loggers::getLogger(LogWorld)->debug("TransformComponent::Clone() add key: %v, value: %v to original_uuid_to_world_uuid", this->GetUuid().ToString(), clone->GetUuid().ToString());
-            original_uuid_to_world_uuid[this->GetUuid()] = clone->GetUuid();
             return clone;
         }
 
