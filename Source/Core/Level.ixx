@@ -19,7 +19,7 @@ import AssetBase;
 import PrefabAsset;
 import CreateComponentsForGameObject;
 import Engine;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -125,7 +125,7 @@ namespace GiiGa
             else // current game object is part of prefab -> save as prefab in level 
             {
                 auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(go->prefab_handle_);
-                jsons.push_back(PrefabAsset::GameObjectAsPrefabRoot(prefab, go));
+                jsons.push_back(PrefabAsset::GameObjectAsPrefabInstance(prefab, go));
             }
 
             return jsons;
@@ -140,6 +140,8 @@ namespace GiiGa
 
             auto&& all_gos_jsons = json["GameObjects"];
             std::vector<std::shared_ptr<GameObject>> created_game_objects;
+            std::unordered_map<std::shared_ptr<PrefabAsset>,
+                               std::vector<std::pair<std::shared_ptr<GameObject>, PrefabInstanceModifications>>> created_prefab_instances;
             for (auto&& gameobject_js : all_gos_jsons)
             {
                 if (gameobject_js["Prefab"].empty()) // is not prefab instance
@@ -152,8 +154,9 @@ namespace GiiGa
                 {
                     auto prefab_handle = AssetHandle::FromJson(gameobject_js["Prefab"]);
                     auto prefab_asset = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(prefab_handle);
-                    PrefabModifications modifications{gameobject_js["Modifications"]};
-                    prefab_asset->Instantiate(modifications, created_game_objects);
+                    PrefabInstanceModifications modifications{gameobject_js["InstanceModifications"]};
+                    auto instance = prefab_asset->Instantiate(modifications.InPrefabUuid_to_Instance, modifications.Removed_GOs_Comps);
+                    created_prefab_instances[prefab_asset].push_back({instance, modifications});
                 }
             }
 
@@ -171,10 +174,13 @@ namespace GiiGa
                 {
                     std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
                 }
-                else
+            }
+
+            for (auto&& prefab_assets : created_prefab_instances)
+            {
+                for (auto&& instance : prefab_assets.second)
                 {
-                    PrefabModifications modifications{all_gos_jsons[i]["Modifications"]};
-                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->ApplyModifications(modifications);
+                    instance.first->ApplyModifications(instance.second.PropertyModifications);
                 }
             }
 

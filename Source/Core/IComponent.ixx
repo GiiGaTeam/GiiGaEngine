@@ -8,7 +8,7 @@ import <optional>;
 export import ITickable;
 export import Uuid;
 import IGameObject;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -20,7 +20,8 @@ namespace GiiGa
 
         virtual void RegisterInWorld() =0;
 
-        virtual std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) =0;
+        virtual std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
+                                                  & instance_uuid) =0;
 
         virtual void Restore(const ::Json::Value&) =0;
 
@@ -30,7 +31,7 @@ namespace GiiGa
 
         virtual std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const = 0;
 
-        virtual void ApplyModifications(const PrefabModifications& modifications) =0;
+        virtual void ApplyModifications(const PropertyModifications& modifications) =0;
 
         virtual void Init() = 0;
 

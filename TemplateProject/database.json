@@ -30,20 +30,6 @@
 	{
 		"id" : 
 		{
-			"id" : "371f989f-df3e-49c3-9ccd-009089a3e040",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "a3227723-70bb-4b66-bab0-1d92d492a75c",
-			"name" : "Sphere",
-			"path" : "Sphere.prefab",
-			"type" : "Prefab"
-		}
-	},
-	{
-		"id" : 
-		{
 			"id" : "00000000-0000-0000-0000-000000000003",
 			"subresource" : 0
 		},
@@ -128,20 +114,6 @@
 	{
 		"id" : 
 		{
-			"id" : "86d4e21c-591f-4f85-8055-6a447ce78ecc",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "00000000-0000-0000-0000-000000000000",
-			"name" : "",
-			"path" : "Sphere.prefab",
-			"type" : "Prefab"
-		}
-	},
-	{
-		"id" : 
-		{
 			"id" : "00000000-0000-0000-0000-000000000009",
 			"subresource" : 0
 		},
@@ -212,7 +184,7 @@
 	{
 		"id" : 
 		{
-			"id" : "086bf36e-4c3e-47a5-9adf-1d8c11b59255",
+			"id" : "5e620318-56c3-4555-8157-10055442bfe8",
 			"subresource" : 0
 		},
 		"meta" : 
@@ -221,6 +193,34 @@
 			"name" : "barell",
 			"path" : "barell.jpg",
 			"type" : "Texture2D"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "8c4a0ef9-b06b-409e-8d97-0db68f54aff6",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "00000000-0000-0000-0000-000000000000",
+			"name" : "",
+			"path" : "Sphere.prefab",
+			"type" : "Prefab"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "eadd086a-ceb6-4e94-8f79-2a3a3db4363a",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "a3227723-70bb-4b66-bab0-1d92d492a75c",
+			"name" : "Sphere",
+			"path" : "Sphere.prefab",
+			"type" : "Prefab"
 		}
 	}
 ]

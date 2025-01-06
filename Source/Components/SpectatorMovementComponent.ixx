@@ -14,7 +14,7 @@ import Window;
 import Misc;
 import Logger;
 import Engine;
-import PrefabModifications;
+import PrefabInstance;
 
 using namespace DirectX::SimpleMath;
 
@@ -31,7 +31,8 @@ namespace GiiGa
 
         void Restore(const ::Json::Value&) override { Todo(); }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
+                                          & instance_uuid) override
         {
             Todo();
             return {};
@@ -53,7 +54,7 @@ namespace GiiGa
             return {};
         }
 
-        void ApplyModifications(const PrefabModifications& modifications) override
+        void ApplyModifications(const PropertyModifications& modifications) override
         {
             Todo();
         }

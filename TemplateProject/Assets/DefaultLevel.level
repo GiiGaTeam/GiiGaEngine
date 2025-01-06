@@ -2,44 +2,6 @@
 	"GameObjects" : 
 	[
 		{
-			"Modifications" : 
-			{
-				"Modifications" : 
-				[
-					{
-						"PropertyName" : "Uuid",
-						"PropertyValue" : "3776c5cd-5e88-4690-8ae6-465ac365606c",
-						"Target" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
-					},
-					{
-						"PropertyName" : "Uuid",
-						"PropertyValue" : "8d720e67-cf50-4e34-8a88-6a5197e1e4fc",
-						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244"
-					},
-					{
-						"PropertyName" : "Uuid",
-						"PropertyValue" : "d3b5b5b5-5246-4752-8211-d28fbe10e5f0",
-						"Target" : "2b113a80-5958-46af-9258-b5c3ecb55230"
-					},
-					{
-						"PropertyName" : "Uuid",
-						"PropertyValue" : "023d5024-47ce-4791-be89-f7514c172bf6",
-						"Target" : "692d1d29-5343-4b7c-931c-e32cc59ebb38"
-					},
-					{
-						"PropertyName" : "Uuid",
-						"PropertyValue" : "9b3060bb-48bd-4b28-b037-4994a597502c",
-						"Target" : "83879672-9ba3-4c6b-be28-5d1579e997e2"
-					}
-				]
-			},
-			"Prefab" : 
-			{
-				"id" : "371f989f-df3e-49c3-9ccd-009089a3e040",
-				"subresource" : 0
-			}
-		},
-		{
 			"Components" : 
 			[
 				{
@@ -162,12 +124,45 @@
 						}
 					},
 					"Type" : "class GiiGa::TransformComponent",
-					"Uuid" : "83879672-9ba3-4c6b-be28-5d1579e997e2"
+					"Uuid" : "fd19140e-72be-4409-bb85-15af35ec9f5b"
 				}
 			],
 			"Name" : "GameObject",
 			"Parent" : "a9929549-03f4-4d0a-a307-9ffd1d754061",
-			"Uuid" : "692d1d29-5343-4b7c-931c-e32cc59ebb38"
+			"Uuid" : "937145b4-18af-4448-ae17-07571c1726be"
+		},
+		{
+			"InstanceModifications" : 
+			{
+				"InPrefabUuid_to_Instance" : 
+				[
+					{
+						"Target" : "a9929549-03f4-4d0a-a307-9ffd1d754061",
+						"Value" : "819a0af1-d7f7-4181-bce9-a55b994b0591"
+					},
+					{
+						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244",
+						"Value" : "d289476f-274e-46e3-8da9-55415cec4630"
+					},
+					{
+						"Target" : "2b113a80-5958-46af-9258-b5c3ecb55230",
+						"Value" : "7cdcd2d4-61ca-4e4c-99a3-049178e76485"
+					},
+					{
+						"Target" : "937145b4-18af-4448-ae17-07571c1726be",
+						"Value" : "38c9c069-637b-484f-a981-73d2aaff6266"
+					},
+					{
+						"Target" : "fd19140e-72be-4409-bb85-15af35ec9f5b",
+						"Value" : "2b484ae6-3b94-422e-9725-361a64d3bb70"
+					}
+				]
+			},
+			"Prefab" : 
+			{
+				"id" : "eadd086a-ceb6-4e94-8f79-2a3a3db4363a",
+				"subresource" : 0
+			}
 		}
 	],
 	"LevelSettings" : 
@@ -176,7 +171,7 @@
 	},
 	"RootGameObjects" : 
 	[
-		"3776c5cd-5e88-4690-8ae6-465ac365606c",
-		"e96c756a-b1ee-4763-8a37-0651c1d504c7"
+		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
+		"819a0af1-d7f7-4181-bce9-a55b994b0591"
 	]
 }

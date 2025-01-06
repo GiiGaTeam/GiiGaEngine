@@ -7,7 +7,7 @@ import <optional>;
 import Component;
 import Time;
 import IWorldQuery;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -44,7 +44,8 @@ namespace GiiGa
             return json;
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
+                                          & instance_uuid) override
         {
             return {};
         }
@@ -63,7 +64,7 @@ namespace GiiGa
             return {};
         }
 
-        void ApplyModifications(const PrefabModifications& modifications) override
+        void ApplyModifications(const PropertyModifications& modifications) override
         {
         }
 

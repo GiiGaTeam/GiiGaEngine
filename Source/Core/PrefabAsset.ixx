@@ -3,6 +3,7 @@ export module PrefabAsset;
 import <json/value.h>;
 import <memory>;
 import <optional>;
+import <unordered_set>;
 
 import AssetBase;
 import GameObject;
@@ -10,7 +11,7 @@ import TransformComponent;
 import ConsoleComponent;
 import StaticMeshComponent;
 import Engine;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -37,23 +38,26 @@ namespace GiiGa
             return result;
         }
 
-        static Json::Value GameObjectAsPrefabRoot(std::shared_ptr<PrefabAsset> prefab, std::shared_ptr<GameObject> gameObject)
+        static Json::Value GameObjectAsPrefabInstance(std::shared_ptr<PrefabAsset> prefab, std::shared_ptr<GameObject> gameObject)
         {
             Json::Value root;
 
             root["Prefab"] = prefab->GetId().ToJson();
 
-            PrefabModifications modifications;
-            gameObject->FindModifications(modifications, prefab->root);
-            root["Modifications"] = modifications.ToJson();
+            PrefabInstanceModifications modifications;
+            modifications.InPrefabUuid_to_Instance = gameObject->GetInstanceIdMap(prefab->root);
+            modifications.Removed_GOs_Comps = gameObject->GetRemovedGOsComps(prefab->root);
+            modifications.PropertyModifications = gameObject->GetPropertyModifications(prefab->root);
+            root["InstanceModifications"] = modifications.ToJson();
 
             return root;
         }
-                
-        std::shared_ptr<GameObject> Instantiate(std::optional<PrefabModifications> modifications, std::optional<std::vector<std::shared_ptr<GameObject>>> created_game_objects)
+
+        std::shared_ptr<GameObject> Instantiate(const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid,
+                                                const std::optional<std::unordered_set<Uuid>>& removed_gos_comps)
         {
             std::unordered_map<Uuid, Uuid> prefab_uuid_to_world;
-            auto new_go = root->Clone(prefab_uuid_to_world, modifications, created_game_objects);
+            auto new_go = root->Clone(prefab_uuid_to_world, instance_uuid, removed_gos_comps);
             new_go->RestoreFromOriginal(root, prefab_uuid_to_world);
             return new_go;
         }
@@ -78,7 +82,7 @@ namespace GiiGa
             else // current go is part of other prefab -- save as sub prefab
             {
                 auto sub_prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(go->prefab_handle_);
-                jsons.push_back(GameObjectAsPrefabRoot(sub_prefab, go));
+                jsons.push_back(GameObjectAsPrefabInstance(sub_prefab, go));
             }
 
             return jsons;

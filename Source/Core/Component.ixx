@@ -9,7 +9,7 @@ import IComponent;
 import IGameObject;
 import Uuid;
 import IWorldQuery;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -86,17 +86,7 @@ namespace GiiGa
         }
 
         virtual Json::Value DerivedToJson(bool is_prefab_root = false) =0;
-
-        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_other) const override
-        {
-            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
-
-            if (this->GetUuid()!=prefab_other->GetUuid())
-                result.push_back({{this->GetInPrefabUuid(),"Uuid"},this->GetUuid().ToString()});
-
-            return result;
-        }
-
+        
         void Tick(float dt) override =0;
 
     protected:
@@ -106,12 +96,12 @@ namespace GiiGa
         std::weak_ptr<IGameObject> owner_;
 
         void CloneBase(std::shared_ptr<Component> derived_clone, std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid,
-                       std::optional<PrefabModifications> modifications) const
+                       const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) const
         {
             derived_clone->inprefab_uuid_ = this->GetInPrefabUuid();
 
-            if (modifications.has_value() && modifications->Modifications.contains({this->GetInPrefabUuid(), "Uuid"}))
-                derived_clone->uuid_ = Uuid::FromString(modifications->Modifications.at({this->GetInPrefabUuid(), "Uuid"}).asString()).value();
+            if (instance_uuid.has_value())
+                derived_clone->uuid_ = instance_uuid.value().at(this->GetInPrefabUuid());
             
             derived_clone->RegisterInWorld();
             prefab_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();

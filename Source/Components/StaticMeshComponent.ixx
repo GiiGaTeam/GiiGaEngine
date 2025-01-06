@@ -2,6 +2,7 @@ module;
 
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -27,7 +28,7 @@ import IObjectShaderResource;
 import PerObjectData;
 import StubTexturesHandles;
 import IUpdateGPUData;
-import PrefabModifications;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -106,10 +107,11 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid,
+                                          const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
         {
             auto clone = std::make_shared<StaticMeshComponent>();
-            this->CloneBase(clone, original_uuid_to_world_uuid, modifications);
+            this->CloneBase(clone, original_uuid_to_world_uuid, instance_uuid);
             clone->mesh_ = mesh_;
             clone->material_ = material_;
             return clone;
@@ -125,7 +127,7 @@ namespace GiiGa
 
         std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            auto result = Component::GetModifications(prefab_comp);
+            std::vector<std::pair<PropertyModificationKey, PropertyValue>>  result;
 
             auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
 
@@ -138,17 +140,17 @@ namespace GiiGa
             return result;
         }
 
-        void ApplyModifications(const PrefabModifications& modifications) override
+        void ApplyModifications(const PropertyModifications& modifications) override
         {
-            if (modifications.Modifications.contains({this->inprefab_uuid_,"Mesh"}))
+            if (modifications.contains({this->inprefab_uuid_, "Mesh"}))
             {
-                auto new_mesh_handle = AssetHandle::FromJson(modifications.Modifications.at({this->inprefab_uuid_,"Mesh"}));
+                auto new_mesh_handle = AssetHandle::FromJson(modifications.at({this->inprefab_uuid_, "Mesh"}));
                 this->mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_mesh_handle);
             }
 
-            if (modifications.Modifications.contains({this->inprefab_uuid_,"Material"}))
+            if (modifications.contains({this->inprefab_uuid_, "Material"}))
             {
-                auto new_mat_handle = AssetHandle::FromJson(modifications.Modifications.at({this->inprefab_uuid_,"Material"}));
+                auto new_mat_handle = AssetHandle::FromJson(modifications.at({this->inprefab_uuid_, "Material"}));
                 this->material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(new_mat_handle);
             }
         }

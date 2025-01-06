@@ -76,12 +76,12 @@
 						}
 					},
 					"Type" : "class GiiGa::TransformComponent",
-					"Uuid" : "83879672-9ba3-4c6b-be28-5d1579e997e2"
+					"Uuid" : "fd19140e-72be-4409-bb85-15af35ec9f5b"
 				}
 			],
 			"Name" : "GameObject",
 			"Parent" : "a9929549-03f4-4d0a-a307-9ffd1d754061",
-			"Uuid" : "692d1d29-5343-4b7c-931c-e32cc59ebb38"
+			"Uuid" : "937145b4-18af-4448-ae17-07571c1726be"
 		}
 	],
 	"RootGameObject" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
