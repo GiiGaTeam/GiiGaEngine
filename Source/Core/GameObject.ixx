@@ -94,6 +94,16 @@ namespace GiiGa
             }
         }
 
+        void RecurSetLevel(std::shared_ptr<ILevelRootGameObjects> level_rgo)
+        {
+            this->level_root_gos_ = level_rgo;
+
+            for (auto& kid : children_)
+            {
+                kid->RecurSetLevel(level_rgo);
+            }
+        }
+
         void DetachFromParent()
         {
             if (auto l_parent = parent_.lock())
@@ -211,6 +221,16 @@ namespace GiiGa
             if (this->name != prefab_other->name)
                 modifications.insert({{this->inprefab_uuid_, "Name"}, this->name});
 
+            if (!this->parent_.expired() && !prefab_other->parent_.expired())
+            {
+                if (this->parent_.lock()->GetInPrefabUuid() != prefab_other->parent_.lock()->GetInPrefabUuid())
+                    modifications.insert({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+            }
+            else
+            {
+                modifications.insert({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+            }
+
             const auto& prefab_components_prefab_uuids = prefab_other->GetComponentsByPrefabUuid();
             for (auto&& comp : components_)
             {
@@ -232,6 +252,40 @@ namespace GiiGa
             }
 
             return modifications;
+        }
+
+        void ApplyModifications(const PropertyModifications& modifications)
+        {
+            if (modifications.contains({this->GetInPrefabUuid(), "Name"}))
+            {
+                auto new_val_js = modifications.at({this->GetInPrefabUuid(), "Name"});
+                auto new_name = new_val_js.asString();
+                this->name = new_name;
+            }
+
+            if (modifications.contains({this->inprefab_uuid_, "Parent"}))
+            {
+                Uuid parentUuid = Uuid::FromString(modifications.at({this->inprefab_uuid_, "Parent"}).asString()).value();
+
+                if (parentUuid == Uuid::Null())
+                {
+                    DetachFromParent();
+                }
+                else
+                {
+                    SetParent(WorldQuery::GetWithUUID<GameObject>(parentUuid));
+                }
+            }
+
+            for (auto& comp : components_)
+            {
+                comp->ApplyModifications(modifications);
+            }
+
+            for (auto& kid : children_)
+            {
+                kid->ApplyModifications(modifications);
+            }
         }
 
         std::unordered_map<Uuid, std::shared_ptr<GameObject>> GetKidsByPrefabUuid()
@@ -352,28 +406,6 @@ namespace GiiGa
             }
         }
 
-        void ApplyModifications(const PropertyModifications& modifications)
-        {
-            // todo: reparanting
-
-            if (modifications.contains({this->GetInPrefabUuid(), "Name"}))
-            {
-                auto new_val_js = modifications.at({this->GetInPrefabUuid(), "Name"});
-                auto new_name = new_val_js["Name"].asString();
-                this->name = new_name;
-            }
-
-            for (auto& comp : components_)
-            {
-                comp->ApplyModifications(modifications);
-            }
-
-            for (auto& kid : children_)
-            {
-                kid->ApplyModifications(modifications);
-            }
-        }
-
         void Tick(float dt) override
         {
             for (int i = 0; i < components_.size(); ++i)
@@ -420,6 +452,11 @@ namespace GiiGa
             {
                 parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
                 parent_ = parent;
+            }
+
+            if (this->level_root_gos_.lock() != parent->level_root_gos_.lock())
+            {
+                this->RecurSetLevel(parent->level_root_gos_.lock());
             }
 
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());

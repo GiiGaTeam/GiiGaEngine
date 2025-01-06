@@ -93,7 +93,7 @@
 					"Uuid" : "491f087e-2d2f-470b-91b4-33eea4bef244"
 				}
 			],
-			"Name" : "Sphere",
+			"Name" : "Sphere 1",
 			"Parent" : "e96c756a-b1ee-4763-8a37-0651c1d504c7",
 			"Uuid" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
 		},
@@ -124,12 +124,12 @@
 						}
 					},
 					"Type" : "class GiiGa::TransformComponent",
-					"Uuid" : "fd19140e-72be-4409-bb85-15af35ec9f5b"
+					"Uuid" : "b304101c-4f3c-492c-94b2-2a95b90bc0e0"
 				}
 			],
 			"Name" : "GameObject",
 			"Parent" : "a9929549-03f4-4d0a-a307-9ffd1d754061",
-			"Uuid" : "937145b4-18af-4448-ae17-07571c1726be"
+			"Uuid" : "2a3945b5-8c6a-4c84-a1f6-b719633f9495"
 		},
 		{
 			"InstanceModifications" : 
@@ -138,34 +138,39 @@
 				[
 					{
 						"Target" : "a9929549-03f4-4d0a-a307-9ffd1d754061",
-						"Value" : "819a0af1-d7f7-4181-bce9-a55b994b0591"
+						"Value" : "90d3a684-6c57-42d2-9574-e23ce7e6685b"
 					},
 					{
 						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244",
-						"Value" : "d289476f-274e-46e3-8da9-55415cec4630"
+						"Value" : "3c2201df-b060-4085-be2e-933c00ecb7f6"
 					},
 					{
 						"Target" : "2b113a80-5958-46af-9258-b5c3ecb55230",
-						"Value" : "7cdcd2d4-61ca-4e4c-99a3-049178e76485"
+						"Value" : "c0a2f930-6282-4654-8098-b974b7f764ef"
 					},
 					{
-						"Target" : "937145b4-18af-4448-ae17-07571c1726be",
-						"Value" : "38c9c069-637b-484f-a981-73d2aaff6266"
+						"Target" : "2a3945b5-8c6a-4c84-a1f6-b719633f9495",
+						"Value" : "e1cd14af-5efc-47cb-a2b7-3939dd4de0d8"
 					},
 					{
-						"Target" : "fd19140e-72be-4409-bb85-15af35ec9f5b",
-						"Value" : "2b484ae6-3b94-422e-9725-361a64d3bb70"
+						"Target" : "b304101c-4f3c-492c-94b2-2a95b90bc0e0",
+						"Value" : "b3a96740-ef80-4a46-8c75-c76a9fd9833d"
 					}
 				],
 				"PropertyModifications" : 
 				[
+					{
+						"PropertyName" : "Name",
+						"PropertyValue" : "Sphere 2",
+						"Target" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
+					},
 					{
 						"PropertyName" : "Transform",
 						"PropertyValue" : 
 						{
 							"Location" : 
 							{
-								"x" : 7.3000001907348633,
+								"x" : -5.0,
 								"y" : 0.0,
 								"z" : 0.0
 							},
@@ -183,12 +188,22 @@
 							}
 						},
 						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244"
+					},
+					{
+						"PropertyName" : "Parent",
+						"PropertyValue" : "e96c756a-b1ee-4763-8a37-0651c1d504c7",
+						"Target" : "a9929549-03f4-4d0a-a307-9ffd1d754061"
+					},
+					{
+						"PropertyName" : "Parent",
+						"PropertyValue" : "dccca657-1709-402f-8930-6e6805bb4af2",
+						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244"
 					}
 				]
 			},
 			"Prefab" : 
 			{
-				"id" : "eadd086a-ceb6-4e94-8f79-2a3a3db4363a",
+				"id" : "22473b85-92fb-4608-8a40-98ecd11cfbae",
 				"subresource" : 0
 			}
 		}
@@ -199,7 +214,6 @@
 	},
 	"RootGameObjects" : 
 	[
-		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
-		"819a0af1-d7f7-4181-bce9-a55b994b0591"
+		"e96c756a-b1ee-4763-8a37-0651c1d504c7"
 	]
 }

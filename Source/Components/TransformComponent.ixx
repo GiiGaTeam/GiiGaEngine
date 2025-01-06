@@ -169,14 +169,22 @@ namespace GiiGa
 
         std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            std::vector<std::pair<PropertyModificationKey, PropertyValue>>  result;
+            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
 
             auto prefab_trans = std::static_pointer_cast<TransformComponent>(prefab_comp);
 
             if (this->transform_ != prefab_trans->transform_)
                 result.push_back({{this->inprefab_uuid_, "Transform"}, this->transform_.ToJson()});
 
-            // todo: reparenting?
+            if (!this->parent_.expired() && !prefab_trans->parent_.expired())
+            {
+                if (this->parent_.lock()->GetInPrefabUuid() != prefab_trans->parent_.lock()->GetInPrefabUuid())
+                    result.push_back({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+            }
+            else
+            {
+                result.push_back({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+            }
 
             return result;
         }
@@ -186,7 +194,19 @@ namespace GiiGa
             if (modifications.contains({this->inprefab_uuid_, "Transform"}))
                 this->transform_ = Transform{modifications.at({this->inprefab_uuid_, "Transform"})};
 
-            // todo: reparenting?
+            if (modifications.contains({this->inprefab_uuid_, "Parent"}))
+            {
+                Uuid parent_comp_uuid = Uuid::FromString(modifications.at({this->inprefab_uuid_, "Parent"}).asString()).value();
+
+                if (parent_comp_uuid == Uuid::Null())
+                {
+                    Detach();
+                }
+                else
+                {
+                    AttachTo(WorldQuery::GetWithUUID<TransformComponent>(parent_comp_uuid));
+                }
+            }
         }
 
         bool operator==(const TransformComponent* rhs) const
@@ -214,7 +234,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid,
-            const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
+                                          const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
         {
             auto clone = std::make_shared<TransformComponent>();
             this->CloneBase(clone, original_uuid_to_world_uuid, instance_uuid);

@@ -158,6 +158,25 @@ namespace GiiGa
                     std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
                 }
 
+                if (ImGui::BeginMenu("Add Child From Prefab"))
+                {
+                    char prefabUuidStr[37];
+                    snprintf(prefabUuidStr, sizeof(prefabUuidStr), "%s", Uuid::Null().ToString().c_str());
+                    if (ImGui::InputText("UUID", prefabUuidStr, sizeof(prefabUuidStr), ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        auto newUuid = Uuid::FromString(prefabUuidStr);
+                        if (newUuid.has_value() && newUuid.value() != Uuid::Null())
+                        {
+                            auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(AssetHandle{newUuid.value(), 0});
+                            el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", newUuid.value().ToString());
+                            auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
+                            new_go->SetParent(gameObject);
+                        }
+                    }
+
+                    ImGui::EndMenu();
+                }
+
                 ImGui::EndPopup();
             }
 
