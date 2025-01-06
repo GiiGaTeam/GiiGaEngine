@@ -106,16 +106,16 @@ namespace GiiGa
             }
         }
 
-        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<StaticMeshComponent>();
-            this->CloneBaseAsPrefab(clone, original_uuid_to_world_uuid);
+            this->CloneBase(clone, original_uuid_to_world_uuid, modifications);
             clone->mesh_ = mesh_;
             clone->material_ = material_;
             return clone;
         }
 
-        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
         }
 
@@ -125,7 +125,8 @@ namespace GiiGa
 
         std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
+            auto result = Component::GetModifications(prefab_comp);
+
             auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
 
             if (this->mesh_ != prefab_mesh->mesh_)
@@ -135,6 +136,21 @@ namespace GiiGa
                 result.push_back({{this->inprefab_uuid_, "Material"}, this->material_->GetId().ToJson()});
 
             return result;
+        }
+
+        void ApplyModifications(const PrefabModifications& modifications) override
+        {
+            if (modifications.Modifications.contains({this->inprefab_uuid_,"Mesh"}))
+            {
+                auto new_mesh_handle = AssetHandle::FromJson(modifications.Modifications.at({this->inprefab_uuid_,"Mesh"}));
+                this->mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_mesh_handle);
+            }
+
+            if (modifications.Modifications.contains({this->inprefab_uuid_,"Material"}))
+            {
+                auto new_mat_handle = AssetHandle::FromJson(modifications.Modifications.at({this->inprefab_uuid_,"Material"}));
+                this->material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(new_mat_handle);
+            }
         }
 
         void Draw(RenderContext& context) override

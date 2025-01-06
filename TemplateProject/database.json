@@ -30,6 +30,20 @@
 	{
 		"id" : 
 		{
+			"id" : "371f989f-df3e-49c3-9ccd-009089a3e040",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "a3227723-70bb-4b66-bab0-1d92d492a75c",
+			"name" : "Sphere",
+			"path" : "Sphere.prefab",
+			"type" : "Prefab"
+		}
+	},
+	{
+		"id" : 
+		{
 			"id" : "00000000-0000-0000-0000-000000000003",
 			"subresource" : 0
 		},
@@ -53,20 +67,6 @@
 			"name" : "Roughness",
 			"path" : "roug_stub.png",
 			"type" : "Texture2D"
-		}
-	},
-	{
-		"id" : 
-		{
-			"id" : "5e21bf9f-a5d4-405e-a823-d78447be031b",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "00000000-0000-0000-0000-000000000000",
-			"name" : "",
-			"path" : "Sphere.prefab",
-			"type" : "Prefab"
 		}
 	},
 	{
@@ -123,6 +123,20 @@
 			"name" : "Normal",
 			"path" : "norm_stab.png",
 			"type" : "Texture2D"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "86d4e21c-591f-4f85-8055-6a447ce78ecc",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "00000000-0000-0000-0000-000000000000",
+			"name" : "",
+			"path" : "Sphere.prefab",
+			"type" : "Prefab"
 		}
 	},
 	{
@@ -198,7 +212,7 @@
 	{
 		"id" : 
 		{
-			"id" : "da8e5f5c-12d8-48c8-ab37-9f666e29c66c",
+			"id" : "086bf36e-4c3e-47a5-9adf-1d8c11b59255",
 			"subresource" : 0
 		},
 		"meta" : 
@@ -207,20 +221,6 @@
 			"name" : "barell",
 			"path" : "barell.jpg",
 			"type" : "Texture2D"
-		}
-	},
-	{
-		"id" : 
-		{
-			"id" : "c27980c9-595e-4205-9351-adcee6afbd9c",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "a3227723-70bb-4b66-bab0-1d92d492a75c",
-			"name" : "Sphere",
-			"path" : "Sphere.prefab",
-			"type" : "Prefab"
 		}
 	}
 ]

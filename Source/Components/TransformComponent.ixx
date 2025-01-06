@@ -169,7 +169,7 @@ namespace GiiGa
 
         std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            std::vector<std::pair<PropertyModificationKey, PropertyValue>> result;
+            auto result = Component::GetModifications(prefab_comp);
 
             auto prefab_trans = std::static_pointer_cast<TransformComponent>(prefab_comp);
 
@@ -177,8 +177,16 @@ namespace GiiGa
                 result.push_back({{this->inprefab_uuid_, "Transform"}, this->transform_.ToJson()});
 
             // todo: reparenting?
-            
+
             return result;
+        }
+
+        void ApplyModifications(const PrefabModifications& modifications) override
+        {
+            if (modifications.Modifications.contains({this->inprefab_uuid_, "Transform"}))
+                this->transform_ = Transform{modifications.Modifications.at({this->inprefab_uuid_, "Transform"})};
+
+            // todo: reparenting?
         }
 
         bool operator==(const TransformComponent* rhs) const
@@ -205,22 +213,22 @@ namespace GiiGa
             return result;
         }
 
-        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             auto clone = std::make_shared<TransformComponent>();
-            this->CloneBaseAsPrefab(clone, original_uuid_to_world_uuid);
+            this->CloneBase(clone, original_uuid_to_world_uuid, modifications);
             clone->transform_ = transform_;
             return clone;
         }
 
-        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid) override
         {
             auto orig_trans = std::static_pointer_cast<TransformComponent>(original);
             auto parentUuid = Uuid::Null();
             if (!orig_trans->parent_.expired())
             {
                 el::Loggers::getLogger(LogWorld)->debug("TrasformComp::RestoreFromOriginal() Request %v from original_uuid_to_world_uuid", orig_trans->parent_.lock()->GetUuid().ToString());
-                parentUuid = original_uuid_to_world_uuid.at(orig_trans->parent_.lock()->GetInPrefabUuid());
+                parentUuid = original_uuid_to_world_uuid.at(orig_trans->parent_.lock()->GetUuid());
             }
             if (parentUuid != Uuid::Null())
                 AttachTo(WorldQuery::GetWithUUID<TransformComponent>(parentUuid));

@@ -34,6 +34,19 @@ namespace GiiGa
         //std::unordered_map<Uuid, Json::Value> Added_GOs;   // parent to GO
         //std::unordered_map<Uuid, Json::Value> Added_Comps; // owner to Comp
 
+        PrefabModifications() = default;
+
+        PrefabModifications(Json::Value js)
+        {
+            for (const auto& mod : js["Modifications"])
+            {
+                Uuid Target = Uuid::FromString(mod["Target"].asString()).value();
+                std::string prop_name = mod["PropertyName"].asString();
+                Json::Value prop_val = mod["PropertyValue"];
+                Modifications.insert({{Target, prop_name}, prop_val});
+            }
+        }
+
         Json::Value ToJson() const
         {
             Json::Value result;
@@ -45,9 +58,9 @@ namespace GiiGa
                 modification["PropertyName"] = values.first.second;
                 modification["PropertyValue"] = values.second;
 
-                result.append(modification);
+                result["Modifications"].append(modification);
             }
-            
+
             return result;
         }
     };

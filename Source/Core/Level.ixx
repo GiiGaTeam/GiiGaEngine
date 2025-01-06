@@ -92,10 +92,7 @@ namespace GiiGa
 
             for (auto&& [_,root_go] : root_game_objects_)
             {
-                if (root_go->GetInPrefabUuid() == Uuid::Null())
-                    result["RootGameObjects"].append(root_go->GetUuid().ToString());
-                else
-                    result["RootGameObjects"].append(root_go->GetInPrefabUuid().ToString());
+                result["RootGameObjects"].append(root_go->GetUuid().ToString());
 
                 std::vector<Json::Value> go_with_kids = RecurGOToJsonWithKids(std::dynamic_pointer_cast<GameObject>(root_go));
 
@@ -143,10 +140,9 @@ namespace GiiGa
 
             auto&& all_gos_jsons = json["GameObjects"];
             std::vector<std::shared_ptr<GameObject>> created_game_objects;
-            std::unordered_map<Uuid, Uuid> prefab_to_world_ids;
             for (auto&& gameobject_js : all_gos_jsons)
             {
-                if (gameobject_js["Prefab"].empty())
+                if (gameobject_js["Prefab"].empty()) // is not prefab instance
                 {
                     auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
                     CreateComponentsForGameObject::Create(new_go, gameobject_js, false);
@@ -156,8 +152,8 @@ namespace GiiGa
                 {
                     auto prefab_handle = AssetHandle::FromJson(gameobject_js["Prefab"]);
                     auto prefab_asset = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(prefab_handle);
-                    PrefabModifications modifications;
-                    prefab_asset->Clone(prefab_to_world_ids, modifications, created_game_objects);
+                    PrefabModifications modifications{gameobject_js["Modifications"]};
+                    prefab_asset->Instantiate(modifications, created_game_objects);
                 }
             }
 
@@ -165,19 +161,21 @@ namespace GiiGa
             {
                 std::string go_id_str = root_go.asString();
                 Uuid go_id = Uuid::FromString(go_id_str).value();
-                if (!prefab_to_world_ids.contains(go_id))
-                    WorldQuery::GetWithUUID<GameObject>(go_id)->AttachToLevelRoot(level);
-                else
-                {
-                    auto world_id = prefab_to_world_ids[go_id];
-                    WorldQuery::GetWithUUID<GameObject>(world_id)->AttachToLevelRoot(level);
-                }
+                WorldQuery::GetWithUUID<GameObject>(go_id)->AttachToLevelRoot(level);
             }
 
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");
             for (int i = 0; i < created_game_objects.size(); ++i)
             {
-                std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
+                if (all_gos_jsons[i]["Prefab"].empty()) // is not prefab instance
+                {
+                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
+                }
+                else
+                {
+                    PrefabModifications modifications{all_gos_jsons[i]["Modifications"]};
+                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->ApplyModifications(modifications);
+                }
             }
 
             return level;

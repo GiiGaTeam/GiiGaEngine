@@ -44,12 +44,12 @@ namespace GiiGa
             return json;
         }
 
-        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             return {};
         }
 
-        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
         }
 
@@ -62,6 +62,11 @@ namespace GiiGa
         {
             return {};
         }
+
+        void ApplyModifications(const PrefabModifications& modifications) override
+        {
+        }
+
 
     private:
         float time_sum_ = 0;

@@ -31,13 +31,13 @@ namespace GiiGa
 
         void Restore(const ::Json::Value&) override { Todo(); }
 
-        std::shared_ptr<IComponent> CloneAsPrefab(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, std::optional<PrefabModifications> modifications) override
         {
             Todo();
             return {};
         }
 
-        void RestoreFromPrefab(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
             Todo();
         }
@@ -52,6 +52,12 @@ namespace GiiGa
             Todo();
             return {};
         }
+
+        void ApplyModifications(const PrefabModifications& modifications) override
+        {
+            Todo();
+        }
+
 
         ::Json::Value DerivedToJson(bool is_prefab_root) override
         {
