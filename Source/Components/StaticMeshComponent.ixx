@@ -29,6 +29,7 @@ import PerObjectData;
 import StubTexturesHandles;
 import IUpdateGPUData;
 import PrefabInstance;
+import AssetHandle;
 
 namespace GiiGa
 {
@@ -170,25 +171,25 @@ namespace GiiGa
             //nothing to do
         }
 
-        Uuid GetMeshUuid()
+        AssetHandle GetMeshHandle()
         {
             if (mesh_)
-                return mesh_->GetId().id;
+                return mesh_->GetId();
             else
-                return Uuid::Null();
+                return {};
         }
 
-        void SetMeshUuid(const Uuid& newUuid)
+        void SetMeshHandle(const AssetHandle& new_handle)
         {
             // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
+            if (new_handle.id == Uuid::Null())
             {
                 mesh_.reset();
                 visibilityEntry_.reset();
             }
             else
             {
-                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>({newUuid, 0});
+                mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_handle);
                 RegisterInVisibility();
 
                 if (!material_)
@@ -200,21 +201,20 @@ namespace GiiGa
             }
         }
 
-        Uuid GetMaterialUuid() const
+        AssetHandle GetMaterialHandle() const
         {
             if (material_)
-                return material_->GetId().id;
+                return material_->GetId();
             else
-                return Uuid::Null();
+                return {};
         }
 
-        void SetMaterialUuid(const Uuid& newUuid)
+        void SetMaterialHandle(const AssetHandle& handle)
         {
-            // what a fuck is subresource?
-            if (newUuid == Uuid::Null())
+            if (handle.id == Uuid::Null())
                 material_.reset();
             else
-                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>({newUuid, 0});
+                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(handle);
         }
 
         void UpdateGPUData(RenderContext& context) override

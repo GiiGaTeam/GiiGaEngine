@@ -189,7 +189,7 @@ namespace GiiGa
             if (current_path_ != database_->AssetPath()) 
             {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("##Button_1", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     current_path_ = current_path_.parent_path();
@@ -210,7 +210,7 @@ namespace GiiGa
                 if (entry.is_directory()) 
                 {
                     auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                    ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+                    ImGui::ImageButton("##Button_2", (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
                         current_path_ /= path.filename();
@@ -231,13 +231,12 @@ namespace GiiGa
                 {
                     auto range = database_->GetHandlesByPath(relative_path);
 
-
-
                     for (const auto& [handle, meta] : range) {
                         if (meta.type != AssetType::Unknown)
                         {
+                            ImGui::PushID(static_cast<int>(handle.id.Hash()));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
-                            ImGui::ImageButton((ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            ImGui::ImageButton("##Button_3", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
 
                             const char* raw_name = filename.c_str();
 
@@ -248,21 +247,26 @@ namespace GiiGa
                                 raw_name = name.c_str();
                             }
 
-                            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                            if (ImGui::IsItemActive() && ImGui::BeginDragDropSource()) {
                                 ImGui::SetDragDropPayload(AssetTypeToStaticString(meta.type), &handle, sizeof(AssetHandle));
                                 ImGui::EndDragDropSource();
                             }
 
-                            if (ImGui::BeginPopupContextItem(raw_name)) {
+                            if (ImGui::BeginPopupContextItem()) {
+                                ImGui::Text(
+                                    "UUID: %s Subresource: %d",
+                                    const_cast<char*>(handle.id.ToString().c_str()),
+                                    handle.subresource
+                                );
+
                                 if (ImGui::MenuItem("Remove")) {
                                     std::filesystem::remove(path);
                                 }
-
-                                ImGui::InputText("UUID:", const_cast<char*>(handle.id.ToString().c_str()), handle.id.ToString().length(), ImGuiInputTextFlags_ReadOnly);
-
                                 
                                 ImGui::EndPopup();
                             }
+
+                            ImGui::PopID();
 
                             ImGui::TextWrapped(raw_name);
 

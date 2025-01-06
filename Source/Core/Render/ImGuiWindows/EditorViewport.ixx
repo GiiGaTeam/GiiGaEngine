@@ -1,5 +1,7 @@
 #include <imgui_internal.h>
+
 #include<directxtk12/SimpleMath.h>
+#include <ImGuizmo.h>
 
 export module EditorViewport;
 
@@ -21,14 +23,16 @@ import SpectatorMovementComponent;
 import GBuffer;
 import Input;
 import Logger;
+import EditorContext;
 
 namespace GiiGa
 {
     export class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
-        EditorViewport(RenderDevice& device):
+        EditorViewport(RenderDevice& device, std::shared_ptr<EditorContext> editor_ctx):
             Viewport(device)
+            , editorContext_(editor_ctx)
         {
             Resize(viewport_size_);
         }
@@ -62,21 +66,29 @@ namespace GiiGa
 
         void Execute(RenderContext& context) override
         {
+            // TODO: Check simulation mode or editor mode
+
             if (camera_.expired()) return;
-            if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
-            {
-                movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+
+            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str())) {
+                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+                    if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
+                    {
+                        movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+                    }
+                }
             }
 
             UpdateCameraInfo(context);
-
-            ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str());
-
 
             auto current_size = ImGui::GetWindowSize();
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
+
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::AllowAxisFlip(false);
+            ImGuizmo::SetDrawlist();
 
             // draw here
             D3D12_VIEWPORT viewport = {};
@@ -105,6 +117,9 @@ namespace GiiGa
             //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
             ImGui::Image((ImTextureID)gbuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation).ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
+            // Widgets on viewport
+            PostViewportDrawWidgets();
+
             ImGui::End();
         }
 
@@ -113,6 +128,118 @@ namespace GiiGa
         std::weak_ptr<GameObject> camera_;
         std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
         DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+
+        std::shared_ptr<EditorContext> editorContext_;
+
+        void DrawToolbar()
+        {
+            if (ImGui::IsKeyPressed(ImGuiKey_W) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_E) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
+            if (ImGui::IsKeyPressed(ImGuiKey_R) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALEU;
+
+            const float header_h = ImGui::GetTextLineHeightWithSpacing();
+
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetWindowPos().x + 10.0f, ImGui::GetWindowPos().y + header_h + 10.0f));
+
+            ImGui::BeginChild("ToolBar");
+
+            bool translate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::TRANSLATE;
+            bool rotate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::ROTATE;
+            bool scale = editorContext_->currentOperation_ & ImGuizmo::OPERATION::SCALEU;
+
+            if (ImGui::Checkbox("Translate", &translate)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(translate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::TRANSLATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::TRANSLATE);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: W");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Checkbox("Rotate", &rotate)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(rotate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::ROTATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::ROTATE);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: E");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Checkbox("Scale", &scale)) {
+                editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(scale ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::SCALEU : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::SCALEU);
+            } 
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Hotkey: S");
+            }
+            ImGui::SameLine();
+
+            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD)) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
+            }
+            ImGui::SameLine();
+
+            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL)) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
+            }
+
+            ImGui::EndChild();
+        }
+
+        void PostViewportDrawWidgets() 
+        {
+            DrawToolbar();
+
+            auto current_size = ImGui::GetWindowSize();
+
+            const float header_h = ImGui::GetTextLineHeightWithSpacing();
+            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + header_h, current_size.x, current_size.y);
+
+            auto l_camera = camera_.lock();
+
+            auto cmp = l_camera->GetComponent<CameraComponent>()->GetCamera();
+
+            auto view = cmp.GetView();
+            auto proj = cmp.GetProj();
+
+            auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
+
+            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);
+
+            if (auto go = editorContext_->selectedGameObject.lock())
+            {
+                auto transform = go->GetTransformComponent().lock();
+                auto transform_matrix = transform->GetTransform().GetMatrix();
+                if (ImGuizmo::Manipulate((float*)view.m, (float*)proj.m, editorContext_->currentOperation_, editorContext_->currentMode_, (float*)transform_matrix.m))
+                {
+                    transform->SetTransform(Transform::TransformFromMatrix(transform_matrix));
+                }
+            }
+
+            /*ImGui::Begin("Viewport Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+            if (ImGui::Button("Translate")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Rotate")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Scale")) {
+                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALE;
+            }
+
+            if (ImGui::Button("World")) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Local")) {
+                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
+            }
+
+            ImGui::End();*/
+        }
 
         void UpdateCameraInfo(RenderContext& context)
         {

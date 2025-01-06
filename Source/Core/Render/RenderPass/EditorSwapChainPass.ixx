@@ -1,12 +1,14 @@
+import <imgui.h>;
+import <imgui_impl_dx12.h>;
+import <imgui_impl_sdl2.h>;
+
+#include <ImGuizmo.h>
+
 export module EditorSwapChainPass;
 
 import <d3d12.h>;
 import <vector>;
 import <memory>;
-
-import <imgui.h>;
-import <imgui_impl_dx12.h>;
-import <imgui_impl_sdl2.h>;
 
 import RenderSystemSettings;
 import RenderDevice;
@@ -62,6 +64,7 @@ namespace GiiGa
             ImGui_ImplDX12_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
+            ImGuizmo::BeginFrame();
 
             BeginDockSpace_();
             {
@@ -77,12 +80,6 @@ namespace GiiGa
                 {
                     viewport->Execute(context);
                 }
-                // todo: ImGui Call
-                // Start the Dear ImGui frame
-
-                bool show_demo_window = true;
-                // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-                ImGui::ShowDemoWindow(&show_demo_window);
             }
             EndDockSpace_();
 

@@ -37,5 +37,7 @@ namespace GiiGa
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000b").value(), 0};
         export const AssetHandle Sphere =
             AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000c").value(), 0};
+        export const AssetHandle Quad =
+            AssetHandle{Uuid::FromString("00000000-0000-0000-0000-00000000000d").value(), 0};
     }
 }

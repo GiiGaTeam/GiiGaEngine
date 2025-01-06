@@ -3,19 +3,15 @@ module;
 #define NOMINMAX
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
-#include <unordered_map>
-#include <variant>
-#include <vector>
 #include <directxtk12/SimpleMath.h>
 
-export module PointLightComponent;
+export module DirectionalLightComponent;
 
 import <memory>;
 import <json/value.h>;
 import <bitset>;
 import <filesystem>;
 import <algorithm>;
-import <optional>;
 
 import Engine;
 import Component;
@@ -34,41 +30,38 @@ import IUpdateGPUData;
 import ViewTypes;
 import BufferView;
 import GPULocalResource;
-import PrefabInstance;
 import LightComponent;
 
 namespace GiiGa
 {
-    struct alignas(256) PointLightData
+    struct alignas(256) DirectionLightData
     {
-        alignas(16) DirectX::SimpleMath::Vector3 posWS;
-        alignas(16) DirectX::SimpleMath::Vector3 color = {1, 0, 0};
-        float radius = 1;
+        DirectX::SimpleMath::Vector3 dirWS;
         float max_intensity = 1;
-        float falloff = 1;
+        alignas(16) DirectX::SimpleMath::Vector3 color = {1, 0, 0};
     };
 
-    export class PointLightShaderResource : public IObjectShaderResource
+    export class DirectionLightShaderResource : public IObjectShaderResource
     {
-        friend class PointLightComponent;
+        friend class DirectionalLightComponent;
 
     public:
         std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
         {
             std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
-            result[0] = PointLightCBV_->getDescriptor().getGPUHandle();
+            result[0] = directionLightCBV_->getDescriptor().getGPUHandle();
             return result;
         }
 
     private:
-        std::shared_ptr<BufferView<Constant>> PointLightCBV_;
+        std::shared_ptr<BufferView<Constant>> directionLightCBV_;
     };
 
-    export class PointLightComponent : public LightComponent
+    export class DirectionalLightComponent : public LightComponent
     {
     public:
-        PointLightComponent():
-            pointLightShaderRes_(std::make_shared<PointLightShaderResource>())
+        DirectionalLightComponent():
+            directionLightShaderRes_(std::make_shared<DirectionLightShaderResource>())
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
 
@@ -77,17 +70,17 @@ namespace GiiGa
 
             if (isStatic_)
             {
-                UINT SizeInBytes = sizeof(PointLightData);
+                UINT SizeInBytes = sizeof(DirectionLightData);
 
                 const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-                poinLightRes = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-                poinLightRes->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(poinLightRes->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
-                pointLightShaderRes_->PointLightCBV_ = poinLightRes->CreateConstantBufferView(desc);
+                directionLightRes = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+                directionLightRes->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(directionLightRes->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
+                directionLightShaderRes_->directionLightCBV_ = directionLightRes->CreateConstantBufferView(desc);
             }
         }
 
-        ~PointLightComponent()
+        ~DirectionalLightComponent()
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
@@ -108,40 +101,17 @@ namespace GiiGa
             {
                 auto rm = Engine::Instance().ResourceManager();
 
-                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Sphere);
+                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Quad);
 
                 RegisterInVisibility();
             }
         }
 
-        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
-                                          & instance_uuid) override
+        ::std::shared_ptr<IComponent> Clone() override
         {
             Todo();
             return {};
         }
-
-        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
-        {
-            Todo();
-        }
-
-        void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
-        {
-            Todo();
-        }
-
-        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
-        {
-            Todo();
-            return {};
-        }
-
-        void ApplyModifications(const PropertyModifications& modifications) override
-        {
-            Todo();
-        }
-
 
         void Draw(RenderContext& context) override
         {
@@ -150,7 +120,7 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire).SetLightType(LightType::Point), .shaderResource = pointLightShaderRes_};
+            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Solid).SetLightType(LightType::Direction), .shaderResource = directionLightShaderRes_};
         }
 
         void Restore(const Json::Value&) override
@@ -158,7 +128,7 @@ namespace GiiGa
             Todo();
         }
 
-        Json::Value DerivedToJson(bool is_prefab_root) override
+        Json::Value DerivedToJson() override
         {
             Todo();
             return {};
@@ -173,18 +143,18 @@ namespace GiiGa
                 perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
 
-            UINT SizeInBytes = sizeof(PointLightData);
+            UINT SizeInBytes = sizeof(DirectionLightData);
 
             const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
 
             if (isStatic_)
             {
-                poinLightRes->UpdateContentsImmediate(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                directionLightRes->UpdateContentsImmediate(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             }
             else
             {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-                pointLightShaderRes_->PointLightCBV_ = context.AllocateDynamicConstantView(span, desc);
+                directionLightShaderRes_->directionLightCBV_ = context.AllocateDynamicConstantView(span, desc);
             }
         }
 
@@ -199,35 +169,22 @@ namespace GiiGa
             isDirty = true;
         }
 
-        void SetRadius(float radius)
-        {
-            data_.radius = radius;
-            std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->SetScale({radius, radius, radius});
-            isDirty = true;
-        }
-
         void SetIntensity(float max_intensity) override
         {
             data_.max_intensity = max_intensity;
             isDirty = true;
         }
 
-        void SetFallOff(float falloff)
-        {
-            data_.falloff = falloff;
-            isDirty = true;
-        }
-
-        PointLightData GetData() const {return data_;}
+        DirectionLightData GetData() const {return data_;}
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
         std::shared_ptr<PerObjectData> perObjectData_;
-        std::unique_ptr<GPULocalResource> poinLightRes;
-        std::shared_ptr<PointLightShaderResource> pointLightShaderRes_;
-        PointLightData data_;
+        std::unique_ptr<GPULocalResource> directionLightRes;
+        std::shared_ptr<DirectionLightShaderResource> directionLightShaderRes_;
+        DirectionLightData data_;
 
         bool isStatic_ = false;
         bool isDirty = true;
@@ -248,8 +205,7 @@ namespace GiiGa
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
 
-                    data_.posWS = trans.location_;
-                    data_.radius = std::max(trans.scale_.x, std::max(trans.scale_.y, trans.scale_.z));
+                    data_.dirWS = trans.GetForward();
                     isDirty = true;
 
                     visibilityEntry_->Update(origaabb);

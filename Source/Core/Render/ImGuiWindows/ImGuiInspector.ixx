@@ -9,10 +9,17 @@ import <unordered_map>;
 import IImGuiWindow;
 import EditorContext;
 import World;
+import Component;
 import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
+import DirectionalLightComponent;
+import LightComponent;
+import TransformComponent;
 import Material;
+
+import AssetType;
+import AssetHandle;
 
 namespace GiiGa
 {
@@ -26,7 +33,7 @@ namespace GiiGa
 
         void RecordImGui() override
         {
-            ImGui::Begin("ImGuiInspector");
+            ImGui::Begin("Inspector");
 
             if (auto gameobject = editorContext_->selectedGameObject.lock())
             {
@@ -45,249 +52,18 @@ namespace GiiGa
 
                 if (auto l_transfrom = transform.lock())
                 {
+                    ImGui::PushID(l_transfrom->GetUuid().ToString().c_str());
                     if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        auto location = l_transfrom->GetLocation();
-                        auto rot_deg = l_transfrom->GetRotation();
-                        auto scale = l_transfrom->GetScale();
-                        if (drawVec3Control("Translation", location))
-                        {
-                            l_transfrom->SetLocation(location);
-                        }
-                        if (drawVec3Control("Rotation", rot_deg))
-                        {
-                            l_transfrom->SetRotation(rot_deg);
-                        }
-                        if (drawVec3Control("Scale", scale, 1.0f))
-                        {
-                            l_transfrom->SetScale(scale);
-                        }
-
+                        DrawTransformComponent(l_transfrom);
                         ImGui::TreePop();
                     }
+                    ImGui::PopID();
                 }
 
                 for (auto&& comp : gameobject->GetComponents())
                 {
-                    if (auto camera_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
-                    {
-                        if (ImGui::TreeNodeEx("Camera Component", ImGuiTreeNodeFlags_DefaultOpen))
-                        {
-                            auto camera = camera_comp->GetCamera();
-
-                            // Camera type
-                            const char* camera_types[] = {"Perspective", "Orthographic"};
-                            int current_type = static_cast<int>(camera.type_);
-                            if (ImGui::Combo("Camera Type", &current_type, camera_types, IM_ARRAYSIZE(camera_types)))
-                            {
-                                camera_comp->SetType(static_cast<CameraType>(current_type));
-                            }
-
-                            // Perspective settings
-                            if (camera.type_ == Perspective)
-                            {
-                                if (ImGui::SliderFloat("FOV", &camera.FOV_, 1.0f, 179.0f))
-                                {
-                                    camera_comp->SetFOVinDeg(camera.FOV_);
-                                }
-                                if (ImGui::InputFloat("Aspect Ratio", &camera.aspect_, 0.01f, 0.1f))
-                                {
-                                    camera_comp->SetAspect(camera.aspect_);
-                                }
-                            }
-                            // Orthographic settings
-                            else if (camera.type_ == Orthographic)
-                            {
-                                if (ImGui::InputFloat("Width", &camera.width_, 1.0f, 10.0f))
-                                {
-                                    camera_comp->SetWidth(camera.width_);
-                                }
-                                if (ImGui::InputFloat("Height", &camera.height_, 1.0f, 10.0f))
-                                {
-                                    camera_comp->SetHeight(camera.height_);
-                                }
-                            }
-
-                            // Common settings
-                            if (ImGui::InputFloat("Near Plane", &camera.near_, 0.01f, 0.1f))
-                            {
-                                camera_comp->SetNear(camera.near_);
-                            }
-                            if (ImGui::InputFloat("Far Plane", &camera.far_, 1.0f, 10.0f))
-                            {
-                                camera_comp->SetFar(camera.far_);
-                            }
-
-                            ImGui::TreePop();
-                        }
-                    }
-                    else if (auto static_mesh_comp = std::dynamic_pointer_cast<StaticMeshComponent>(comp))
-                    {
-                        if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
-                        {
-                            // Get and display the Mesh UUID
-                            Uuid meshUuid = static_mesh_comp->GetMeshUuid();
-                            char meshUuidStr[37];
-                            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", meshUuid.ToString().c_str());
-                            if (ImGui::InputText("Mesh UUID", meshUuidStr, sizeof(meshUuidStr)))
-                            {
-                                auto newUuid = Uuid::FromString(meshUuidStr);
-                                if (newUuid.has_value())
-                                    static_mesh_comp->SetMeshUuid(newUuid.value());
-                            }
-
-                            auto material = static_mesh_comp->material_;
-
-                            if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
-                            {
-                                // Material UUID
-                                Uuid materialUuid = static_mesh_comp->GetMaterialUuid();
-                                char materialUuidStr[37];
-                                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", materialUuid.ToString().c_str());
-                                if (ImGui::InputText("Material UUID", materialUuidStr, sizeof(materialUuidStr)))
-                                {
-                                    auto newUuid = Uuid::FromString(materialUuidStr);
-                                    if (newUuid.has_value())
-                                        static_mesh_comp->SetMaterialUuid(newUuid.value());
-                                }
-
-                                // Shading Model
-                                static const char* shadingModelNames[] = {
-                                    "None", "DefaultLit", "Unlit"
-                                };
-                                int currentShadingModel = static_cast<int>(material->GetMaterialMask().GetShadingModel());
-                                if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModelNames, IM_ARRAYSIZE(shadingModelNames)))
-                                {
-                                    material->SetShadingModel(static_cast<ShadingModel>(currentShadingModel));
-                                }
-
-                                // Blend Mode
-                                static const char* blendModeNames[] = {
-                                    "None", "Opaque", "Masked", "Translucent"
-                                };
-                                int currentBlendMode = static_cast<int>(material->GetMaterialMask().GetBlendMode());
-                                if (ImGui::Combo("Blend Mode", &currentBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames)))
-                                {
-                                    material->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
-                                }
-
-                                // Define required texture indices based on the blend mode and shading model
-                                RequiredTexturesMask requiredTextures = material->GetRequiredTextures();
-                                {
-                                    TexturesOrder texture_order = TexturesOrder::BaseColor;
-                                    int texture_index = static_cast<int>(texture_order) - 1;
-                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
-                                    {
-                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                                        char textureUuidStr[37];
-                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("BaseColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                                        {
-                                            auto newUuid = Uuid::FromString(textureUuidStr);
-                                            if (newUuid.has_value())
-                                            {
-                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
-                                            }
-                                        }
-
-                                        DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
-                                        if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
-                                            material->SetBaseColorTint(val);
-                                    }
-                                    else
-                                        ImGui::Text("You Can't Set BaseColor");
-                                }
-
-                                {
-                                    TexturesOrder texture_order = TexturesOrder::EmissiveColor;
-                                    int texture_index = static_cast<int>(texture_order) - 1;
-                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
-                                    {
-                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                                        char textureUuidStr[37];
-                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("EmissiveColor Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                                        {
-                                            auto newUuid = Uuid::FromString(textureUuidStr);
-                                            if (newUuid.has_value())
-                                            {
-                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
-                                            }
-                                        }
-
-                                        DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
-                                        if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
-                                            material->SetEmissiveTint(val);
-                                    }
-                                    else
-                                        ImGui::Text("You Can't Set EmissiveColor");
-                                }
-
-                                {
-                                    TexturesOrder texture_order = TexturesOrder::Metallic;
-                                    int texture_index = static_cast<int>(texture_order) - 1;
-                                    if (requiredTextures[texture_index] && material->textures_[texture_index])
-                                    {
-                                        Uuid textureUuid = material->textures_[texture_index]->GetId().id;
-                                        char textureUuidStr[37];
-                                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", textureUuid.ToString().c_str());
-                                        if (ImGui::InputText("Metallic Texture UUID", textureUuidStr, sizeof(textureUuidStr)))
-                                        {
-                                            auto newUuid = Uuid::FromString(textureUuidStr);
-                                            if (newUuid.has_value())
-                                            {
-                                                material->SetTexture(texture_order, AssetHandle{newUuid.value(), 0});
-                                            }
-                                        }
-
-                                        float val = material->data_.MetallicScale_;
-                                        if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
-                                            material->SetMetallicScale(val);
-                                    }
-                                    else
-                                        ImGui::Text("You Can't Set Metallic");
-                                }
-                            }
-
-                            ImGui::TreePop();
-                        }
-                    }
-                    else if(auto point_light = std::dynamic_pointer_cast<PointLightComponent>(comp))
-                    {
-                        if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
-                        {
-                            // Edit Color
-                            DirectX::SimpleMath::Vector3 color = point_light->data_.color;
-                            float colorArray[3] = { color.x, color.y, color.z };
-                            if (ImGui::ColorEdit3("Color", colorArray))
-                            {
-                                point_light->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
-                            }
-
-                            // Edit Radius
-                            float radius = point_light->data_.radius;
-                            if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
-                            {
-                                point_light->SetRadius(radius);
-                            }
-
-                            // Edit Intensity
-                            float intensity = point_light->data_.max_intensity;
-                            if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
-                            {
-                                point_light->SetIntensity(intensity);
-                            }
-
-                            // Edit Falloff
-                            float falloff = point_light->data_.falloff;
-                            if (ImGui::DragFloat("Falloff", &falloff, 0.01f, 0.0f, 10.0f))
-                            {
-                                point_light->SetFallOff(falloff);
-                            }
-
-                            ImGui::TreePop();
-                        }
-                    }
+                    ImGuiComponentWidgetFactory(comp);
                 }
 
                 if (ImGui::Button("Add Component"))
@@ -313,6 +89,15 @@ namespace GiiGa
                         ImGui::CloseCurrentPopup();
                     }
 
+                    if (ImGui::MenuItem("Direction Light Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<DirectionalLightComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
                     ImGui::EndPopup();
                 }
             }
@@ -323,7 +108,331 @@ namespace GiiGa
     private:
         std::shared_ptr<EditorContext> editorContext_;
 
-        static bool drawVec3Control(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
+        void DrawTransformComponent(std::shared_ptr<TransformComponent> comp)
+        {
+            auto location = comp->GetLocation();
+            auto rot_deg = comp->GetRotation();
+            auto scale = comp->GetScale();
+
+            if (DrawVec3Control("Translation", location))
+            {
+                comp->SetLocation(location);
+            }
+
+            if (DrawVec3Control("Rotation", rot_deg))
+            {
+                comp->SetRotation(rot_deg);
+            }
+
+            if (DrawVec3Control("Scale", scale, 1.0f))
+            {
+                comp->SetScale(scale);
+            }
+        }
+
+        void DrawCameraComponent(std::shared_ptr<CameraComponent> comp) 
+        {
+            auto camera = comp->GetCamera();
+
+            // Camera type
+            const char* camera_types[] = { "Perspective", "Orthographic" };
+            int current_type = static_cast<int>(camera.type_);
+            if (ImGui::Combo("Camera Type", &current_type, camera_types, IM_ARRAYSIZE(camera_types)))
+            {
+                comp->SetType(static_cast<CameraType>(current_type));
+            }
+
+            // Perspective settings
+            if (camera.type_ == Perspective)
+            {
+                if (ImGui::SliderFloat("FOV", &camera.FOV_, 1.0f, 179.0f))
+                {
+                    comp->SetFOVinDeg(camera.FOV_);
+                }
+                if (ImGui::InputFloat("Aspect Ratio", &camera.aspect_, 0.01f, 0.1f))
+                {
+                    comp->SetAspect(camera.aspect_);
+                }
+            }
+            // Orthographic settings
+            else if (camera.type_ == Orthographic)
+            {
+                if (ImGui::InputFloat("Width", &camera.width_, 1.0f, 10.0f))
+                {
+                    comp->SetWidth(camera.width_);
+                }
+                if (ImGui::InputFloat("Height", &camera.height_, 1.0f, 10.0f))
+                {
+                    comp->SetHeight(camera.height_);
+                }
+            }
+
+            // Common settings
+            if (ImGui::InputFloat("Near Plane", &camera.near_, 0.01f, 0.1f))
+            {
+                comp->SetNear(camera.near_);
+            }
+            if (ImGui::InputFloat("Far Plane", &camera.far_, 1.0f, 10.0f))
+            {
+                comp->SetFar(camera.far_);
+            }
+        }
+
+        void DrawStaticMeshComponent(std::shared_ptr<StaticMeshComponent> comp)
+        {
+            auto mesh_handle = comp->GetMeshHandle();
+            std::string text_handle = mesh_handle.id.ToString() + " " + std::to_string(mesh_handle.subresource);
+
+            char meshUuidStr[512];
+            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", text_handle.c_str());
+
+            ImGui::InputText("Mesh Handle", meshUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh))) {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    comp->SetMeshHandle(*handle);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            auto material = comp->material_;
+
+            if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                auto material_handle = comp->GetMaterialHandle();
+                std::string text_handle = material_handle.id.ToString() + " " + std::to_string(material_handle.subresource);
+
+                char materialUuidStr[512];
+                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", text_handle.c_str());
+                ImGui::InputText("Material Handle", materialUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material))) {
+                        AssetHandle* handle = (AssetHandle*)payload->Data;
+                        comp->SetMaterialHandle(*handle);
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+
+                // Shading Model
+                static const char* shadingModelNames[] = {
+                    "None", "DefaultLit", "Unlit"
+                };
+                int currentShadingModel = static_cast<int>(material->GetMaterialMask().GetShadingModel());
+                if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModelNames, IM_ARRAYSIZE(shadingModelNames)))
+                {
+                    material->SetShadingModel(static_cast<ShadingModel>(currentShadingModel));
+                }
+
+                // Blend Mode
+                static const char* blendModeNames[] = {
+                    "None", "Opaque", "Masked", "Translucent"
+                };
+                int currentBlendMode = static_cast<int>(material->GetMaterialMask().GetBlendMode());
+                if (ImGui::Combo("Blend Mode", &currentBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames)))
+                {
+                    material->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
+                }
+
+                // Define required texture indices based on the blend mode and shading model
+                RequiredTexturesMask requiredTextures = material->GetRequiredTextures();
+                {
+                    TexturesOrder texture_order = TexturesOrder::BaseColor;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                        ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
+                        if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
+                        {
+                            material->SetBaseColorTint(val);
+                        } 
+                    }
+                    else
+                    {
+                        ImGui::Text("You Can't Set BaseColor");
+                    }  
+                }
+
+                {
+                    TexturesOrder texture_order = TexturesOrder::EmissiveColor;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
+                        if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
+                        {
+                            material->SetEmissiveTint(val);
+                        }  
+                    }
+                    else
+                    {
+                        ImGui::Text("You Can't Set EmissiveColor");
+                    }
+                }
+
+                {
+                    TexturesOrder texture_order = TexturesOrder::Metallic;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("Metallic Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        float val = material->data_.MetallicScale_;
+                        if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                        {
+                            material->SetMetallicScale(val);
+                        }  
+                    }
+                    else
+                    {
+                        ImGui::Text("You Can't Set Metallic");
+                    }  
+                }
+            }
+        }
+
+        void DrawPointLightComponent(std::shared_ptr<PointLightComponent> comp)
+        {
+            // Edit Color
+            DirectX::SimpleMath::Vector3 color = comp->GetData().color;
+            float colorArray[3] = { color.x, color.y, color.z };
+            if (ImGui::ColorEdit3("Color", colorArray))
+            {
+                comp->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+            }
+
+            // Edit Radius
+            float radius = comp->GetData().radius;
+            if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.1f, 1000.0f))
+            {
+                comp->SetRadius(radius);
+            }
+
+            // Edit Intensity
+            float intensity = comp->GetData().max_intensity;
+            if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
+            {
+                comp->SetIntensity(intensity);
+            }
+
+            // Edit Falloff
+            float falloff = comp->GetData().falloff;
+            if (ImGui::DragFloat("Falloff", &falloff, 0.01f, 0.0f, 10.0f))
+            {
+                comp->SetFallOff(falloff);
+            }
+        }
+
+        void DrawDirectionLightComponent(std::shared_ptr<DirectionalLightComponent> comp)
+        {
+            // Edit Color
+            DirectX::SimpleMath::Vector3 color = comp->GetData().color;
+            float colorArray[3] = { color.x, color.y, color.z };
+            if (ImGui::ColorEdit3("Color", colorArray))
+            {
+                comp->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+            }
+
+            // Edit Intensity
+            float intensity = comp->GetData().max_intensity;
+            if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f))
+            {
+                comp->SetIntensity(intensity);
+            }
+        }
+
+        void ImGuiComponentWidgetFactory(std::shared_ptr<IComponent> comp)
+        {
+            ImGui::PushID(comp->GetUuid().ToString().c_str());
+            if (auto camera_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
+            {
+
+                if (ImGui::TreeNodeEx("Camera Component", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawCameraComponent(camera_comp);
+                    ImGui::TreePop();
+                }
+                
+            }
+            else if (auto static_mesh_comp = std::dynamic_pointer_cast<StaticMeshComponent>(comp))
+            {
+                if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawStaticMeshComponent(static_mesh_comp);
+                    ImGui::TreePop();
+                }
+            }
+            else if (auto point_light = std::dynamic_pointer_cast<PointLightComponent>(comp))
+            {
+                if (ImGui::TreeNodeEx("PointLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawPointLightComponent(point_light);
+                    ImGui::TreePop();
+                }
+            }
+            else if (auto direction_light = std::dynamic_pointer_cast<DirectionalLightComponent>(comp))
+            {
+                if (ImGui::TreeNodeEx("DirectionalLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawDirectionLightComponent(direction_light);
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::PopID();
+        }
+
+        static bool DrawVec3Control(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
                                     float columnWidth = 100.0f)
         {
             ImGuiIO& io = ImGui::GetIO();

@@ -1,3 +1,6 @@
+#ifndef SHADER_HEADER
+#define SHADER_HEADER
+
 cbuffer CameraMatricies : register(b0)
 {
     matrix View;
@@ -12,7 +15,7 @@ cbuffer WorldMatricies : register(b1)
     //bool RenderState;
 }
 
-struct VS_INPUT                 
+struct VS_INPUT
 {
     float3 Pos : POSITION;
     float3 Norm : NORMAL;
@@ -20,11 +23,12 @@ struct VS_INPUT
     float3 Bitangent : BINORMAL;
     float2 Tex : TEXCOORD;
 };
+
 //TODO
 //????????? ?? skeletal mesh
-struct PS_INPUT                   
+struct PS_INPUT
 {
-    float4 Pos : SV_POSITION;    
+    float4 Pos : SV_POSITION;
     float3 PosWS : TEXCOORD0;
     float3 PosVS : TEXCOORD1;
     float3 NormWS : TEXCOORD2;
@@ -40,3 +44,5 @@ float3 GetCameraPos()
 {
     return -View[3];
 }
+
+#endif
