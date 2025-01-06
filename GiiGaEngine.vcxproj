@@ -174,15 +174,16 @@
     <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\GBufferWireframeShader.hlsl" />
-    <None Include="Shaders\GDirectionLight.hlsl" />
+    <None Include="Shaders\GDirectionalLight.hlsl" />
     <None Include="Shaders\GLightHeader.hlsl" />
     <None Include="Shaders\GPointLight.hlsl" />
     <None Include="Shaders\MaterialHeader.hlsl" />
     <None Include="Shaders\ShaderHeader.hlsl" />
+    <None Include="Shaders\VertexFullQuadShader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />
     <None Include="Shaders\VertexPNTBTShader.hlsl" />
     <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
-    <ClCompile Include="Source\Components\DirectionLightComponent.ixx">
+    <ClCompile Include="Source\Components\DirectionalLightComponent.ixx">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>

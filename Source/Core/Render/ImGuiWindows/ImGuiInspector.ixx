@@ -13,7 +13,7 @@ import Component;
 import CameraComponent;
 import StaticMeshComponent;
 import PointLightComponent;
-import DirectionLightComponent;
+import DirectionalLightComponent;
 import LightComponent;
 import TransformComponent;
 import Material;
@@ -93,7 +93,7 @@ namespace GiiGa
                     {
                         if (auto l_go = editorContext_->selectedGameObject.lock())
                         {
-                            l_go->CreateComponent<DirectionLightComponent>();
+                            l_go->CreateComponent<DirectionalLightComponent>();
                         }
                         ImGui::CloseCurrentPopup();
                     }
@@ -374,7 +374,7 @@ namespace GiiGa
             }
         }
 
-        void DrawDirectionLightComponent(std::shared_ptr<DirectionLightComponent> comp)
+        void DrawDirectionLightComponent(std::shared_ptr<DirectionalLightComponent> comp)
         {
             // Edit Color
             DirectX::SimpleMath::Vector3 color = comp->GetData().color;
@@ -421,9 +421,9 @@ namespace GiiGa
                     ImGui::TreePop();
                 }
             }
-            else if (auto direction_light = std::dynamic_pointer_cast<DirectionLightComponent>(comp))
+            else if (auto direction_light = std::dynamic_pointer_cast<DirectionalLightComponent>(comp))
             {
-                if (ImGui::TreeNodeEx("DirectionLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                if (ImGui::TreeNodeEx("DirectionalLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     DrawDirectionLightComponent(direction_light);
                     ImGui::TreePop();

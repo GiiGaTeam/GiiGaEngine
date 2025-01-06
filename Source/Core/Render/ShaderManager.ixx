@@ -16,11 +16,12 @@ namespace GiiGa
 {
     export const LPCWSTR VertexPositionShader = L"Shaders/VertexPositionShader.hlsl";
     export const LPCWSTR VertexPNTBTShader = L"Shaders/VertexPNTBTShader.hlsl";
+    export const LPCWSTR VertexFullQuadShader = L"Shaders/VertexFullQuadShader.hlsl";
     export const LPCWSTR GBufferOpaqueUnlitShader = L"Shaders/GBufferOpaqueUnlitPixelShader.hlsl";
     export const LPCWSTR GBufferOpaqueDefaultLitShader = L"Shaders/GBufferOpaqueDefaultLitPixelShader.hlsl";
     export const LPCWSTR GBufferWireframeShader = L"Shaders/GBufferWireframeShader.hlsl";
     export const LPCWSTR GPointLight = L"Shaders/GPointLight.hlsl";
-    export const LPCWSTR GDirectionLight = L"Shaders/GDirectionLight.hlsl";
+    export const LPCWSTR GDirectionLight = L"Shaders/GDirectionalLight.hlsl";
     
     export class ShaderManager
     {
@@ -92,6 +93,10 @@ namespace GiiGa
             // И так дальше с остальными шейдерами
 
             shader = std::make_shared<Shader>(VertexPNTBTShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+            
+            shader = std::make_shared<Shader>(VertexFullQuadShader, "VSMain", "vs_5_1", VertexTypes::VertexPNTBT);
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
 

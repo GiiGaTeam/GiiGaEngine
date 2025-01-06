@@ -194,13 +194,13 @@ namespace GiiGa
                                   .SetVertexType(VertexTypes::VertexPNTBT)
                                   .SetLightType(LightType::Direction)]
 
-                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
+                    .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
                     .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
                     .set_rasterizer_state(shade_rs)
                     .set_input_layout(VertexPNTBT::InputLayout)
                     .set_rtv_format(g_format_array, 1)
-                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                    .set_depth_stencil_state(shade_ds)
+                    //.set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                    //.set_depth_stencil_state(shade_ds)
                     .set_blend_state(blendDesc)
                     .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
                     {
@@ -221,6 +221,8 @@ namespace GiiGa
             auto cam_info = getCamInfoDataFunction_();
 
             auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+
+            // Frustum culling should not work for directional lighting.
             SceneVisibility::Extract(renderpass_direction_filter, renderpass_unite, visibles);
 
             context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
@@ -249,7 +251,8 @@ namespace GiiGa
                         pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any()){
+                        if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any())
+                        {
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);

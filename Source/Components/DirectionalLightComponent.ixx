@@ -5,7 +5,7 @@ module;
 #include <DirectXCollision.h>
 #include <directxtk12/SimpleMath.h>
 
-export module DirectionLightComponent;
+export module DirectionalLightComponent;
 
 import <memory>;
 import <json/value.h>;
@@ -43,7 +43,7 @@ namespace GiiGa
 
     export class DirectionLightShaderResource : public IObjectShaderResource
     {
-        friend class DirectionLightComponent;
+        friend class DirectionalLightComponent;
 
     public:
         std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
@@ -57,10 +57,10 @@ namespace GiiGa
         std::shared_ptr<BufferView<Constant>> directionLightCBV_;
     };
 
-    export class DirectionLightComponent : public LightComponent
+    export class DirectionalLightComponent : public LightComponent
     {
     public:
-        DirectionLightComponent():
+        DirectionalLightComponent():
             directionLightShaderRes_(std::make_shared<DirectionLightShaderResource>())
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
@@ -80,7 +80,7 @@ namespace GiiGa
             }
         }
 
-        ~DirectionLightComponent()
+        ~DirectionalLightComponent()
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
@@ -101,7 +101,7 @@ namespace GiiGa
             {
                 auto rm = Engine::Instance().ResourceManager();
 
-                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Cube);
+                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Quad);
 
                 RegisterInVisibility();
             }
@@ -120,7 +120,7 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire).SetLightType(LightType::Direction), .shaderResource = directionLightShaderRes_};
+            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Solid).SetLightType(LightType::Direction), .shaderResource = directionLightShaderRes_};
         }
 
         void Restore(const Json::Value&) override

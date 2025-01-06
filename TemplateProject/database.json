@@ -25,6 +25,18 @@
 	},
 	{
 		"id": {
+			"id": "00000000-0000-0000-0000-00000000000d",
+			"subresource": 0
+		},
+		"meta": {
+			"path": "quad.fbx",
+			"type": "Mesh",
+			"loader_id": "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name":"Quad"
+		}
+	},
+	{
+		"id": {
 			"id": "00000000-0000-0000-0000-000000000001",
 			"subresource": 0
 		},
