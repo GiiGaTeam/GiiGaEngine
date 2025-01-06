@@ -156,6 +156,34 @@
 						"Target" : "fd19140e-72be-4409-bb85-15af35ec9f5b",
 						"Value" : "2b484ae6-3b94-422e-9725-361a64d3bb70"
 					}
+				],
+				"PropertyModifications" : 
+				[
+					{
+						"PropertyName" : "Transform",
+						"PropertyValue" : 
+						{
+							"Location" : 
+							{
+								"x" : 7.3000001907348633,
+								"y" : 0.0,
+								"z" : 0.0
+							},
+							"Rotation" : 
+							{
+								"x" : -0.0,
+								"y" : 0.0,
+								"z" : 0.0
+							},
+							"Scale" : 
+							{
+								"x" : 1.0,
+								"y" : 1.0,
+								"z" : 1.0
+							}
+						},
+						"Target" : "491f087e-2d2f-470b-91b4-33eea4bef244"
+					}
 				]
 			},
 			"Prefab" : 

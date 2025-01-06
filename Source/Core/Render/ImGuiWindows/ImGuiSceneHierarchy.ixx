@@ -126,10 +126,17 @@ namespace GiiGa
             if (!editorContext_->selectedGameObject.expired())
                 flags |= (editorContext_->selectedGameObject.lock() == gameObject ? ImGuiTreeNodeFlags_Selected : 0);
 
+
+            if (gameObject->prefab_handle_ != AssetHandle{})
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.8f, 1.0f, 1.0f));
+
             const bool opened = ImGui::TreeNodeEx(
                 gameObject->GetUuid().ToString().c_str(),
                 flags,
                 gameObject->name.c_str());
+
+            if (gameObject->prefab_handle_ != AssetHandle{})
+                ImGui::PopStyleColor();
 
             if (ImGui::BeginPopupContextItem(gameObject->GetUuid().ToString().c_str()))
             {
