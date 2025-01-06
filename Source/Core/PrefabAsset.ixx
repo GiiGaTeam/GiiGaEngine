@@ -12,6 +12,7 @@ import ConsoleComponent;
 import StaticMeshComponent;
 import Engine;
 import PrefabInstance;
+import Misc;
 
 namespace GiiGa
 {
@@ -81,6 +82,7 @@ namespace GiiGa
             }
             else // current go is part of other prefab -- save as sub prefab
             {
+                Todo(); // no support for sub prefabs yet, need big refactor for this
                 auto sub_prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(go->prefab_handle_);
                 jsons.push_back(GameObjectAsPrefabInstance(sub_prefab, go));
             }

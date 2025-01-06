@@ -31,6 +31,7 @@ import ViewTypes;
 import BufferView;
 import GPULocalResource;
 import LightComponent;
+import PrefabInstance;
 
 namespace GiiGa
 {
@@ -107,12 +108,6 @@ namespace GiiGa
             }
         }
 
-        ::std::shared_ptr<IComponent> Clone() override
-        {
-            Todo();
-            return {};
-        }
-
         void Draw(RenderContext& context) override
         {
             mesh_->Draw(context.GetGraphicsCommandList());
@@ -128,7 +123,34 @@ namespace GiiGa
             Todo();
         }
 
-        Json::Value DerivedToJson() override
+        std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
+        {
+            Todo();
+            return {};
+        }
+
+        void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
+            Todo();
+        }
+
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
+        {
+            Todo();
+        }
+
+        std::vector<std::pair<::GiiGa::PropertyModificationKey, ::GiiGa::PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
+        {
+            Todo();
+            return {};
+        }
+
+        void ApplyModifications(const ::GiiGa::PropertyModifications& modifications) override
+        {
+            Todo();
+        }
+
+        Json::Value DerivedToJson(bool is_prefab_root) override
         {
             Todo();
             return {};
@@ -175,7 +197,7 @@ namespace GiiGa
             isDirty = true;
         }
 
-        DirectionLightData GetData() const {return data_;}
+        DirectionLightData GetData() const { return data_; }
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
