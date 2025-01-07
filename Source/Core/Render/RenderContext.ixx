@@ -89,6 +89,7 @@ namespace GiiGa
 
         std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(std::span<uint8_t> data, D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
         {
+            if (!current_frame._Ptr) return nullptr;
             return current_frame->AllocateDynamicConstantView(device_, data, 256, desc);
         }
 

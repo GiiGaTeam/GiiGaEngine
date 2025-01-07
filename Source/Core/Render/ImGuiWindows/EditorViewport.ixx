@@ -34,21 +34,21 @@ namespace GiiGa
             Viewport(device)
             , editorContext_(editor_ctx)
         {
-            Resize(viewport_size_);
         }
 
-        void Resize(DirectX::SimpleMath::Vector2 new_size)
+        void Resize(DirectX::SimpleMath::Vector2 new_size) override
         {
             Viewport::Resize(new_size);
 
             if (auto l_camera = camera_.lock())
             {
-                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x/new_size.y);
+                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x / new_size.y);
             }
         }
 
         void Init(RenderContext& context) override
         {
+            Resize(viewport_size_);
             renderGraph_ = std::make_shared<RenderGraph>();
 
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
@@ -61,7 +61,10 @@ namespace GiiGa
 
         RenderPassViewData GetCameraInfo() override
         {
-            return RenderPassViewData{.ViewProjMat = ViewProjectionMatrix, .viewDescriptor = ViewInfoConstBuffer->getDescriptor().getGPUHandle()};
+            return RenderPassViewData{
+                viewProjectionMatrix, viewInfoConstBuffer->getDescriptor().getGPUHandle(),
+                viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
+            };
         }
 
         void Execute(RenderContext& context) override
@@ -70,8 +73,10 @@ namespace GiiGa
 
             if (camera_.expired()) return;
 
-            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str())) {
-                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str()))
+            {
+                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+                {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
                     {
                         movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
@@ -126,8 +131,9 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
-        std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
-        DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+        std::shared_ptr<BufferView<Constant>> viewInfoConstBuffer;
+        std::shared_ptr<BufferView<Constant>> screenDimensionsConstBuffer;
+        DirectX::SimpleMath::Matrix viewProjectionMatrix;
 
         std::shared_ptr<EditorContext> editorContext_;
 
@@ -150,43 +156,51 @@ namespace GiiGa
             bool rotate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::ROTATE;
             bool scale = editorContext_->currentOperation_ & ImGuizmo::OPERATION::SCALEU;
 
-            if (ImGui::Checkbox("Translate", &translate)) {
+            if (ImGui::Checkbox("Translate", &translate))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(translate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::TRANSLATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::TRANSLATE);
             }
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: W");
             }
             ImGui::SameLine();
 
-            if (ImGui::Checkbox("Rotate", &rotate)) {
+            if (ImGui::Checkbox("Rotate", &rotate))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(rotate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::ROTATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::ROTATE);
             }
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: E");
             }
             ImGui::SameLine();
 
-            if (ImGui::Checkbox("Scale", &scale)) {
+            if (ImGui::Checkbox("Scale", &scale))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(scale ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::SCALEU : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::SCALEU);
-            } 
-            if (ImGui::IsItemHovered()) {
+            }
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: S");
             }
             ImGui::SameLine();
 
-            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD)) {
+            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD))
+            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
             }
             ImGui::SameLine();
 
-            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL)) {
+            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL))
+            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
             }
 
             ImGui::EndChild();
         }
 
-        void PostViewportDrawWidgets() 
+        void PostViewportDrawWidgets()
         {
             DrawToolbar();
 
@@ -241,20 +255,33 @@ namespace GiiGa
             ImGui::End();*/
         }
 
+
         void UpdateCameraInfo(RenderContext& context)
         {
             auto camera_go = camera_.lock();
             auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
 
-            ViewProjectionMatrix = camera.GetViewProj();
+            viewProjectionMatrix = camera.GetViewProj();
 
-            RenderPassViewMatricies const_buf_data = {camera.view_.Transpose(), camera.GetProj().Transpose()};
+            RenderPassViewMatricies const_buf_data = {
+                camera.GetView().Transpose(), camera.GetProj().Transpose(),
+                camera.GetView().Invert().Transpose(), camera.GetProj().Invert().Transpose(),
+                camera_go->GetTransformComponent().lock()->GetWorldLocation()
+            };
 
             const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
 
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
 
-            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+            viewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+
+            ScreenDimensions size_const_data = {viewport_size_};
+
+            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
+
+            desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(ScreenDimensions));
+
+            screenDimensionsConstBuffer = context.AllocateDynamicConstantView(ScreenDimensionsSpan, desc);
         }
     };
 }

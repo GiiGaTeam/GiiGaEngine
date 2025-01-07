@@ -35,7 +35,7 @@ namespace GiiGa
 
         virtual void Execute(RenderContext& context) =0;
 
-        void Resize(DirectX::SimpleMath::Vector2 new_size)
+        virtual void Resize(DirectX::SimpleMath::Vector2 new_size)
         {
             viewport_size_ = new_size;
 

@@ -167,13 +167,13 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.viewProjMat);
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            //gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
             gbuffer_->BindAllAsRTV(context);
 
@@ -198,11 +198,6 @@ namespace GiiGa
                     }
                 }
             }
-
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
     private:

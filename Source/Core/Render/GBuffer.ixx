@@ -22,7 +22,7 @@ namespace GiiGa
      *      Diffuse             R       G       B      NU
      *      MatProps         Metal    Spec    Rough    Aniso
      *      NormalWS            X       Y       Z      NU
-     *      PostionWS           X       Y       Z      NU
+     *      PostionWS           X       Y       Z      NU  - Deprecated
      *      
      **** Depth/Stencil              D24_UNORM     S8_UINT
      */
@@ -36,10 +36,10 @@ namespace GiiGa
             Diffuse,
             Material,
             NormalWS,
-            PositionWS
+            //PositionWS
         };
 
-        static inline const uint8_t NUM_GBUFFERS = 5;
+        static inline const uint8_t NUM_GBUFFERS = 4;
         static inline const DXGI_FORMAT G_FORMAT = DXGI_FORMAT_R32G32B32A32_FLOAT;
         static inline const D3D12_CLEAR_VALUE G_CLEAR_VALUE = {.Format = G_FORMAT, .Color = {0.0f, 0.0f, 0.0f, 1.0f}};
         static inline const DXGI_FORMAT DS_FORMAT_RES = DXGI_FORMAT_R24G8_TYPELESS;
@@ -59,19 +59,25 @@ namespace GiiGa
                 context.ClearRenderTargetView(rtv->getDescriptor().GetCpuHandle(), G_CLEAR_VALUE);
             }
             context.ClearDepthStencilView(DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DS_CLEAR_VALUE);
+            context.ClearDepthStencilView(DSV_lights_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DS_CLEAR_VALUE);
         }
 
-        void TransitionResource(RenderContext& context, GBufferOrder buffer, D3D12_RESOURCE_STATES after)
+        void TransitionResource(RenderContext& context, GBufferOrder buffer, D3D12_RESOURCE_STATES after) const
         {
             resources_[static_cast<int>(buffer)]->StateTransition(context, after);
         }
 
-        void TransitionDepthResource(RenderContext& context, D3D12_RESOURCE_STATES after)
+        void TransitionDepthResource(RenderContext& context, D3D12_RESOURCE_STATES after) const
         {
             depth_res_->StateTransition(context, after);
         }
 
-        void BindAllAsRTV(RenderContext& context)
+        void TransitionDepthLightsResource(RenderContext& context, D3D12_RESOURCE_STATES after) const
+        {
+            depth_lights_res_->StateTransition(context, after);
+        }
+
+        void BindAllAsRTV(RenderContext& context) const
         {
             std::array<D3D12_CPU_DESCRIPTOR_HANDLE, NUM_GBUFFERS> rtvs;
 
@@ -84,24 +90,39 @@ namespace GiiGa
                                                                  false, &dsv);
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetRTV(GBufferOrder buffer)
+        D3D12_CPU_DESCRIPTOR_HANDLE GetRTV(GBufferOrder buffer) const
         {
             return RTVs_[static_cast<int>(buffer)]->getDescriptor().GetCpuHandle();
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetSRV(GBufferOrder buffer)
+        D3D12_GPU_DESCRIPTOR_HANDLE GetSRV(GBufferOrder buffer) const
         {
             return SRVs_[static_cast<int>(buffer)]->getDescriptor().getGPUHandle();
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthRTV()
+        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthRTV() const
         {
             return DSV_->getDescriptor().GetCpuHandle();
+        }
+
+        D3D12_GPU_DESCRIPTOR_HANDLE GetDepthSRV() const
+        {
+            return SRVs_[NUM_GBUFFERS]->getDescriptor().getGPUHandle();
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthLightsRTV() const
+        {
+            return DSV_lights_->getDescriptor().GetCpuHandle();
         }
 
         void ClearStencil(RenderContext& context, uint8_t value)
         {
             context.ClearDepthStencilView(DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_STENCIL, D3D12_CLEAR_VALUE{.DepthStencil = {.Depth = 0, .Stencil = value}});
+        }
+
+        void ClearLightsStencil(RenderContext& context, uint8_t value)
+        {
+            context.ClearDepthStencilView(DSV_lights_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_STENCIL, D3D12_CLEAR_VALUE{.DepthStencil = {.Depth = 0, .Stencil = value}});
         }
 
         void Resize(DirectX::SimpleMath::Vector2 new_size)
@@ -152,7 +173,7 @@ namespace GiiGa
                 }
             }
 
-            {
+            {                
                 D3D12_RESOURCE_DESC res_desc = {};
                 res_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
                 res_desc.Alignment = 0;
@@ -177,15 +198,38 @@ namespace GiiGa
                 dsv_desc.Texture2D.MipSlice = 0; // Use the first mip level
 
                 DSV_ = depth_res_->EmplaceDepthStencilView(dsv_desc);
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS; // Specify the format of the SRV
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Texture2D.MostDetailedMip = 0;        // Use the most detailed mip level
+                srvDesc.Texture2D.MipLevels = 1;              // Use one mip level
+                srvDesc.Texture2D.PlaneSlice = 0;             // Only relevant for certain texture formats, usually set to 0
+                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f; // Resource minimum level-of-detail clamp
+
+                // Create the Shader Resource View
+                SRVs_[NUM_GBUFFERS] = depth_res_->EmplaceShaderResourceBufferView(srvDesc);
+                
+                // DSV for Lights pass
+                depth_lights_res_ = std::make_unique<GPULocalResource>(device_, res_desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clear_value);
+                DSV_lights_ = depth_lights_res_->EmplaceDepthStencilView(dsv_desc);
             }
         }
 
+        void CopyGBufferDSVToLightDSV(RenderContext& context)
+        {
+            context.GetGraphicsCommandList()->CopyResource(depth_lights_res_->GetResource().get(), depth_res_->GetResource().get());
+        }
     private:
         RenderDevice& device_;
         std::array<std::unique_ptr<GPULocalResource>, NUM_GBUFFERS> resources_;
         std::array<std::shared_ptr<BufferView<RenderTarget>>, NUM_GBUFFERS> RTVs_;
-        std::array<std::shared_ptr<BufferView<ShaderResource>>, NUM_GBUFFERS> SRVs_;
+        std::array<std::shared_ptr<BufferView<ShaderResource>>, NUM_GBUFFERS + 1> SRVs_;
         std::unique_ptr<GPULocalResource> depth_res_;
         std::shared_ptr<BufferView<DepthStencil>> DSV_;
+
+        std::unique_ptr<GPULocalResource> depth_lights_res_;
+        std::shared_ptr<BufferView<DepthStencil>> DSV_lights_;
     };
 }

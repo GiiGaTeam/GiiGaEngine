@@ -5,6 +5,9 @@ cbuffer CameraMatricies : register(b0)
 {
     matrix View;
     matrix Proj;
+    matrix InvView;
+    matrix InvProj;
+    float3 CamPos;
     //bool RenderState;
 }
 
@@ -43,6 +46,7 @@ struct PS_INPUT
 float3 GetCameraPos()
 {
     return -View[3];
+    //return CamPos;
 }
 
 #endif
