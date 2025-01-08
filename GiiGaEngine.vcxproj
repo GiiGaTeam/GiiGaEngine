@@ -674,6 +674,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitmodules" />
+    <Content Include="vcpkg-configuration.json" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="TemplateProject\Assets\" />

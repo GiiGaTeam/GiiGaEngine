@@ -8,6 +8,7 @@
     "directxtk",
     {
       "name": "imgui",
+      "version>=": "1.91.6",
       "features": [
         "docking-experimental",
         "dx12-binding",
@@ -21,6 +22,10 @@
     "sdl2",
     "directxtk12",
     "easyloggingpp",
-    "imguizmo"
-  ]
+    "imguizmo",
+    "pybind11-smart-holder"
+  ],
+  "overrides": [
+    { "name": "imguizmo", "version": "2024-05-29#1" }
+    ]
 }
