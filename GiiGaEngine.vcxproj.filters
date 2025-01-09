@@ -342,7 +342,46 @@
     <ClCompile Include="Source\Core\Render\RenderPassViewData.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Core\StubTexturesHandles.ixx">
+    <ClCompile Include="Source\Components\DirectionalLightComponent.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\PointLightComponent.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Components\PyBehaviourSchemeComponent.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\AssetLoaders\LevelAssetLoader.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\AssetLoaders\PrefabAssetLoader.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\AssetLoaders\ScriptAssetLoader.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\CreateComponentsForGameObject.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\PrefabAsset.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\PrefabInstanceModifications.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Render\GBuffer.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Render\Interfaces\IUpdateGPUData.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\DefaultAssetsHandles.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ScriptAsset.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\ScriptSystem.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -351,10 +390,17 @@
     <None Include="README.md" />
     <None Include=".gitignore" />
     <None Include="TemplateProject\project.giga" />
-    <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\ShaderHeader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />
     <None Include="Shaders\VertexPNTBTShader.hlsl" />
+    <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
+    <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\GBufferWireframeShader.hlsl" />
+    <None Include="Shaders\GDirectionalLight.hlsl" />
+    <None Include="Shaders\GLightHeader.hlsl" />
+    <None Include="Shaders\GPointLight.hlsl" />
+    <None Include="Shaders\MaterialHeader.hlsl" />
+    <None Include="Shaders\VertexFullQuadShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\FileWatch.hpp">

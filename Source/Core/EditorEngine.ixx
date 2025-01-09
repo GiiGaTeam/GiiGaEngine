@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/pybind11.h>;
+
 export module EditorEngine;
 
 import <filesystem>;

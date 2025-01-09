@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/pybind11.h>;
+
 export module ScriptAsset;
 
 import <vector>;
@@ -19,5 +23,7 @@ namespace GiiGa
         {
             return AssetType::Behaviour;
         }
+    private:
+        pybind11::module_ module;
     };
 }

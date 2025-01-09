@@ -13,6 +13,7 @@ module;
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
+#include <pybind11/pybind11.h>;
 
 export module Main;
 

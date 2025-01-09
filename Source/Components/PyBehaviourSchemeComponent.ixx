@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/pybind11.h>;
+
 export module PyBehaviourSchemeComponent;
 
 import <unordered_map>;

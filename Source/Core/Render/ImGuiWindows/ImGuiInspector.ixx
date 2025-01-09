@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/pybind11.h>;
+
 export module ImGuiInspector;
 
 import <imgui.h>;

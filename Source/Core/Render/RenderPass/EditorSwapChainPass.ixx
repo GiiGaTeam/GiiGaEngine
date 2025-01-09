@@ -1,7 +1,9 @@
-import <imgui.h>;
-import <imgui_impl_dx12.h>;
-import <imgui_impl_sdl2.h>;
+module;
 
+#include <imgui.h>;
+#include <imgui_impl_dx12.h>;
+#include <imgui_impl_sdl2.h>;
+#include <pybind11/pybind11.h>;
 #include <ImGuizmo.h>
 
 export module EditorSwapChainPass;
