@@ -8,6 +8,7 @@ import Input;
 import Window;
 import RenderSystem;
 import WindowManager;
+import ScriptSystem;
 export import Project;
 
 namespace GiiGa
@@ -26,6 +27,8 @@ namespace GiiGa
         std::shared_ptr<ResourceManager> resource_manager_ = nullptr;
         std::shared_ptr<BaseAssetDatabase> asset_database_ = nullptr;
 
+        std::shared_ptr<ScriptSystem> script_system_ = nullptr;
+
         virtual void Initialize(std::shared_ptr<Project> proj)
         {
             instance_ = this;
@@ -38,6 +41,8 @@ namespace GiiGa
 
             window_->OnWindowClose.Register([this](const WindowCloseEvent& arg) { quit_ = true; });
             window_->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
+
+            script_system_ = std::make_shared<ScriptSystem>();
         }
 
         virtual void DeInitialize()
@@ -81,6 +86,11 @@ namespace GiiGa
         std::shared_ptr<Window> Window()
         {
             return window_;
+        }
+        
+        std::shared_ptr<ScriptSystem> ScriptSystem()
+        {
+            return script_system_;
         }
 
         virtual ~Engine()

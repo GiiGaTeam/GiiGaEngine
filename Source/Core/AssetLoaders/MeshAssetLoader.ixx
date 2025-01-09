@@ -1,5 +1,8 @@
-export module MeshAssetLoader;
+module;
 
+#include<DirectXCollision.h>
+
+export module MeshAssetLoader;
 
 import <d3d12.h>;
 import <assimp/Importer.hpp>;
@@ -9,7 +12,6 @@ import <stdexcept>;
 import <filesystem>;
 import <memory>;
 import <vector>;
-import <DirectXCollision.h>;
 import <directxtk/SimpleMath.h>;
 
 import Uuid;

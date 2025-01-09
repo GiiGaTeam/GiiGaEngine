@@ -1,8 +1,11 @@
+module;
+
+#include <DirectXCollision.h>
+
 export module MeshAsset;
 
 import <vector>;
 import <filesystem>;
-import  <DirectXCollision.h>;
 
 import AssetBase;
 import Mesh;

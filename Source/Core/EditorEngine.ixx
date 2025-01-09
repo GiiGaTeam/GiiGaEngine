@@ -20,6 +20,7 @@ import MaterialLoader;
 import MaterialLoader;
 import LevelAssetLoader;
 import PrefabAssetLoader;
+import ScriptAssetLoader;
 
 namespace GiiGa
 {
@@ -99,6 +100,7 @@ namespace GiiGa
             editor_asset_database_->RegisterLoader<MaterialLoader>();
             editor_asset_database_->RegisterLoader<LevelAssetLoader>();
             editor_asset_database_->RegisterLoader<PrefabAssetLoader>();
+            editor_asset_database_->RegisterLoader<ScriptAssetLoader>();
 
             editor_asset_database_->RegisterSaver<LevelAssetLoader>();
             editor_asset_database_->RegisterSaver<PrefabAssetLoader>();

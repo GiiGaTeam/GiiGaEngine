@@ -4,10 +4,10 @@ module;
 #include <directxtk12/SimpleMath.h>
 #include<directxtk12/SimpleMath.inl>
 #include<Octree/octree.h>
+#include<DirectXCollision.h>
 
 export module SceneVisibility;
 
-import <DirectXCollision.h>;
 import <memory>;
 import <vector>;
 import <limits>;

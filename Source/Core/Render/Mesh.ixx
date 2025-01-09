@@ -1,6 +1,10 @@
+module;
+
+#include<DirectXCollision.h>
+
 export module Mesh;
 
-import <DirectXCollision.h>;
+
 import <span>;
 import <vector>;
 import <directx/d3dx12.h>;

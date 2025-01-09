@@ -338,6 +338,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Source\Components\PointLightComponent.ixx" />
+    <ClCompile Include="Source\Components\PyBehaviourComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
@@ -346,6 +347,7 @@
     <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\MeshAssetLoader.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\PrefabAssetLoader.ixx" />
+    <ClCompile Include="Source\Core\AssetLoaders\ScriptAssetLoader.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
     <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
@@ -652,6 +654,8 @@
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\DefaultAssetsHandles.ixx" />
+    <ClCompile Include="Source\Core\ScriptAsset.ixx" />
+    <ClCompile Include="Source\Core\ScriptSystem.ixx" />
     <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\unique_any.ixx" />
