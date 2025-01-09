@@ -42,7 +42,7 @@ namespace GiiGa
             window_->OnWindowClose.Register([this](const WindowCloseEvent& arg) { quit_ = true; });
             window_->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
 
-            script_system_ = std::make_shared<ScriptSystem>();
+            script_system_ = std::make_shared<GiiGa::ScriptSystem>();
         }
 
         virtual void DeInitialize()

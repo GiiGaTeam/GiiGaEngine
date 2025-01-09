@@ -236,7 +236,7 @@ namespace GiiGa
             {
                 if (prefab_components_prefab_uuids.contains(comp->GetInPrefabUuid()))
                 {
-                    std::vector<std::pair<PropertyModificationKey, PropertyValue>> comp_mods = comp->GetModifications(prefab_components_prefab_uuids.at(comp->GetInPrefabUuid()));
+                    std::vector<std::pair<PropertyModificationKey, PropertyValue>> comp_mods = comp->GetPrefabInstanceModifications(prefab_components_prefab_uuids.at(comp->GetInPrefabUuid()));
                     modifications.insert(comp_mods.begin(), comp_mods.end());
                 }
             }

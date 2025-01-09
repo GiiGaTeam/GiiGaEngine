@@ -48,7 +48,7 @@ namespace GiiGa
             Todo();
         }
 
-        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};

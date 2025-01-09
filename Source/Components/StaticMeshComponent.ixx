@@ -126,7 +126,7 @@ namespace GiiGa
         {
         }
 
-        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent> prefab_comp) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
             std::vector<std::pair<PropertyModificationKey, PropertyValue>>  result;
 

@@ -338,7 +338,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Source\Components\PointLightComponent.ixx" />
-    <ClCompile Include="Source\Components\PyBehaviourComponent.ixx" />
+    <ClCompile Include="Source\Components\PyBehaviourSchemeComponent.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />

@@ -18,6 +18,8 @@ import LightComponent;
 import TransformComponent;
 import Material;
 
+import PyBehaviourSchemeComponent;
+
 import AssetType;
 import AssetHandle;
 
@@ -98,6 +100,15 @@ namespace GiiGa
                         ImGui::CloseCurrentPopup();
                     }
 
+                    if (ImGui::MenuItem("Behaviour Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<PyBehaviourSchemeComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
                     ImGui::EndPopup();
                 }
             }
@@ -130,12 +141,12 @@ namespace GiiGa
             }
         }
 
-        void DrawCameraComponent(std::shared_ptr<CameraComponent> comp) 
+        void DrawCameraComponent(std::shared_ptr<CameraComponent> comp)
         {
             auto camera = comp->GetCamera();
 
             // Camera type
-            const char* camera_types[] = { "Perspective", "Orthographic" };
+            const char* camera_types[] = {"Perspective", "Orthographic"};
             int current_type = static_cast<int>(camera.type_);
             if (ImGui::Combo("Camera Type", &current_type, camera_types, IM_ARRAYSIZE(camera_types)))
             {
@@ -188,8 +199,10 @@ namespace GiiGa
 
             ImGui::InputText("Mesh Handle", meshUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh))) {
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh)))
+                {
                     AssetHandle* handle = (AssetHandle*)payload->Data;
                     comp->SetMeshHandle(*handle);
                 }
@@ -208,8 +221,10 @@ namespace GiiGa
                 snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", text_handle.c_str());
                 ImGui::InputText("Material Handle", materialUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
-                if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material))) {
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material)))
+                    {
                         AssetHandle* handle = (AssetHandle*)payload->Data;
                         comp->SetMaterialHandle(*handle);
                     }
@@ -251,8 +266,10 @@ namespace GiiGa
                         snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
                         ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
-                        if (ImGui::BeginDragDropTarget()) {
-                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
                                 AssetHandle* handle = (AssetHandle*)payload->Data;
                                 material->SetTexture(texture_order, *handle);
                             }
@@ -264,12 +281,12 @@ namespace GiiGa
                         if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
                         {
                             material->SetBaseColorTint(val);
-                        } 
+                        }
                     }
                     else
                     {
                         ImGui::Text("You Can't Set BaseColor");
-                    }  
+                    }
                 }
 
                 {
@@ -285,8 +302,10 @@ namespace GiiGa
 
                         ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
-                        if (ImGui::BeginDragDropTarget()) {
-                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
                                 AssetHandle* handle = (AssetHandle*)payload->Data;
                                 material->SetTexture(texture_order, *handle);
                             }
@@ -298,7 +317,7 @@ namespace GiiGa
                         if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
                         {
                             material->SetEmissiveTint(val);
-                        }  
+                        }
                     }
                     else
                     {
@@ -319,8 +338,10 @@ namespace GiiGa
 
                         ImGui::InputText("Metallic Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
-                        if (ImGui::BeginDragDropTarget()) {
-                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D))) {
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
                                 AssetHandle* handle = (AssetHandle*)payload->Data;
                                 material->SetTexture(texture_order, *handle);
                             }
@@ -332,12 +353,12 @@ namespace GiiGa
                         if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
                         {
                             material->SetMetallicScale(val);
-                        }  
+                        }
                     }
                     else
                     {
                         ImGui::Text("You Can't Set Metallic");
-                    }  
+                    }
                 }
             }
         }
@@ -346,10 +367,10 @@ namespace GiiGa
         {
             // Edit Color
             DirectX::SimpleMath::Vector3 color = comp->GetData().color;
-            float colorArray[3] = { color.x, color.y, color.z };
+            float colorArray[3] = {color.x, color.y, color.z};
             if (ImGui::ColorEdit3("Color", colorArray))
             {
-                comp->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+                comp->SetColor({colorArray[0], colorArray[1], colorArray[2]});
             }
 
             // Edit Radius
@@ -378,10 +399,10 @@ namespace GiiGa
         {
             // Edit Color
             DirectX::SimpleMath::Vector3 color = comp->GetData().color;
-            float colorArray[3] = { color.x, color.y, color.z };
+            float colorArray[3] = {color.x, color.y, color.z};
             if (ImGui::ColorEdit3("Color", colorArray))
             {
-                comp->SetColor({ colorArray[0], colorArray[1], colorArray[2] });
+                comp->SetColor({colorArray[0], colorArray[1], colorArray[2]});
             }
 
             // Edit Intensity
@@ -392,18 +413,38 @@ namespace GiiGa
             }
         }
 
+        void DrawBehaviourComponent(std::shared_ptr<PyBehaviourSchemeComponent> comp)
+        {
+            auto script_handle = comp->GetScriptHandle();
+            std::string text_handle = script_handle.id.ToString() + " " + std::to_string(script_handle.subresource);
+
+            char scriptUuidStr[512];
+            snprintf(scriptUuidStr, sizeof(scriptUuidStr), "%s", text_handle.c_str());
+
+            ImGui::InputText("Script Handle", scriptUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Behaviour)))
+                {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    comp->SetScriptHandle(*handle);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+        }
+
         void ImGuiComponentWidgetFactory(std::shared_ptr<IComponent> comp)
         {
             ImGui::PushID(comp->GetUuid().ToString().c_str());
             if (auto camera_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
             {
-
                 if (ImGui::TreeNodeEx("Camera Component", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     DrawCameraComponent(camera_comp);
                     ImGui::TreePop();
                 }
-                
             }
             else if (auto static_mesh_comp = std::dynamic_pointer_cast<StaticMeshComponent>(comp))
             {
@@ -426,6 +467,15 @@ namespace GiiGa
                 if (ImGui::TreeNodeEx("DirectionalLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     DrawDirectionLightComponent(direction_light);
+                    ImGui::TreePop();
+                }
+            }
+            else if (auto py_beh = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(comp))
+            {
+                //todo: add script Class name to TreeNodeEx
+                if (ImGui::TreeNodeEx("PyBehaviourSchemeComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    DrawBehaviourComponent(py_beh);
                     ImGui::TreePop();
                 }
             }

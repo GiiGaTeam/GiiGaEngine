@@ -29,7 +29,7 @@ namespace GiiGa
 
         virtual void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
 
-        virtual std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const = 0;
+        virtual std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const = 0;
 
         virtual void ApplyModifications(const PropertyModifications& modifications) =0;
 
