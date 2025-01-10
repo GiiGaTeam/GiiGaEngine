@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/conduit/wrap_include_python_h.h>
+#include <pybind11/pybind11.h>
 
 export module PyBehaviourSchemeComponent;
 
@@ -12,7 +12,7 @@ import <json/json.h>;
 import PrefabInstance;
 import Component;
 import Misc;
-import ScriptSystem;
+import ScriptAsset;
 import AssetHandle;
 import Engine;
 

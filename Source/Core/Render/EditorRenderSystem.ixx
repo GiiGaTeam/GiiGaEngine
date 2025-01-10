@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/conduit/wrap_include_python_h.h>;
+#include <pybind11/pybind11.h>
 
 export module EditorRenderSystem;
 

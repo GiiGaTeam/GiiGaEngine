@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/embed.h>
+#include <pybind11/pybind11.h>
 
 export module ScriptAssetLoader;
 
@@ -12,7 +12,7 @@ import AssetHandle;
 import AssetMeta;
 import AssetLoader;
 
-import ScriptSystem;
+import ScriptAsset;
 import Logger;
 
 import Misc;
@@ -49,9 +49,14 @@ namespace GiiGa
             try
             {
                 pybind11::module_ c_e = pybind11::module_::import("PyBeh1");
-            }catch (pybind11::error_already_set e)
+                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::imported %v", script_path.filename());
+                pybind11::object res = c_e.attr("add")(1, 2);
+                int i = res.cast<int>();
+                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::add %v", i);
+            }
+            catch (pybind11::error_already_set e)
             {
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v",e.what());
+                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::Load %v", e.what());
             }
             return std::make_shared<ScriptAsset>(handle);
         }

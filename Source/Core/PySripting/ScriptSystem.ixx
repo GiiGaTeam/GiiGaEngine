@@ -11,29 +11,14 @@ import Project;
 import Logger;
 
 namespace GiiGa
-{
-    export class ScriptAsset : public AssetBase
-    {
-    public:
-        ScriptAsset(AssetHandle assetHandle): AssetBase(assetHandle)
-        {
-        }
-
-        AssetType GetType() override
-        {
-            return AssetType::Behaviour;
-        }
-
-    private:
-        pybind11::module_ module;
-    };
-    
+{    
     export class ScriptSystem
     {
     public:
         //C:\Users\olege\AppData\Local\Temp\TemplateProject
         ScriptSystem(std::shared_ptr<Project> project)
         {
+            PyConfig conf;
             pybind11::initialize_interpreter();
 
             // add sys
