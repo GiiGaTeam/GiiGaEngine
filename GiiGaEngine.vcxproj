@@ -383,6 +383,7 @@
     <ClCompile Include="Source\Core\Project.ixx" />
     <ClCompile Include="Source\Core\PySripting\py_module.ixx" />
     <ClCompile Include="Source\Core\PySripting\ScriptAsset.ixx" />
+    <ClCompile Include="Source\Core\PySripting\ScriptHelpers.ixx" />
     <ClCompile Include="Source\Core\PySripting\ScriptSystem.ixx">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

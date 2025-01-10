@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
 
 export module ScriptAssetLoader;
 
@@ -14,6 +14,7 @@ import AssetLoader;
 
 import ScriptAsset;
 import Logger;
+import ScriptHelpers;
 
 import Misc;
 
@@ -46,8 +47,27 @@ namespace GiiGa
         std::shared_ptr<AssetBase> Load(AssetHandle handle, const ::std::filesystem::path& script_path) override
         {
             //todo: replace all \ wiht . after Assets
+            pybind11::module_ module;
 
-            return std::make_shared<ScriptAsset>(handle, script_path.stem().string());
+            try
+            {
+                module = pybind11::module::import(script_path.stem().string().c_str());
+            }
+            catch (pybind11::error_already_set e)
+            {
+                el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while importing %v", e.what());
+                throw std::exception("cant import module");
+            }
+
+            std::string name = ScriptHelpers::GetComponentSubclassNameInModule(module);
+
+            if (name.empty())
+            {
+                el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while gather name");
+                throw std::exception("cant find subclass name");
+            }
+
+            return std::make_shared<ScriptAsset>(handle, module, name);
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

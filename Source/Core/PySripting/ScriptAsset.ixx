@@ -15,17 +15,11 @@ namespace GiiGa
     export class ScriptAsset : public AssetBase
     {
     public:
-        ScriptAsset(AssetHandle assetHandle, const std::string& module_name): AssetBase(assetHandle)
+        ScriptAsset(AssetHandle assetHandle, const pybind11::module_ module, const std::string user_class_name):
+            AssetBase(assetHandle)
+            , module_(module)
+            , user_class_name_(user_class_name)
         {
-            try
-            {
-                module = pybind11::module_::import(module_name.c_str());
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAsset():: Imported %v", module_name.c_str());
-            }
-            catch (pybind11::error_already_set e)
-            {
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAsset()::Error %v", e.what());
-            }
         }
 
         AssetType GetType() override
@@ -38,7 +32,7 @@ namespace GiiGa
             //todo temp MyPyBeh1
             try
             {
-                auto obj = module.attr("MyPyBeh1")();
+                auto obj = module_.attr(user_class_name_.c_str())();
                 return pybind11::cast<std::shared_ptr<PyBehaviourTrampoline>>(obj);
             }
             catch (pybind11::error_already_set e)
@@ -50,6 +44,7 @@ namespace GiiGa
         }
 
     private:
-        pybind11::module_ module;
+        pybind11::module_ module_;
+        std::string user_class_name_;
     };
 }
