@@ -87,12 +87,12 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(PYTHON_PATH)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PYTHON_PATH)\libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Python_Path)\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(PYTHON_PATH)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PYTHON_PATH)\libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Python_Path)\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -147,7 +147,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;python311_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;python312_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -168,7 +168,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;python311.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;python312.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -380,6 +380,84 @@
     <ClCompile Include="Source\Core\PrefabAsset.ixx" />
     <ClCompile Include="Source\Core\PrefabInstanceModifications.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
+    <ClCompile Include="Source\Core\PySripting\ScriptAsset.ixx" />
+    <ClCompile Include="Source\Core\PySripting\ScriptSystem.ixx">
+      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <Optimization>Disabled</Optimization>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <AssemblerOutput>NoListing</AssemblerOutput>
+      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
+      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
+      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
+      <CompileAs>Default</CompileAs>
+      <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <ExpandAttributedSource>false</ExpandAttributedSource>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableASAN>false</EnableASAN>
+      <EnableFuzzer>false</EnableFuzzer>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <GenerateModuleDependencies>false</GenerateModuleDependencies>
+      <GenerateSourceDependencies>false</GenerateSourceDependencies>
+      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
+      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
+      <OmitDefaultLibName>false</OmitDefaultLibName>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
+      <CallingConvention>Cdecl</CallingConvention>
+      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <ShowIncludes>false</ShowIncludes>
+      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
+      <SpectreMitigation>false</SpectreMitigation>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
+      <TranslateIncludes>false</TranslateIncludes>
+      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <UseFullPaths>true</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <IntelJCCErratum>false</IntelJCCErratum>
+      <BuildStlModules>false</BuildStlModules>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
+      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
+      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\repos\GiiGaEngine\vendor;D:\repos\GiiGaEngine\/Source;D:\repos\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>D:\repos\GiiGaEngine\/Source</AdditionalUsingDirectories>
+      <AdditionalOptions>/bigobj </AdditionalOptions>
+      <LinkCompiled>true</LinkCompiled>
+    </ClCompile>
     <ClCompile Include="Source\Core\Render\Align.ixx" />
     <ClCompile Include="Source\Core\Render\BufferView.ixx" />
     <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx" />
@@ -656,8 +734,6 @@
     <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
     <ClCompile Include="Source\Core\Input.ixx" />
     <ClCompile Include="Source\Core\DefaultAssetsHandles.ixx" />
-    <ClCompile Include="Source\Core\ScriptAsset.ixx" />
-    <ClCompile Include="Source\Core\ScriptSystem.ixx" />
     <ClCompile Include="Source\Core\TextureAsset.ixx" />
     <ClCompile Include="Source\Core\Time.ixx" />
     <ClCompile Include="Source\Core\unique_any.ixx" />
@@ -677,9 +753,50 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\FileWatch.hpp" />
+    <ClInclude Include="ThirdParty\pybind11\attr.h" />
+    <ClInclude Include="ThirdParty\pybind11\buffer_info.h" />
+    <ClInclude Include="ThirdParty\pybind11\cast.h" />
+    <ClInclude Include="ThirdParty\pybind11\chrono.h" />
+    <ClInclude Include="ThirdParty\pybind11\common.h" />
+    <ClInclude Include="ThirdParty\pybind11\complex.h" />
+    <ClInclude Include="ThirdParty\pybind11\conduit\pybind11_conduit_v1.h" />
+    <ClInclude Include="ThirdParty\pybind11\conduit\pybind11_platform_abi_id.h" />
+    <ClInclude Include="ThirdParty\pybind11\conduit\wrap_include_python_h.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\class.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\common.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\cpp_conduit.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\descr.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\exception_translation.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\init.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\internals.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\typeid.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\type_caster_base.h" />
+    <ClInclude Include="ThirdParty\pybind11\detail\value_and_holder.h" />
+    <ClInclude Include="ThirdParty\pybind11\eigen.h" />
+    <ClInclude Include="ThirdParty\pybind11\eigen\common.h" />
+    <ClInclude Include="ThirdParty\pybind11\eigen\matrix.h" />
+    <ClInclude Include="ThirdParty\pybind11\eigen\tensor.h" />
+    <ClInclude Include="ThirdParty\pybind11\embed.h" />
+    <ClInclude Include="ThirdParty\pybind11\eval.h" />
+    <ClInclude Include="ThirdParty\pybind11\functional.h" />
+    <ClInclude Include="ThirdParty\pybind11\gil.h" />
+    <ClInclude Include="ThirdParty\pybind11\gil_safe_call_once.h" />
+    <ClInclude Include="ThirdParty\pybind11\iostream.h" />
+    <ClInclude Include="ThirdParty\pybind11\numpy.h" />
+    <ClInclude Include="ThirdParty\pybind11\operators.h" />
+    <ClInclude Include="ThirdParty\pybind11\options.h" />
+    <ClInclude Include="ThirdParty\pybind11\pybind11.h" />
+    <ClInclude Include="ThirdParty\pybind11\pytypes.h" />
+    <ClInclude Include="ThirdParty\pybind11\stl.h" />
+    <ClInclude Include="ThirdParty\pybind11\stl\filesystem.h" />
+    <ClInclude Include="ThirdParty\pybind11\stl_bind.h" />
+    <ClInclude Include="ThirdParty\pybind11\type_caster_pyobject_ptr.h" />
+    <ClInclude Include="ThirdParty\pybind11\typing.h" />
+    <ClInclude Include="ThirdParty\pybind11\warnings.h" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitmodules" />
+    <Content Include="ThirdParty\pybind11\conduit\README.txt" />
     <Content Include="vcpkg-configuration.json" />
   </ItemGroup>
   <ItemGroup>

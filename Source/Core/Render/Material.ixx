@@ -1,5 +1,6 @@
 ﻿module;
 
+#include <pybind11/conduit/wrap_include_python_h.h>
 #include <DirectXMath.h>
 #include <stdexcept>
 #include <json/json.h>

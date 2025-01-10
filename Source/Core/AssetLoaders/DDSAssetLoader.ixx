@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/conduit/wrap_include_python_h.h>
+
 export module DDSAssetLoader;
 
 import <d3d12.h>;

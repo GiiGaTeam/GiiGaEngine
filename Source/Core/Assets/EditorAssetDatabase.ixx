@@ -132,6 +132,10 @@ namespace GiiGa
 
         void ImportAsset(const std::filesystem::path& path)
         {
+            //todo add better filtering
+            if (path.string().find("__pycache__") != std::string::npos)
+                return;
+            
             if (std::filesystem::is_directory(asset_path_ / path))
             {
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path))

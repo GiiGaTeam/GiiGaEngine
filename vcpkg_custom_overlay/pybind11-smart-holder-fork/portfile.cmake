@@ -1,9 +1,9 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO pybind/pybind11
+    REPO GiiGaTeam/pybind11
     REF "smart_holder"
-    SHA512 f5f3f6cd69a10384d5e2116ec458b883d130d0c35b3181e1015b2caf13446abb09b24931e55da26950b79ded3485512d75c47736d02fc83b50d93d39c21089c4
-    HEAD_REF master
+    SHA512 4e475c4151beec4e5bcee3809f8cb7e4e499590b8e73a884a159ca57da2a6dd037ee08f03f6ab99a67febb88873c478989569626eab2e4d0d18944e5c9c5b59c
+    HEAD_REF "smart_holder"
 )
 
 vcpkg_cmake_configure(

@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/pybind11.h>;
+#include <pybind11/embed.h>
 
 export module ScriptAssetLoader;
 
@@ -12,7 +12,8 @@ import AssetHandle;
 import AssetMeta;
 import AssetLoader;
 
-import ScriptAsset;
+import ScriptSystem;
+import Logger;
 
 import Misc;
 
@@ -41,9 +42,17 @@ namespace GiiGa
                                })
             };
         }
-        
+
+        //C:\Users\olege\AppData\Local\Temp\TemplateProject\Assets\PyBeh1.py
         std::shared_ptr<AssetBase> Load(AssetHandle handle, const ::std::filesystem::path& script_path) override
         {
+            try
+            {
+                pybind11::module_ c_e = pybind11::module_::import("PyBeh1");
+            }catch (pybind11::error_already_set e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v",e.what());
+            }
             return std::make_shared<ScriptAsset>(handle);
         }
 

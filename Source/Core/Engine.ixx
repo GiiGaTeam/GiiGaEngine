@@ -1,3 +1,7 @@
+module;
+
+#include <pybind11/conduit/wrap_include_python_h.h>
+
 export module Engine;
 
 import <memory>;
@@ -42,7 +46,7 @@ namespace GiiGa
             window_->OnWindowClose.Register([this](const WindowCloseEvent& arg) { quit_ = true; });
             window_->OnQuit.Register([this](const QuitEvent& arg) { quit_ = true; });
 
-            script_system_ = std::make_shared<GiiGa::ScriptSystem>();
+            script_system_ = std::make_shared<GiiGa::ScriptSystem>(project_);
         }
 
         virtual void DeInitialize()

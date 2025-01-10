@@ -1,5 +1,6 @@
 module;
 
+#include <pybind11/conduit/wrap_include_python_h.h>
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
 #include <unordered_map>

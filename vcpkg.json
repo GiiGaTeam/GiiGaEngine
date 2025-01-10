@@ -23,7 +23,7 @@
     "directxtk12",
     "easyloggingpp",
     "imguizmo",
-    "pybind11-smart-holder"
+    "pybind11-smart-holder-fork"
   ],
   "overrides": [
     { "name": "imguizmo", "version": "2024-05-29#1" }
