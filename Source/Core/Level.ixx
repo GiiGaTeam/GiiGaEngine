@@ -86,6 +86,14 @@ namespace GiiGa
             isActive_ = newActive;
         }
 
+        void BeginPlay()
+        {
+            for (auto& root_game_object : root_game_objects_)
+            {
+                std::dynamic_pointer_cast<GameObject>(root_game_object.second)->BeginPlay();
+            }
+        }
+
         Json::Value ToJson()
         {
             Json::Value result;

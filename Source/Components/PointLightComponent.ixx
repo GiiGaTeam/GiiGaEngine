@@ -115,6 +115,11 @@ namespace GiiGa
             }
         }
 
+        void BeginPlay() override
+        {
+            
+        }
+
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
                                           & instance_uuid) override
         {

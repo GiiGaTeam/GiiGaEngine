@@ -28,6 +28,15 @@ namespace GiiGa
             );
         }
 
+        void BeginPlay() override
+        {
+            PYBIND11_OVERRIDE_PURE(
+                void,             /* Return type */
+                GiiGa::Component, /* Parent class */
+                BeginPlay              /* Name of function in C++ (must match Python name) */
+            );
+        }
+
         void Tick(float dt) override
         {
             std::cout << "Tick" << std::endl;

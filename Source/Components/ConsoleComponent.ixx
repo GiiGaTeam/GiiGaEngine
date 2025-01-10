@@ -28,6 +28,11 @@ namespace GiiGa
         void Init() override
         {
         }
+        
+        void BeginPlay() override
+        {
+            
+        }
 
         virtual void Restore(const ::Json::Value&) override
         {

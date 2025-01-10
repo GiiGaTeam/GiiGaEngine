@@ -50,6 +50,11 @@ namespace GiiGa
         {
             WorldQuery::RemoveComponent(shared_from_this());
             WorldQuery::RemoveAnyWithUuid(uuid_);
+
+            if (auto l_owner = owner_.lock())
+            {
+                l_owner->RemoveComponent(shared_from_this());
+            }
         }
 
         virtual ~Component() override = default;

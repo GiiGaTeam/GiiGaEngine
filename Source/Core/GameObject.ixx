@@ -66,10 +66,9 @@ namespace GiiGa
                 kid->Destroy();
             }
 
-            for (auto&& component : components_)
-            {
-                component->Destroy();
-            }
+            //todo: not efficient n^2 complexity
+            while (components_.size() > 0)
+                components_[0]->Destroy();
         }
 
         ~GameObject() override = default;
@@ -78,6 +77,24 @@ namespace GiiGa
         GameObject(GameObject&& other) noexcept = default;
         GameObject& operator=(const GameObject& other) = delete;
         GameObject& operator=(GameObject&& other) noexcept = default;
+
+        void BeginPlay()
+        {
+            for (auto& kid : children_)
+            {
+                kid->BeginPlay();
+            }
+
+            for (auto& component : components_)
+            {
+                component->BeginPlay();
+            }
+        }
+
+        void RemoveComponent(std::shared_ptr<IComponent> comp) override
+        {
+            components_.erase(std::remove(components_.begin(), components_.end(), comp));
+        }
 
         void AttachToLevelRoot(std::shared_ptr<ILevelRootGameObjects> level_rgo)
         {
@@ -112,7 +129,8 @@ namespace GiiGa
                 l_parent->GetComponent<TransformComponent>()->Detach();
             }
             parent_.reset();
-            AttachToLevelRoot(level_root_gos_.lock());
+            if (!level_root_gos_.expired())
+                AttachToLevelRoot(level_root_gos_.lock());
         }
 
         static std::shared_ptr<GameObject> CreateEmptyGameObject(const SpawnParameters& spawnParameters)

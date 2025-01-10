@@ -116,6 +116,11 @@ namespace GiiGa
             ownerGO_ = std::dynamic_pointer_cast<GameObject>(owner_.lock());
         }
 
+        void BeginPlay() override
+        {
+            
+        }
+
         void Restore(const ::Json::Value&) override
         {
             Todo();

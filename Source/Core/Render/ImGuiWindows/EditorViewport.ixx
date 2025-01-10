@@ -43,7 +43,7 @@ namespace GiiGa
 
             if (auto l_camera = camera_.lock())
             {
-                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x/new_size.y);
+                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x / new_size.y);
             }
         }
 
@@ -70,8 +70,10 @@ namespace GiiGa
 
             if (camera_.expired()) return;
 
-            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str())) {
-                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str()))
+            {
+                if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+                {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
                     {
                         movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
@@ -150,43 +152,66 @@ namespace GiiGa
             bool rotate = editorContext_->currentOperation_ & ImGuizmo::OPERATION::ROTATE;
             bool scale = editorContext_->currentOperation_ & ImGuizmo::OPERATION::SCALEU;
 
-            if (ImGui::Checkbox("Translate", &translate)) {
+            if (ImGui::Checkbox("Translate", &translate))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(translate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::TRANSLATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::TRANSLATE);
             }
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: W");
             }
             ImGui::SameLine();
 
-            if (ImGui::Checkbox("Rotate", &rotate)) {
+            if (ImGui::Checkbox("Rotate", &rotate))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(rotate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::ROTATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::ROTATE);
             }
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: E");
             }
             ImGui::SameLine();
 
-            if (ImGui::Checkbox("Scale", &scale)) {
+            if (ImGui::Checkbox("Scale", &scale))
+            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(scale ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::SCALEU : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::SCALEU);
-            } 
-            if (ImGui::IsItemHovered()) {
+            }
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Hotkey: S");
             }
             ImGui::SameLine();
 
-            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD)) {
+            if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD))
+            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
             }
             ImGui::SameLine();
 
-            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL)) {
+            if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL))
+            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
+            }
+
+            ImGui::SameLine();
+            WorldState current_state = World::GetInstance().GetState();
+            bool isPlay = current_state == WorldState::Play;
+            if (ImGui::Checkbox("Play", &isPlay))
+            {
+                if (current_state == WorldState::Play)
+                {
+                    World::GetInstance().SetState(WorldState::Edit);
+                }
+                else if (current_state == WorldState::Edit)
+                {
+                    World::GetInstance().SetState(WorldState::Play);
+                }
             }
 
             ImGui::EndChild();
         }
 
-        void PostViewportDrawWidgets() 
+        void PostViewportDrawWidgets()
         {
             DrawToolbar();
 

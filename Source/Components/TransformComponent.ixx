@@ -286,6 +286,11 @@ namespace GiiGa
             AttachTo(parent_);
         }
 
+        void BeginPlay() override
+        {
+            
+        }
+
         Transform GetTransform() const { return transform_; }
 
         void SetTransform(const Transform& transform)

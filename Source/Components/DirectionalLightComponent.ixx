@@ -109,6 +109,11 @@ namespace GiiGa
             }
         }
 
+        void BeginPlay() override
+        {
+            
+        }
+
         void Draw(RenderContext& context) override
         {
             mesh_->Draw(context.GetGraphicsCommandList());

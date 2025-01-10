@@ -29,6 +29,11 @@ namespace GiiGa
             transformOwner_ = GO->GetTransformComponent();
         }
 
+        void BeginPlay() override
+        {
+            
+        }
+
         void Restore(const ::Json::Value&) override { Todo(); }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>

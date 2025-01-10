@@ -28,6 +28,12 @@ namespace GiiGa
         {
         }
 
+        ~PrefabAsset()override
+        {
+            if (root)
+                root->Destroy();
+        }
+
         Json::Value ToJson()
         {
             Json::Value result;
@@ -95,9 +101,7 @@ namespace GiiGa
         }
 
         std::shared_ptr<GameObject> root;
-
-        ~PrefabAsset() override = default;
-
+        
         AssetType GetType() override
         {
             return AssetType::Prefab;

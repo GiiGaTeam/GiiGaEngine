@@ -21,6 +21,12 @@ import TransformComponent;
 
 namespace GiiGa
 {
+    export enum class WorldState
+    {
+        Edit,
+        Play
+    };
+    
     export class World : public WorldQuery
     {
     public:
@@ -89,14 +95,56 @@ namespace GiiGa
             GetInstance().levels_.push_back(level);
         }
 
+        WorldState GetState()
+        {
+            return state_;
+        }
+
+        void SetState(WorldState state)
+        {
+            if (state_ == state)
+                return;
+
+            if (state_ == WorldState::Edit && state == WorldState::Play)
+            {
+                OnEditToPlayStateChange_();
+            }
+            else if (state_ == WorldState::Play && state == WorldState::Edit)
+            {
+                OnPlayToEditStateChange_();
+            }
+
+            state_ = state;
+        }
+
     private:
         std::vector<std::shared_ptr<Level>> levels_;
+
+        WorldState state_;
 
         World() = default;
 
         std::shared_ptr<ILevelRootGameObjects> GetPersistentLevel_Impl() override
         {
             return levels_[0];
+        }
+
+        void OnEditToPlayStateChange_()
+        {
+            for (auto&& level : levels_)
+            {
+                level->BeginPlay();
+            }
+        }
+
+        void OnPlayToEditStateChange_()
+        {
+            if (levels_.size()>2)
+            {
+                AssetHandle loaded_levelid = levels_[1]->GetId();
+
+                Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid)
+            }
         }
     };
 }
