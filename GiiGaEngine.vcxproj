@@ -341,6 +341,7 @@
     </ClCompile>
     <ClCompile Include="Source\Components\PointLightComponent.ixx" />
     <ClCompile Include="Source\Components\PyBehaviourSchemeComponent.ixx" />
+    <ClCompile Include="Source\Components\PyBehaviourTrampoline.ixx" />
     <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
     <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
     <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
@@ -380,6 +381,7 @@
     <ClCompile Include="Source\Core\PrefabAsset.ixx" />
     <ClCompile Include="Source\Core\PrefabInstanceModifications.ixx" />
     <ClCompile Include="Source\Core\Project.ixx" />
+    <ClCompile Include="Source\Core\PySripting\py_module.ixx" />
     <ClCompile Include="Source\Core\PySripting\ScriptAsset.ixx" />
     <ClCompile Include="Source\Core\PySripting\ScriptSystem.ixx">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>

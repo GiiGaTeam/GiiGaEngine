@@ -43,22 +43,11 @@ namespace GiiGa
             };
         }
 
-        //C:\Users\olege\AppData\Local\Temp\TemplateProject\Assets\PyBeh1.py
         std::shared_ptr<AssetBase> Load(AssetHandle handle, const ::std::filesystem::path& script_path) override
         {
-            try
-            {
-                pybind11::module_ c_e = pybind11::module_::import("PyBeh1");
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::imported %v", script_path.filename());
-                pybind11::object res = c_e.attr("add")(1, 2);
-                int i = res.cast<int>();
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::add %v", i);
-            }
-            catch (pybind11::error_already_set e)
-            {
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAssetLoader()::Load %v", e.what());
-            }
-            return std::make_shared<ScriptAsset>(handle);
+            //todo: replace all \ wiht . after Assets
+
+            return std::make_shared<ScriptAsset>(handle, script_path.stem().string());
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

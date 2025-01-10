@@ -59,6 +59,11 @@ namespace GiiGa
             owner_ = go;
         }
 
+        std::shared_ptr<IGameObject> GetOwner() const
+        {
+            return owner_.lock();
+        }
+
         Uuid GetUuid() const override
         {
             return uuid_;
@@ -86,7 +91,7 @@ namespace GiiGa
         }
 
         virtual Json::Value DerivedToJson(bool is_prefab_root = false) =0;
-        
+
         void Tick(float dt) override =0;
 
     protected:
@@ -102,7 +107,7 @@ namespace GiiGa
 
             if (instance_uuid.has_value())
                 derived_clone->uuid_ = instance_uuid.value().at(this->GetInPrefabUuid());
-            
+
             derived_clone->RegisterInWorld();
             prefab_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();
         }

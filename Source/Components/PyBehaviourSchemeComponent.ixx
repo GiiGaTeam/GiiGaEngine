@@ -15,6 +15,7 @@ import Misc;
 import ScriptAsset;
 import AssetHandle;
 import Engine;
+import GameObject;
 
 namespace GiiGa
 {
@@ -91,6 +92,13 @@ namespace GiiGa
         void SetScriptHandle(const AssetHandle& handle)
         {
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(handle);
+            if (auto l_owner = owner_.lock())
+            {
+                auto l_owner_go = std::dynamic_pointer_cast<GameObject>(l_owner);
+                auto new_comp = script_asset_->CreateBehaviourComponent();
+                new_comp->RegisterInWorld();
+                l_owner_go->AddComponent(new_comp);
+            }
         }
 
     private:

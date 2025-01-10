@@ -428,6 +428,13 @@ namespace GiiGa
             return nullptr;
         }
 
+        // note: do not forget to register component in world
+        void AddComponent(std::shared_ptr<IComponent> comp)
+        {
+            comp->SetOwner(shared_from_this());
+            components_.push_back(comp);
+        }
+
         template <typename T>
         std::shared_ptr<T> GetComponent()
         {
@@ -609,12 +616,6 @@ namespace GiiGa
                 auto kid_go = CreateGameObjectFromJson(kid_js, this->level_root_gos_.lock(), roll_id);
                 this->AddChild(kid_go);
             }
-        }
-
-        void AddComponent(std::shared_ptr<IComponent> newComp)
-        {
-            newComp->SetOwner(std::static_pointer_cast<GameObject>(shared_from_this()));
-            components_.push_back(newComp);
         }
     };
 } // namespace GiiGa
