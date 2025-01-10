@@ -2,20 +2,6 @@
 	{
 		"id" : 
 		{
-			"id" : "65bd7221-c69c-47f0-8b0b-bc72a3184ef1",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "00000000-0000-0000-0000-000000000000",
-			"name" : "",
-			"path" : "Sphere.prefab",
-			"type" : "Prefab"
-		}
-	},
-	{
-		"id" : 
-		{
 			"id" : "00000000-0000-0000-0000-000000000001",
 			"subresource" : 0
 		},

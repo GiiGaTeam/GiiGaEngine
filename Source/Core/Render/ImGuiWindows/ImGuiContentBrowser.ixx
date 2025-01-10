@@ -211,6 +211,7 @@ namespace GiiGa
                 {
                     auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
                     ImGui::ImageButton("##Button_2", (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
                         current_path_ /= path.filename();

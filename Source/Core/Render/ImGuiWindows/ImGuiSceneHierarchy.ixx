@@ -70,6 +70,19 @@ namespace GiiGa
                 level_lable.c_str(),
                 flags, level_lable.c_str());
 
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab))) {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(*handle);
+                    el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", handle->id.ToString());
+
+                    auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
+                    new_go->AttachToLevelRoot(level);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
             ImGui::PopStyleColor();
 
             if (ImGui::BeginPopupContextItem(level_lable.c_str()))
@@ -82,25 +95,6 @@ namespace GiiGa
                 {
                     auto database = Engine::Instance().ResourceManager()->Database();
                     std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(std::dynamic_pointer_cast<AssetBase>(level));
-                }
-
-                if (ImGui::BeginMenu("Add GameObject From Prefab"))
-                {
-                    char prefabUuidStr[37];
-                    snprintf(prefabUuidStr, sizeof(prefabUuidStr), "%s", Uuid::Null().ToString().c_str());
-                    if (ImGui::InputText("UUID", prefabUuidStr, sizeof(prefabUuidStr), ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        auto newUuid = Uuid::FromString(prefabUuidStr);
-                        if (newUuid.has_value() && newUuid.value() != Uuid::Null())
-                        {
-                            auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(AssetHandle{newUuid.value(), 0});
-                            el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", newUuid.value().ToString());
-                            auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
-                            new_go->AttachToLevelRoot(level);
-                        }
-                    }
-
-                    ImGui::EndMenu();
                 }
 
                 ImGui::EndPopup();
@@ -135,6 +129,31 @@ namespace GiiGa
                 flags,
                 gameObject->name.c_str());
 
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab))) {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(*handle);
+                    el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", handle->id.ToString());
+
+                    auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
+                    new_go->SetParent(gameObject);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+            {
+                if (auto go = editorContext_->selectedGameObject.lock())
+                {
+                    if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+                    {
+                        go->Destroy();
+                        editorContext_->selectedGameObject.reset();
+                    }
+                }
+            }
+
             if (gameObject->prefab_handle_ != AssetHandle{})
                 ImGui::PopStyleColor();
 
@@ -156,25 +175,6 @@ namespace GiiGa
                     auto database = Engine::Instance().ResourceManager()->Database();
                     auto prefab = std::make_shared<PrefabAsset>(AssetHandle{Uuid::New(), 0}, gameObject);
                     std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
-                }
-
-                if (ImGui::BeginMenu("Add Child From Prefab"))
-                {
-                    char prefabUuidStr[37];
-                    snprintf(prefabUuidStr, sizeof(prefabUuidStr), "%s", Uuid::Null().ToString().c_str());
-                    if (ImGui::InputText("UUID", prefabUuidStr, sizeof(prefabUuidStr), ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        auto newUuid = Uuid::FromString(prefabUuidStr);
-                        if (newUuid.has_value() && newUuid.value() != Uuid::Null())
-                        {
-                            auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(AssetHandle{newUuid.value(), 0});
-                            el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", newUuid.value().ToString());
-                            auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
-                            new_go->SetParent(gameObject);
-                        }
-                    }
-
-                    ImGui::EndMenu();
                 }
 
                 ImGui::EndPopup();

@@ -229,30 +229,6 @@ namespace GiiGa
                     transform->SetTransform(Transform::TransformFromMatrix(transform_matrix));
                 }
             }
-
-            /*ImGui::Begin("Viewport Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-            if (ImGui::Button("Translate")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Rotate")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Scale")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALE;
-            }
-
-            if (ImGui::Button("World")) {
-                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Local")) {
-                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
-            }
-
-            ImGui::End();*/
         }
 
 
