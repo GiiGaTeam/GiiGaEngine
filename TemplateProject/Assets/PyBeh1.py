@@ -9,4 +9,6 @@ class MyPyBeh1(gp.Component):
         print("MyPyBeh1 Init")
 
     def Tick(self, dt: float):
-        print("MyPyBeh1 Tick",flush=True)
+        #self.owner.GetTransformComponent().AddLocation(gp.Vector3(1,1,1))
+        #print("MyPyBeh1 Tick",flush=True)
+        pass
