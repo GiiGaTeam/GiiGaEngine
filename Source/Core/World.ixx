@@ -134,13 +134,13 @@ namespace GiiGa
 
         void OnPlayToEditStateChange_()
         {
-            if (levels_.size() > 2)
+            if (levels_.size() >= 2)
             {
                 AssetHandle loaded_levelid = levels_[1]->GetId();
 
                 levels_.erase(levels_.begin() + 1);
-
-                Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid);
+                
+                AddLevel(Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid));
             }
         }
     };
