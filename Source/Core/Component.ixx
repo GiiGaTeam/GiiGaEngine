@@ -43,21 +43,23 @@ namespace GiiGa
         void RegisterInWorld() override
         {
             WorldQuery::AddComponent(shared_from_this());
-            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<Component>(shared_from_this()));
+            WorldQuery::AddAnyWithUuid(uuid_, shared_from_this());
         }
 
         void Destroy() override
         {
-            WorldQuery::RemoveComponent(shared_from_this());
-            WorldQuery::RemoveAnyWithUuid(uuid_);
-
             if (auto l_owner = owner_.lock())
             {
                 l_owner->RemoveComponent(shared_from_this());
             }
         }
 
-        virtual ~Component() override = default;
+        virtual ~Component() override
+        {
+            el::Loggers::getLogger("")->debug("Component::~Component");
+            WorldQuery::RemoveComponent(this);
+            WorldQuery::RemoveAnyWithUuid(uuid_);
+        }
 
         virtual void SetOwner(std::shared_ptr<IGameObject> go) override
         {

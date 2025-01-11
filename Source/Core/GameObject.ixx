@@ -48,30 +48,16 @@ namespace GiiGa
 
         void Destroy() override
         {
-            if (!pending_to_destroy_)
-            {
-                WorldQuery::EmplaceGOToDestroy(shared_from_this());
-                pending_to_destroy_ = true;
-                return;
-            }
-
-            DetachFromParent();
+            TryDetachFromParent(false);
 
             TryRemoveFromLevelRoot();
-
-            WorldQuery::RemoveAnyWithUuid(uuid_);
-
-            for (auto&& kid : children_)
-            {
-                kid->Destroy();
-            }
-
-            //todo: not efficient n^2 complexity
-            while (components_.size() > 0)
-                components_[0]->Destroy();
         }
 
-        ~GameObject() override = default;
+        ~GameObject() override
+        {
+            el::Loggers::getLogger("")->debug("Component::~Component");
+            WorldQuery::RemoveAnyWithUuid(uuid_);
+        }
 
         GameObject(const GameObject& other) = delete;
         GameObject(GameObject&& other) noexcept = default;
@@ -121,7 +107,7 @@ namespace GiiGa
             }
         }
 
-        void DetachFromParent()
+        void TryDetachFromParent(bool add_to_level_root = true)
         {
             if (auto l_parent = parent_.lock())
             {
@@ -129,7 +115,7 @@ namespace GiiGa
                 l_parent->GetComponent<TransformComponent>()->Detach();
             }
             parent_.reset();
-            if (!level_root_gos_.expired())
+            if (add_to_level_root && !level_root_gos_.expired())
                 AttachToLevelRoot(level_root_gos_.lock());
         }
 
@@ -287,7 +273,7 @@ namespace GiiGa
 
                 if (parentUuid == Uuid::Null())
                 {
-                    DetachFromParent();
+                    TryDetachFromParent();
                 }
                 else
                 {
@@ -582,9 +568,7 @@ namespace GiiGa
         std::shared_ptr<TransformComponent> transform_;
 
         std::shared_ptr<PerObjectData> perObjectData_;
-
-        bool pending_to_destroy_ = false;
-
+        
         void TryRemoveFromLevelRoot()
         {
             auto l_level = level_root_gos_.lock();
@@ -624,7 +608,7 @@ namespace GiiGa
         // does not register children
         void RegisterInWorld()
         {
-            WorldQuery::AddAnyWithUuid(uuid_, std::static_pointer_cast<GameObject>(shared_from_this()));
+            WorldQuery::AddAnyWithUuid(uuid_, shared_from_this());
         }
 
         void CreateChildren(const Json::Value& json, bool roll_id = false)

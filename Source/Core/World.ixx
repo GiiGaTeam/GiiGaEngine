@@ -26,7 +26,7 @@ namespace GiiGa
         Edit,
         Play
     };
-    
+
     export class World : public WorldQuery
     {
     public:
@@ -46,6 +46,7 @@ namespace GiiGa
 
         static void DeInitialize()
         {
+            GetInstance().levels_.clear();
             instance_.reset();
         }
 
@@ -57,12 +58,6 @@ namespace GiiGa
                 auto comp_to_init = instance.comp_init_queue_.front();
                 instance.comp_init_queue_.pop();
                 comp_to_init->Init();
-            }
-            while (!instance.gameobject_destroy_queue_.empty())
-            {
-                auto go_to_destroy = instance.gameobject_destroy_queue_.front();
-                instance.gameobject_destroy_queue_.pop();
-                go_to_destroy->Destroy();
             }
             for (auto& level : GetLevels())
             {
@@ -139,11 +134,13 @@ namespace GiiGa
 
         void OnPlayToEditStateChange_()
         {
-            if (levels_.size()>2)
+            if (levels_.size() > 2)
             {
                 AssetHandle loaded_levelid = levels_[1]->GetId();
 
-                Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid)
+                levels_.erase(levels_.begin() + 1);
+
+                Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid);
             }
         }
     };

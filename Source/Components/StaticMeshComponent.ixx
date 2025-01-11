@@ -40,15 +40,11 @@ namespace GiiGa
         friend class ImGuiInspector;
 
     public:
-        StaticMeshComponent()
-        {
-        }
-
+        StaticMeshComponent()=default;
+        
         StaticMeshComponent(Json::Value json, bool roll_id = false):
             Component(json, roll_id)
         {
-            StaticMeshComponent();
-
             auto mesh_handle = AssetHandle::FromJson(json["Mesh"]);
             auto material_handle = AssetHandle::FromJson(json["Material"]);
 
@@ -89,6 +85,8 @@ namespace GiiGa
 
         void Init() override
         {
+            if (owner_.expired())
+                return;
             transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
