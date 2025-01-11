@@ -10,6 +10,7 @@ import <directxtk12/ResourceUploadBatch.h>;
 
 import <iostream>;
 
+import Logger;
 import Engine;
 
 import ResourceManager;
@@ -49,6 +50,7 @@ namespace GiiGa
         float thumbnail_size = 128.0f;
 
         EventHandle<DropFileEvent> drop_file_evt_ = EventHandle<DropFileEvent>::Null();
+        bool is_dir_creating_ = false;
 
     public:
         ImGuiContentBrowser(const ImGuiContentBrowser& obj) = delete;
@@ -181,6 +183,7 @@ namespace GiiGa
 
             ImVec2 cursor_pos = ImGui::GetCursorPos();
             ImGui::Dummy(ImGui::GetContentRegionAvail());
+
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GOTOPREFAB")) {
                     std::shared_ptr<GameObject> go = *(std::shared_ptr<GameObject>*)payload->Data;
@@ -191,6 +194,14 @@ namespace GiiGa
 
                 ImGui::EndDragDropTarget();
             }
+
+            if (ImGui::BeginPopupContextItem("CONTENTBROWSER")) {
+                if (ImGui::MenuItem("Create Folder")) {
+                    is_dir_creating_ = true;
+                }
+                ImGui::EndPopup();
+            }
+
             ImGui::SetCursorPos(cursor_pos);
 
             ImGui::TextWrapped("Current path: %s", current_path_.string().c_str());
@@ -209,12 +220,37 @@ namespace GiiGa
             if (current_path_ != database_->AssetPath()) 
             {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton("##Button_1", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     current_path_ = current_path_.parent_path();
                 }
                 ImGui::Text("..");
+
+                ImGui::NextColumn();
+            }
+
+            if (is_dir_creating_) {
+                auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
+                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                char folder_name_buf[512];
+                snprintf(folder_name_buf, sizeof(folder_name_buf), "%s", "");
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::InputText("##", folder_name_buf, IM_ARRAYSIZE(folder_name_buf));
+
+                if (!ImGui::IsItemActive() && strlen(folder_name_buf) > 0) {
+                    is_dir_creating_ = false;
+
+                    std::filesystem::path new_folder_path = current_path_ / folder_name_buf;
+                    try {
+                        std::filesystem::create_directory(new_folder_path);
+                    }
+                    catch (const std::exception& e) {
+                        el::Loggers::getLogger(LogEditor)->error("Failed to create folder: %v", e.what());
+                    }
+                }
 
                 ImGui::NextColumn();
             }
@@ -230,7 +266,7 @@ namespace GiiGa
                 if (entry.is_directory()) 
                 {
                     auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                    ImGui::ImageButton("##Button_2", (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+                    ImGui::ImageButton(filename.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
 
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
@@ -257,7 +293,7 @@ namespace GiiGa
                         {
                             ImGui::PushID(static_cast<int>(handle.id.Hash()));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
-                            ImGui::ImageButton("##Button_3", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            ImGui::ImageButton(filename.c_str(), (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
 
                             const char* raw_name = filename.c_str();
 
