@@ -57,7 +57,8 @@ namespace GiiGa
             {
                 auto comp_to_init = instance.comp_init_queue_.front();
                 instance.comp_init_queue_.pop();
-                comp_to_init->Init();
+                if (!comp_to_init.expired())
+                    comp_to_init.lock()->Init();
             }
             for (auto& level : GetLevels())
             {
@@ -65,10 +66,11 @@ namespace GiiGa
                 {
                     continue;
                 }
-                for (auto&& [_,game_object] : level->GetRootGameObjects())
+                const auto& level_root_gos = level->GetRootGameObjects();
+                for (int i = 0; i < level_root_gos.size(); ++i)
                 {
-                    if (game_object->tick_type == TickType::Default)
-                        game_object->Tick(dt);
+                    if (level_root_gos[i]->tick_type == TickType::Default)
+                        level_root_gos[i]->Tick(dt);
                 }
             }
         }
@@ -139,7 +141,7 @@ namespace GiiGa
                 AssetHandle loaded_levelid = levels_[1]->GetId();
 
                 levels_.erase(levels_.begin() + 1);
-                
+
                 AddLevel(Engine::Instance().ResourceManager()->GetAsset<Level>(loaded_levelid));
             }
         }

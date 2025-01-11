@@ -88,9 +88,10 @@ namespace GiiGa
 
         void BeginPlay()
         {
-            for (auto& root_game_object : root_game_objects_)
+            for (int i = 0; i < root_game_objects_.size(); ++i)
             {
-                std::dynamic_pointer_cast<GameObject>(root_game_object.second)->BeginPlay();
+                std::dynamic_pointer_cast<GameObject>(root_game_objects_[i])->BeginPlay();
+
             }
         }
 
@@ -102,7 +103,7 @@ namespace GiiGa
             level_settings["Name"] = name_;
             result["LevelSettings"] = level_settings;
 
-            for (auto&& [_,root_go] : root_game_objects_)
+            for (auto&& root_go : root_game_objects_)
             {
                 result["RootGameObjects"].append(root_go->GetUuid().ToString());
 
@@ -158,7 +159,7 @@ namespace GiiGa
             {
                 if (gameobject_js["Prefab"].empty()) // is not prefab instance
                 {
-                    auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js, level);
+                    auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js);
                     CreateComponentsForGameObject::Create(new_go, gameobject_js, false);
                     created_game_objects.push_back(new_go);
                 }

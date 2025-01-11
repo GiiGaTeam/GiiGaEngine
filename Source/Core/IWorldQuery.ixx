@@ -135,7 +135,7 @@ namespace GiiGa
         static inline std::shared_ptr<WorldQuery> instance_;
         std::unordered_map<std::type_index, std::vector<std::weak_ptr<IComponent>>> type_to_components_;
         std::unordered_map<Uuid, std::weak_ptr<void>> uuid_to_any_;
-        std::queue<std::shared_ptr<IComponent>> comp_init_queue_;
+        std::queue<std::weak_ptr<IComponent>> comp_init_queue_;
 
         virtual std::shared_ptr<ILevelRootGameObjects> GetPersistentLevel_Impl()
         {

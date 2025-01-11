@@ -48,8 +48,8 @@ namespace GiiGa
 
         void Destroy() override
         {
-            TryDetachFromParent(false);
-
+            TryDetachFromParent();
+            
             TryRemoveFromLevelRoot();
         }
 
@@ -107,7 +107,7 @@ namespace GiiGa
             }
         }
 
-        void TryDetachFromParent(bool add_to_level_root = true)
+        void TryDetachFromParent()
         {
             if (auto l_parent = parent_.lock())
             {
@@ -115,7 +115,7 @@ namespace GiiGa
                 l_parent->GetComponent<TransformComponent>()->Detach();
             }
             parent_.reset();
-            if (add_to_level_root && !level_root_gos_.expired())
+            if (!level_root_gos_.expired())
                 AttachToLevelRoot(level_root_gos_.lock());
         }
 

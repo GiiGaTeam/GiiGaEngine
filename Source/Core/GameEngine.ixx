@@ -44,10 +44,11 @@ namespace GiiGa
                     {
                         continue;
                     }
-                    for (auto&& [_,game_object] : level->GetRootGameObjects())
+                    const auto& level_root_gos = level->GetRootGameObjects();
+                    for (int i = 0; i < level_root_gos.size(); ++i)
                     {
-                        if (game_object->tick_type == TickType::Default)
-                            game_object->Tick(static_cast<float>(Time::GetDeltaTime()));
+                        if (level_root_gos[i]->tick_type == TickType::Default)
+                            level_root_gos[i]->Tick(Time::GetDeltaTime());
                     }
                 }
                 render_system_->Tick();

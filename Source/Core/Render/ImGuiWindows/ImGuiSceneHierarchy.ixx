@@ -113,9 +113,9 @@ namespace GiiGa
 
             if (opened)
             {
-                for (auto&& [_,go] : level->GetRootGameObjects())
+                for (int i = 0; i < level->GetNumRootGameObjects(); i++)
                 {
-                    RecursiveDrawGameObject(std::dynamic_pointer_cast<GameObject>(go));
+                    RecursiveDrawGameObject(std::dynamic_pointer_cast<GameObject>(level->GetRootGameObjects()[i]));
                 }
                 ImGui::TreePop();
             }
@@ -198,9 +198,9 @@ namespace GiiGa
 
             if (opened)
             {
-                for (auto kid : gameObject->GetChildren())
+                for (int i = 0; i < gameObject->GetChildrenCount(); ++i)
                 {
-                    RecursiveDrawGameObject(kid);
+                    RecursiveDrawGameObject(gameObject->GetChildren()[i]);
                 }
                 ImGui::TreePop();
             }

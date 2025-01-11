@@ -14,15 +14,25 @@ namespace GiiGa
 
         void AddRootGameObject(std::shared_ptr<IGameObject> rootGameObject)
         {
-            root_game_objects_.insert({rootGameObject->GetUuid(), rootGameObject});
+            root_game_objects_.push_back(rootGameObject);
         }
 
         void RemoveRootGameObject(std::shared_ptr<IGameObject> rootGameObject)
         {
-            root_game_objects_.erase(rootGameObject->GetUuid());
+            auto where = std::find_if(root_game_objects_.begin(),
+                                      root_game_objects_.end(),
+                                      [rootGameObject](std::shared_ptr<IGameObject> game_object)
+                                      {
+                                          return rootGameObject.get() == game_object.get();
+                                      });
+
+            if (where == root_game_objects_.end())
+                return;
+            
+            root_game_objects_.erase(where);
         }
 
     protected:
-        std::unordered_map<Uuid, std::shared_ptr<IGameObject>> root_game_objects_;
+        std::vector<std::shared_ptr<IGameObject>> root_game_objects_;
     };
 }

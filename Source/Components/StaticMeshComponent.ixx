@@ -85,8 +85,6 @@ namespace GiiGa
 
         void Init() override
         {
-            if (owner_.expired())
-                return;
             transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
