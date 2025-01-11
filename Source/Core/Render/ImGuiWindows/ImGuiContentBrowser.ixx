@@ -11,9 +11,11 @@ import <directxtk12/ResourceUploadBatch.h>;
 import <iostream>;
 
 import Engine;
+
 import ResourceManager;
 import IImGuiWindow;
 import BaseAssetDatabase;
+import EditorAssetDatabase;
 import GPULocalResource;
 import RenderDevice;
 
@@ -22,6 +24,9 @@ import AssetType;
 
 import EventSystem;
 import Window;
+
+import GameObject;
+import PrefabAsset;
 
 namespace GiiGa
 {
@@ -34,7 +39,7 @@ namespace GiiGa
     export class ImGuiContentBrowser : public IImGuiWindow
     {
     private:
-        std::shared_ptr<BaseAssetDatabase> database_;
+        std::shared_ptr<EditorAssetDatabase> database_;
         std::filesystem::path current_path_;
 
         std::unordered_map<AssetType, std::unique_ptr<GPULocalResource>> icons_;
@@ -51,7 +56,7 @@ namespace GiiGa
 
         ImGuiContentBrowser()
         {
-            database_ = Engine::Instance().ResourceManager()->Database();
+            database_ = std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().ResourceManager()->Database());
             assert(database_);
             current_path_ = database_->AssetPath();
 
@@ -174,6 +179,20 @@ namespace GiiGa
         {
             ImGui::Begin("Content Browser");
 
+            ImVec2 cursor_pos = ImGui::GetCursorPos();
+            ImGui::Dummy(ImGui::GetContentRegionAvail());
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GOTOPREFAB")) {
+                    std::shared_ptr<GameObject> go = *(std::shared_ptr<GameObject>*)payload->Data;
+
+                    auto prefab = std::make_shared<PrefabAsset>(AssetHandle{ Uuid::New(), 0 }, go);
+                    database_->CreateAsset(prefab, current_path_ / std::string{ go->name + ".prefab" });
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+            ImGui::SetCursorPos(cursor_pos);
+
             ImGui::TextWrapped("Current path: %s", current_path_.string().c_str());
 
             float cell_size = padding + thumbnail_size;
@@ -185,6 +204,7 @@ namespace GiiGa
             }
 
             ImGui::Columns(column_count, nullptr, false);
+
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             if (current_path_ != database_->AssetPath()) 
             {

@@ -142,6 +142,15 @@ namespace GiiGa
                 ImGui::EndDragDropTarget();
             }
 
+            if (gameObject->prefab_handle_ == AssetHandle{})
+            {
+                if (ImGui::BeginDragDropSource()) {
+
+                    ImGui::SetDragDropPayload("GOTOPREFAB", &gameObject, sizeof(std::shared_ptr<GameObject>));
+                    ImGui::EndDragDropSource();
+                }
+            }
+
             if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
             {
                 if (auto go = editorContext_->selectedGameObject.lock())
