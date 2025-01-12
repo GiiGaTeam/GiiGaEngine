@@ -86,7 +86,7 @@ namespace GiiGa
 
             UpdateCameraInfo(context);
 
-            auto current_size = ImGui::GetWindowSize();
+            auto current_size = ImGui::GetContentRegionAvail();
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
@@ -216,9 +216,9 @@ namespace GiiGa
             auto view = cmp.GetView();
             auto proj = cmp.GetProj();
 
-            auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
+            /*auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
 
-            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);
+            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);*/
 
             if (auto go = editorContext_->selectedGameObject.lock())
             {
