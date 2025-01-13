@@ -34,36 +34,46 @@ namespace GiiGa
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) = 0;
 
-        void LoadAsync(AssetHandle handle, const std::filesystem::path& path, LoadCallback&& callback) {
-             std::thread([this, handle, path, callback = std::move(callback)]() {
-                try
-                {
-                    auto asset = Load(handle, path);
-                    callback(asset);
-                }
-                catch (...)
-                {
-                    callback(nullptr);
-                }
-            })
-            .detach();
+        virtual void Update(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path)
+        {
         }
 
-        bool MatchesPattern(const std::filesystem::path& path) const {
+        void LoadAsync(AssetHandle handle, const std::filesystem::path& path, LoadCallback&& callback)
+        {
+            std::thread([this, handle, path, callback = std::move(callback)]()
+                {
+                    try
+                    {
+                        auto asset = Load(handle, path);
+                        callback(asset);
+                    }
+                    catch (...)
+                    {
+                        callback(nullptr);
+                    }
+                })
+                .detach();
+        }
+
+        bool MatchesPattern(const std::filesystem::path& path) const
+        {
             std::string filename = path.filename().string();
             return std::regex_match(filename, pattern_);
         }
 
-        AssetType Type() const {
+        AssetType Type() const
+        {
             return type_;
         }
 
-        Uuid Id() const {
+        Uuid Id() const
+        {
             return id_;
         }
 
-        virtual const char* GetName() {
+        virtual const char* GetName()
+        {
             return "Unnamed";
         }
     };
-}  // namespace GiiGa
+} // namespace GiiGa

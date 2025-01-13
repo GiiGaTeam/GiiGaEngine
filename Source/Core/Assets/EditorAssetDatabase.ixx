@@ -7,6 +7,7 @@ import <stdexcept>;
 import <type_traits>;
 import <vector>;
 import <iostream>;
+import <mutex>;
 
 import Logger;
 import BaseAssetDatabase;
@@ -26,6 +27,10 @@ namespace GiiGa
     {
     private:
         ProjectWatcher project_watcher_;
+
+        std::mutex update_queue_mutex = {};
+        // idk, i cant use unordered here -> internal compiler error
+        std::vector<AssetHandle> update_queue_ = {};
 
     public:
         EditorAssetDatabase(std::shared_ptr<Project> proj)
@@ -52,7 +57,13 @@ namespace GiiGa
 
             project_watcher_.OnFileModified.Register([this](const auto& path)
             {
-                //std::cout << "[DEBUG] File was modified: " << path << std::endl;
+                if (assets_to_path_.contains(path))
+                {
+                    std::lock_guard lock{update_queue_mutex};
+                    if (std::find(update_queue_.begin(), update_queue_.end(), assets_to_path_.at(path)) == update_queue_.end())
+                        update_queue_.emplace_back(assets_to_path_.at(path));
+                    el::Loggers::getLogger(LogResourceManager)->info("Asset File %v was modified enqueue to update", path.string());
+                }
             });
 
             project_watcher_.OnFileRemoved.Register([this](const auto& path)
@@ -135,7 +146,7 @@ namespace GiiGa
             //todo add better filtering
             if (path.string().find("__pycache__") != std::string::npos)
                 return;
-            
+
             if (std::filesystem::is_directory(asset_path_ / path))
             {
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(asset_path_ / path))
@@ -299,6 +310,11 @@ namespace GiiGa
                     ++it;
                 }
             }
+        }
+
+        auto GetUpdateQueue()
+        {
+            return std::pair{&update_queue_mutex, &update_queue_};
         }
 
     private:

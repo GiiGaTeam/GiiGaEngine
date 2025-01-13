@@ -14,6 +14,7 @@ namespace GiiGa
 {
     export class ScriptAsset : public AssetBase
     {
+        friend class ScriptAssetLoader;
     public:
         ScriptAsset(AssetHandle assetHandle, const pybind11::module_ module, const std::string user_class_name):
             AssetBase(assetHandle)

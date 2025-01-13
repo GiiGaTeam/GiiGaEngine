@@ -51,6 +51,29 @@ namespace GiiGa
         std::shared_ptr<BaseAssetDatabase> Database() const {
             return database_;
         }
+
+        //todo: actually if in game assets are not mutable, we don't need it in game, so...
+        void UpdateAsset(const AssetHandle& handle)
+        {
+            if (loaded_assets_.contains(handle))
+            {
+                auto asset_meta_opt = database_->GetAssetMeta(handle);
+                if (!asset_meta_opt)
+                {
+                    throw std::runtime_error("Asset metadata not found for handle: " + handle.id.ToString());
+                }
+
+                const AssetMeta& asset_meta = asset_meta_opt->get();
+                auto loader_it = database_->asset_loader_by_uuid_.find(asset_meta.loader_id);
+                if (loader_it == database_->asset_loader_by_uuid_.end())
+                {
+                    throw std::runtime_error("No loader available for asset type: " + AssetTypeToString(asset_meta.type));
+                }
+
+                loader_it->second->Update(loaded_assets_.at(handle).lock(), database_->asset_path_ / asset_meta.path);
+            }
+        }
+        
     private:
         template <typename T>
         std::shared_ptr<T> FindAsset(AssetHandle handle) {

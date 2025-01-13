@@ -70,6 +70,23 @@ namespace GiiGa
             return std::make_shared<ScriptAsset>(handle, module, name);
         }
 
+        void Update(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
+        {
+            auto script_asset = std::dynamic_pointer_cast<ScriptAsset>(asset);            
+
+            script_asset->module_.reload();
+
+            std::string name = ScriptHelpers::GetComponentSubclassNameInModule(script_asset->module_);
+
+            if (name.empty())
+            {
+                el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while gather name");
+                throw std::exception("cant find subclass name");
+            }
+            
+            script_asset->user_class_name_ = name.c_str();
+        }
+
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
             Todo(); // no support and need to script save

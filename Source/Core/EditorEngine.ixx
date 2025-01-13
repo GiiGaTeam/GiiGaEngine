@@ -40,6 +40,7 @@ namespace GiiGa
             while (!quit_)
             {
                 window_->ProcessEvents();
+                CheckAssetUpdateQueue();
                 Time::UpdateTime();
                 World::Tick(static_cast<float>(Time::GetDeltaTime()));
                 render_system_->Tick();
@@ -108,6 +109,18 @@ namespace GiiGa
 
             editor_asset_database_->RegisterSaver<LevelAssetLoader>();
             editor_asset_database_->RegisterSaver<PrefabAssetLoader>();
+        }
+
+        void CheckAssetUpdateQueue()
+        {
+            auto update_pair = EditorDatabase()->GetUpdateQueue();
+            std::lock_guard lock{*update_pair.first};
+            while (!update_pair.second->empty())
+            {
+                AssetHandle handle = update_pair.second->back();
+                update_pair.second->pop_back();
+                resource_manager_->UpdateAsset(handle);
+            }
         }
     };
 } // namespace GiiGa
