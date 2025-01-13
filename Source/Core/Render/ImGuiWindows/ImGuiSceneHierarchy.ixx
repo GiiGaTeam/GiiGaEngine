@@ -187,7 +187,7 @@ namespace GiiGa
                 }
 
                 if (gameObject->prefab_handle_ != AssetHandle{}) {
-                    if (ImGui::MenuItem("Unpack prefab"))
+                    if (ImGui::MenuItem("Unpack Prefab"))
                     {
                         gameObject->prefab_handle_ = {};
                     }
