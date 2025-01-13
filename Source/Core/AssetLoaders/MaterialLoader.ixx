@@ -124,7 +124,10 @@ namespace GiiGa
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
-            Todo();
+            if (auto mat = std::dynamic_pointer_cast<Material>(asset))
+            {
+                mat->SaveToAbsolutePath(path);
+            }
         }
 
         const char* GetName() override

@@ -28,9 +28,16 @@ import Window;
 
 import GameObject;
 import PrefabAsset;
+import Material;
 
 namespace GiiGa
 {
+    enum class CreateAssetState {
+        None,
+        Folder,
+        Material
+    };
+
     std::unique_ptr<GPULocalResource> LoadEditorIcon(
         RenderDevice& rd,
         DirectX::ResourceUploadBatch& batcher,
@@ -50,7 +57,7 @@ namespace GiiGa
         float thumbnail_size = 128.0f;
 
         EventHandle<DropFileEvent> drop_file_evt_ = EventHandle<DropFileEvent>::Null();
-        bool is_dir_creating_ = false;
+        CreateAssetState create_asset_state_ = CreateAssetState::None;
 
     public:
         ImGuiContentBrowser(const ImGuiContentBrowser& obj) = delete;
@@ -197,8 +204,15 @@ namespace GiiGa
 
             if (ImGui::BeginPopupContextItem("CONTENTBROWSER")) {
                 if (ImGui::MenuItem("Create Folder")) {
-                    is_dir_creating_ = true;
+                    create_asset_state_ = CreateAssetState::Folder;
                 }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Create Material")) {
+                    create_asset_state_ = CreateAssetState::Material;
+                }
+
                 ImGui::EndPopup();
             }
 
@@ -230,7 +244,11 @@ namespace GiiGa
                 ImGui::NextColumn();
             }
 
-            if (is_dir_creating_) {
+            // Context menu logic
+            switch (create_asset_state_)
+            {
+            case CreateAssetState::Folder:
+            {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
                 ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
 
@@ -241,7 +259,7 @@ namespace GiiGa
                 ImGui::InputText("##", folder_name_buf, IM_ARRAYSIZE(folder_name_buf));
 
                 if (!ImGui::IsItemActive() && strlen(folder_name_buf) > 0) {
-                    is_dir_creating_ = false;
+                    create_asset_state_ = CreateAssetState::None;
 
                     std::filesystem::path new_folder_path = current_path_ / folder_name_buf;
                     try {
@@ -254,7 +272,37 @@ namespace GiiGa
 
                 ImGui::NextColumn();
             }
+            break;
 
+            case CreateAssetState::Material:
+            {
+                auto& icon = icons_srv_[AssetType::Material]->getDescriptor();
+                ImGui::ImageButton("MaterialBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                char material_name_buf[512];
+                snprintf(material_name_buf, sizeof(material_name_buf), "%s", "");
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::InputText("##", material_name_buf, IM_ARRAYSIZE(material_name_buf));
+
+                if (!ImGui::IsItemActive() && strlen(material_name_buf) > 0) {
+                    create_asset_state_ = CreateAssetState::None;
+
+                    auto material = std::make_shared<Material>(material_name_buf);
+                    auto filename = material->name + ".mat";
+
+                    database_->CreateAsset(material, current_path_ / filename);
+                }
+
+                ImGui::NextColumn();
+            }
+            break;
+
+            default:
+                break;
+            }
+
+            // Asset displaying
             for (auto& entry : std::filesystem::directory_iterator(current_path_))
             {
                 const auto& path = entry.path();

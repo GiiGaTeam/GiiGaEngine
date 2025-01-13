@@ -102,6 +102,7 @@ namespace GiiGa
 
             editor_asset_database_->RegisterSaver<LevelAssetLoader>();
             editor_asset_database_->RegisterSaver<PrefabAssetLoader>();
+            editor_asset_database_->RegisterSaver<MaterialLoader>();
         }
     };
 } // namespace GiiGa

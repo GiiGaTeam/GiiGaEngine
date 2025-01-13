@@ -156,6 +156,19 @@ namespace GiiGa
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
         }
 
+        Material(std::string name) : 
+            AssetBase(AssetHandle{ Uuid::New(), 0}),
+            shaderResource_(std::make_shared<MaterialShaderResource>()),
+            name(name)
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+
+            materialMask_.SetBlendMode(BlendMode::Opaque);
+            materialMask_.SetShadingModel(ShadingModel::DefaultLit);
+
+            CheckAndLoadRequirededTextures_();
+        }
+
         Material(AssetHandle handle, const BlendMode& blendMode, const ShadingModel& shadingModel,
                  const MaterialData& data, const std::array<std::shared_ptr<TextureAsset>, MaxTextureCount>& textures,
                  const std::array<ComponentMapping, MaxTextureCount>& component_mappings) :
