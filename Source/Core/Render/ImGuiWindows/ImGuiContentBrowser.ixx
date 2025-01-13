@@ -189,7 +189,7 @@ namespace GiiGa
                     std::shared_ptr<GameObject> go = *(std::shared_ptr<GameObject>*)payload->Data;
 
                     auto prefab = std::make_shared<PrefabAsset>(AssetHandle{ Uuid::New(), 0 }, go);
-                    database_->CreateAsset(prefab, current_path_ / std::string{ go->name + ".prefab" });
+                    go->prefab_handle_ = database_->CreateAsset(prefab, current_path_ / std::string{ go->name + ".prefab" });
                 }
 
                 ImGui::EndDragDropTarget();

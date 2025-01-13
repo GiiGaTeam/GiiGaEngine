@@ -183,7 +183,14 @@ namespace GiiGa
                 {
                     auto database = Engine::Instance().ResourceManager()->Database();
                     auto prefab = std::make_shared<PrefabAsset>(AssetHandle{Uuid::New(), 0}, gameObject);
-                    std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
+                    gameObject->prefab_handle_ = std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
+                }
+
+                if (gameObject->prefab_handle_ != AssetHandle{}) {
+                    if (ImGui::MenuItem("Unpack prefab"))
+                    {
+                        gameObject->prefab_handle_ = {};
+                    }
                 }
 
                 ImGui::EndPopup();
