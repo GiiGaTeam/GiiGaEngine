@@ -23,6 +23,18 @@ namespace GiiGa
         {
         }
 
+        Uuid(const std::string& str)
+        {
+            auto result = uuids::uuid::from_string(str);
+
+            if (result.has_value())
+            {
+                uuid_ = result.value();
+            }
+
+            uuid_ = uuids::uuid();
+        }
+
         Uuid& operator=(const Uuid& other)
         {
             uuid_ = other.uuid_;

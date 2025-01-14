@@ -9,6 +9,9 @@ def get_subclass_name_in_module(module, base_type) -> str:
             and obj.__module__ == module.__name__
         ):
             return name
+        
+def IsEqOrSubClass(cls, base_type)-> bool:
+    return type(cls) == type(base_type) or issubclass(cls,base_type)
 
 
 # Example usage:

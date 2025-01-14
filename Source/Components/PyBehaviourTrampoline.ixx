@@ -39,7 +39,6 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
-            std::cout << "Tick" << std::endl;
             try
             {
                 PYBIND11_OVERRIDE_PURE(

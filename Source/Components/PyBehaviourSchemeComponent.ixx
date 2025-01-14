@@ -8,6 +8,7 @@ import <unordered_map>;
 import <optional>;
 import <memory>;
 import <json/json.h>;
+import <any>;
 
 import PrefabInstance;
 import Component;
@@ -16,9 +17,12 @@ import ScriptAsset;
 import AssetHandle;
 import Engine;
 import GameObject;
+import Logger;
+import EventSystem;
+import PyProperty;
 
 namespace GiiGa
-{
+{    
     export class PyBehaviourSchemeComponent : public Component
     {
         //todo: temp?
@@ -91,7 +95,6 @@ namespace GiiGa
         }
 
         //temp:
-
         AssetHandle GetScriptHandle()
         {
             if (script_asset_)
@@ -102,11 +105,34 @@ namespace GiiGa
 
         void SetScriptHandle(const AssetHandle& handle)
         {
+            if (script_asset_)
+                script_asset_->OnUpdate.Unregister(script_updated_handle_);
+
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(handle);
+            script_asset_->OnUpdate.Register(std::bind(&PyBehaviourSchemeComponent::OnScriptUpdated, this, std::placeholders::_1));
+
+            prop_modifications.clear();
+            prop_modifications = script_asset_->GetPropertieAnnotaions();
+        }
+
+        std::string GetUserClassName() const
+        {
+            if (script_asset_)
+                return script_asset_->GetUserClassName();
+            return "";
         }
 
     private:
-        std::unordered_map<std::string, Json::Value> prop_modifications{};
+        std::unordered_map<std::string, PyProperty> prop_modifications{};
         std::shared_ptr<ScriptAsset> script_asset_ = nullptr;
+
+        EventHandle<AssetHandle> script_updated_handle_ = EventHandle<AssetHandle>::Null();
+
+        void OnScriptUpdated(AssetHandle id)
+        {
+            //todo: find way to merge
+            prop_modifications.clear();
+            prop_modifications = script_asset_->GetPropertieAnnotaions();
+        }
     };
 }

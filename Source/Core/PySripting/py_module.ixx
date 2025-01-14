@@ -13,6 +13,7 @@ import Component;
 import GameObject;
 import PyBehaviourTrampoline;
 import TransformComponent;
+import Uuid;
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
@@ -62,13 +63,13 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("SetRotation", &GiiGa::Transform::SetRotation)
         .def("__eq__", &GiiGa::Transform::operator==)
         .def("__ne__", &GiiGa::Transform::operator!=);
-    
+
     pybind11::class_<GiiGa::GameObject, std::shared_ptr<GiiGa::GameObject>>(m, "GameObject")
         .def_readwrite("name", &GiiGa::GameObject::name)
-    .def("GetTransformComponent", [](GiiGa::GameObject* self)
-                  {
-                      return self->GetTransformComponent().lock();
-                  });
+        .def("GetTransformComponent", [](GiiGa::GameObject* self)
+        {
+            return self->GetTransformComponent().lock();
+        });
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
@@ -80,7 +81,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("Init", &GiiGa::Component::Init)
         .def("Tick", &GiiGa::Component::Tick);
 
-        pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
+    pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
         .def(pybind11::init<>())
         .def("GetTransform", &GiiGa::TransformComponent::GetTransform)
         .def("SetTransform", &GiiGa::TransformComponent::SetTransform)
@@ -109,4 +110,11 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetInverseWorldMatrix", &GiiGa::TransformComponent::GetInverseWorldMatrix)
         .def("GetLocalMatrix", &GiiGa::TransformComponent::GetLocalMatrix)
         .def("GetInverseLocalMatrix", &GiiGa::TransformComponent::GetInverseLocalMatrix);
+}
+
+PYBIND11_EMBEDDED_MODULE(GiiGaPyPrivate, m)
+{
+    pybind11::class_<GiiGa::Uuid>(m, "Uuid")
+        .def(pybind11::init<>())
+        .def("__str__", &GiiGa::Uuid::ToString);
 }

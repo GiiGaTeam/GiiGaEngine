@@ -9,6 +9,7 @@ import <format>;
 import AssetBase;
 import Project;
 import Logger;
+import ScriptHelpers;
 
 namespace GiiGa
 {
@@ -46,7 +47,7 @@ import os
 import sys
 sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             }
-            
+
             try
             {
             }
@@ -55,8 +56,27 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             {
                 el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v", e.what());
             }
+
+            reference_types_holders =
+            {
+                {pybind11::module::import("GiiGaPy").attr("Component"), pybind11::module::import("GiiGaPyPrivate").attr("Uuid")},
+                {pybind11::module::import("GiiGaPy").attr("GameObject"), pybind11::module::import("GiiGaPyPrivate").attr("Uuid")}
+            };
         }
-        
+
+        std::optional<pybind11::type> GetReferenceTypeHolder(const pybind11::type& type)
+        {
+            for (auto ref_holder : reference_types_holders)
+            {
+                if (ScriptHelpers::IsEqOrSubClass(type, ref_holder.first))
+                {
+                    return ref_holder.second;
+                }
+            }
+
+            return std::nullopt;
+        }
+
         ~ScriptSystem()
         {
             try
@@ -68,5 +88,7 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
                 el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v", e.what());
             }
         }
+
+        std::vector<std::pair<pybind11::type, pybind11::type>> reference_types_holders{};
     };
 }

@@ -21,7 +21,7 @@ import DirectionalLightComponent;
 import LightComponent;
 import TransformComponent;
 import Material;
-
+import Engine;
 import PyBehaviourSchemeComponent;
 
 import AssetType;
@@ -422,10 +422,9 @@ namespace GiiGa
             auto script_handle = comp->GetScriptHandle();
             std::string text_handle = script_handle.id.ToString() + " " + std::to_string(script_handle.subresource);
 
-            char scriptUuidStr[512];
-            snprintf(scriptUuidStr, sizeof(scriptUuidStr), "%s", text_handle.c_str());
-
-            ImGui::InputText("Script Handle", scriptUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+            char raw_str_buf[512];
+            snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", text_handle.c_str());
+            ImGui::InputText("Script Handle", raw_str_buf, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
             if (ImGui::BeginDragDropTarget())
             {
@@ -436,6 +435,36 @@ namespace GiiGa
                 }
 
                 ImGui::EndDragDropTarget();
+            }
+
+            if (comp->script_asset_)
+            {
+                for (auto& name_prop : comp->prop_modifications)
+                {
+                    //todo: i think need to be redone using json.JSON(En)(De)coder, now it is str for convi
+                    ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.type)).c_str());
+                    memset(raw_str_buf, 0, sizeof(raw_str_buf));
+                    snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", pybind11::cast<std::string>(pybind11::str(name_prop.second.value)).c_str());
+
+                    ImGui::PushID(name_prop.first.c_str());
+                    if (ImGui::InputText("##value", raw_str_buf, text_handle.size()))
+                    {
+                        auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(name_prop.second.type);
+                        if (!opt_holder_type.has_value())
+                        {
+                            pybind11::str str = pybind11::str(raw_str_buf);
+                            if (pybind11::len(str) > 0)
+                                name_prop.second.value = name_prop.second.type(str);
+                        }
+                        else
+                        {
+                            pybind11::str str = pybind11::str(raw_str_buf);
+                            if (pybind11::len(str) > 0)
+                                name_prop.second.value = opt_holder_type.value()(str);
+                        }
+                    }
+                    ImGui::PopID();
+                }
             }
         }
 
@@ -477,7 +506,10 @@ namespace GiiGa
             else if (auto py_beh = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(comp))
             {
                 //todo: add script Class name to TreeNodeEx
-                if (ImGui::TreeNodeEx("PyBehaviourSchemeComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                std::string comp_name = "PyBehaviourSchemeComponent";
+                if (py_beh->script_asset_)
+                    comp_name = py_beh->GetUserClassName();
+                if (ImGui::TreeNodeEx(comp_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
                     DrawBehaviourComponent(py_beh);
                     ImGui::TreePop();

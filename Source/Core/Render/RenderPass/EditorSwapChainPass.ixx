@@ -78,6 +78,8 @@ namespace GiiGa
                 // Tick scene visibility in case it was changed in imgui
                 SceneVisibility::Tick();
 
+                ImGui::ShowDemoWindow();
+
                 for (auto viewport : viewports_)
                 {
                     viewport->Execute(context);
@@ -86,7 +88,7 @@ namespace GiiGa
             EndDockSpace_();
 
             swapChain_->Reset(context);
-
+            
             // Render Dear ImGui graphics
             context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), {.Color = {0, 0, 0, 1}});
 

@@ -23,7 +23,9 @@ namespace GiiGa
 
         AssetBase(AssetBase&& other) noexcept
             : id_(std::move(other.id_)),
-            OnDestroy(std::move(other.OnDestroy))
+              OnDestroy(std::move(other.OnDestroy)),
+              OnUpdate(std::move(other.OnUpdate))
+        
         {
             other.id_ = AssetHandle{};
         }
@@ -34,6 +36,7 @@ namespace GiiGa
             {
                 id_ = std::move(other.id_);
                 OnDestroy = std::move(other.OnDestroy);
+                OnUpdate = std::move(other.OnUpdate);
                 other.id_ = AssetHandle{};
             }
             return *this;
@@ -44,7 +47,8 @@ namespace GiiGa
         {
         }
 
-        AssetHandle GetId() const {
+        AssetHandle GetId() const
+        {
             return id_;
         }
 
@@ -52,8 +56,11 @@ namespace GiiGa
 
         EventDispatcher<AssetHandle> OnDestroy;
 
-        virtual ~AssetBase() { 
+        EventDispatcher<AssetHandle> OnUpdate;
+
+        virtual ~AssetBase()
+        {
             OnDestroy.Invoke(id_);
         }
     };
-}  // namespace GiiGa
+} // namespace GiiGa
