@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
 
 export module ImGuiInspector;
 
@@ -442,25 +442,26 @@ namespace GiiGa
                 for (auto& name_prop : comp->prop_modifications)
                 {
                     //todo: i think need to be redone using json.JSON(En)(De)coder, now it is str for convi
-                    ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.type)).c_str());
+                    ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.script_type)).c_str());
+                    std::string value_str = pybind11::cast<std::string>(pybind11::str(name_prop.second.value_or_holder));
                     memset(raw_str_buf, 0, sizeof(raw_str_buf));
-                    snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", pybind11::cast<std::string>(pybind11::str(name_prop.second.value)).c_str());
+                    snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", value_str.c_str());
 
                     ImGui::PushID(name_prop.first.c_str());
-                    if (ImGui::InputText("##value", raw_str_buf, text_handle.size()))
+                    if (ImGui::InputText("##value", raw_str_buf, value_str.size()))
                     {
-                        auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(name_prop.second.type);
+                        auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(name_prop.second.script_type);
                         if (!opt_holder_type.has_value())
                         {
                             pybind11::str str = pybind11::str(raw_str_buf);
                             if (pybind11::len(str) > 0)
-                                name_prop.second.value = name_prop.second.type(str);
+                                name_prop.second.value_or_holder = name_prop.second.script_type(str);
                         }
                         else
                         {
                             pybind11::str str = pybind11::str(raw_str_buf);
                             if (pybind11::len(str) > 0)
-                                name_prop.second.value = opt_holder_type.value()(str);
+                                name_prop.second.value_or_holder = opt_holder_type.value()(str);
                         }
                     }
                     ImGui::PopID();

@@ -9,6 +9,9 @@ import <json/json.h>;
 import Component;
 import PrefabInstance;
 import Logger;
+import Engine;
+import PyProperty;
+import IWorldQuery;
 
 import Misc;
 
@@ -21,20 +24,34 @@ namespace GiiGa
 
         void Init() override
         {
-            PYBIND11_OVERRIDE_PURE(
-                void,             /* Return type */
-                GiiGa::Component, /* Parent class */
-                Init              /* Name of function in C++ (must match Python name) */
-            );
+            try
+            {
+                PYBIND11_OVERRIDE_PURE(
+                    void,             /* Return type */
+                    GiiGa::Component, /* Parent class */
+                    Init              /* Name of function in C++ (must match Python name) */
+                );
+            }
+            catch (pybind11::error_already_set e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Init %v", e.what());
+            }
         }
 
         void BeginPlay() override
         {
-            PYBIND11_OVERRIDE_PURE(
-                void,             /* Return type */
-                GiiGa::Component, /* Parent class */
-                BeginPlay              /* Name of function in C++ (must match Python name) */
-            );
+            try
+            {
+                PYBIND11_OVERRIDE_PURE(
+                    void,             /* Return type */
+                    GiiGa::Component, /* Parent class */
+                    BeginPlay         /* Name of function in C++ (must match Python name) */
+                );
+            }
+            catch (pybind11::error_already_set e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::BeginPlay %v", e.what());
+            }
         }
 
         void Tick(float dt) override
@@ -50,7 +67,7 @@ namespace GiiGa
             }
             catch (pybind11::error_already_set e)
             {
-                el::Loggers::getLogger(LogPyScript)->debug("ScriptAsset()::CreateBehaviourComponent %v", e.what());
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Tick %v", e.what());
             }
         }
 
@@ -90,6 +107,37 @@ namespace GiiGa
         {
             Todo();
             return {};
+        }
+
+        void SetProperties(const std::unordered_map<std::string, PyProperty>& properties)
+        {
+            for (const auto& [name, prop] : properties)
+            {
+                // ugly as f
+                if (Engine::Instance().ScriptSystem()->IsTypeGameObject(prop.script_type))
+                {
+                    if (prop.value_or_holder.is(pybind11::none()))
+                        continue;
+                    Uuid uuid = pybind11::cast<Uuid>(prop.value_or_holder);
+                    std::shared_ptr<IGameObject> value = WorldQuery::GetWithUUID<IGameObject>(uuid);
+                    setattr(pybind11::cast(this),
+                            pybind11::cast(name),
+                            pybind11::cast(value));
+                }
+                if (Engine::Instance().ScriptSystem()->IsTypeComponent(prop.script_type))
+                {
+                    if (prop.value_or_holder.is(pybind11::none()))
+                        continue;
+                    Uuid uuid = pybind11::cast<Uuid>(prop.value_or_holder);
+                    std::shared_ptr<IComponent> value = WorldQuery::GetWithUUID<IComponent>(uuid);
+                    setattr(pybind11::cast(this),
+                            pybind11::cast(name),
+                            pybind11::cast(value));
+                }
+                setattr(pybind11::cast(this),
+                        pybind11::cast(name),
+                        prop.value_or_holder);
+            }
         }
     };
 }

@@ -79,6 +79,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                       },
                       &GiiGa::Component::SetOwner)
         .def("Init", &GiiGa::Component::Init)
+        .def("BeginPlay", &GiiGa::Component::BeginPlay)
         .def("Tick", &GiiGa::Component::Tick);
 
     pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")

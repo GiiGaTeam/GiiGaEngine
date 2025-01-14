@@ -6,10 +6,13 @@ class MyPyBeh1(gp.Component):
     trans: gp.TransformComponent = None
     def __init__(self):
         super().__init__()
-        print("MyPyBeh1 Im Alive")
+        print("MyPyBeh1 Im Alive", flush=True)
 
     def Init(self):
-        print("MyPyBeh1 Init")
+        print("MyPyBeh1 Init", flush=True)
+        
+    def BeginPlay(self):
+        print("MyPyBeh1 BeginPlay", flush=True)
 
     def Tick(self, dt: float):
         self.owner.GetTransformComponent().AddLocation(

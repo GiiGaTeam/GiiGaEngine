@@ -1,6 +1,6 @@
 module;
 
-#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
 
 export module PyBehaviourSchemeComponent;
 
@@ -20,9 +20,11 @@ import GameObject;
 import Logger;
 import EventSystem;
 import PyProperty;
+import IWorldQuery;
+import PyBehaviourTrampoline;
 
 namespace GiiGa
-{    
+{
     export class PyBehaviourSchemeComponent : public Component
     {
         //todo: temp?
@@ -30,6 +32,11 @@ namespace GiiGa
 
     public:
         PyBehaviourSchemeComponent() = default;
+
+        PyBehaviourSchemeComponent(const PyBehaviourSchemeComponent& other) = delete;
+        PyBehaviourSchemeComponent(PyBehaviourSchemeComponent&& other) noexcept = default;
+        PyBehaviourSchemeComponent& operator=(const PyBehaviourSchemeComponent& other) = delete;
+        PyBehaviourSchemeComponent& operator=(PyBehaviourSchemeComponent&& other) noexcept = default;
 
         PyBehaviourSchemeComponent(Json::Value json, bool roll_id = false):
             Component(json, roll_id)
@@ -49,12 +56,21 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            if (auto l_owner = owner_.lock())
+            if (!substituter_component_)
             {
-                auto l_owner_go = std::dynamic_pointer_cast<GameObject>(l_owner);
-                auto new_comp = script_asset_->CreateBehaviourComponent();
-                new_comp->RegisterInWorld();
-                l_owner_go->AddComponent(new_comp);
+                if (auto l_owner = owner_.lock())
+                {
+                    auto l_owner_go = std::dynamic_pointer_cast<GameObject>(l_owner);
+                    substituter_component_ = script_asset_->CreateBehaviourComponent();
+                    substituter_component_->RegisterInWorld();
+                    l_owner_go->AddComponent(substituter_component_);
+                    WorldQuery::AddComponentToBeginPlayQueue(shared_from_this());
+                }
+            }
+            else
+            {
+                substituter_component_->SetProperties(prop_modifications);
+                this->Destroy();
             }
         }
 
@@ -127,6 +143,8 @@ namespace GiiGa
         std::shared_ptr<ScriptAsset> script_asset_ = nullptr;
 
         EventHandle<AssetHandle> script_updated_handle_ = EventHandle<AssetHandle>::Null();
+
+        std::shared_ptr<PyBehaviourTrampoline> substituter_component_ ;
 
         void OnScriptUpdated(AssetHandle id)
         {

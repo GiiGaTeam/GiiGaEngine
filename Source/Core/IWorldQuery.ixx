@@ -78,6 +78,11 @@ namespace GiiGa
             GetInstance().type_to_components_[typeid(*component)].push_back(component);
         }
 
+        static void AddComponentToBeginPlayQueue(std::shared_ptr<IComponent> component)
+        {
+            GetInstance().comp_begin_play_queue_.push(component);
+        }
+
         static void RemoveComponent(IComponent* component)
         {
             // Будет работать только в том случае, если умные указатели будут корректно сравниваться в течении всей работы программы.
@@ -136,6 +141,7 @@ namespace GiiGa
         std::unordered_map<std::type_index, std::vector<std::weak_ptr<IComponent>>> type_to_components_;
         std::unordered_map<Uuid, std::weak_ptr<void>> uuid_to_any_;
         std::queue<std::weak_ptr<IComponent>> comp_init_queue_;
+        std::queue<std::weak_ptr<IComponent>> comp_begin_play_queue_;
 
         virtual std::shared_ptr<ILevelRootGameObjects> GetPersistentLevel_Impl()
         {

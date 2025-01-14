@@ -77,6 +77,28 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             return std::nullopt;
         }
 
+        bool IsTypeReference(const pybind11::type& type)
+        {
+            for (auto ref_holder : reference_types_holders)
+            {
+                if (ScriptHelpers::IsEqOrSubClass(type, ref_holder.first))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool IsTypeGameObject(const pybind11::type& type)
+        {
+            return pybind11::type(type).is(pybind11::module::import("GiiGaPy").attr("GameObject"));
+        }
+
+        bool IsTypeComponent(const pybind11::type& type)
+        {
+            return ScriptHelpers::IsEqOrSubClass(type, pybind11::module::import("GiiGaPy").attr("Component"));
+        }
+
         ~ScriptSystem()
         {
             try

@@ -56,7 +56,7 @@ namespace GiiGa
                 std::string name = pybind11::cast<std::string>(item.first);
                 pybind11::type type = pybind11::cast<pybind11::type>(item.second);
                 pybind11::object value = module_.attr(user_class_name_.c_str()).attr(name.c_str());
-                result.insert({name, {.type = type, .value = value}});
+                result.insert({name, {.script_type = type, .value_or_holder = value}});
             }
 
             return result;

@@ -58,8 +58,23 @@ namespace GiiGa
                 auto comp_to_init = instance.comp_init_queue_.front();
                 instance.comp_init_queue_.pop();
                 if (!comp_to_init.expired())
+                {
                     comp_to_init.lock()->Init();
+                    if (instance.state_ == WorldState::Play)
+                        AddComponentToBeginPlayQueue(comp_to_init.lock());
+                }
             }
+
+            while (!instance.comp_begin_play_queue_.empty())
+            {
+                auto comp_to_bp = instance.comp_begin_play_queue_.front();
+                instance.comp_begin_play_queue_.pop();
+                if (!comp_to_bp.expired())
+                {
+                    comp_to_bp.lock()->BeginPlay();
+                }
+            }
+            
             for (auto& level : GetLevels())
             {
                 if (!level->GetIsActive())
