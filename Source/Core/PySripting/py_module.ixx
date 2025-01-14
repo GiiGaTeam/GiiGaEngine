@@ -7,16 +7,31 @@ module;
 
 export module PyModule;
 
+import <json/json.h>;
+
 using namespace DirectX::SimpleMath;
+
 
 import Component;
 import GameObject;
 import PyBehaviourTrampoline;
 import TransformComponent;
 import Uuid;
+import MathUtils;
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
+    pybind11::class_<Json::Value>(m, "JsonValue")
+        .def(pybind11::init<>())
+        .def("toStyledString", &Json::Value::toStyledString)
+    .def_static("FromStyledString", [](const std::string& str)
+    {
+        Json::Value json;
+        Json::Reader reader;
+        reader.parse(str, json);
+        return json;
+    });
+
     pybind11::class_<Vector3>(m, "Vector3")
         .def(pybind11::init<>())                    // Default constructor
         .def(pybind11::init<float>())               // Single float constructor
@@ -48,6 +63,10 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def_readonly_static("Up", &Vector3::Up)
         .def_readonly_static("Forward", &Vector3::Forward)
         .def_readonly_static("Right", &Vector3::Right);
+    
+    m.def("Vector3ToJson", &GiiGa::Vector3ToJson);
+
+    m.def("Vector3FromJson", &GiiGa::Vector3FromJson);
 
     pybind11::class_<GiiGa::Transform>(m, "Transform")
         .def(pybind11::init<Vector3, Vector3, Vector3>(),

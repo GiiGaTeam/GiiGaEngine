@@ -22,6 +22,7 @@ import EventSystem;
 import PyProperty;
 import IWorldQuery;
 import PyBehaviourTrampoline;
+import ScriptHelpers;
 
 namespace GiiGa
 {
@@ -41,12 +42,98 @@ namespace GiiGa
         PyBehaviourSchemeComponent(Json::Value json, bool roll_id = false):
             Component(json, roll_id)
         {
+            auto script_handle = AssetHandle::FromJson(json["Script"]);
+
+            if (script_handle == AssetHandle())
+                return;
+
+            script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
+
+            prop_modifications = script_asset_->GetPropertieAnnotaions();
+
+            Json::CharReaderBuilder builder;
+            Json::CharReader* reader = builder.newCharReader();
+
+            for (const auto& prop_js : json["PropertyModifications"])
+            {
+                auto prop_it = prop_modifications.find(prop_js["Name"].asString());
+                if (prop_it != prop_modifications.end())
+                {
+                    auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(prop_it->second.script_type);
+                    if (!opt_holder_type.has_value())
+                    {
+                        pybind11::object obj = ScriptHelpers::DecodeFromJSON(prop_js["Value"]);
+                        std::string obj_js_str = pybind11::str(obj);
+                        Json::Value root;
+                        reader->parse(
+                            obj_js_str.c_str(),
+                            obj_js_str.c_str() + obj_js_str.size(),
+                            &root,
+                            nullptr
+                        );
+                        pybind11::object value = opt_holder_type.value()(pybind11::cast(root));
+                        prop_it->second.value_or_holder = value;
+                    }
+                    else
+                    {
+                        //todo: list should be reviwed to have ref types 
+                        pybind11::object obj = ScriptHelpers::DecodeFromJSON(prop_js["Value"]);
+
+                        //todo: what if actual dict?
+                        if (pybind11::type(obj).is(pybind11::dict{}))
+                        {
+                            // obj (dict) to json string
+                            std::string obj_js_str = pybind11::str(obj);
+                            Json::Value root;
+                            reader->parse(
+                                obj_js_str.c_str(),
+                                obj_js_str.c_str() + obj_js_str.size(),
+                                &root,
+                                nullptr
+                            );
+                            pybind11::object value = prop_it->second.script_type(pybind11::cast(root));
+                            prop_it->second.value_or_holder = value;
+                        }
+                        else
+                        {
+                            prop_it->second.value_or_holder = obj;
+                        }
+                    }
+                }
+            }
+
+            delete reader;
         }
 
         Json::Value DerivedToJson(bool is_prefab_root) override
         {
             Json::Value result;
             result["Type"] = typeid(PyBehaviourSchemeComponent).name();
+            result["Script"] = script_asset_ ? script_asset_->GetId().ToJson() : AssetHandle{}.ToJson();
+
+            Json::CharReaderBuilder builder;
+            Json::CharReader* reader = builder.newCharReader();
+
+            for (auto& [name, prop] : prop_modifications)
+            {
+                Json::Value prop_node;
+
+                prop_node["Name"] = name;
+
+                std::string obj_str = ScriptHelpers::EncodeToJSONStyledString(prop.value_or_holder);
+
+                reader->parse(
+                    obj_str.c_str(),
+                    obj_str.c_str() + obj_str.size(),
+                    &prop_node["Value"],
+                    nullptr
+                );
+
+                result["PropertyModifications"].append(prop_node);
+            }
+
+            delete reader;
+
             return result;
         }
 
@@ -129,6 +216,7 @@ namespace GiiGa
 
             prop_modifications.clear();
             prop_modifications = script_asset_->GetPropertieAnnotaions();
+            
         }
 
         std::string GetUserClassName() const
@@ -144,7 +232,7 @@ namespace GiiGa
 
         EventHandle<AssetHandle> script_updated_handle_ = EventHandle<AssetHandle>::Null();
 
-        std::shared_ptr<PyBehaviourTrampoline> substituter_component_ ;
+        std::shared_ptr<PyBehaviourTrampoline> substituter_component_;
 
         void OnScriptUpdated(AssetHandle id)
         {

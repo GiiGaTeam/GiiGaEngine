@@ -9,6 +9,7 @@ import <imgui_internal.h>;
 import <memory>;
 import <directxtk12/SimpleMath.h>;
 import <unordered_map>;
+import <json/json.h>;
 
 import IImGuiWindow;
 import EditorContext;
@@ -23,9 +24,10 @@ import TransformComponent;
 import Material;
 import Engine;
 import PyBehaviourSchemeComponent;
-
+import ScriptHelpers;
 import AssetType;
 import AssetHandle;
+import Logger;
 
 namespace GiiGa
 {
@@ -422,9 +424,11 @@ namespace GiiGa
             auto script_handle = comp->GetScriptHandle();
             std::string text_handle = script_handle.id.ToString() + " " + std::to_string(script_handle.subresource);
 
-            char raw_str_buf[512];
-            snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", text_handle.c_str());
-            ImGui::InputText("Script Handle", raw_str_buf, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+            {
+                char raw_str_buf[512];
+                snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", text_handle.c_str());
+                ImGui::InputText("Script Handle", raw_str_buf, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+            }
 
             if (ImGui::BeginDragDropTarget())
             {
@@ -439,34 +443,75 @@ namespace GiiGa
 
             if (comp->script_asset_)
             {
+                Json::Reader reader;
                 for (auto& name_prop : comp->prop_modifications)
                 {
-                    //todo: i think need to be redone using json.JSON(En)(De)coder, now it is str for convi
                     ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.script_type)).c_str());
-                    std::string value_str = pybind11::cast<std::string>(pybind11::str(name_prop.second.value_or_holder));
-                    memset(raw_str_buf, 0, sizeof(raw_str_buf));
-                    snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", value_str.c_str());
+                    std::string js_str = ScriptHelpers::EncodeToJSONStyledString(name_prop.second.value_or_holder);
+                    
+                    Json::Value root{Json::ValueType::objectValue};
+                    reader.parse(js_str, root);
 
                     ImGui::PushID(name_prop.first.c_str());
-                    if (ImGui::InputText("##value", raw_str_buf, value_str.size()))
+                    if (ImGuiJsonInput(root))
                     {
                         auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(name_prop.second.script_type);
                         if (!opt_holder_type.has_value())
                         {
-                            pybind11::str str = pybind11::str(raw_str_buf);
-                            if (pybind11::len(str) > 0)
-                                name_prop.second.value_or_holder = name_prop.second.script_type(str);
+                            pybind11::object obj = ScriptHelpers::DecodeFromJSON(root);
+                            name_prop.second.value_or_holder = obj;
                         }
                         else
                         {
-                            pybind11::str str = pybind11::str(raw_str_buf);
-                            if (pybind11::len(str) > 0)
-                                name_prop.second.value_or_holder = opt_holder_type.value()(str);
+                            name_prop.second.value_or_holder = opt_holder_type.value()(root);
                         }
                     }
                     ImGui::PopID();
                 }
             }
+        }
+
+        bool ImGuiJsonInput(Json::Value& js)
+        {
+            bool edited = false;
+            if (js.isInt())
+            {
+                int value = js.asInt();
+                if (ImGui::InputInt("##int", &value))
+                {
+                    js = value;
+                    edited = true;
+                }
+            }
+            else if (js.isDouble())
+            {
+                float value = js.asDouble();
+                if (ImGui::DragFloat("##float", &value))
+                {
+                    js = value;
+                    edited = true;
+                }
+            }
+            else if (js.isObject())
+            {
+                ImGui::Indent(10);
+                for (auto it = js.begin(); it != js.end(); ++it)
+                {
+                    std::string key = it.key().asString();
+                    ImGui::Text("%s", key.c_str());
+                    ImGui::SameLine();
+
+                    ImGui::PushID(key.c_str());
+                    if (ImGuiJsonInput(*it))
+                    {
+                        edited = true;
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::Unindent(10);
+            }
+
+            return edited;
         }
 
         void ImGuiComponentWidgetFactory(std::shared_ptr<IComponent> comp)
