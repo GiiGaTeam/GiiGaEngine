@@ -21,6 +21,13 @@ import VertexTypes;
 import Misc;
 import AssetMeta;
 
+import PrefabAsset;
+import TransformComponent;
+import StaticMeshComponent;
+import GameObject;
+
+import EditorAssetDatabase;
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -54,13 +61,20 @@ namespace GiiGa
             std::vector<std::pair<AssetHandle, AssetMeta>> handles;
 
             auto uuid = Uuid::New();
-            for (int i = 0; i < scene->mNumMeshes; ++i) {
-                handles.push_back(std::make_pair(AssetHandle(uuid, i), AssetMeta{
-                    type_,
-                    relative_path,
-                    id_,
-                    scene->mMeshes[i]->mName.C_Str()
-                    }));
+            auto go = CreateGameObjectHierarchy(
+                scene->mRootNode,
+                scene,
+                uuid,
+                relative_path,
+                handles
+            );
+
+            if (auto db = std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().AssetDatabase())) {
+                std::filesystem::path path = absolute_path;
+                path = path.parent_path() / (path.stem().string() + ".prefab");
+
+                auto prefab = std::make_shared<PrefabAsset>(AssetHandle{Uuid::New(), 0}, go);
+                db->CreateAsset(prefab, path);
             }
 
             return handles;
@@ -118,6 +132,69 @@ namespace GiiGa
         }
 
     private:
+        Transform FromAiMatrix(const aiMatrix4x4& matrix) {
+            aiVector3D scaling, position;
+            aiQuaternion rotation;
+
+            matrix.Decompose(scaling, rotation, position);
+
+            return Transform(
+                Vector3(position.x, position.y, position.z), 
+                Quaternion(rotation.x, rotation.y, rotation.z, rotation.w), 
+                Vector3(scaling.x, scaling.y, scaling.z)
+            );
+        }
+
+        std::shared_ptr<GameObject> CreateGameObjectHierarchy(
+            aiNode* node, 
+            const aiScene* scene,
+            const Uuid& mesh_uuid,
+            const std::filesystem::path& relative_path,
+            std::vector<std::pair<AssetHandle, AssetMeta>>& handles
+        ) {
+            auto gameObject = GameObject::CreateEmptyGameObject(SpawnParameters{
+                    node->mName.C_Str(),
+                    std::weak_ptr<IGameObject>(),
+                    std::weak_ptr<ILevelRootGameObjects>(),
+                });
+
+            aiMatrix4x4 transform = node->mTransformation;
+            gameObject->GetTransformComponent().lock()->SetTransform(FromAiMatrix(transform));
+
+            for (int i = 0; i < node->mNumMeshes; ++i) {
+                aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+                if (mesh) {
+                    auto handle = AssetHandle{ mesh_uuid, (int) node->mMeshes[i] };
+                    // TODO: Handle skeletal
+                    auto mesh_asset = std::make_shared<MeshAsset<VertexPNTBT>>(handle);
+
+                    auto staticMeshComponent = gameObject->CreateComponent<StaticMeshComponent>();
+                    staticMeshComponent->SetDummyMesh(mesh_asset);
+
+                    handles.push_back(std::make_pair(handle, AssetMeta{
+                        type_,
+                        relative_path,
+                        id_,
+                        mesh->mName.C_Str()
+                    }));
+                }
+            }
+
+            for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+                auto childGameObject = CreateGameObjectHierarchy(
+                    node->mChildren[i], 
+                    scene, 
+                    mesh_uuid, 
+                    relative_path,
+                    handles
+                );
+                gameObject->AddChild(childGameObject);
+            }
+
+            return gameObject;
+        }
+
+
         std::vector<VertexType> ProcessVertices(aiMesh* mesh)
         {
             if (mesh->HasBones())

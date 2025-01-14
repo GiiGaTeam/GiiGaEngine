@@ -31,6 +31,11 @@ namespace GiiGa
             rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
         }
 
+        Transform(Vector3 loc, Quaternion rot, Vector3 scale)
+            : location_(loc), rotate_(rot), scale_(scale)
+        {
+        }
+
         Transform(Json::Value json)
             : location_(Vector3FromJson(json["Location"])), scale_(Vector3FromJson(json["Scale"]))
         {

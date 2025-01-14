@@ -410,4 +410,3 @@ namespace GiiGa
         return std::make_unique<GPULocalResource>(rd, texture_ptr);
     }
 }
-

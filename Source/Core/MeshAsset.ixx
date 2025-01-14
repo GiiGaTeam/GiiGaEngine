@@ -28,6 +28,13 @@ namespace GiiGa
         {
         }
 
+        MeshAsset(
+            AssetHandle handle
+        )
+            : AssetBase(handle)
+        {
+        }
+
         MeshAsset(const MeshAsset&) = delete;
         MeshAsset& operator=(const MeshAsset&) = delete;
 

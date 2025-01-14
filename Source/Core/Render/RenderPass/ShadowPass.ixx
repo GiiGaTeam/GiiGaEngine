@@ -144,7 +144,7 @@ namespace GiiGa
                     }
                 }
             }*/
-aaaa        }
+        }
 
     private:
         ObjectMask objects_filter = ObjectMask().SetBlendMode(BlendMode::Opaque)

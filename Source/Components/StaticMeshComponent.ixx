@@ -179,6 +179,18 @@ namespace GiiGa
                 return {};
         }
 
+        void SetDummyMesh(std::shared_ptr<MeshAsset<VertexPNTBT>> asset)
+        {
+            mesh_ = asset;
+
+            if (!material_)
+            {
+                auto rm = Engine::Instance().ResourceManager();
+
+                material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
+            }
+        }
+
         void SetMeshHandle(const AssetHandle& new_handle)
         {
             // what a fuck is subresource?

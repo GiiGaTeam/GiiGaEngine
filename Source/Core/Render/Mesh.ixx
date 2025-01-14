@@ -19,6 +19,7 @@ namespace GiiGa
     {
     public:
         //using VertexType = VertexPNTBT;
+        Mesh() = default;
 
         Mesh(IRenderContext& render_context, RenderDevice& device,
              const std::vector<VertexType>& vertices,
@@ -65,7 +66,6 @@ namespace GiiGa
             return vertex_type_mask_;
         }
     protected:
-        Mesh();
         std::shared_ptr<GPULocalResource> vertexBuffer_;
         std::shared_ptr<BufferView<Vertex>> vertexView_;
         UINT indexCount;
