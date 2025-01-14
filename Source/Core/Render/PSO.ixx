@@ -134,6 +134,7 @@ namespace GiiGa
         PSO& set_hs(const D3D12_SHADER_BYTECODE& hs)
         {
             HS_ = hs;
+            return *this;
         }
 
         PSO& set_gs(const D3D12_SHADER_BYTECODE& gs)

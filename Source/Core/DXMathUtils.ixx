@@ -82,6 +82,19 @@ namespace GiiGa
         return corners_world;
     }
 
+    export Vector3 GetFrustumCenter(const std::array<Vector3, 8>& corners)
+    {
+        Vector3 center = Vector3::Zero;
+
+        for (const auto& corner : corners)
+        {
+            center += Vector3(corner.x, corner.y, corner.z);
+        }
+        center /= static_cast<float>(corners.size());
+
+        return center;
+    }
+
     export std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
     {
         std::vector<Plane> planes_world(6);

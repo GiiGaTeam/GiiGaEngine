@@ -27,10 +27,16 @@ namespace GiiGa
         virtual PerObjectData& GetPerObjectData() =0;
     };
 
+    export bool operator==(const std::weak_ptr<IRenderable>& lhs, const std::weak_ptr<IRenderable>& rhs)
+    {
+        return lhs.lock() == rhs.lock();
+    }
+
     export struct CommonResourceGroup
     {
         std::shared_ptr<IObjectShaderResource> shaderResource;
         std::vector<std::weak_ptr<IRenderable>> renderables;
+
 
         CommonResourceGroup(std::shared_ptr<IObjectShaderResource> in_shaderResource):
             shaderResource(in_shaderResource)

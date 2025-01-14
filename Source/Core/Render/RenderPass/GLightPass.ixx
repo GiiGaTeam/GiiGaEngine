@@ -193,7 +193,7 @@ namespace GiiGa
 
                 shade_mask_to_pso[ObjectMask()
                                   .SetVertexType(VertexTypes::VertexPNTBT)
-                                  .SetLightType(LightType::Direction)]
+                                  .SetLightType(LightType::Directional)]
 
                     .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
                     .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
@@ -221,7 +221,7 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.viewProjMat);
+            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
 
             // Frustum culling should not work for directional lighting.
             SceneVisibility::Extract(renderpass_direction_filter, renderpass_unite, visibles);
@@ -289,7 +289,7 @@ namespace GiiGa
 
     private:
         ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::NoDirection);
-        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Direction);
+        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Directional);
 
         ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
                                                   .SetLightType(LightType::All);

@@ -24,6 +24,7 @@ import GBuffer;
 import Input;
 import Logger;
 import EditorContext;
+import ShadowPass;
 
 namespace GiiGa
 {
@@ -51,6 +52,7 @@ namespace GiiGa
             Resize(viewport_size_);
             renderGraph_ = std::make_shared<RenderGraph>();
 
+            renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
 
@@ -62,7 +64,7 @@ namespace GiiGa
         RenderPassViewData GetCameraInfo() override
         {
             return RenderPassViewData{
-                viewProjectionMatrix, viewInfoConstBuffer->getDescriptor().getGPUHandle(),
+                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer->getDescriptor().getGPUHandle(),
                 viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
             };
         }

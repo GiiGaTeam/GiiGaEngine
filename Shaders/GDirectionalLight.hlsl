@@ -1,10 +1,30 @@
 #include "ShaderHeader.hlsl"
 #include "GLightHeader.hlsl"
 
+cbuffer CameraMatricies : register(b0)
+{
+    CameraMatricies cameraMatricies;
+}
+
+cbuffer WorldMatricies : register(b1)
+{
+    WorldMatrices worldMatricies;
+}
+
+cbuffer ScreenDimensions : register (b2)
+{
+    float2 ScreenDimensions;
+}
+
 cbuffer DirectionLight : register(b3)
 {
     DirectionLightData directionLight;
 }
+
+Texture2D Diffuse : register(t0);
+Texture2D MatProp : register(t1);
+Texture2D NormalWS : register(t2);
+Texture2D DepthVS : register(t3);
 
 SamplerState sampl : register(s0);
 
@@ -51,8 +71,8 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float4 NormalTex = NormalWS.Load(int3(texCoord, 0));
     //float4 PositionTex = PositionWS.Load(int3(texCoord, 0));
     float depth = DepthVS.Load(int3(texCoord, 0)).r;
-    matrix ProjView = mul(InvProj, InvView);
-    float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView);
+    matrix ProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
+    float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView, ScreenDimensions);
 
 
     // Retrieve the WorldSpace position and normal from the textures
@@ -60,7 +80,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float3 normalWS = normalize(NormalTex.xyz);
 
     // Calculate the view direction
-    float3 viewDir = normalize(fragPosWS - GetCameraPos()); // Assuming the camera is at the origin
+    float3 viewDir = normalize(fragPosWS - cameraMatricies.CamPos); // Assuming the camera is at the origin
 
     // Calculate the surface color from the diffuse texture
     float3 surfColor = DiffuseColor.rgb;

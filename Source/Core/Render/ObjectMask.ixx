@@ -53,10 +53,10 @@ namespace GiiGa
     {
         None = 0,
         Point = 1,
-        Direction = 2,
+        Directional = 2,
         Spot = 4,
         NoDirection = Point | Spot,
-        All = Point | Direction | Spot,
+        All = Point | Directional | Spot,
     };
 
     export enum class BlendMode

@@ -1,22 +1,20 @@
 #ifndef SHADER_HEADER
 #define SHADER_HEADER
 
-cbuffer CameraMatricies : register(b0)
+struct CameraMatricies
 {
     matrix View;
     matrix Proj;
     matrix InvView;
     matrix InvProj;
     float3 CamPos;
-    //bool RenderState;
-}
+};
 
-cbuffer WorldMatricies : register(b1)
+struct WorldMatrices
 {
     matrix World;
     matrix invWorld;
-    //bool RenderState;
-}
+};
 
 struct VS_INPUT
 {
@@ -42,11 +40,5 @@ struct PS_INPUT
     float3 BitangentVS : TEXCOORD7;
     float2 Tex : TEXCOORD8;
 };
-
-float3 GetCameraPos()
-{
-    return -View[3];
-    //return CamPos;
-}
 
 #endif

@@ -15,17 +15,15 @@ struct DirectionLightData
     float3 dirWS;
     float max_intensity;
     float3 color;
+    float cascadeCount;
 };
 
-cbuffer ScreenDimensions : register (b2)
+struct CascadeData
 {
-    float2 ScreenDimensions;
+    matrix ViewProj;
+    float Distances;
 };
 
-Texture2D Diffuse : register(t0);
-Texture2D MatProp : register(t1);
-Texture2D NormalWS : register(t2);
-Texture2D DepthVS : register(t3);
 
 float attenuate(float distance, float radius, float max_intensity, float falloff)
 {
@@ -52,9 +50,9 @@ float4 ClipToWorld(float4 clip, matrix inverseProjView)
     return posWS;
 }
 
-float4 ScreenToWorld(float4 screen, matrix inverseProjView)
+float4 ScreenToWorld(float4 screen, matrix inverseProjView, float screenDim)
 {
-    float2 texCoord = screen.xy / ScreenDimensions;
+    float2 texCoord = screen.xy / screenDim;
     float4 clip = float4(float2(texCoord.x, 1.0f - texCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
 
     return ClipToWorld(clip, inverseProjView);

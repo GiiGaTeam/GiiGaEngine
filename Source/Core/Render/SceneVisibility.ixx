@@ -156,7 +156,7 @@ namespace GiiGa
 
             return mask_to_draw_packets;
         }
-        
+
         static void Extract(ObjectMask render_filter_type, ObjectMask unite_mask, std::unordered_map<ObjectMask, DrawPacket>& mask_to_draw_packets)
         {
             // Iterate through each entity ID from frustum culling.
@@ -196,6 +196,48 @@ namespace GiiGa
             }
         }
 
+        static void Expand(ObjectMask render_filter_type, ObjectMask unite_mask, DirectX::SimpleMath::Matrix viewproj, std::unordered_map<ObjectMask, DrawPacket>& common_packets)
+        {
+            // Extract frustum planes from the view-projection matrix.
+            const auto res = Extract(render_filter_type, unite_mask, viewproj);
+
+            for (auto& [filter, packet] : res)
+            {
+                if (!common_packets.contains(filter))
+                    common_packets.emplace(filter, packet);
+                else
+                {
+                    auto common_packet = common_packets.find(filter);
+                    for (auto& [shaderResource, resourceGroup] : packet.common_resource_renderables)
+                    {
+                        if (!common_packet->second.common_resource_renderables.contains(resourceGroup.shaderResource.get()))
+                            common_packet->second.common_resource_renderables.emplace(shaderResource, resourceGroup);
+                        else
+                        {
+                            auto common_resourceGroup = common_packet->second.common_resource_renderables.find(shaderResource);
+                            for (const auto& renderable : resourceGroup.renderables)
+                            {
+                                //auto& com_rend = common_resourceGroup.renderables;
+                                bool contains = false;
+                                for (auto& com_rend : common_resourceGroup->second.renderables)
+                                {
+                                    if (com_rend == renderable)
+                                    {
+                                        contains = true;
+                                        break;
+                                    }
+                                }
+                                if (!contains)
+                                {
+                                    common_resourceGroup->second.renderables.push_back(renderable);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         static void Tick()
         {
             GetInstance()->quadtree = OrthoTree::OctreeBoxMap
@@ -217,6 +259,7 @@ namespace GiiGa
                 20
             };
         }
+
         static std::unique_ptr<SceneVisibility>& GetInstance()
         {
             if (instance_) return instance_;

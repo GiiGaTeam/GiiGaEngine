@@ -55,7 +55,7 @@ namespace GiiGa
 
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.viewProjMat.Transpose());
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(0, cam_info.viewDescriptor);

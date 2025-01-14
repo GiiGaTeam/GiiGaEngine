@@ -5,6 +5,7 @@ module;
 
 export module RenderPassViewData;
 
+import CameraComponent;
 import <memory>;
 
 namespace GiiGa
@@ -25,7 +26,7 @@ namespace GiiGa
 
     export struct RenderPassViewData
     {
-        DirectX::SimpleMath::Matrix viewProjMat;
+        Camera camera;
         D3D12_GPU_DESCRIPTOR_HANDLE viewDescriptor;
         ScreenDimensions screenDimensions;
         D3D12_GPU_DESCRIPTOR_HANDLE dimensionsDescriptor;

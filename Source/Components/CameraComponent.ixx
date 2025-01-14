@@ -13,6 +13,7 @@ import GameObject;
 import Misc;
 import IObjectShaderResource;
 import PrefabInstance;
+import MathUtils;
 
 using namespace DirectX::SimpleMath;
 
@@ -85,6 +86,21 @@ namespace GiiGa
         {
             return GetProj() * view_;
         }
+
+        /*
+         * nearLayer and farLayer in the range from 0 to 1
+         */
+        void GetSubProjAndDistanceToFar(float nearLayer, float farLayer, Matrix& retProj, float& retDistanceToFar) const
+        {
+            nearLayer = nearLayer >= 0.0f && nearLayer <= 1.0f ? near_ + (far_ - near_) * nearLayer : near_;
+            farLayer = farLayer >= 0.0f && farLayer <= 1.0f ? near_ + (far_ - near_) * farLayer : far_;
+            retDistanceToFar = farLayer;
+
+            if (type_ == Perspective)
+                retProj = Matrix::CreatePerspectiveFieldOfView(RadFromDeg(FOV_), aspect_, nearLayer, farLayer);
+            else
+                retProj = Matrix::CreateOrthographic(width_, height_, nearLayer, farLayer);
+        }
     };
 
     export class CameraComponent : public Component
@@ -131,13 +147,12 @@ namespace GiiGa
         void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
         }
-        
+
         void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
         {
-            
         }
 
-        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};

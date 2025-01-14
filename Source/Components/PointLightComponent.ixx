@@ -131,7 +131,7 @@ namespace GiiGa
             Todo();
         }
 
-        std::vector<std::pair<PropertyModificationKey,PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
@@ -188,6 +188,10 @@ namespace GiiGa
             }
         }
 
+        void InitShadowData(RenderDevice& device) override
+        {
+        };
+
         PerObjectData& GetPerObjectData() override
         {
             return *perObjectData_;
@@ -218,7 +222,7 @@ namespace GiiGa
             isDirty = true;
         }
 
-        PointLightData GetData() const {return data_;}
+        PointLightData GetData() const { return data_; }
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
