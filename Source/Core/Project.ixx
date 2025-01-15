@@ -107,8 +107,10 @@ namespace GiiGa
                     throw std::runtime_error("Template project folder not found: " + template_path.string());
                 }
 
-
-                std::filesystem::copy(template_path, temp_path, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                if (!std::filesystem::exists(temp_path))
+                {
+                    std::filesystem::copy(template_path, temp_path, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+                }
 
                 return std::shared_ptr<Project>(new Project(temp_path));
             }

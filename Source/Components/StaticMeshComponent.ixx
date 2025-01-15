@@ -97,7 +97,7 @@ namespace GiiGa
 
                     material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
                 }
-                if (!visibilityEntry_)
+                if (!visibilityEntry_ && should_register_)
                     RegisterInVisibility();
             }
 
@@ -189,6 +189,8 @@ namespace GiiGa
 
                 material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
             }
+
+            should_register_ = false;
         }
 
         void SetMeshHandle(const AssetHandle& new_handle)
@@ -246,6 +248,7 @@ namespace GiiGa
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
         std::weak_ptr<TransformComponent> transform_;
         std::shared_ptr<PerObjectData> perObjectData_;
+        bool should_register_ = true;
         //TODO
         //Добавить возможность делать статик меши статическими или динамическими
         bool isStatic_ = false;

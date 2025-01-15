@@ -178,8 +178,8 @@ namespace GiiGa
                 try {
                     std::filesystem::copy(evt.path, current_path_);
                 }
-                catch (...) {
-
+                catch (const std::exception& e) {
+                    el::Loggers::getLogger(LogEditor)->error("Failed drop file: %v", e.what());
                 }
                 });
         }
