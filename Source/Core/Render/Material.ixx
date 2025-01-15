@@ -135,8 +135,8 @@ namespace GiiGa
 
             MaterialData(const Json::Value& json)
             {
-                BaseColorTint_ = JsonHints::FromJson<DirectX::SimpleMath::Vector3>(json["BaseColorTint_"]);
-                EmissiveColorTint_ = JsonHints::FromJson<DirectX::SimpleMath::Vector3>(json["EmissiveColorTint_"]);
+                BaseColorTint_ = Vector3FromJson(json["BaseColorTint_"]);
+                EmissiveColorTint_ = Vector3FromJson(json["EmissiveColorTint_"]);
                 MetallicScale_ = json["MetallicScale_"].asFloat();
                 SpecularScale_ = json["SpecularScale_"].asFloat();
                 RoughnessScale_ = json["RoughnessScale_"].asFloat();

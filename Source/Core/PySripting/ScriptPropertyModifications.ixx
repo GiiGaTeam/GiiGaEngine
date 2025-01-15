@@ -8,6 +8,8 @@ import <json/json.h>;
 
 import ScriptHelpers;
 import Engine;
+import Logger;
+import Misc;
 
 namespace GiiGa
 {
@@ -16,17 +18,63 @@ namespace GiiGa
         pybind11::type script_type = pybind11::none{};
         pybind11::object value_or_holder = pybind11::none{};
 
-        void Set()
+        void Set(const Json::Value& json)
         {
-            
+            try
+            {
+                pybind11::object value_type = pybind11::type::of(value_or_holder);                
+                if (value_type.is(ScriptHelpers::GetBuiltinType("int")))
+                {
+                    value_or_holder = pybind11::cast(json.asInt());
+                    return;
+                }
+                else if (value_type.is(ScriptHelpers::GetBuiltinType("bool")))
+                {
+                    value_or_holder = pybind11::cast(json.asBool());
+                    return;
+                }
+                else if (value_type.is(ScriptHelpers::GetBuiltinType("str")))
+                {
+                    value_or_holder = pybind11::cast(json.asString());
+                    return;
+                }
+                else if (value_type.is(ScriptHelpers::GetBuiltinType("float")))
+                {
+                    value_or_holder = pybind11::cast(json.asFloat());
+                    return;
+                }
+                else if (value_type.is(ScriptHelpers::GetBuiltinType("list")))
+                {
+                    if (json.isArray())
+                    {
+                        Todo();
+                    }
+                }
+                else
+                {
+                    if (json.isObject())
+                    {
+                        value_or_holder = pybind11::type::of(value_or_holder)(json);
+                        return;
+                    }
+                    Todo();
+                }
+                throw std::runtime_error("Invalid value for py script property");
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->info("value_or_holder = value_or_holder.get_type()(json) %v", e.what());
+            }
         }
     };
 
     export class ScriptPropertyModifications
     {
+        friend class PyBehaviourSchemeComponent;
+
     public:
         ScriptPropertyModifications() = default;
-        
+
         ScriptPropertyModifications(const std::unordered_map<std::string, PyProperty>& anot):
             prop_modifications(anot)
         {
@@ -52,44 +100,7 @@ namespace GiiGa
         {
             if (prop_modifications.contains(name))
             {
-                Json::Reader reader;
-
-                PyProperty& prop = prop_modifications.at(name);
-
-                auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(prop.script_type);
-                if (opt_holder_type.has_value())
-                {
-                    pybind11::object obj = ScriptHelpers::DecodeFromJSON(json);
-                    std::string obj_js_str = pybind11::str(obj);
-
-                    Json::Value root;
-                    reader.parse(obj_js_str, root);
-
-                    pybind11::object value = opt_holder_type.value()(root);
-                    prop.value_or_holder = value;
-                }
-                else
-                {
-                    //todo: list should be reviwed to have ref types 
-                    pybind11::object obj = ScriptHelpers::DecodeFromJSON(json);
-
-                    //todo: what if actual dict?
-                    if (pybind11::type(obj).is(pybind11::dict{}))
-                    {
-                        // obj (dict) to json string
-                        std::string obj_js_str = pybind11::str(obj);
-
-                        Json::Value root;
-                        reader.parse(obj_js_str, root);
-
-                        pybind11::object value = prop.script_type(root);
-                        prop.value_or_holder = value;
-                    }
-                    else
-                    {
-                        prop.value_or_holder = obj;
-                    }
-                }
+                prop_modifications.at(name).Set(json);
             }
         }
 
@@ -103,12 +114,9 @@ namespace GiiGa
 
                 prop_node["Name"] = name;
 
-                std::string obj_str = ScriptHelpers::EncodeToJSONStyledString(prop.value_or_holder);
-
-                reader.parse(obj_str, prop_node["Value"]);
-
-                result.append(prop_node);
+                result.append(ScriptHelpers::EncodeToJSONValue(prop.value_or_holder));
             }
+            return result;
         }
 
         void MergeWithNewAnnotation(const std::unordered_map<std::string, PyProperty>& anot)
@@ -131,6 +139,47 @@ namespace GiiGa
         {
             prop_modifications.clear();
         }
+
+        class Iterator
+        {
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using difference_type = std::ptrdiff_t;
+            using value_type = std::pair<const std::string, PyProperty>;
+            using pointer = value_type*;
+            using reference = value_type&;
+
+            Iterator(std::unordered_map<std::string, PyProperty>::iterator itr) : itr_(itr)
+            {
+            }
+
+            reference operator*() const { return *itr_; }
+            pointer operator->() { return &(*itr_); }
+
+            // Prefix increment
+            Iterator& operator++()
+            {
+                itr_++;
+                return *this;
+            }
+
+            // Postfix increment
+            Iterator operator++(int)
+            {
+                Iterator tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+
+            friend bool operator==(const Iterator& a, const Iterator& b) { return a.itr_ == b.itr_; }
+            friend bool operator!=(const Iterator& a, const Iterator& b) { return a.itr_ != b.itr_; }
+
+        private:
+            std::unordered_map<std::string, PyProperty>::iterator itr_;
+        };
+
+        Iterator begin() { return Iterator(prop_modifications.begin()); }
+        Iterator end() { return Iterator(prop_modifications.end()); }
 
     private:
         std::unordered_map<std::string, PyProperty> prop_modifications{};

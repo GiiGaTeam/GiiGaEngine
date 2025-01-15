@@ -34,7 +34,7 @@ sys.path.append(r'{}'))", ScriptsPath.c_str());
                 {
                     pybind11::exec(pyAddSys);
                 }
-                catch (pybind11::error_already_set e)
+                catch (pybind11::error_already_set& e)
                 {
                     el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v", e.what());
                 }
@@ -105,7 +105,7 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             {
                 pybind11::finalize_interpreter();
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v", e.what());
             }

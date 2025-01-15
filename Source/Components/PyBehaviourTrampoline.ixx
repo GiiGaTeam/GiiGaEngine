@@ -32,7 +32,7 @@ namespace GiiGa
                     Init              /* Name of function in C++ (must match Python name) */
                 );
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Init %v", e.what());
             }
@@ -48,7 +48,7 @@ namespace GiiGa
                     BeginPlay         /* Name of function in C++ (must match Python name) */
                 );
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::BeginPlay %v", e.what());
             }
@@ -65,7 +65,7 @@ namespace GiiGa
                     dt
                 );
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Tick %v", e.what());
             }

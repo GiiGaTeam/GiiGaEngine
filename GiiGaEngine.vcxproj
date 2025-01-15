@@ -370,7 +370,6 @@
     <ClCompile Include="Source\Core\EventSystem.ixx" />
     <ClCompile Include="Source\Core\GameEngine.ixx" />
     <ClCompile Include="Source\Core\GameObject.ixx" />
-    <ClCompile Include="Source\Core\GiiGaJsonHints.ixx" />
     <ClCompile Include="Source\Core\IComponent.ixx" />
     <ClCompile Include="Source\Core\IWorldQuery.ixx" />
     <ClCompile Include="Source\Core\IGameObject.ixx" />

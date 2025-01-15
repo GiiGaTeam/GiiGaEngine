@@ -23,11 +23,6 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
     pybind11::class_<Json::Value>(m, "JsonValue")
         .def(pybind11::init<>())
-        .def("toStyledString", &Json::Value::toStyledString)
-        .def("asBool",&Json::Value::asBool).def("isBool", &Json::Value::isBool)
-        .def("asDouble",&Json::Value::asDouble).def("isDouble", &Json::Value::isDouble)
-        .def("asString",&Json::Value::asString).def("isString", &Json::Value::isString)
-        .def("asInt",&Json::Value::asInt).def("isInt", &Json::Value::isInt)
         .def_static("FromStyledString", [](const std::string& str)
         {
             Json::Value json;
@@ -40,7 +35,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<>())                    // Default constructor
         .def(pybind11::init<float>())               // Single float constructor
         .def(pybind11::init<float, float, float>()) // Three float constructor
-
+        .def(pybind11::init(&GiiGa::Vector3FromJson))
         // Comparison operators using magic methods
         .def("__eq__", &Vector3::operator==)
         .def("__ne__", &Vector3::operator!=)
@@ -70,7 +65,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
     
     m.def("Vector3ToJson", &GiiGa::Vector3ToJson);
 
-    m.def("Vector3FromJson", &GiiGa::JsonHints::FromJson<Vector3>);
+    m.def("Vector3FromJson", &GiiGa::Vector3FromJson);
 
     pybind11::class_<GiiGa::Transform>(m, "Transform")
         .def(pybind11::init<Vector3, Vector3, Vector3>(),

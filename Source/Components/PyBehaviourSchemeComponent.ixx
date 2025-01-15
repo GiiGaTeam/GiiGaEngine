@@ -84,7 +84,7 @@ namespace GiiGa
             }
             else
             {
-                substituter_component_->SetProperties(prop_modifications);
+                substituter_component_->SetProperties(prop_modifications.prop_modifications);
                 this->Destroy();
             }
         }
@@ -152,6 +152,11 @@ namespace GiiGa
             if (script_asset_)
                 return script_asset_->GetUserClassName();
             return "";
+        }
+
+        ScriptPropertyModifications& GetPropertyModifications()
+        {
+            return prop_modifications;
         }
 
     private:

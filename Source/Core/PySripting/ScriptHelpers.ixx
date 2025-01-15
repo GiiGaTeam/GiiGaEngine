@@ -25,26 +25,24 @@ namespace GiiGa
             return helpers_module.attr("IsEqOrSubClass")(type, base).cast<bool>();
         }
 
-        export std::string EncodeToJSONStyledString(const pybind11::object& obj)
+        export Json::Value EncodeToJSONValue(const pybind11::object& obj)
         {
             pybind11::module_ helpers_module = pybind11::module_::import("GiiGaPyHelpers");
             try
             {
-                pybind11::object t = helpers_module.attr("EncodeToJSONStyledString")(obj);
-                return t.cast<std::string>();
+                pybind11::object t = helpers_module.attr("EncodeToJSONValue")(obj);
+                return t.cast<Json::Value>();
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
-                el::Loggers::getLogger(LogPyScript)->debug("EncodeToJSONStyledString %v", e.what());
+                el::Loggers::getLogger(LogPyScript)->debug("EncodeToJSONValue %v", e.what());
             }
         }
 
-        // returns simple type (str, int...) or dict if is object
-        export pybind11::object DecodeFromJSON(const Json::Value& js)
+        export pybind11::object GetBuiltinType(const std::string& name)
         {
-            pybind11::object s = pybind11::str(js.toStyledString());
-            pybind11::module_ helpers_module = pybind11::module_::import("GiiGaPyHelpers");
-            return helpers_module.attr("DecodeFromJSON")(s);
+            pybind11::module_ builtins = pybind11::module_::import("builtins");
+            return builtins.attr(name.c_str());
         }
     }
 }

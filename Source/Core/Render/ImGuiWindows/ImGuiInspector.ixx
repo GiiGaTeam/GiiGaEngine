@@ -444,33 +444,23 @@ namespace GiiGa
             if (comp->script_asset_)
             {
                 Json::Reader reader;
-                for (auto& name_prop : comp->prop_modifications)
+                auto& mods = comp->GetPropertyModifications();
+                for (auto& name_prop : mods)
                 {
                     ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.script_type)).c_str());
-                    std::string js_str = ScriptHelpers::EncodeToJSONStyledString(name_prop.second.value_or_holder);
-                    
-                    Json::Value root{Json::ValueType::objectValue};
-                    reader.parse(js_str, root);
+                    auto js = ScriptHelpers::EncodeToJSONValue(name_prop.second.value_or_holder);
 
                     ImGui::PushID(name_prop.first.c_str());
-                    if (ImGuiJsonInput(root))
+                    if (ImGuiJsonInput(js))
                     {
-                        auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(name_prop.second.script_type);
-                        if (!opt_holder_type.has_value())
-                        {
-                            pybind11::object obj = ScriptHelpers::DecodeFromJSON(root);
-                            name_prop.second.value_or_holder = obj;
-                        }
-                        else
-                        {
-                            name_prop.second.value_or_holder = opt_holder_type.value()(root);
-                        }
+                        name_prop.second.Set(js);
                     }
                     ImGui::PopID();
                 }
             }
         }
-
+        
+        // decpricated
         bool ImGuiJsonInput(Json::Value& js)
         {
             bool edited = false;

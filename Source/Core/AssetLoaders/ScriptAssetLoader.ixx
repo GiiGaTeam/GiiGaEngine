@@ -53,7 +53,7 @@ namespace GiiGa
             {
                 module = pybind11::module::import(script_path.stem().string().c_str());
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while importing %v", e.what());
                 throw std::exception("cant import module");

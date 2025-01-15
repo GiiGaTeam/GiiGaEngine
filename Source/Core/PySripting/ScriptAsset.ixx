@@ -38,7 +38,7 @@ namespace GiiGa
                 auto obj = module_.attr(user_class_name_.c_str())();
                 return pybind11::cast<std::shared_ptr<PyBehaviourTrampoline>>(obj);
             }
-            catch (pybind11::error_already_set e)
+            catch (pybind11::error_already_set& e)
             {
                 el::Loggers::getLogger(LogPyScript)->debug("ScriptAsset()::CreateBehaviourComponent %v", e.what());
             }
