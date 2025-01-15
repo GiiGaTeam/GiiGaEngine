@@ -9,7 +9,7 @@ import <memory>;
 import AssetBase;
 import Logger;
 import PyBehaviourTrampoline;
-import PyProperty;
+import ScriptPropertyModifications;
 
 namespace GiiGa
 {
@@ -47,7 +47,7 @@ namespace GiiGa
         }
 
         // pair is type and default value
-        std::unordered_map<std::string, PyProperty> GetPropertieAnnotaions()
+        std::unordered_map<std::string, PyProperty> GetPropertyAnnotaions()
         {
             std::unordered_map<std::string, PyProperty> result;
             auto py_prop = pybind11::cast<pybind11::dict>(module_.attr(user_class_name_.c_str()).attr("__annotations__"));

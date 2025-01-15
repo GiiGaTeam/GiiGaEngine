@@ -128,9 +128,9 @@ namespace GiiGa
         {
         }
 
-        std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent> prefab_comp) const override
+        std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            std::vector<std::pair<PropertyModificationKey, PropertyValue>>  result;
+            std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>>  result;
 
             auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
 
@@ -143,7 +143,7 @@ namespace GiiGa
             return result;
         }
 
-        void ApplyModifications(const PropertyModifications& modifications) override
+        void ApplyModifications(const PrefabPropertyModifications& modifications) override
         {
             if (modifications.contains({this->inprefab_uuid_, "Mesh"}))
             {

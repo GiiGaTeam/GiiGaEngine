@@ -2,6 +2,7 @@ export module MathUtils;
 
 import <json/config.h>;
 import <json/value.h>;
+import <iostream>;
 
 import "directxtk12/SimpleMath.h";
 
@@ -38,6 +39,8 @@ namespace GiiGa
         json["x"] = vec.x;
         json["y"] = vec.y;
         json["z"] = vec.z;
+
+        std::cout << json.toStyledString();
 
         return json;
     }

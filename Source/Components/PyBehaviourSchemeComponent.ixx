@@ -19,7 +19,7 @@ import Engine;
 import GameObject;
 import Logger;
 import EventSystem;
-import PyProperty;
+import ScriptPropertyModifications;
 import IWorldQuery;
 import PyBehaviourTrampoline;
 import ScriptHelpers;
@@ -49,60 +49,9 @@ namespace GiiGa
 
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
 
-            prop_modifications = script_asset_->GetPropertieAnnotaions();
+            prop_modifications = script_asset_->GetPropertyAnnotaions();
 
-            Json::CharReaderBuilder builder;
-            Json::CharReader* reader = builder.newCharReader();
-
-            for (const auto& prop_js : json["PropertyModifications"])
-            {
-                auto prop_it = prop_modifications.find(prop_js["Name"].asString());
-                if (prop_it != prop_modifications.end())
-                {
-                    auto opt_holder_type = Engine::Instance().ScriptSystem()->GetReferenceTypeHolder(prop_it->second.script_type);
-                    if (!opt_holder_type.has_value())
-                    {
-                        pybind11::object obj = ScriptHelpers::DecodeFromJSON(prop_js["Value"]);
-                        std::string obj_js_str = pybind11::str(obj);
-                        Json::Value root;
-                        reader->parse(
-                            obj_js_str.c_str(),
-                            obj_js_str.c_str() + obj_js_str.size(),
-                            &root,
-                            nullptr
-                        );
-                        pybind11::object value = opt_holder_type.value()(pybind11::cast(root));
-                        prop_it->second.value_or_holder = value;
-                    }
-                    else
-                    {
-                        //todo: list should be reviwed to have ref types 
-                        pybind11::object obj = ScriptHelpers::DecodeFromJSON(prop_js["Value"]);
-
-                        //todo: what if actual dict?
-                        if (pybind11::type(obj).is(pybind11::dict{}))
-                        {
-                            // obj (dict) to json string
-                            std::string obj_js_str = pybind11::str(obj);
-                            Json::Value root;
-                            reader->parse(
-                                obj_js_str.c_str(),
-                                obj_js_str.c_str() + obj_js_str.size(),
-                                &root,
-                                nullptr
-                            );
-                            pybind11::object value = prop_it->second.script_type(pybind11::cast(root));
-                            prop_it->second.value_or_holder = value;
-                        }
-                        else
-                        {
-                            prop_it->second.value_or_holder = obj;
-                        }
-                    }
-                }
-            }
-
-            delete reader;
+            prop_modifications.SetValuesFromJson(json["PropertyModifications"]);
         }
 
         Json::Value DerivedToJson(bool is_prefab_root) override
@@ -110,30 +59,9 @@ namespace GiiGa
             Json::Value result;
             result["Type"] = typeid(PyBehaviourSchemeComponent).name();
             result["Script"] = script_asset_ ? script_asset_->GetId().ToJson() : AssetHandle{}.ToJson();
-
-            Json::CharReaderBuilder builder;
-            Json::CharReader* reader = builder.newCharReader();
-
-            for (auto& [name, prop] : prop_modifications)
-            {
-                Json::Value prop_node;
-
-                prop_node["Name"] = name;
-
-                std::string obj_str = ScriptHelpers::EncodeToJSONStyledString(prop.value_or_holder);
-
-                reader->parse(
-                    obj_str.c_str(),
-                    obj_str.c_str() + obj_str.size(),
-                    &prop_node["Value"],
-                    nullptr
-                );
-
-                result["PropertyModifications"].append(prop_node);
-            }
-
-            delete reader;
-
+            
+            result["PropertyModifications"] = prop_modifications.toJson();
+            
             return result;
         }
 
@@ -186,13 +114,13 @@ namespace GiiGa
             Todo();
         }
 
-        ::std::vector<std::pair<PropertyModificationKey, PropertyValue>> GetPrefabInstanceModifications(::std::shared_ptr<IComponent>) const override
+        ::std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(::std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
         }
 
-        void ApplyModifications(const ::GiiGa::PropertyModifications& modifications) override
+        void ApplyModifications(const ::GiiGa::PrefabPropertyModifications& modifications) override
         {
             Todo();
         }
@@ -215,7 +143,7 @@ namespace GiiGa
             script_asset_->OnUpdate.Register(std::bind(&PyBehaviourSchemeComponent::OnScriptUpdated, this, std::placeholders::_1));
 
             prop_modifications.clear();
-            prop_modifications = script_asset_->GetPropertieAnnotaions();
+            prop_modifications = script_asset_->GetPropertyAnnotaions();
             
         }
 
@@ -227,7 +155,7 @@ namespace GiiGa
         }
 
     private:
-        std::unordered_map<std::string, PyProperty> prop_modifications{};
+        ScriptPropertyModifications prop_modifications{};
         std::shared_ptr<ScriptAsset> script_asset_ = nullptr;
 
         EventHandle<AssetHandle> script_updated_handle_ = EventHandle<AssetHandle>::Null();
@@ -236,9 +164,7 @@ namespace GiiGa
 
         void OnScriptUpdated(AssetHandle id)
         {
-            //todo: find way to merge
-            prop_modifications.clear();
-            prop_modifications = script_asset_->GetPropertieAnnotaions();
+            prop_modifications.MergeWithNewAnnotation(script_asset_->GetPropertyAnnotaions());
         }
     };
 }

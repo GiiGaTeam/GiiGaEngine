@@ -218,9 +218,9 @@ namespace GiiGa
             return Removed_GOs_Comps;
         }
 
-        PropertyModifications GetPropertyModifications(std::shared_ptr<GameObject> prefab_other)
+        PrefabPropertyModifications GetPropertyModifications(std::shared_ptr<GameObject> prefab_other)
         {
-            PropertyModifications modifications;
+            PrefabPropertyModifications modifications;
 
             if (this->name != prefab_other->name)
                 modifications.insert({{this->inprefab_uuid_, "Name"}, this->name});
@@ -240,7 +240,7 @@ namespace GiiGa
             {
                 if (prefab_components_prefab_uuids.contains(comp->GetInPrefabUuid()))
                 {
-                    std::vector<std::pair<PropertyModificationKey, PropertyValue>> comp_mods = comp->GetPrefabInstanceModifications(prefab_components_prefab_uuids.at(comp->GetInPrefabUuid()));
+                    std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> comp_mods = comp->GetPrefabInstanceModifications(prefab_components_prefab_uuids.at(comp->GetInPrefabUuid()));
                     modifications.insert(comp_mods.begin(), comp_mods.end());
                 }
             }
@@ -258,7 +258,7 @@ namespace GiiGa
             return modifications;
         }
 
-        void ApplyModifications(const PropertyModifications& modifications)
+        void ApplyModifications(const PrefabPropertyModifications& modifications)
         {
             if (modifications.contains({this->GetInPrefabUuid(), "Name"}))
             {

@@ -24,14 +24,14 @@ namespace GiiGa
         }
     };
 
-    export using PropertyValue = Json::Value;
+    export using PrefabPropertyValue = Json::Value;
 
-    export using PropertyModifications = std::unordered_map<PropertyModificationKey, PropertyValue, PropertyModificationKeyHash>;
+    export using PrefabPropertyModifications = std::unordered_map<PropertyModificationKey, PrefabPropertyValue, PropertyModificationKeyHash>;
 
     export struct PrefabInstanceModifications
     {
         std::unordered_map<Uuid, Uuid> InPrefabUuid_to_Instance;
-        PropertyModifications PropertyModifications;
+        PrefabPropertyModifications PropertyModifications;
         std::unordered_set<Uuid> Removed_GOs_Comps;
         // todo: no support for this
         //std::unordered_map<Uuid, Json::Value> Added_GOs;

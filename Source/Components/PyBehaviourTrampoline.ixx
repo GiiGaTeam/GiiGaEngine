@@ -10,7 +10,7 @@ import Component;
 import PrefabInstance;
 import Logger;
 import Engine;
-import PyProperty;
+import ScriptPropertyModifications;
 import IWorldQuery;
 
 import Misc;
@@ -92,13 +92,13 @@ namespace GiiGa
             Todo();
         }
 
-        std::vector<std::pair<::GiiGa::PropertyModificationKey, ::GiiGa::PropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<::GiiGa::PropertyModificationKey, ::GiiGa::PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
         }
 
-        void ApplyModifications(const ::GiiGa::PropertyModifications& modifications) override
+        void ApplyModifications(const ::GiiGa::PrefabPropertyModifications& modifications) override
         {
             Todo();
         }

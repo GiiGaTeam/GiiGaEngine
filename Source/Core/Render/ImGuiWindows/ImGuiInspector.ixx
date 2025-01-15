@@ -474,19 +474,10 @@ namespace GiiGa
         bool ImGuiJsonInput(Json::Value& js)
         {
             bool edited = false;
-            if (js.isInt())
-            {
-                int value = js.asInt();
-                if (ImGui::InputInt("##int", &value))
-                {
-                    js = value;
-                    edited = true;
-                }
-            }
-            else if (js.isDouble())
+            if (js.isNumeric())
             {
                 float value = js.asDouble();
-                if (ImGui::DragFloat("##float", &value))
+                if (ImGui::InputFloat("##float", &value))
                 {
                     js = value;
                     edited = true;
