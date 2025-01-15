@@ -448,6 +448,48 @@ namespace GiiGa
                 for (auto& name_prop : mods)
                 {
                     ImGui::Text("%s: %s", name_prop.first.c_str(), pybind11::cast<std::string>(pybind11::str(name_prop.second.script_type)).c_str());
+
+                    if (ImGui::BeginDragDropTarget())
+                    {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GameObject"))
+                        {
+                            void* t = (payload->Data);
+                            GameObject* go = *static_cast<GameObject**>(t);
+
+                            if (name_prop.second.script_type.is(pybind11::type::of<GameObject>()))
+                            {
+                                name_prop.second.value_or_holder = pybind11::cast(go->GetUuid());
+                            }
+                            else if (ScriptHelpers::TypeIsSubClassComponent(name_prop.second.script_type))
+                            {
+                                auto& comps = go->GetComponents();
+                                for (auto& go_comp : comps)
+                                {
+                                    pybind11::object py_obj = pybind11::none();
+                                    py_obj = pybind11::cast(go_comp,pybind11::return_value_policy::reference);
+                                    
+                                    if (py_obj.ptr() == nullptr)
+                                        continue;
+                                    
+                                    pybind11::type obj_type = pybind11::type::of(py_obj);
+                                    if (obj_type.is(name_prop.second.script_type))
+                                    {
+                                        name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
+                                    }else if (typeid(*go_comp) == typeid(PyBehaviourSchemeComponent))
+                                    {
+                                        std::shared_ptr<PyBehaviourSchemeComponent> beh_schm = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(comp);
+                                        if (name_prop.second.script_type.is(beh_schm->GetUnderlyingType()))
+                                        {
+                                            name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        ImGui::EndDragDropTarget();
+                    }
+
                     auto js = ScriptHelpers::EncodeToJSONValue(name_prop.second.value_or_holder);
 
                     ImGui::PushID(name_prop.first.c_str());
@@ -455,11 +497,12 @@ namespace GiiGa
                     {
                         name_prop.second.Set(js);
                     }
+
                     ImGui::PopID();
                 }
             }
         }
-        
+
         // decpricated
         bool ImGuiJsonInput(Json::Value& js)
         {
@@ -472,7 +515,8 @@ namespace GiiGa
                     js = value;
                     edited = true;
                 }
-            }else if (js.isDouble())
+            }
+            else if (js.isDouble())
             {
                 float value = js.asDouble();
                 if (ImGui::InputFloat("##float", &value))
@@ -485,7 +529,7 @@ namespace GiiGa
             {
                 char raw_str_buf[512];
                 snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", js.asString().c_str());
-                if (ImGui::InputText("##string", raw_str_buf, js.asString().size(),ImGuiInputTextFlags_EnterReturnsTrue))
+                if (ImGui::InputText("##string", raw_str_buf, js.asString().size(), ImGuiInputTextFlags_EnterReturnsTrue))
                 {
                     js = raw_str_buf;
                     edited = true;

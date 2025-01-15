@@ -25,6 +25,11 @@ namespace GiiGa
             return helpers_module.attr("IsEqOrSubClass")(type, base).cast<bool>();
         }
 
+        export bool TypeIsSubClassComponent(const pybind11::type& type)
+        {
+            return IsEqOrSubClass(type,pybind11::module::import("GiiGaPy").attr("Component"));
+        }
+
         export Json::Value EncodeToJSONValue(const pybind11::object& obj)
         {
             pybind11::module_ helpers_module = pybind11::module_::import("GiiGaPyHelpers");

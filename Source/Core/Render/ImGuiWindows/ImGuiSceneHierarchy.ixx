@@ -139,6 +139,13 @@ namespace GiiGa
                 flags,
                 gameObject->name.c_str());
 
+            if (ImGui::IsItemActive() && ImGui::BeginDragDropSource())
+            {
+                void* t = gameObject.get();
+                ImGui::SetDragDropPayload("GameObject", &t, sizeof(void*));
+                ImGui::EndDragDropSource();
+            }
+
             if (gameObject->prefab_handle_ != AssetHandle{})
                 ImGui::PopStyleColor();
 

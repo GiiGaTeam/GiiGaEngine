@@ -159,6 +159,13 @@ namespace GiiGa
             return prop_modifications;
         }
 
+        pybind11::object GetUnderlyingType()
+        {
+            if (script_asset_)
+                return script_asset_->GetUnderlyingType();
+            return pybind11::none();
+        }
+
     private:
         ScriptPropertyModifications prop_modifications{};
         std::shared_ptr<ScriptAsset> script_asset_ = nullptr;

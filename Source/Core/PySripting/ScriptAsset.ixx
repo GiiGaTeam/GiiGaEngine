@@ -67,6 +67,11 @@ namespace GiiGa
             return user_class_name_;
         }
 
+        pybind11::object GetUnderlyingType()const
+        {
+            return module_.attr(user_class_name_.c_str());
+        }
+
     private:
         pybind11::module_ module_;
         std::string user_class_name_;

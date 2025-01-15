@@ -33,7 +33,6 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<double>())
         .def(pybind11::init([](const std::string& s)
         {
-            el::Loggers::getLogger(GiiGa::LogPyScript)->debug("Json from string");
             return Json::Value(s);
         }))
         .def_static("FromStyledString", [](const std::string& str)
