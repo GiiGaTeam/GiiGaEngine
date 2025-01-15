@@ -19,6 +19,8 @@ namespace GiiGa
 {
     export class PyBehaviourTrampoline : public Component, public pybind11::trampoline_self_life_support
     {
+        friend class ScriptAsset;
+
     public:
         using Component::Component;
 
@@ -116,27 +118,28 @@ namespace GiiGa
                 // ugly as f
                 if (Engine::Instance().ScriptSystem()->IsTypeGameObject(prop.script_type))
                 {
-                    if (prop.value_or_holder.is(pybind11::none()))
-                        continue;
                     Uuid uuid = pybind11::cast<Uuid>(prop.value_or_holder);
+                    if (uuid == Uuid::Null())
+                        continue;
                     std::shared_ptr<IGameObject> value = WorldQuery::GetWithUUID<IGameObject>(uuid);
                     setattr(pybind11::cast(this),
                             pybind11::cast(name),
                             pybind11::cast(value));
                 }
-                if (Engine::Instance().ScriptSystem()->IsTypeComponent(prop.script_type))
+                else if (Engine::Instance().ScriptSystem()->IsTypeComponent(prop.script_type))
                 {
-                    if (prop.value_or_holder.is(pybind11::none()))
-                        continue;
                     Uuid uuid = pybind11::cast<Uuid>(prop.value_or_holder);
+                    if (uuid == Uuid::Null())
+                        continue;
                     std::shared_ptr<IComponent> value = WorldQuery::GetWithUUID<IComponent>(uuid);
                     setattr(pybind11::cast(this),
                             pybind11::cast(name),
                             pybind11::cast(value));
                 }
-                setattr(pybind11::cast(this),
-                        pybind11::cast(name),
-                        prop.value_or_holder);
+                else
+                    setattr(pybind11::cast(this),
+                            pybind11::cast(name),
+                            prop.value_or_holder);
             }
         }
     };

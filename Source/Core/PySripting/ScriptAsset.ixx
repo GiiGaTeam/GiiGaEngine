@@ -10,6 +10,7 @@ import AssetBase;
 import Logger;
 import PyBehaviourTrampoline;
 import ScriptPropertyModifications;
+import ScriptHelpers;
 
 namespace GiiGa
 {
@@ -30,13 +31,14 @@ namespace GiiGa
             return AssetType::Behaviour;
         }
 
-        std::shared_ptr<PyBehaviourTrampoline> CreateBehaviourComponent() const
+        std::shared_ptr<PyBehaviourTrampoline> CreateBehaviourComponent(const Uuid& uuid) const
         {
-            //todo temp MyPyBeh1
             try
             {
                 auto obj = module_.attr(user_class_name_.c_str())();
-                return pybind11::cast<std::shared_ptr<PyBehaviourTrampoline>>(obj);
+                auto beh = pybind11::cast<std::shared_ptr<PyBehaviourTrampoline>>(obj);
+                beh->uuid_ = uuid;
+                return beh;
             }
             catch (pybind11::error_already_set& e)
             {
@@ -69,7 +71,15 @@ namespace GiiGa
 
         pybind11::object GetUnderlyingType()const
         {
-            return module_.attr(user_class_name_.c_str());
+            try
+            {
+                return ScriptHelpers::GetTypeWithNameInModule(module_, user_class_name_);
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("ScriptAsset()::CreateBehaviourComponent %v", e.what());
+            }
+            return {};
         }
 
     private:

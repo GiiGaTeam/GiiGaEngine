@@ -465,20 +465,24 @@ namespace GiiGa
                                 auto& comps = go->GetComponents();
                                 for (auto& go_comp : comps)
                                 {
-                                    pybind11::object py_obj = pybind11::none();
-                                    py_obj = pybind11::cast(go_comp,pybind11::return_value_policy::reference);
-                                    
-                                    if (py_obj.ptr() == nullptr)
-                                        continue;
-                                    
-                                    pybind11::type obj_type = pybind11::type::of(py_obj);
-                                    if (obj_type.is(name_prop.second.script_type))
+                                    if (typeid(*go_comp) == typeid(PyBehaviourSchemeComponent))
                                     {
-                                        name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
-                                    }else if (typeid(*go_comp) == typeid(PyBehaviourSchemeComponent))
-                                    {
-                                        std::shared_ptr<PyBehaviourSchemeComponent> beh_schm = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(comp);
+                                        std::shared_ptr<PyBehaviourSchemeComponent> beh_schm = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(go_comp);
                                         if (name_prop.second.script_type.is(beh_schm->GetUnderlyingType()))
+                                        {
+                                            el::Loggers::getLogger(LogPyScript)->debug("FUCK");
+                                            name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
+                                        }
+                                    }else
+                                    {
+                                        pybind11::object py_obj = pybind11::none();
+                                        py_obj = pybind11::cast(go_comp,pybind11::return_value_policy::reference);
+                                    
+                                        if (py_obj.ptr() == nullptr)
+                                            continue;
+                                    
+                                        pybind11::type obj_type = pybind11::type::of(py_obj);
+                                        if (obj_type.is(name_prop.second.script_type))
                                         {
                                             name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
                                         }

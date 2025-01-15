@@ -42,6 +42,9 @@ namespace GiiGa
 
         static void RemoveAnyWithUuid(const Uuid& uuid)
         {
+            if (uuid == Uuid::Null())
+                return;
+            
             if (!GetInstance().uuid_to_any_.contains(uuid))
                 throw std::runtime_error("Failed to RemoveAnyWithUuid, not found uuid!");
             el::Loggers::getLogger(LogWorldQuery)->debug("RemoveAnyWithUuid any with uuid %v", uuid.ToString());

@@ -55,7 +55,7 @@ namespace GiiGa
 
         ~GameObject() override
         {
-            el::Loggers::getLogger("")->debug("Component::~Component");
+            el::Loggers::getLogger("")->debug("GameObject::~GameObject");
             WorldQuery::RemoveAnyWithUuid(uuid_);
         }
 

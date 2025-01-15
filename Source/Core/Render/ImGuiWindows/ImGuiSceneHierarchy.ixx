@@ -191,7 +191,7 @@ namespace GiiGa
                 ImGui::EndPopup();
             }
 
-            if (ImGui::IsItemClicked())
+            if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
             {
                 //if (selected_)
                 //{

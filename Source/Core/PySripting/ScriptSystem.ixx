@@ -91,7 +91,7 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
 
         bool IsTypeGameObject(const pybind11::type& type)
         {
-            return pybind11::type(type).is(pybind11::module::import("GiiGaPy").attr("GameObject"));
+            return type.is(pybind11::module::import("GiiGaPy").attr("GameObject"));
         }
 
         bool IsTypeComponent(const pybind11::type& type)

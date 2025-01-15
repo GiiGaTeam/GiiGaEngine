@@ -76,7 +76,13 @@ namespace GiiGa
                 if (auto l_owner = owner_.lock())
                 {
                     auto l_owner_go = std::dynamic_pointer_cast<GameObject>(l_owner);
-                    substituter_component_ = script_asset_->CreateBehaviourComponent();
+                    substituter_component_ = script_asset_->CreateBehaviourComponent(this->uuid_);
+                    
+                    el::Loggers::getLogger("")->debug("PyBehaviourSchemeComponent Unregister");
+                    WorldQuery::RemoveComponent(this);
+                    WorldQuery::RemoveAnyWithUuid(uuid_);
+                    this->uuid_ = {};
+                    
                     substituter_component_->RegisterInWorld();
                     l_owner_go->AddComponent(substituter_component_);
                     WorldQuery::AddComponentToBeginPlayQueue(shared_from_this());

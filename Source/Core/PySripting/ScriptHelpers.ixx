@@ -44,6 +44,12 @@ namespace GiiGa
             }
         }
 
+        export pybind11::object GetTypeWithNameInModule(const pybind11::module& m, const std::string& name)
+        {
+            pybind11::module_ helpers_module = pybind11::module_::import("GiiGaPyHelpers");
+            return helpers_module.attr("get_type_with_name_in_module")(m,name);
+        }
+
         export pybind11::object GetBuiltinType(const std::string& name)
         {
             pybind11::module_ builtins = pybind11::module_::import("builtins");

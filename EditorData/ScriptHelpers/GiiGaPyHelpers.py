@@ -13,6 +13,11 @@ def get_subclass_name_in_module(module, base_type) -> str:
         ):
             return name
         
+def get_type_with_name_in_module(module, name:str) -> object:
+    attr = getattr(module, name)
+    print(str(attr),flush=True)
+    return attr
+
 def IsEqOrSubClass(cls, base_type)-> bool:
     return cls == base_type or issubclass(cls,base_type)
 
