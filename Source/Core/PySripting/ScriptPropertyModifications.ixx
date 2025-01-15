@@ -10,6 +10,7 @@ import ScriptHelpers;
 import Engine;
 import Logger;
 import Misc;
+import Uuid;
 
 namespace GiiGa
 {
@@ -48,6 +49,13 @@ namespace GiiGa
                     if (json.isArray())
                     {
                         Todo();
+                    }
+                }
+                else if (value_type.is(pybind11::type::of<Uuid>()))
+                {
+                    if (json.isString())
+                    {
+                        value_or_holder = pybind11::cast(Uuid::FromString(json.asString()).value());
                     }
                 }
                 else

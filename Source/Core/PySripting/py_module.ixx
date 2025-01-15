@@ -19,10 +19,23 @@ import TransformComponent;
 import Uuid;
 import MathUtils;
 
+import Logger;
+
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
+    pybind11::class_<GiiGa::Uuid>(m, "Uuid")
+        .def(pybind11::init<>())
+        .def("__str__", &GiiGa::Uuid::ToString);
+    
     pybind11::class_<Json::Value>(m, "JsonValue")
         .def(pybind11::init<>())
+        .def(pybind11::init<int>())
+        .def(pybind11::init<double>())
+        .def(pybind11::init([](const std::string& s)
+        {
+            el::Loggers::getLogger(GiiGa::LogPyScript)->debug("Json from string");
+            return Json::Value(s);
+        }))
         .def_static("FromStyledString", [](const std::string& str)
         {
             Json::Value json;
@@ -129,11 +142,4 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetInverseWorldMatrix", &GiiGa::TransformComponent::GetInverseWorldMatrix)
         .def("GetLocalMatrix", &GiiGa::TransformComponent::GetLocalMatrix)
         .def("GetInverseLocalMatrix", &GiiGa::TransformComponent::GetInverseLocalMatrix);
-}
-
-PYBIND11_EMBEDDED_MODULE(GiiGaPyPrivate, m)
-{
-    pybind11::class_<GiiGa::Uuid>(m, "Uuid")
-        .def(pybind11::init<>())
-        .def("__str__", &GiiGa::Uuid::ToString);
 }

@@ -2,8 +2,8 @@ import GiiGaPy as gp
 import random as rand
 
 class MyPyBeh1(gp.Component):
-    speed: int = 0
-    vec: gp.Vector3 = gp.Vector3()
+    speed: float = 0
+    trans: gp.TransformComponent = None
     def __init__(self):
         super().__init__()
         print("MyPyBeh1 Im Alive", flush=True)

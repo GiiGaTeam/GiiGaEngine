@@ -464,12 +464,30 @@ namespace GiiGa
         bool ImGuiJsonInput(Json::Value& js)
         {
             bool edited = false;
-            if (js.isNumeric())
+            if (js.isInt())
+            {
+                int value = js.asDouble();
+                if (ImGui::InputInt("##int", &value))
+                {
+                    js = value;
+                    edited = true;
+                }
+            }else if (js.isDouble())
             {
                 float value = js.asDouble();
                 if (ImGui::InputFloat("##float", &value))
                 {
                     js = value;
+                    edited = true;
+                }
+            }
+            else if (js.isString())
+            {
+                char raw_str_buf[512];
+                snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", js.asString().c_str());
+                if (ImGui::InputText("##string", raw_str_buf, js.asString().size(),ImGuiInputTextFlags_EnterReturnsTrue))
+                {
+                    js = raw_str_buf;
                     edited = true;
                 }
             }

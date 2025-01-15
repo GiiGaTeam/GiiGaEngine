@@ -21,8 +21,11 @@ def EncodeToJSONValue(obj: object)->gp.JsonValue:
     if isinstance(obj, gp.Vector3):
         return gp.Vector3ToJson(obj)
     
+    if isinstance(obj, gp.Uuid):
+        return gp.JsonValue(str(obj))
+    
     # case for default types (int, str etc), looks strange
-    return gp.JsonValue.FromStyledString(json.JSONEncoder().encode(obj))
+    return gp.JsonValue(obj)
 
 # Example usage:
 # import your_module

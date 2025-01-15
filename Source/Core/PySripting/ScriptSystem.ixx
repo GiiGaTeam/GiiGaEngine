@@ -59,8 +59,8 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
 
             reference_types_holders =
             {
-                {pybind11::module::import("GiiGaPy").attr("Component"), pybind11::module::import("GiiGaPyPrivate").attr("Uuid")},
-                {pybind11::module::import("GiiGaPy").attr("GameObject"), pybind11::module::import("GiiGaPyPrivate").attr("Uuid")}
+                {pybind11::module::import("GiiGaPy").attr("Component"), pybind11::module::import("GiiGaPy").attr("Uuid")},
+                {pybind11::module::import("GiiGaPy").attr("GameObject"), pybind11::module::import("GiiGaPy").attr("Uuid")}
             };
         }
 
