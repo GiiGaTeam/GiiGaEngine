@@ -32,9 +32,9 @@ namespace GiiGa
         }
 
         Transform(Json::Value json)
-            : location_(Vector3FromJson(json["Location"])), scale_(Vector3FromJson(json["Scale"]))
+            : location_(JsonHints::FromJson<Vector3>(json["Location"])), scale_(JsonHints::FromJson<Vector3>(json["Scale"]))
         {
-            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(Vector3FromJson(json["Rotation"])));
+            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(JsonHints::FromJson<Vector3>(json["Rotation"])));
         }
 
         Transform(const Transform& transform) = default;

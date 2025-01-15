@@ -24,13 +24,17 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
     pybind11::class_<Json::Value>(m, "JsonValue")
         .def(pybind11::init<>())
         .def("toStyledString", &Json::Value::toStyledString)
-    .def_static("FromStyledString", [](const std::string& str)
-    {
-        Json::Value json;
-        Json::Reader reader;
-        reader.parse(str, json);
-        return json;
-    });
+        .def("asBool",&Json::Value::asBool).def("isBool", &Json::Value::isBool)
+        .def("asDouble",&Json::Value::asDouble).def("isDouble", &Json::Value::isDouble)
+        .def("asString",&Json::Value::asString).def("isString", &Json::Value::isString)
+        .def("asInt",&Json::Value::asInt).def("isInt", &Json::Value::isInt)
+        .def_static("FromStyledString", [](const std::string& str)
+        {
+            Json::Value json;
+            Json::Reader reader;
+            reader.parse(str, json);
+            return json;
+        });
 
     pybind11::class_<Vector3>(m, "Vector3")
         .def(pybind11::init<>())                    // Default constructor
@@ -66,7 +70,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
     
     m.def("Vector3ToJson", &GiiGa::Vector3ToJson);
 
-    m.def("Vector3FromJson", &GiiGa::Vector3FromJson);
+    m.def("Vector3FromJson", &GiiGa::JsonHints::FromJson<Vector3>);
 
     pybind11::class_<GiiGa::Transform>(m, "Transform")
         .def(pybind11::init<Vector3, Vector3, Vector3>(),

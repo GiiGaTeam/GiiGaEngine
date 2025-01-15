@@ -3,8 +3,9 @@ export module MathUtils;
 import <json/config.h>;
 import <json/value.h>;
 import <iostream>;
-
 import "directxtk12/SimpleMath.h";
+
+export import JsonHints;
 
 using namespace DirectX::SimpleMath;
 
@@ -39,23 +40,10 @@ namespace GiiGa
         json["x"] = vec.x;
         json["y"] = vec.y;
         json["z"] = vec.z;
-
-        std::cout << json.toStyledString();
-
+        
         return json;
     }
-
-    export Vector3 Vector3FromJson(const Json::Value& json)
-    {
-        Vector3 vec;
-
-        vec.x = json["x"].asFloat();
-        vec.y = json["y"].asFloat();
-        vec.z = json["z"].asFloat();
-
-        return vec;
-    }
-
+    
     // note:
     // Do NOT change order of points
     export std::array<Vector3, 8> ExtractFrustumWorldCorners(const Matrix& viewProjMatrix)
@@ -119,4 +107,11 @@ namespace GiiGa
 
         return planes_world;
     }
+
+    template<>
+    Vector3 JsonHints::FromJson<Vector3>(const Json::Value js)
+    {
+        return {};
+    }
 }
+

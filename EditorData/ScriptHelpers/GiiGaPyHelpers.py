@@ -2,23 +2,17 @@
 import json
 import GiiGaPy as gp
 
-'''
-class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, gp.Vector3):
-            return gp.Vector3ToJson(obj)
-        elif isinstance(obj, gp.JsonValue):
-            return obj.toStyledString()
-        return super().default(obj)
-'''
-    
+print("Helpers Import", flush=True)
+
 class CustomDecoder(json.JSONDecoder):
-    def default(self, s):
-        if isinstance(s, gp.Vector3):
-            return gp.Vector3FromJson(s)
-        if isinstance(s, gp.JsonValue):
-            return gp.JsonValue.FromStyledString(s)
-        return super().default(s)
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+    def object_hook(self, dct):
+        if 'Vector3' in dct:
+            #not like this 
+            js = gp.JsonValue.FromStyledString(str(dct))
+            return gp.Vector3FromJson(js)
+        return dct
 
 def get_subclass_name_in_module(module, base_type) -> str:
     for name, obj in inspect.getmembers(module):
@@ -32,15 +26,15 @@ def get_subclass_name_in_module(module, base_type) -> str:
 def IsEqOrSubClass(cls, base_type)-> bool:
     return cls == base_type or issubclass(cls,base_type)
 
-def EncodeToJSONStyledString(obj: object)->str:
+def EncodeToJSONStyledString(obj: object)->gp.JsonValue:
     
     if isinstance(obj, gp.Vector3):
-        return gp.Vector3ToJson(obj).toStyledString()
+        return gp.Vector3ToJson(obj)
     
-    enc = json.JSONEncoder()
-    return enc.encode(obj)
+    # case for default types (int, str etc), looks strange
+    return gp.JsonValue.FromStyledString(json.JSONEncoder().encode(obj))
 
-def DecodeFromJSON(s: str)->object:
+def DecodeFromJSON(s: gp.JsonValue)->object:
     dec = CustomDecoder()
     return dec.decode(s)
 
