@@ -83,8 +83,7 @@ namespace GiiGa
 
         //virtual ~SceneVisibility() = default;
 
-        // Extract visible objects matching a filter and organize them into draw packets.
-        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, ObjectMask unite_mask, DirectX::SimpleMath::Matrix viewproj)
+        static std::vector<std::weak_ptr<IRenderable>> FrustumCulling(DirectX::SimpleMath::Matrix viewproj)
         {
             // Extract frustum planes from the view-projection matrix.
             auto dxplanes = ExtractFrustumPlanesPointInside(viewproj);
@@ -109,36 +108,46 @@ namespace GiiGa
             auto& inst = GetInstance();
             auto ent_ids = inst->quadtree.FrustumCulling(otplanes, 0.1, inst->visibility_to_geometry_);
 
+            std::vector<std::weak_ptr<IRenderable>> result;
+            for (auto ent_id : ent_ids)
+            {
+                // Attempt to lock and retrieve the renderable object.
+                if (!inst->visibility_to_renderable_[ent_id].expired())
+                    result.push_back(inst->visibility_to_renderable_[ent_id]);
+            }
+            return result;
+        }
 
+        // Extract visible objects matching a filter and organize them into draw packets.
+        static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, const std::vector<std::weak_ptr<IRenderable>>& renderables)
+        {
             // Map to store draw packets grouped by object mask.
             std::unordered_map<ObjectMask, DrawPacket> mask_to_draw_packets;
 
             // Iterate through each entity ID from frustum culling.
-            for (auto ent_id : ent_ids)
+            for (auto weak_renderable : renderables)
             {
                 // Attempt to lock and retrieve the renderable object.
-                if (std::shared_ptr<IRenderable> renderable = inst->visibility_to_renderable_[ent_id].lock())
+                if (std::shared_ptr<IRenderable> renderable = weak_renderable.lock())
                 {
                     // Get sorting data (e.g., mask and shader resource).
                     auto sort_data = renderable->GetSortData();
 
                     // Apply render filter to the object mask.
                     // If the object matches the filter, process it.
-                    if ((sort_data.object_mask & render_filter_type).any())
+                    ObjectMask object_mask = sort_data.object_mask;
+                    if ((object_mask & render_filter_type) == object_mask)
                     {
-                        ObjectMask mask_with_unite = sort_data.object_mask & unite_mask;
-
                         // Check if a draw packet already exists for this mask.
-                        auto drawPacket = mask_to_draw_packets.find(mask_with_unite);
+                        auto drawPacket = mask_to_draw_packets.find(object_mask);
 
                         // Create a new draw packet if one doesn't exist.
                         if (drawPacket == mask_to_draw_packets.end())
-                            mask_to_draw_packets.emplace(mask_with_unite, DrawPacket{mask_with_unite});
+                            mask_to_draw_packets.emplace(object_mask, DrawPacket{object_mask});
 
-                        drawPacket = mask_to_draw_packets.find(mask_with_unite);
+                        drawPacket = mask_to_draw_packets.find(object_mask);
 
                         // Find or create a resource group for the object's shader resource.
-                        auto t = sort_data.shaderResource.get();
                         auto CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
                         if (CMR == drawPacket->second.common_resource_renderables.end())
                             drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
@@ -157,57 +166,21 @@ namespace GiiGa
             return mask_to_draw_packets;
         }
 
-        static void Extract(ObjectMask render_filter_type, ObjectMask unite_mask, std::unordered_map<ObjectMask, DrawPacket>& mask_to_draw_packets)
+        static std::unordered_map<ObjectMask, DrawPacket> ExtractFromFrustum(ObjectMask render_filter_type, DirectX::SimpleMath::Matrix viewproj)
         {
-            // Iterate through each entity ID from frustum culling.
-            for (const auto& [ent_id, renderable] : GetInstance()->visibility_to_renderable_)
-            {
-                // Attempt to lock and retrieve the renderable object.
-
-                // Get sorting data (e.g., mask and shader resource).
-                auto sort_data = renderable.lock()->GetSortData();
-
-                // Apply render filter to the object mask.
-                // If the object matches the filter, process it.
-                if ((sort_data.object_mask & render_filter_type).any())
-                {
-                    ObjectMask mask_with_unite = sort_data.object_mask & unite_mask;
-
-                    // Check if a draw packet already exists for this mask.
-                    auto drawPacket = mask_to_draw_packets.find(mask_with_unite);
-
-                    // Create a new draw packet if one doesn't exist.
-                    if (drawPacket == mask_to_draw_packets.end())
-                        mask_to_draw_packets.emplace(mask_with_unite, DrawPacket{mask_with_unite});
-
-                    drawPacket = mask_to_draw_packets.find(mask_with_unite);
-
-                    // Find or create a resource group for the object's shader resource.
-                    auto t = sort_data.shaderResource.get();
-                    auto CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
-                    if (CMR == drawPacket->second.common_resource_renderables.end())
-                        drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
-
-                    CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
-
-                    // Add the renderable to the resource group's renderables list.
-                    CMR->second.renderables.push_back(renderable);
-                }
-            }
+            const auto& culling = FrustumCulling(viewproj);
+            return Extract(render_filter_type, culling);
         }
 
-        static void Expand(ObjectMask render_filter_type, ObjectMask unite_mask, DirectX::SimpleMath::Matrix viewproj, std::unordered_map<ObjectMask, DrawPacket>& common_packets)
+        static void Expand(const std::unordered_map<ObjectMask, DrawPacket>& from_packets, std::unordered_map<ObjectMask, DrawPacket>& result_packets)
         {
-            // Extract frustum planes from the view-projection matrix.
-            const auto res = Extract(render_filter_type, unite_mask, viewproj);
-
-            for (auto& [filter, packet] : res)
+            for (auto& [filter, packet] : from_packets)
             {
-                if (!common_packets.contains(filter))
-                    common_packets.emplace(filter, packet);
+                if (!result_packets.contains(filter))
+                    result_packets.emplace(filter, packet);
                 else
                 {
-                    auto common_packet = common_packets.find(filter);
+                    auto common_packet = result_packets.find(filter);
                     for (auto& [shaderResource, resourceGroup] : packet.common_resource_renderables)
                     {
                         if (!common_packet->second.common_resource_renderables.contains(resourceGroup.shaderResource.get()))
@@ -236,6 +209,51 @@ namespace GiiGa
                     }
                 }
             }
+        }
+
+        static void ExpandByFilterFromAll(ObjectMask render_filter_type, std::unordered_map<ObjectMask, DrawPacket>& result_packets)
+        {
+            // Iterate through each entity ID from frustum culling.
+            for (const auto& [ent_id, renderable] : GetInstance()->visibility_to_renderable_)
+            {
+                // Attempt to lock and retrieve the renderable object.
+
+                // Get sorting data (e.g., mask and shader resource).
+                auto sort_data = renderable.lock()->GetSortData();
+
+                // Apply render filter to the object mask.
+                // If the object matches the filter, process it.
+                ObjectMask object_mask = sort_data.object_mask;
+                if ((object_mask & render_filter_type) == object_mask)
+                {
+                    // Check if a draw packet already exists for this mask.
+                    auto drawPacket = result_packets.find(object_mask);
+
+                    // Create a new draw packet if one doesn't exist.
+                    if (drawPacket == result_packets.end())
+                        result_packets.emplace(object_mask, DrawPacket{object_mask});
+
+                    drawPacket = result_packets.find(object_mask);
+
+                    // Find or create a resource group for the object's shader resource.
+                    auto CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
+                    if (CMR == drawPacket->second.common_resource_renderables.end())
+                        drawPacket->second.common_resource_renderables.emplace(sort_data.shaderResource.get(), CommonResourceGroup(sort_data.shaderResource));
+
+                    CMR = drawPacket->second.common_resource_renderables.find(sort_data.shaderResource.get());
+
+                    // Add the renderable to the resource group's renderables list.
+                    CMR->second.renderables.push_back(renderable);
+                }
+            }
+        }
+
+        static void ExpandByFilterFromFrustum(ObjectMask render_filter_type, DirectX::SimpleMath::Matrix viewproj, std::unordered_map<ObjectMask, DrawPacket>& result_packets)
+        {
+            // Extract frustum planes from the view-projection matrix.
+            const auto culling = FrustumCulling(viewproj);
+            const auto res = Extract(render_filter_type, culling);
+            Expand(res, result_packets);
         }
 
         static void Tick()

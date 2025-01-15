@@ -2,12 +2,13 @@
 
 import <memory>;
 import <vector>;
+import <unordered_map>;
 
 import IRenderable;
 import RenderTypes;
 import SceneVisibility;
 export import RenderContext;
-
+import PSO;
 namespace GiiGa
 {
     export class RenderPass
@@ -15,9 +16,20 @@ namespace GiiGa
     public:
         virtual ~RenderPass() = default;
 
-        virtual void Draw(RenderContext& context)=0;
+        virtual void Draw(RenderContext& context) =0;
 
     protected:
-        int32_t default_filter_type_ = Static | Dynamic | Opacity | Transparency;
+        static bool GetPsoFromMapByMask(const std::unordered_map<ObjectMask, PSO>& mask_map, const ObjectMask& objectMask, PSO& res_pso)
+        {
+            for (const auto& [mask, pso] : mask_map)
+            {
+                if ((mask & objectMask) == objectMask)
+                {
+                    res_pso = pso;
+                    return true;
+                }
+            }
+            return false;
+        }
     };
 }

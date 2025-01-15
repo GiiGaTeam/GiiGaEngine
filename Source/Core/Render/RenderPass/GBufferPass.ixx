@@ -81,11 +81,7 @@ namespace GiiGa
             };
 
 
-            mask_to_pso[ObjectMask().
-                        SetVertexType(VertexTypes::VertexPNTBT)
-                        .SetShadingModel(ShadingModel::Unlit)
-                        .SetBlendMode(BlendMode::Opaque)
-                        .SetFillMode(FillMode::Solid)]
+            mask_to_pso[filter_unlit_solid_]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
                 .set_rasterizer_state(rast_desc)
@@ -106,11 +102,7 @@ namespace GiiGa
                 .add_static_samplers(sampler_desc)
                 .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
 
-            mask_to_pso[ObjectMask()
-                        .SetVertexType(VertexTypes::VertexPNTBT)
-                        .SetShadingModel(ShadingModel::DefaultLit)
-                        .SetBlendMode(BlendMode::Opaque).
-                        SetFillMode(FillMode::Solid)]
+            mask_to_pso[filter_lit_solid_]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
                 .set_rasterizer_state(rast_desc)
@@ -142,9 +134,7 @@ namespace GiiGa
             rast_desc.CullMode = D3D12_CULL_MODE_NONE;
             rast_desc.FrontCounterClockwise = TRUE;
 
-            mask_to_pso[ObjectMask()
-                        .SetVertexType(VertexTypes::VertexPNTBT)
-                        .SetFillMode(FillMode::Wire)]
+            mask_to_pso[filter_wire_]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferWireframeShader))
                 .set_rasterizer_state(rast_desc)
@@ -167,7 +157,14 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
+            const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
+            const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum_culling_res);
+            const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum_culling_res);
+            const auto& vis_wire = SceneVisibility::Extract(filter_wire_, frustum_culling_res);
+            std::unordered_map<ObjectMask, DrawPacket> visibles;
+            SceneVisibility::Expand(vis_unlit, visibles);
+            SceneVisibility::Expand(vis_lit, visibles);
+            SceneVisibility::Expand(vis_wire, visibles);
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -184,7 +181,10 @@ namespace GiiGa
 
             for (auto& visible : visibles)
             {
-                PSO& pso = mask_to_pso.at(visible.first);
+                //if (!mask_to_pso.contains(visible.first)) continue;
+                PSO pso;
+                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
+
                 context.BindPSO(pso.GetState().get());
                 context.SetSignature(pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
@@ -201,13 +201,21 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                   .SetFillMode(FillMode::Wire);
+        ObjectMask filter_unlit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                     .SetShadingModel(ShadingModel::Unlit)
+                                                     .SetBlendMode(BlendMode::Opaque)
+                                                     .SetFillMode(FillMode::Solid);
 
-        ObjectMask renderpass_unite = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                  .SetShadingModel(ShadingModel::All)
-                                                  .SetVertexType(VertexTypes::All)
-                                                  .SetFillMode(FillMode::All);
+        ObjectMask filter_lit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                   .SetShadingModel(ShadingModel::DefaultLit)
+                                                   .SetBlendMode(BlendMode::Opaque)
+                                                   .SetFillMode(FillMode::Solid);
+
+        ObjectMask filter_wire_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                              .SetShadingModel(ShadingModel::DefaultLit)
+                                              .SetBlendMode(BlendMode::Opaque)
+                                              .SetFillMode(FillMode::Wire)
+                                              .SetLightType(LightType::All);
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

@@ -34,7 +34,7 @@ namespace GiiGa
             D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
             rast_desc.CullMode = D3D12_CULL_MODE_NONE;
 
-            mask_to_pso[ObjectMask().SetVertexType(VertexTypes::VertexPNTBT).SetShadingModel(ShadingModel::Unlit).SetBlendMode(BlendMode::Opaque)]
+            mask_to_pso[filter_renderPass_]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
                 .set_rasterizer_state(rast_desc)
@@ -55,7 +55,7 @@ namespace GiiGa
 
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
+            const auto& visibles = SceneVisibility::ExtractFromFrustum(filter_renderPass_, cam_info.camera.GetViewProj());
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(0, cam_info.viewDescriptor);
@@ -64,7 +64,9 @@ namespace GiiGa
 
             for (auto& visible : visibles)
             {
-                PSO& pso = mask_to_pso.at(visible.first);
+                PSO pso;
+                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
+
                 context.BindPSO(pso.GetState().get());
                 context.SetSignature(pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
@@ -81,13 +83,9 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask renderpass_filter = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                   .SetFillMode(FillMode::Wire);
-
-        ObjectMask renderpass_unite = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                  .SetShadingModel(ShadingModel::All)
-                                                  .SetVertexType(VertexTypes::All)
-                                                  .SetFillMode(FillMode::All);
+        ObjectMask filter_renderPass_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                    .SetShadingModel(ShadingModel::Unlit)
+                                                    .SetBlendMode(BlendMode::Opaque);
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

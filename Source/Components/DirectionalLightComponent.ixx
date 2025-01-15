@@ -68,7 +68,7 @@ namespace GiiGa
     public:
         static inline const uint8_t NUM_CASCADE = 4;
 
-        struct alignas(256) CascadeData
+        struct CascadeData
         {
             Matrix ViewProj;
             float Distances;
@@ -94,7 +94,7 @@ namespace GiiGa
                 directionLightShaderRes_->directionLightCBV_ = directionLightRes_->CreateConstantBufferView(desc);
             }
 
-            TEXTURE_SIZE = Vector2(800);
+            TEXTURE_SIZE = Vector2(1024);
             DS_FORMAT_RES = DXGI_FORMAT_R32_TYPELESS;
             DS_FORMAT_DSV = DXGI_FORMAT_D32_FLOAT;
             DS_FORMAT_SRV = DXGI_FORMAT_R32_FLOAT;
@@ -221,7 +221,7 @@ namespace GiiGa
             desc.Buffer.StructureByteStride = sizeof(CascadeData);
             desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc);
+            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, 0);
         }
 
         PerObjectData& GetPerObjectData() override
@@ -261,7 +261,7 @@ namespace GiiGa
                 rtvDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
                 D3D12_CLEAR_VALUE clear_value = DS_CLEAR_VALUE;
-                shadow_resource_ = std::make_unique<GPULocalResource>(device, rtvDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clear_value);
+                shadow_resource_ = std::make_unique<GPULocalResource>(device, rtvDesc, D3D12_RESOURCE_STATE_DEPTH_READ, &clear_value);
             }
 
             {
@@ -299,14 +299,14 @@ namespace GiiGa
             const auto forward = transform.GetForward();
             const auto up = transform.GetUp();
 
-            float percentDist = 1.0f / static_cast<float>(NUM_CASCADE);
+            float percentDist = 0.24f / static_cast<float>(NUM_CASCADE);
             for (uint32_t i = 0; i < NUM_CASCADE; ++i)
             {
                 Matrix subProj;
                 camera.GetSubProjAndDistanceToFar(percentDist * i, percentDist * static_cast<float>(i + 1), subProj,
                                                   cascadeData_[i].Distances);
                 //cascData.Distances[i] /= 50.0f;
-                const auto corners = ExtractFrustumWorldCorners(camera.GetViewProj());
+                const auto corners = ExtractFrustumWorldCorners(subProj);
                 const auto center = GetFrustumCenter(corners);
                 const auto tar = center + forward;
                 const auto view = Matrix::CreateLookAt(center, tar, up);
@@ -320,7 +320,7 @@ namespace GiiGa
             shadow_views.clear();
             for (const auto& cascade : cascadeData_)
             {
-                shadow_views.push_back(cascade.ViewProj);
+                shadow_views.push_back(cascade.ViewProj.Transpose());
             }
             return shadow_views;
         }

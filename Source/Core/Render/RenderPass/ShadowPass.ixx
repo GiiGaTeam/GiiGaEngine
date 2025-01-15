@@ -28,8 +28,8 @@ namespace GiiGa
     public:
         static const uint8_t ModelDataRootIndex = 0;
         static const uint8_t DirectionalDataRootIndex = 1;
-        static const uint8_t StructuredBufferShadow = 0;
-        
+        static const uint8_t StructuredBufferShadow = 2;
+
         static const uint8_t ConstantBufferCount = 2;
         static const uint8_t SRVCount = 1;
 
@@ -72,16 +72,12 @@ namespace GiiGa
                 .MaxLOD = D3D12_FLOAT32_MAX
             };
 
-            mask_to_pso[ObjectMask().
-                        SetVertexType(VertexTypes::VertexPNTBT)
-                        .SetShadingModel(ShadingModel::DefaultLit)
-                        .SetBlendMode(BlendMode::Opaque)
-                        .SetFillMode(FillMode::Solid)]
+            mask_to_pso[filter_objects_]
                 .set_vs(ShaderManager::GetShaderByName(CascadeShadowShader))
                 .set_gs(ShaderManager::GetShaderByName(CascadeShadowGeomShader))
                 .set_rasterizer_state(rast_desc)
                 .set_input_layout(VertexPNTBT::InputLayout)
-                .set_dsv_format(DXGI_FORMAT_D24_UNORM_S8_UINT)
+                .set_dsv_format(DXGI_FORMAT_D32_FLOAT)
                 .set_depth_stencil_state(depth_stencil_desc)
                 .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
                 {
@@ -93,12 +89,12 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
-            /*auto cam_info = getCamInfoDataFunction_();
+            auto cam_info = getCamInfoDataFunction_();
 
             context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
 
             std::unordered_map<ObjectMask, DrawPacket> lights;
-            SceneVisibility::Extract(lights_filter, renderpass_unite, lights);
+            SceneVisibility::ExpandByFilterFromAll(filter_lights_, lights);
 
             for (const auto& [mask, lightPacket] : lights)
             {
@@ -112,28 +108,32 @@ namespace GiiGa
 
                         if (const auto dirLight = std::dynamic_pointer_cast<DirectionalLightComponent>(light))
                         {
+                            const auto dsv = dirLight->GetShadowDSV();
+                            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr, true, &dsv);
                             dirLight->UpdateCascadeGPUData(context, cam_info.camera);
                             context.BindDescriptorHandle(StructuredBufferShadow, dirLight->GetCascadeDataSRV());
                             context.BindDescriptorHandle(DirectionalDataRootIndex, dirLight->GetLightDataSRV());
                         }
+                        else continue;
 
                         const auto lightViews = light->GetViews();
                         std::unordered_map<ObjectMask, DrawPacket> visibles;
 
                         for (const auto view : lightViews)
                         {
-                            SceneVisibility::Expand(objects_filter, renderpass_unite, view, visibles);
+                            SceneVisibility::ExpandByFilterFromFrustum(filter_objects_, view, visibles);
                         }
 
                         for (auto& visible : visibles)
                         {
-                            PSO& pso = mask_to_pso.at(visible.first);
+                            PSO pso;
+                            if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
                             context.BindPSO(pso.GetState().get());
                             context.SetSignature(pso.GetSignature().get());
                             for (auto& common_resource_group : visible.second.common_resource_renderables)
                             {
-                                auto CRG = common_resource_group.second;
-                                pso.SetShaderResources(context, *CRG.shaderResource);
+                                //auto CRG = common_resource_group.second;
+                                //pso.SetShaderResources(context, *CRG.shaderResource);
                                 for (auto& renderable : common_resource_group.second.renderables)
                                 {
                                     pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
@@ -143,20 +143,19 @@ namespace GiiGa
                         }
                     }
                 }
-            }*/
-aaaa        }
+            }
+        }
 
     private:
-        ObjectMask objects_filter = ObjectMask().SetBlendMode(BlendMode::Opaque)
-                                                .SetFillMode(FillMode::Solid)
-                                                .SetShadingModel(ShadingModel::DefaultLit);
-        ObjectMask lights_filter = ObjectMask().SetLightType(LightType::Directional)
-                                               .SetShadingModel(ShadingModel::DefaultLit);
+        ObjectMask filter_objects_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                 .SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
+                                                 .SetShadingModel(ShadingModel::DefaultLit)
+                                                 .SetFillMode(FillMode::Solid);
 
-        ObjectMask renderpass_unite = ObjectMask().SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
-                                                  .SetShadingModel(ShadingModel::All)
-                                                  .SetVertexType(VertexTypes::All)
-                                                  .SetFillMode(FillMode::All);
+        ObjectMask filter_lights_ = ObjectMask().SetLightType(LightType::Directional)
+                                                .SetShadingModel(ShadingModel::All)
+                                                .SetVertexType(VertexTypes::All)
+                                                .SetFillMode(FillMode::All);
 
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
