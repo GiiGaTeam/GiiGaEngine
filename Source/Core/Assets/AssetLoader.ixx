@@ -30,7 +30,7 @@ namespace GiiGa
 
     public:
         virtual ~AssetLoader() = default;
-        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) = 0;
+        virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) = 0;
         virtual std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) = 0;
         virtual void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) = 0;
 

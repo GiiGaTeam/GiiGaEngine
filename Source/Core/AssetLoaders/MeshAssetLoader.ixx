@@ -47,7 +47,7 @@ namespace GiiGa
             type_ = AssetType::Mesh;
         }
 
-        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
+        virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path) {
             if (!std::filesystem::exists(absolute_path))
                 throw std::runtime_error("File does not exist: " + absolute_path.string());
 
@@ -58,7 +58,7 @@ namespace GiiGa
                 throw std::runtime_error("Failed to load mesh from file: " + absolute_path.string());
             }
 
-            std::vector<std::pair<AssetHandle, AssetMeta>> handles;
+            std::unordered_map<AssetHandle, AssetMeta> handles;
 
             auto uuid = Uuid::New();
             auto go = CreateGameObjectHierarchy(
@@ -150,7 +150,7 @@ namespace GiiGa
             const aiScene* scene,
             const Uuid& mesh_uuid,
             const std::filesystem::path& relative_path,
-            std::vector<std::pair<AssetHandle, AssetMeta>>& handles
+            std::unordered_map<AssetHandle, AssetMeta>& handles
         ) {
             auto gameObject = GameObject::CreateEmptyGameObject(SpawnParameters{
                     node->mName.C_Str(),
@@ -171,12 +171,12 @@ namespace GiiGa
                     auto staticMeshComponent = gameObject->CreateComponent<StaticMeshComponent>();
                     staticMeshComponent->SetDummyMesh(mesh_asset);
 
-                    handles.push_back(std::make_pair(handle, AssetMeta{
+                    handles.emplace(handle, AssetMeta{
                         type_,
                         relative_path,
                         id_,
                         mesh->mName.C_Str()
-                    }));
+                    });
                 }
             }
 

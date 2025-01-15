@@ -191,9 +191,9 @@ namespace GiiGa
                 registry_map_.emplace(handle, std::move(meta));
             }
 
-            auto handle = handles[0];
-            handle.first.subresource = 0;
-            assets_to_path_.emplace(path, handle.first);
+            auto handle = handles.begin()->first;
+            handle.subresource = 0;
+            assets_to_path_.emplace(path, handle);
         }
 
         void RemoveAsset(const std::filesystem::path& path)

@@ -339,9 +339,10 @@ namespace GiiGa
                     for (const auto& [handle, meta] : range) {
                         if (meta.type != AssetType::Unknown)
                         {
-                            ImGui::PushID(static_cast<int>(handle.id.Hash()));
+                            //ImGui::PushID(static_cast<int>(std::hash(handle)));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
-                            ImGui::ImageButton(filename.c_str(), (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            auto id = handle.id.ToString() + std::to_string(handle.subresource);
+                            ImGui::ImageButton(id.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
 
                             const char* raw_name = filename.c_str();
 
@@ -371,7 +372,7 @@ namespace GiiGa
                                 ImGui::EndPopup();
                             }
 
-                            ImGui::PopID();
+                            //ImGui::PopID();
 
                             ImGui::TextWrapped(raw_name);
 
