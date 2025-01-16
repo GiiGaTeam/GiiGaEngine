@@ -5,6 +5,7 @@ module;
 export module ScriptSystem;
 
 import <format>;
+import <filesystem>;
 
 import AssetBase;
 import Project;
@@ -50,6 +51,8 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
 
             try
             {
+                if (!std::filesystem::exists("./EditorData/ScriptHelpers/GiiGaPy.pyi"))
+                    pybind11::module::import("sgen").attr("generate")("./EditorData/ScriptHelpers");
             }
             catch
             (pybind11::error_already_set e)

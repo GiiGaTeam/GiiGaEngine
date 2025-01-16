@@ -26,7 +26,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
     pybind11::class_<GiiGa::Uuid>(m, "Uuid")
         .def(pybind11::init<>())
         .def("__str__", &GiiGa::Uuid::ToString);
-    
+
     pybind11::class_<Json::Value>(m, "JsonValue")
         .def(pybind11::init<>())
         .def(pybind11::init<int>())
@@ -74,21 +74,20 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def_readonly_static("Up", &Vector3::Up)
         .def_readonly_static("Forward", &Vector3::Forward)
         .def_readonly_static("Right", &Vector3::Right);
-    
+
     m.def("Vector3ToJson", &GiiGa::Vector3ToJson);
 
     m.def("Vector3FromJson", &GiiGa::Vector3FromJson);
 
     pybind11::class_<GiiGa::Transform>(m, "Transform")
         .def(pybind11::init<Vector3, Vector3, Vector3>(),
-             pybind11::arg("loc") = Vector3::Zero,
-             pybind11::arg("rot") = Vector3::Zero,
-             pybind11::arg("scale") = Vector3::One)
+             pybind11::arg_v("loc", Vector3::Zero, "Vector3.Zero"),
+             pybind11::arg_v("rot", Vector3::Zero, "Vector3.Zero"),
+             pybind11::arg_v("scale", Vector3::One, "Vector3.One"))
         .def(pybind11::init<const GiiGa::Transform&>())
         .def("GetUp", &GiiGa::Transform::GetUp)
         .def("GetForward", &GiiGa::Transform::GetForward)
         .def("GetRight", &GiiGa::Transform::GetRight)
-        .def("GetMatrix", &GiiGa::Transform::GetMatrix)
         .def("GetRotation", &GiiGa::Transform::GetRotation)
         .def("SetRotation", &GiiGa::Transform::SetRotation)
         .def("__eq__", &GiiGa::Transform::operator==)
@@ -136,9 +135,5 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetWorldScale", &GiiGa::TransformComponent::GetWorldScale)
         .def("SetWorldScale", &GiiGa::TransformComponent::SetWorldScale)
         .def("AddWorldScale", &GiiGa::TransformComponent::AddWorldScale)
-        .def("GetParent", &GiiGa::TransformComponent::GetParent)
-        .def("GetWorldMatrix", &GiiGa::TransformComponent::GetWorldMatrix)
-        .def("GetInverseWorldMatrix", &GiiGa::TransformComponent::GetInverseWorldMatrix)
-        .def("GetLocalMatrix", &GiiGa::TransformComponent::GetLocalMatrix)
-        .def("GetInverseLocalMatrix", &GiiGa::TransformComponent::GetInverseLocalMatrix);
+        .def("GetParent", &GiiGa::TransformComponent::GetParent);
 }
