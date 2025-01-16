@@ -32,7 +32,7 @@ namespace GiiGa
 
         virtual ~ScriptAssetLoader() = default;
 
-        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
+        virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
         {
             return {
                 std::make_pair(AssetHandle{Uuid::New(), 0}, AssetMeta{
