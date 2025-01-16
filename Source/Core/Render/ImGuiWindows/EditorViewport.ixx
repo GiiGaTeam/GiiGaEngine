@@ -26,6 +26,7 @@ import GBuffer;
 import Input;
 import Logger;
 import EditorContext;
+import ShadowPass;
 
 namespace GiiGa
 {
@@ -36,10 +37,9 @@ namespace GiiGa
             Viewport(device)
             , editorContext_(editor_ctx)
         {
-            Resize(viewport_size_);
         }
 
-        void Resize(DirectX::SimpleMath::Vector2 new_size)
+        void Resize(DirectX::SimpleMath::Vector2 new_size) override
         {
             Viewport::Resize(new_size);
 
@@ -51,8 +51,10 @@ namespace GiiGa
 
         void Init(RenderContext& context) override
         {
+            Resize(viewport_size_);
             renderGraph_ = std::make_shared<RenderGraph>();
 
+            renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
 
@@ -63,7 +65,10 @@ namespace GiiGa
 
         RenderPassViewData GetCameraInfo() override
         {
-            return RenderPassViewData{.ViewProjMat = ViewProjectionMatrix, .viewDescriptor = ViewInfoConstBuffer->getDescriptor().getGPUHandle()};
+            return RenderPassViewData{
+                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer->getDescriptor().getGPUHandle(),
+                viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
+            };
         }
 
         void Execute(RenderContext& context) override
@@ -85,7 +90,7 @@ namespace GiiGa
 
             UpdateCameraInfo(context);
 
-            auto current_size = ImGui::GetWindowSize();
+            auto current_size = ImGui::GetContentRegionAvail();
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});
@@ -130,8 +135,9 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
-        std::shared_ptr<BufferView<Constant>> ViewInfoConstBuffer;
-        DirectX::SimpleMath::Matrix ViewProjectionMatrix;
+        std::shared_ptr<BufferView<Constant>> viewInfoConstBuffer;
+        std::shared_ptr<BufferView<Constant>> screenDimensionsConstBuffer;
+        DirectX::SimpleMath::Matrix viewProjectionMatrix;
 
         std::shared_ptr<EditorContext> editorContext_;
 
@@ -229,9 +235,9 @@ namespace GiiGa
             auto view = cmp.GetView();
             auto proj = cmp.GetProj();
 
-            auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
+            /*auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
 
-            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);
+            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);*/
 
             if (auto go = editorContext_->selectedGameObject.lock())
             {
@@ -242,46 +248,35 @@ namespace GiiGa
                     transform->SetTransform(Transform::TransformFromMatrix(transform_matrix));
                 }
             }
-
-            /*ImGui::Begin("Viewport Tools", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-            if (ImGui::Button("Translate")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::TRANSLATE;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Rotate")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::ROTATE;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Scale")) {
-                editorContext_->currentOperation_ = ImGuizmo::OPERATION::SCALE;
-            }
-
-            if (ImGui::Button("World")) {
-                editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Local")) {
-                editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
-            }
-
-            ImGui::End();*/
         }
+
 
         void UpdateCameraInfo(RenderContext& context)
         {
             auto camera_go = camera_.lock();
             auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
 
-            ViewProjectionMatrix = camera.GetViewProj();
+            viewProjectionMatrix = camera.GetViewProj();
 
-            RenderPassViewMatricies const_buf_data = {camera.view_.Transpose(), camera.GetProj().Transpose()};
+            RenderPassViewMatricies const_buf_data = {
+                camera.GetView().Transpose(), camera.GetProj().Transpose(),
+                camera.GetView().Invert().Transpose(), camera.GetProj().Invert().Transpose(),
+                camera_go->GetTransformComponent().lock()->GetWorldLocation()
+            };
 
             const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
 
             D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
 
-            ViewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+            viewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+
+            ScreenDimensions size_const_data = {viewport_size_};
+
+            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
+
+            desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(ScreenDimensions));
+
+            screenDimensionsConstBuffer = context.AllocateDynamicConstantView(ScreenDimensionsSpan, desc);
         }
     };
 }

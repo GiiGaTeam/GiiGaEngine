@@ -18,7 +18,7 @@ struct PixelShaderOutput
     float4 Diffuse : SV_Target1;
     float4 MatProp : SV_Target2;
     float4 NormalWS : SV_Target3;
-    float4 PositionWS : SV_Target4;
+    //float4 PositionWS : SV_Target4;
 };
 
 PixelShaderOutput PSMain(PS_INPUT input)
@@ -49,7 +49,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     output.NormalWS.xyz = normalWS;
 
     // Write normal in world space to output
-    output.PositionWS.xyz = input.PosWS;
+    //output.PositionWS.xyz = input.PosWS;
 
     return output;
 }

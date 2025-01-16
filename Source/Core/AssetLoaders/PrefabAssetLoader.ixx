@@ -32,7 +32,7 @@ namespace GiiGa
 
         virtual ~PrefabAssetLoader() = default;
 
-        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
+        virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
         {
             auto asset_meta = AssetMeta{
                 type_,

@@ -14,10 +14,13 @@ import <directxtk12/ResourceUploadBatch.h>;
 
 import <iostream>;
 
+import Logger;
 import Engine;
+
 import ResourceManager;
 import IImGuiWindow;
 import BaseAssetDatabase;
+import EditorAssetDatabase;
 import GPULocalResource;
 import RenderDevice;
 
@@ -27,8 +30,18 @@ import AssetType;
 import EventSystem;
 import Window;
 
+import GameObject;
+import PrefabAsset;
+import Material;
+
 namespace GiiGa
 {
+    enum class CreateAssetState {
+        None,
+        Folder,
+        Material
+    };
+
     std::unique_ptr<GPULocalResource> LoadEditorIcon(
         RenderDevice& rd,
         DirectX::ResourceUploadBatch& batcher,
@@ -38,7 +51,7 @@ namespace GiiGa
     export class ImGuiContentBrowser : public IImGuiWindow
     {
     private:
-        std::shared_ptr<BaseAssetDatabase> database_;
+        std::shared_ptr<EditorAssetDatabase> database_;
         std::filesystem::path current_path_;
 
         std::unordered_map<AssetType, std::unique_ptr<GPULocalResource>> icons_;
@@ -48,6 +61,7 @@ namespace GiiGa
         float thumbnail_size = 128.0f;
 
         EventHandle<DropFileEvent> drop_file_evt_ = EventHandle<DropFileEvent>::Null();
+        CreateAssetState create_asset_state_ = CreateAssetState::None;
 
     public:
         ImGuiContentBrowser(const ImGuiContentBrowser& obj) = delete;
@@ -55,7 +69,7 @@ namespace GiiGa
 
         ImGuiContentBrowser()
         {
-            database_ = Engine::Instance().ResourceManager()->Database();
+            database_ = std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().ResourceManager()->Database());
             assert(database_);
             current_path_ = database_->AssetPath();
 
@@ -184,8 +198,8 @@ namespace GiiGa
                 try {
                     std::filesystem::copy(evt.path, current_path_);
                 }
-                catch (...) {
-
+                catch (const std::exception& e) {
+                    el::Loggers::getLogger(LogEditor)->error("Failed drop file: %v", e.what());
                 }
                 });
         }
@@ -193,6 +207,36 @@ namespace GiiGa
         void RecordImGui() override
         {
             ImGui::Begin("Content Browser");
+
+            ImVec2 cursor_pos = ImGui::GetCursorPos();
+            ImGui::Dummy(ImGui::GetContentRegionAvail());
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GOTOPREFAB")) {
+                    std::shared_ptr<GameObject> go = *(std::shared_ptr<GameObject>*)payload->Data;
+
+                    auto prefab = std::make_shared<PrefabAsset>(AssetHandle{ Uuid::New(), 0 }, go);
+                    go->prefab_handle_ = database_->CreateAsset(prefab, current_path_ / std::string{ go->name + ".prefab" });
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            if (ImGui::BeginPopupContextItem("CONTENTBROWSER")) {
+                if (ImGui::MenuItem("Create Folder")) {
+                    create_asset_state_ = CreateAssetState::Folder;
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Create Material")) {
+                    create_asset_state_ = CreateAssetState::Material;
+                }
+
+                ImGui::EndPopup();
+            }
+
+            ImGui::SetCursorPos(cursor_pos);
 
             ImGui::TextWrapped("Current path: %s", current_path_.string().c_str());
 
@@ -205,11 +249,12 @@ namespace GiiGa
             }
 
             ImGui::Columns(column_count, nullptr, false);
+
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             if (current_path_ != database_->AssetPath()) 
             {
                 auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton("##Button_1", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     current_path_ = current_path_.parent_path();
@@ -219,6 +264,65 @@ namespace GiiGa
                 ImGui::NextColumn();
             }
 
+            // Context menu logic
+            switch (create_asset_state_)
+            {
+            case CreateAssetState::Folder:
+            {
+                auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
+                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                char folder_name_buf[512];
+                snprintf(folder_name_buf, sizeof(folder_name_buf), "%s", "");
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::InputText("##", folder_name_buf, IM_ARRAYSIZE(folder_name_buf));
+
+                if (!ImGui::IsItemActive() && strlen(folder_name_buf) > 0) {
+                    create_asset_state_ = CreateAssetState::None;
+
+                    std::filesystem::path new_folder_path = current_path_ / folder_name_buf;
+                    try {
+                        std::filesystem::create_directory(new_folder_path);
+                    }
+                    catch (const std::exception& e) {
+                        el::Loggers::getLogger(LogEditor)->error("Failed to create folder: %v", e.what());
+                    }
+                }
+
+                ImGui::NextColumn();
+            }
+            break;
+
+            case CreateAssetState::Material:
+            {
+                auto& icon = icons_srv_[AssetType::Material]->getDescriptor();
+                ImGui::ImageButton("MaterialBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                char material_name_buf[512];
+                snprintf(material_name_buf, sizeof(material_name_buf), "%s", "");
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::InputText("##", material_name_buf, IM_ARRAYSIZE(material_name_buf));
+
+                if (!ImGui::IsItemActive() && strlen(material_name_buf) > 0) {
+                    create_asset_state_ = CreateAssetState::None;
+
+                    auto material = std::make_shared<Material>(material_name_buf);
+                    auto filename = material->name + ".mat";
+
+                    database_->CreateAsset(material, current_path_ / filename);
+                }
+
+                ImGui::NextColumn();
+            }
+            break;
+
+            default:
+                break;
+            }
+
+            // Asset displaying
             for (auto& entry : std::filesystem::directory_iterator(current_path_))
             {
                 const auto& path = entry.path();
@@ -230,7 +334,8 @@ namespace GiiGa
                 if (entry.is_directory()) 
                 {
                     auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                    ImGui::ImageButton("##Button_2", (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+                    ImGui::ImageButton(filename.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
                         current_path_ /= path.filename();
@@ -254,9 +359,10 @@ namespace GiiGa
                     for (const auto& [handle, meta] : range) {
                         if (meta.type != AssetType::Unknown)
                         {
-                            ImGui::PushID(static_cast<int>(handle.id.Hash()));
+                            //ImGui::PushID(static_cast<int>(std::hash(handle)));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
-                            ImGui::ImageButton("##Button_3", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            auto id = handle.id.ToString() + std::to_string(handle.subresource);
+                            ImGui::ImageButton(id.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
 
                             const char* raw_name = filename.c_str();
 
@@ -286,7 +392,7 @@ namespace GiiGa
                                 ImGui::EndPopup();
                             }
 
-                            ImGui::PopID();
+                            //ImGui::PopID();
 
                             ImGui::TextWrapped(raw_name);
 
@@ -325,4 +431,3 @@ namespace GiiGa
         return std::make_unique<GPULocalResource>(rd, texture_ptr);
     }
 }
-

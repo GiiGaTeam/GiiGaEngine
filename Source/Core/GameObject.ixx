@@ -461,8 +461,8 @@ namespace GiiGa
             const auto& kids_by_world_uuid = parent->GetKidsByWorldUuid();
             if (!kids_by_world_uuid.contains(this->uuid_))
             {
-                parent->AddChild(std::static_pointer_cast<GameObject>(shared_from_this()));
-                parent_ = parent;
+                parent->children_.push_back(std::static_pointer_cast<GameObject>(shared_from_this()));
+                this->parent_ = parent;
             }
 
             if (this->level_root_gos_.lock() != parent->level_root_gos_.lock())
@@ -531,7 +531,6 @@ namespace GiiGa
 
         void AddChild(std::shared_ptr<GameObject> child)
         {
-            children_.push_back(child);
             child->SetParent(std::static_pointer_cast<GameObject>(shared_from_this()));
         }
 

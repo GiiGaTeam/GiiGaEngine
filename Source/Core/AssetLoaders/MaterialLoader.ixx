@@ -31,7 +31,7 @@ namespace GiiGa
 
         virtual ~MaterialLoader() = default;
 
-        virtual std::vector<std::pair<AssetHandle, AssetMeta>> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
+        virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
         {
             return {
                 std::make_pair(AssetHandle{Uuid::New(), 0}, AssetMeta{
@@ -128,7 +128,10 @@ namespace GiiGa
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
-            Todo();
+            if (auto mat = std::dynamic_pointer_cast<Material>(asset))
+            {
+                mat->SaveToAbsolutePath(path);
+            }
         }
 
         const char* GetName() override

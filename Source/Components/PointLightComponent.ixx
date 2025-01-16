@@ -194,6 +194,10 @@ namespace GiiGa
             }
         }
 
+        void InitShadowData(RenderDevice& device) override
+        {
+        };
+
         PerObjectData& GetPerObjectData() override
         {
             return *perObjectData_;
@@ -224,7 +228,7 @@ namespace GiiGa
             isDirty = true;
         }
 
-        PointLightData GetData() const {return data_;}
+        PointLightData GetData() const { return data_; }
 
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;

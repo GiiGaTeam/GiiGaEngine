@@ -14,5 +14,6 @@ namespace GiiGa
     export const std::string LogViewport = "Viewport";
     export const std::string LogInput = "Input";
     export const std::string LogWorldQuery = "WorldQuery";
+    export const std::string LogEditor = "Editor";
     export const std::string LogPyScript = "PyScripting";
 }

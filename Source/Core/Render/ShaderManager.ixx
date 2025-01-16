@@ -22,6 +22,8 @@ namespace GiiGa
     export const LPCWSTR GBufferWireframeShader = L"Shaders/GBufferWireframeShader.hlsl";
     export const LPCWSTR GPointLight = L"Shaders/GPointLight.hlsl";
     export const LPCWSTR GDirectionLight = L"Shaders/GDirectionalLight.hlsl";
+    export const LPCWSTR CascadeShadowShader = L"Shaders/CascadeShadowShader.hlsl";
+    export const LPCWSTR CascadeShadowGeomShader = L"Shaders/CascadeShadowGeomShader.hlsl";
     
     export class ShaderManager
     {
@@ -117,6 +119,14 @@ namespace GiiGa
             shader->CompileShader(&shaderMap_);
 
             shader = std::make_shared<Shader>(GDirectionLight, "PSMain", "ps_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_shared<Shader>(CascadeShadowShader, "VSMain", "vs_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_shared<Shader>(CascadeShadowGeomShader, "GSMain", "gs_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
         }

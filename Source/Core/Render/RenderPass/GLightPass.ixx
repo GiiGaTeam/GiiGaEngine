@@ -34,7 +34,8 @@ namespace GiiGa
     {
         static inline int ViewDataRootIndex = 0;
         static inline int ModelDataRootIndex = 1;
-        static inline int LightDataRootIndex = 2;
+        static inline int ScreenDimensionsRootIndex = 2;
+        static inline int LightDataRootIndex = 3;
 
         static inline int ConstantBufferCount = LightDataRootIndex + 1;
 
@@ -108,7 +109,7 @@ namespace GiiGa
                     {
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
             }
 
             // shade PSOs
@@ -188,11 +189,11 @@ namespace GiiGa
                         context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
 
                 shade_mask_to_pso[ObjectMask()
                                   .SetVertexType(VertexTypes::VertexPNTBT)
-                                  .SetLightType(LightType::Direction)]
+                                  .SetLightType(LightType::Directional)]
 
                     .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
                     .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
@@ -212,7 +213,7 @@ namespace GiiGa
                         context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS - 1);
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
             }
         }
 
@@ -220,24 +221,33 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
 
             // Frustum culling should not work for directional lighting.
             SceneVisibility::Extract(renderpass_direction_filter, renderpass_unite, visibles);
 
             context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
+            context.BindDescriptorHandle(ScreenDimensionsRootIndex, cam_info.dimensionsDescriptor);
 
             auto accum = gbuffer_->GetRTV(GBuffer::GBufferOrder::LightAccumulation);
-            auto depth = gbuffer_->GetDepthRTV();
+            auto depth = gbuffer_->GetDepthLightsRTV();
 
-            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
-                                                                 false, &depth);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_COPY_SOURCE);
+            gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_COPY_DEST);
+            gbuffer_->CopyGBufferDSVToLightDSV(context);
+
+            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
             context.BindDescriptorHandle(ConstantBufferCount + 0, gbuffer_->GetSRV(GBuffer::GBufferOrder::Diffuse));
             context.BindDescriptorHandle(ConstantBufferCount + 1, gbuffer_->GetSRV(GBuffer::GBufferOrder::Material));
             context.BindDescriptorHandle(ConstantBufferCount + 2, gbuffer_->GetSRV(GBuffer::GBufferOrder::NormalWS));
-            context.BindDescriptorHandle(ConstantBufferCount + 3, gbuffer_->GetSRV(GBuffer::GBufferOrder::PositionWS));
+            context.BindDescriptorHandle(ConstantBufferCount + 3, gbuffer_->GetDepthSRV());
 
             for (auto& visible : visibles)
             {
@@ -247,15 +257,16 @@ namespace GiiGa
                 {
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
-                        gbuffer_->ClearStencil(context, 1);
+                        gbuffer_->ClearLightsStencil(context, 1);
                         pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any())
+                        //if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any())
                         {
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
-                            context.GetGraphicsCommandList()->OMSetStencilRef(1);
+                            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr,
+                                                                                 false, &depth);
                             renderable.lock()->Draw(context);
                         }
 
@@ -263,17 +274,22 @@ namespace GiiGa
                             // shade
                             PSO& shade_pso = shade_mask_to_pso.at(visible.first);
                             context.BindPSO(shade_pso.GetState().get());
+                            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
+                                                                                 false, &depth);
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);
                             renderable.lock()->Draw(context);
                         }
                     }
                 }
             }
+
+            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+            //gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
         }
 
     private:
         ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::NoDirection);
-        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Direction);
+        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Directional);
 
         ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
                                                   .SetLightType(LightType::All);

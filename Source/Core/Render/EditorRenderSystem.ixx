@@ -25,8 +25,6 @@ namespace GiiGa
         void Initialize() override
         {
             //RenderSystem::Initialize();
-
-            root_.AddPass(std::make_shared<ShadowPass>());
             std::shared_ptr<EditorSwapChainPass> tempEditorSCP = std::make_shared<EditorSwapChainPass>(device_, swapChain_);
             editorSwapChainPass_ = tempEditorSCP;
             root_.AddPass(tempEditorSCP);

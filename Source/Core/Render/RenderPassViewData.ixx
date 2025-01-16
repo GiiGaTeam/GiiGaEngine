@@ -5,6 +5,7 @@ module;
 
 export module RenderPassViewData;
 
+import CameraComponent;
 import <memory>;
 
 namespace GiiGa
@@ -13,12 +14,21 @@ namespace GiiGa
     {
         DirectX::SimpleMath::Matrix viewMatrix;
         DirectX::SimpleMath::Matrix projMatrix;
+        DirectX::SimpleMath::Matrix invViewMatrix;
+        DirectX::SimpleMath::Matrix invProjMatrix;
+        DirectX::SimpleMath::Vector3 camPos;
+    };
+    
+    export struct alignas(256) ScreenDimensions
+    {
+        DirectX::SimpleMath::Vector2 screenDimensions;
     };
 
     export struct RenderPassViewData
     {
-        DirectX::SimpleMath::Matrix ViewProjMat;
+        Camera camera;
         D3D12_GPU_DESCRIPTOR_HANDLE viewDescriptor;
-        DirectX::SimpleMath::Vector2 viewDimensions;
+        ScreenDimensions screenDimensions;
+        D3D12_GPU_DESCRIPTOR_HANDLE dimensionsDescriptor;
     };
 }

@@ -32,13 +32,13 @@ namespace GiiGa
 {
     export class GBufferPass : public RenderPass
     {
-        static inline int ViewDataRootIndex = 0;
-        static inline int ModelDataRootIndex = 1;
-        static inline int MaterialDataRootIndex = 2;
-
-        static inline int ConstantBufferCount = MaterialDataRootIndex + 1;
-
     public:
+        static inline const int ViewDataRootIndex = 0;
+        static inline const int ModelDataRootIndex = 1;
+        static inline const int MaterialDataRootIndex = 2;
+
+        static inline const int ConstantBufferCount = MaterialDataRootIndex + 1;
+
         GBufferPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn, std::shared_ptr<GBuffer> gbuffer):
             getCamInfoDataFunction_(getCamDescFn),
             gbuffer_(gbuffer)
@@ -167,13 +167,13 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.ViewProjMat);
+            const auto& visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            //gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
             gbuffer_->BindAllAsRTV(context);
 
@@ -198,11 +198,6 @@ namespace GiiGa
                     }
                 }
             }
-
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
     private:

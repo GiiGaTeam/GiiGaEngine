@@ -96,12 +96,6 @@ namespace GiiGa
         {
             AssetHandle handle = asset->GetId();
 
-            AssetMeta meta;
-            meta.path = path;
-            meta.type = asset->GetType();
-
-            registry_map_.emplace(handle, std::move(meta));
-
             auto loaderIt = asset_savers_.find(asset->GetType());
 
             if (loaderIt == asset_savers_.end())
@@ -109,9 +103,19 @@ namespace GiiGa
                 throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset->GetType()));
             }
 
-            AssetLoader* loader = loaderIt->second.get();
-            auto absolute_path = asset_path_ / path;
-            loader->Save(asset, absolute_path);
+            std::filesystem::path relative_path = std::filesystem::relative(path, asset_path_);
+
+            AssetMeta meta;
+            meta.path = relative_path;
+            meta.type = asset->GetType();
+            meta.loader_id = loaderIt->second->Id();
+            meta.name = path.stem().string();
+
+            registry_map_.emplace(handle, std::move(meta));
+
+            //TODO: Try catch, if save failed it should remove from registry_map and assets_to_path
+            assets_to_path_.emplace(relative_path, handle);
+            loaderIt->second->Save(asset, path);
 
             return handle;
         }
@@ -166,6 +170,10 @@ namespace GiiGa
                 return;
             }
 
+            if (assets_to_path_.contains(path)) {
+                return;
+            }
+
             el::Loggers::getLogger(LogResourceManager)->debug("Register new file: %v", path);
 
             AssetType asset_type;
@@ -198,9 +206,9 @@ namespace GiiGa
                 registry_map_.emplace(handle, std::move(meta));
             }
 
-            auto handle = handles[0];
-            handle.first.subresource = 0;
-            assets_to_path_.emplace(path, handle.first);
+            auto handle = handles.begin()->first;
+            handle.subresource = 0;
+            assets_to_path_.emplace(path, handle);
         }
 
         void RemoveAsset(const std::filesystem::path& path)
