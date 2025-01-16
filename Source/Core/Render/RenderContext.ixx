@@ -93,9 +93,9 @@ namespace GiiGa
             return current_frame->AllocateDynamicConstantView(device_, data, 256, desc);
         }
 
-        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, size_t alignment = 16)
         {
-            return current_frame->AllocateDynamicShaderResourceView(device_, data, 16, desc);
+            return current_frame->AllocateDynamicShaderResourceView(device_, data, alignment, desc);
         }
 
         void ResourceBarrier(UINT NumBarriers, const D3D12_RESOURCE_BARRIER& pBarriers)

@@ -55,7 +55,7 @@ namespace GiiGa
         Point = 1,
         Directional = 2,
         Spot = 4,
-        NoDirection = Point | Spot,
+        NoDirectional = Point | Spot,
         All = Point | Directional | Spot,
     };
 
@@ -153,6 +153,11 @@ namespace GiiGa
         bool any()
         {
             return mask_.any();
+        }
+
+        bool none()
+        {
+            return mask_.none();
         }
 
         // ======================== OPERATORS =========================================

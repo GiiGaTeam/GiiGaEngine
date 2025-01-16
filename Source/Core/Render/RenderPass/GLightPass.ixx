@@ -167,10 +167,7 @@ namespace GiiGa
                 blendDesc.RenderTarget[0] = renderTargetDesc;
 
 
-                shade_mask_to_pso[ObjectMask()
-                                  .SetVertexType(VertexTypes::VertexPNTBT)
-                                  .SetLightType(LightType::Point)]
-
+                shade_mask_to_pso[filter_pointLight_]
                     .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                     .set_ps(ShaderManager::GetShaderByName(GPointLight))
                     .set_rasterizer_state(shade_rs)
@@ -191,9 +188,7 @@ namespace GiiGa
                     .add_static_samplers(sampler_desc)
                     .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
 
-                shade_mask_to_pso[ObjectMask()
-                                  .SetVertexType(VertexTypes::VertexPNTBT)
-                                  .SetLightType(LightType::Directional)]
+                shade_mask_to_pso[filter_directionalLight_]
 
                     .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
                     .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
@@ -221,10 +216,10 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
 
-            auto visibles = SceneVisibility::Extract(renderpass_filter, renderpass_unite, cam_info.camera.GetViewProj());
+            auto visibles = SceneVisibility::ExtractFromFrustum(filter_pointLight_, cam_info.camera.GetViewProj());
 
             // Frustum culling should not work for directional lighting.
-            SceneVisibility::Extract(renderpass_direction_filter, renderpass_unite, visibles);
+            SceneVisibility::ExpandByFilterFromAll(filter_directionalLight_, visibles);
 
             context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
@@ -251,17 +246,19 @@ namespace GiiGa
 
             for (auto& visible : visibles)
             {
-                PSO& pso = shade_mask_to_pso.at(visible.first);
-                context.SetSignature(pso.GetSignature().get());
+                PSO shade_pso;
+                if (!GetPsoFromMapByMask(shade_mask_to_pso, visible.first, shade_pso)) continue;
+
+                context.SetSignature(shade_pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
                 {
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
                         gbuffer_->ClearLightsStencil(context, 1);
-                        pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
-                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
+                        shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
+                        shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        //if ((renderable.lock()->GetSortData().object_mask & renderpass_filter).any())
+                        //if ((renderable.lock()->GetSortData().object_mask & filter_pointLight_).any())
                         {
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
@@ -272,7 +269,6 @@ namespace GiiGa
 
                         {
                             // shade
-                            PSO& shade_pso = shade_mask_to_pso.at(visible.first);
                             context.BindPSO(shade_pso.GetState().get());
                             context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
                                                                                  false, &depth);
@@ -288,11 +284,15 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask renderpass_filter = ObjectMask().SetLightType(LightType::NoDirection);
-        ObjectMask renderpass_direction_filter = ObjectMask().SetLightType(LightType::Directional);
+        ObjectMask filter_pointLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                    .SetLightType(LightType::Point)
+                                                    .SetBlendMode(BlendMode::Opaque)
+                                                    .SetFillMode(FillMode::All);
 
-        ObjectMask renderpass_unite = ObjectMask().SetVertexType(VertexTypes::All)
-                                                  .SetLightType(LightType::All);
+        ObjectMask filter_directionalLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                                          .SetLightType(LightType::Directional)
+                                                          .SetBlendMode(BlendMode::Opaque)
+                                                          .SetFillMode(FillMode::All);
 
         std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;
         PSO unmark_pso;
