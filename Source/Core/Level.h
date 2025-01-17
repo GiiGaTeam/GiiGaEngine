@@ -176,7 +176,7 @@ namespace GiiGa
             {
                 if (all_gos_jsons[i]["Prefab"].empty()) // is not prefab instance
                 {
-                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
+                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->RestoreFromLevelJson(all_gos_jsons[i]);
                 }
             }
 

@@ -16,7 +16,8 @@ class MyPyBeh2(gp.Component):
         print("MyPyBeh2 BeginPlay", flush=True)
 
     def Tick(self, dt: float):
-        print("MyPyBeh2 say: beh1 owner name is" + self.beh1.owner.name,flush=True)
+        #print("MyPyBeh2 say: beh1 owner name is" + self.beh1.owner.name,flush=True)
+        pass
 
 import inspect
 print(inspect.getmro(MyPyBeh1),flush=True)

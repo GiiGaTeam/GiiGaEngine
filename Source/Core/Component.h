@@ -54,7 +54,7 @@ namespace GiiGa
 
         virtual ~Component() override
         {
-            el::Loggers::getLogger("")->debug("Component::~Component");
+            //el::Loggers::getLogger("")->debug("Component::~Component");
             WorldQuery::RemoveComponent(this);
             WorldQuery::RemoveAnyWithUuid(uuid_);
         }
