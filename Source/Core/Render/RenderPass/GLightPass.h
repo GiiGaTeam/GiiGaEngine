@@ -254,7 +254,7 @@ namespace GiiGa
                         shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
-                        //if ((renderable.lock()->GetSortData().object_mask & filter_pointLight_).any())
+                        if (!filter_directionalLight_.CoversMask(renderable.lock()->GetSortData().object_mask))
                         {
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());

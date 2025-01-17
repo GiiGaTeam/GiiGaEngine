@@ -138,7 +138,6 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            
         }
 
         void Draw(RenderContext& context) override
@@ -200,6 +199,12 @@ namespace GiiGa
 
             UINT SizeInBytes = sizeof(DirectionLightData);
 
+            auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
+            if (!owner_go) return;
+
+            Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();
+            data_.dirWS = trans.GetForward();
+
             const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
 
             if (isStatic_)
@@ -227,7 +232,7 @@ namespace GiiGa
             desc.Buffer.StructureByteStride = sizeof(CascadeData);
             desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, 0);
+            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, sizeof(CascadeData));
         }
 
         PerObjectData& GetPerObjectData() override
@@ -267,7 +272,7 @@ namespace GiiGa
                 rtvDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
                 D3D12_CLEAR_VALUE clear_value = DS_CLEAR_VALUE;
-                shadow_resource_ = std::make_unique<GPULocalResource>(device, rtvDesc, D3D12_RESOURCE_STATE_DEPTH_READ, &clear_value);
+                shadow_resource_ = std::make_unique<GPULocalResource>(device, rtvDesc, D3D12_RESOURCE_STATE_COMMON, &clear_value);
             }
 
             {
@@ -404,8 +409,6 @@ namespace GiiGa
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
 
                     origaabb.Transform(origaabb, trans.GetMatrix());
-
-                    data_.dirWS = trans.GetForward();
                     isDirty = true;
 
                     visibilityEntry_->Update(origaabb);

@@ -137,7 +137,7 @@ namespace GiiGa
                     // Apply render filter to the object mask.
                     // If the object matches the filter, process it.
                     ObjectMask object_mask = sort_data.object_mask;
-                    if ((object_mask & render_filter_type) == object_mask)
+                    if (render_filter_type.CoversMask(object_mask))
                     {
                         // Check if a draw packet already exists for this mask.
                         auto drawPacket = mask_to_draw_packets.find(object_mask);
@@ -225,7 +225,7 @@ namespace GiiGa
                 // Apply render filter to the object mask.
                 // If the object matches the filter, process it.
                 ObjectMask object_mask = sort_data.object_mask;
-                if ((object_mask & render_filter_type) == object_mask)
+                if (render_filter_type.CoversMask(object_mask))
                 {
                     // Check if a draw packet already exists for this mask.
                     auto drawPacket = result_packets.find(object_mask);

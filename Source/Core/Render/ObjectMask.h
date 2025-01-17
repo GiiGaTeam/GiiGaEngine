@@ -225,6 +225,10 @@ namespace GiiGa
             return mask_ != other.mask_;
         }
 
+        bool CoversMask(const ObjectMask& other) const
+        {
+            return (other & *this) == other;
+        }
         std::bitset<BitMaskSize> GetMask() const
         {
             return mask_;

@@ -153,7 +153,6 @@ namespace GiiGa
         void Draw(RenderContext& context) override
         {
             auto cam_info = getCamInfoDataFunction_();
-
             const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
             const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum_culling_res);
             const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum_culling_res);
@@ -162,6 +161,8 @@ namespace GiiGa
             SceneVisibility::Expand(vis_unlit, visibles);
             SceneVisibility::Expand(vis_lit, visibles);
             SceneVisibility::Expand(vis_wire, visibles);
+
+            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -172,18 +173,15 @@ namespace GiiGa
             gbuffer_->BindAllAsRTV(context);
 
             gbuffer_->ClearAll(context);
-
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
             context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
 
             for (auto& visible : visibles)
             {
-                //if (!mask_to_pso.contains(visible.first)) continue;
                 PSO pso;
                 if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
 
-                context.BindPSO(pso.GetState().get());
                 context.SetSignature(pso.GetSignature().get());
+                context.BindPSO(pso.GetState().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
                 {
                     auto CRG = common_resource_group.second;

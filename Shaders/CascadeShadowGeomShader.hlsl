@@ -18,8 +18,8 @@ void GSMain(triangle GS_IN p[3], inout TriangleStream<GS_OUT> stream)
             gs.arrInd = id;
             stream.Append(gs);
         }
-        stream.RestartStrip();
     }
+    stream.RestartStrip();
 }
 
 #endif
