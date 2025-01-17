@@ -23,7 +23,7 @@ namespace GiiGa
         {
             for (const auto& [mask, pso] : mask_map)
             {
-                if ((mask & objectMask) == objectMask)
+                if (mask.CoversMask(objectMask))
                 {
                     res_pso = pso;
                     return true;

@@ -30,7 +30,7 @@ namespace GiiGa
     public:
         static const uint8_t ModelDataRootIndex = 0;
         static const uint8_t DirectionalDataRootIndex = 1;
-        static const uint8_t StructuredBufferShadow = 2;
+        static const uint8_t StructuredBufferShadowRootIndex = 0;
 
         static const uint8_t ConstantBufferCount = 2;
         static const uint8_t SRVCount = 1;
@@ -108,13 +108,18 @@ namespace GiiGa
                         const auto light = std::dynamic_pointer_cast<LightComponent>(rendLight.lock());
                         if (!light) continue;
 
+                        D3D12_GPU_DESCRIPTOR_HANDLE shadow_srv;
+                        D3D12_GPU_DESCRIPTOR_HANDLE light_srv;
                         if (const auto dirLight = std::dynamic_pointer_cast<DirectionalLightComponent>(light))
                         {
                             const auto dsv = dirLight->GetShadowDSV();
                             context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr, true, &dsv);
+                            dirLight->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+                            dirLight->ClearShadowDSV(context);
+                            dirLight->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_READ);
                             dirLight->UpdateCascadeGPUData(context, cam_info.camera);
-                            context.BindDescriptorHandle(StructuredBufferShadow, dirLight->GetCascadeDataSRV());
-                            context.BindDescriptorHandle(DirectionalDataRootIndex, dirLight->GetLightDataSRV());
+                            shadow_srv = dirLight->GetCascadeDataSRV();
+                            light_srv = dirLight->GetLightDataSRV();
                         }
                         else continue;
 
@@ -130,8 +135,11 @@ namespace GiiGa
                         {
                             PSO pso;
                             if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
-                            context.BindPSO(pso.GetState().get());
                             context.SetSignature(pso.GetSignature().get());
+                            context.BindPSO(pso.GetState().get());
+                            context.BindDescriptorHandle(ConstantBufferCount + StructuredBufferShadowRootIndex, shadow_srv);
+                            context.BindDescriptorHandle(DirectionalDataRootIndex, light_srv);
+
                             for (auto& common_resource_group : visible.second.common_resource_renderables)
                             {
                                 //auto CRG = common_resource_group.second;
