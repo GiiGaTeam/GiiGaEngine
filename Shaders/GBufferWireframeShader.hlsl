@@ -26,5 +26,6 @@ PixelShaderOutput PSMain(PS_INPUT input)
     output.LightAccumulation.xyz = float3(0.7, 0.7, 0.7);
     output.LightAccumulation.w = input.Pos.z;
 
+    output.Diffuse.w = input.Pos.z;
     return output;
 }

@@ -24,15 +24,14 @@ cbuffer DirectionLight : register(b3)
 Texture2D Diffuse : register(t0);
 Texture2D MatProp : register(t1);
 Texture2D NormalWS : register(t2);
-Texture2D DepthVS : register(t3);
 
 SamplerState sampl : register(s0);
 
 /*
  *  GBuffer Structure:
  *                          R       G       B       A
- *      LightAccum          R       G       B    depth(copy)
- *      Diffuse             R       G       B      NU
+ *      LightAccum          R       G       B      NU
+ *      Diffuse             R       G       B      depth(copy)
  *      MatProps         Metal    Spec    Rough    Aniso
  *      NormalWS            X       Y       Z      NU
  *      
@@ -69,8 +68,8 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float4 DiffuseColor = Diffuse.Load(int3(texCoord, 0));
     float4 MatProps = MatProp.Load(int3(texCoord, 0));
     float4 NormalTex = NormalWS.Load(int3(texCoord, 0));
-    //float4 PositionTex = PositionWS.Load(int3(texCoord, 0));
-    float depth = DepthVS.Load(int3(texCoord, 0)).r;
+    float depth = DiffuseColor.w;
+    //float depth = DepthVS.Load(int3(texCoord, 0)).r;
     matrix ProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
     float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView, ScreenDimensions);
 
@@ -86,7 +85,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float3 surfColor = DiffuseColor.rgb;
 
     // Calculate the light accumulation
-    float3 lightAccum = CalcDirectionalLight(surfColor, normalWS, viewDir, MatProps.z);
+    float3 lightAccum = CalcDirectionalLight(surfColor, normalWS, viewDir, MatProps.y);
 
     // Output the light accumulation
     output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed

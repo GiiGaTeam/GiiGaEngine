@@ -32,6 +32,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     output.LightAccumulation.w = input.Pos.z;
 
     output.Diffuse.xyz = BaseColor.Sample(sampl, input.Tex).xyz * material.BaseColorTint_;
+    output.Diffuse.w = input.Pos.z;
 
     output.MatProp.x = Metallic.Sample(sampl, input.Tex).x * material.MetallicScale_;
     output.MatProp.y = Specular.Sample(sampl, input.Tex).x * material.SpecularScale_;

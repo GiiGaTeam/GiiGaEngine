@@ -24,7 +24,6 @@ cbuffer PointLight : register(b3)
 Texture2D Diffuse : register(t0);
 Texture2D MatProp : register(t1);
 Texture2D NormalWS : register(t2);
-Texture2D DepthVS : register(t3);
 
 SamplerState sampl : register(s0);
 
@@ -73,7 +72,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float4 MatProps = MatProp.Load(int3(texCoord,0));
     float4 NormalTex = NormalWS.Load(int3(texCoord,0));
     //float4 PositionTex = PositionWS.Load(int3(texCoord, 0));
-    float depth = DepthVS.Load(int3(texCoord, 0)).r;
+    float depth = DiffuseColor.w;
     matrix ProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
     float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView, ScreenDimensions);
     

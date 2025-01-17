@@ -35,7 +35,6 @@ namespace GiiGa
             Diffuse,
             Material,
             NormalWS,
-            //PositionWS
         };
 
         static inline const uint8_t NUM_GBUFFERS = 4;
@@ -58,7 +57,6 @@ namespace GiiGa
                 context.ClearRenderTargetView(rtv->getDescriptor().GetCpuHandle(), G_CLEAR_VALUE);
             }
             context.ClearDepthStencilView(DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DS_CLEAR_VALUE);
-            context.ClearDepthStencilView(DSV_lights_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DS_CLEAR_VALUE);
         }
 
         void TransitionResource(RenderContext& context, GBufferOrder buffer, D3D12_RESOURCE_STATES after) const
@@ -69,11 +67,6 @@ namespace GiiGa
         void TransitionDepthResource(RenderContext& context, D3D12_RESOURCE_STATES after) const
         {
             depth_res_->StateTransition(context, after);
-        }
-
-        void TransitionDepthLightsResource(RenderContext& context, D3D12_RESOURCE_STATES after) const
-        {
-            depth_lights_res_->StateTransition(context, after);
         }
 
         void BindAllAsRTV(RenderContext& context) const
@@ -109,19 +102,9 @@ namespace GiiGa
             return SRVs_[NUM_GBUFFERS]->getDescriptor().getGPUHandle();
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE GetDepthLightsRTV() const
-        {
-            return DSV_lights_->getDescriptor().GetCpuHandle();
-        }
-
         void ClearStencil(RenderContext& context, uint8_t value)
         {
             context.ClearDepthStencilView(DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_STENCIL, D3D12_CLEAR_VALUE{.DepthStencil = {.Depth = 0, .Stencil = value}});
-        }
-
-        void ClearLightsStencil(RenderContext& context, uint8_t value)
-        {
-            context.ClearDepthStencilView(DSV_lights_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_STENCIL, D3D12_CLEAR_VALUE{.DepthStencil = {.Depth = 0, .Stencil = value}});
         }
 
         void Resize(DirectX::SimpleMath::Vector2 new_size)
@@ -172,7 +155,7 @@ namespace GiiGa
                 }
             }
 
-            {                
+            {
                 D3D12_RESOURCE_DESC res_desc = {};
                 res_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
                 res_desc.Alignment = 0;
@@ -209,17 +192,9 @@ namespace GiiGa
 
                 // Create the Shader Resource View
                 SRVs_[NUM_GBUFFERS] = depth_res_->EmplaceShaderResourceBufferView(srvDesc);
-                
-                // DSV for Lights pass
-                depth_lights_res_ = std::make_unique<GPULocalResource>(device_, res_desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clear_value);
-                DSV_lights_ = depth_lights_res_->EmplaceDepthStencilView(dsv_desc);
             }
         }
 
-        void CopyGBufferDSVToLightDSV(RenderContext& context)
-        {
-            context.GetGraphicsCommandList()->CopyResource(depth_lights_res_->GetResource().get(), depth_res_->GetResource().get());
-        }
     private:
         RenderDevice& device_;
         std::array<std::unique_ptr<GPULocalResource>, NUM_GBUFFERS> resources_;
@@ -227,8 +202,5 @@ namespace GiiGa
         std::array<std::shared_ptr<BufferView<ShaderResource>>, NUM_GBUFFERS + 1> SRVs_;
         std::unique_ptr<GPULocalResource> depth_res_;
         std::shared_ptr<BufferView<DepthStencil>> DSV_;
-
-        std::unique_ptr<GPULocalResource> depth_lights_res_;
-        std::shared_ptr<BufferView<DepthStencil>> DSV_lights_;
     };
 }

@@ -222,18 +222,11 @@ namespace GiiGa
             context.BindDescriptorHandle(ScreenDimensionsRootIndex, cam_info.dimensionsDescriptor);
 
             auto accum = gbuffer_->GetRTV(GBuffer::GBufferOrder::LightAccumulation);
-            auto depth = gbuffer_->GetDepthLightsRTV();
+            auto depth = gbuffer_->GetDepthRTV();
 
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_COPY_SOURCE);
-            gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_COPY_DEST);
-            gbuffer_->CopyGBufferDSVToLightDSV(context);
-
-            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
             context.BindDescriptorHandle(ConstantBufferCount + 0, gbuffer_->GetSRV(GBuffer::GBufferOrder::Diffuse));
             context.BindDescriptorHandle(ConstantBufferCount + 1, gbuffer_->GetSRV(GBuffer::GBufferOrder::Material));
@@ -250,7 +243,7 @@ namespace GiiGa
                 {
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
-                        gbuffer_->ClearLightsStencil(context, 1);
+                        gbuffer_->ClearStencil(context, 1);
                         shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
                         shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
@@ -275,8 +268,6 @@ namespace GiiGa
                 }
             }
 
-            gbuffer_->TransitionDepthResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-            //gbuffer_->TransitionDepthLightsResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
         }
 
     private:
