@@ -36,7 +36,7 @@ namespace GiiGa
         PyBehaviourSchemeComponent& operator=(const PyBehaviourSchemeComponent& other) = delete;
         PyBehaviourSchemeComponent& operator=(PyBehaviourSchemeComponent&& other) noexcept = default;
 
-        PyBehaviourSchemeComponent(Json::Value json, bool roll_id = false):
+        PyBehaviourSchemeComponent(const Json::Value& json, bool roll_id = false):
             Component(json, roll_id)
         {
             auto script_handle = AssetHandle::FromJson(json["Script"]);
@@ -47,7 +47,7 @@ namespace GiiGa
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
 
             prop_modifications = script_asset_->GetPropertyAnnotaions();
-
+            
             prop_modifications.SetValuesFromJson(json["PropertyModifications"]);
         }
 
@@ -94,7 +94,7 @@ namespace GiiGa
 
         void Restore(const Json::Value&) override
         {
-            Todo();
+            // nothing to do
         }
 
         void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
