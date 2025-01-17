@@ -75,9 +75,11 @@ namespace GiiGa
         }
 
         std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(RenderDevice& device, std::span<uint8_t> data, size_t alignment,
-                                                                                      const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+                                                                                      D3D12_SHADER_RESOURCE_VIEW_DESC desc)
         {
-            UploadBuffer::Allocation res_alloc = AllocateCopyDynamic(device, data, alignment);
+            auto& upload_buf = CreateUploadBuffer(device, desc.Buffer.NumElements * desc.Buffer.StructureByteStride);
+            UploadBuffer::Allocation res_alloc = upload_buf.Allocate(data.size(), alignment);
+            std::copy(data.begin(), data.end(), res_alloc.CPU.begin());
 
             DescriptorHeapAllocation desc_alloc = common_allocator_.Allocate(1);
             return device.CreateShaderResourceBufferView(res_alloc.resource, desc, std::move(desc_alloc));

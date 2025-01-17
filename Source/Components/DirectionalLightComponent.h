@@ -232,7 +232,7 @@ namespace GiiGa
             desc.Buffer.StructureByteStride = sizeof(CascadeData);
             desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, sizeof(CascadeData));
+            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, 1);
         }
 
         PerObjectData& GetPerObjectData() override
