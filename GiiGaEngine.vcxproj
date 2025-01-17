@@ -87,12 +87,14 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Source/Core/Render/RenderPass;$(SolutionDir)Source/Core/Render/Interfaces;$(SolutionDir)Source/Core/Render/ImGuiWindows;$(SolutionDir)Source/Core/Render;$(SolutionDir)Source/Core/PySripting;$(SolutionDir)Source/Core/Assets;$(SolutionDir)Source/Core/AssetLoaders;$(SolutionDir)Source/Core;$(SolutionDir)Source/Components;$(SolutionDir)Source;$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
     <LibraryPath>$(Python_Path)\libs;$(LibraryPath)</LibraryPath>
+    <SourcePath>D:\repos\GiiGaEngine\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Source/Core/Render/RenderPass;$(SolutionDir)Source/Core/Render/Interfaces;$(SolutionDir)Source/Core/Render/ImGuiWindows;$(SolutionDir)Source/Core/Render;$(SolutionDir)Source/Core/PySripting;$(SolutionDir)Source/Core/Assets;$(SolutionDir)Source/Core/AssetLoaders;$(SolutionDir)Source/Core;$(SolutionDir)Source/Components;$(SolutionDir)Source;$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
     <LibraryPath>$(Python_Path)\libs;$(LibraryPath)</LibraryPath>
+    <SourcePath>D:\repos\GiiGaEngine\Source;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -148,6 +150,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;python312_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -169,12 +173,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;python312.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />
-    <ClCompile Include="Source\Components\CameraComponent.ixx" />
     <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\GBufferWireframeShader.hlsl" />
@@ -186,570 +191,6 @@
     <None Include="Shaders\VertexFullQuadShader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />
     <None Include="Shaders\VertexPNTBTShader.hlsl" />
-    <ClCompile Include="Source\Components\ConsoleComponent.ixx" />
-    <ClCompile Include="Source\Components\DirectionalLightComponent.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Proger\GiiGaEngine\vendor;C:\Proger\GiiGaEngine\/Source;C:\Proger\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>C:\Proger\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <AdditionalOptions>/bigobj </AdditionalOptions>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Components\LightComponent.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Proger\GiiGaEngine\vendor;C:\Proger\GiiGaEngine\/Source;C:\Proger\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>C:\Proger\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <AdditionalOptions>/bigobj </AdditionalOptions>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Components\PointLightComponent.ixx" />
-    <ClCompile Include="Source\Components\PyBehaviourSchemeComponent.ixx" />
-    <ClCompile Include="Source\Components\PyBehaviourTrampoline.ixx" />
-    <ClCompile Include="Source\Components\SpectatorMovementComponent.ixx" />
-    <ClCompile Include="Source\Components\StaticMeshComponent.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\DDSAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\ImageAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\LevelAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\MaterialLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\MeshAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\PrefabAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\AssetLoaders\ScriptAssetLoader.ixx" />
-    <ClCompile Include="Source\Core\Assets\AssetBase.ixx" />
-    <ClCompile Include="Source\Core\Assets\AssetHandle.ixx" />
-    <ClCompile Include="Source\Core\Assets\AssetLoader.ixx" />
-    <ClCompile Include="Source\Core\Assets\AssetMeta.ixx" />
-    <ClCompile Include="Source\Core\Assets\AssetType.ixx" />
-    <ClCompile Include="Source\Core\Assets\BaseAssetDatabase.ixx" />
-    <ClCompile Include="Source\Core\Assets\EditorAssetDatabase.ixx" />
-    <ClCompile Include="Source\Core\Assets\ProjectWatcher.ixx" />
-    <ClCompile Include="Source\Core\Assets\ResourceManager.ixx" />
-    <ClCompile Include="Source\Core\Assets\RuntimeAssetDatabase.ixx" />
-    <ClCompile Include="Source\Components\TransformComponent.ixx" />
-    <ClCompile Include="Source\Core\Component.ixx" />
-    <ClCompile Include="Source\Core\CreateComponentsForGameObject.ixx" />
-    <ClCompile Include="Source\Core\DXMathUtils.ixx" />
-    <ClCompile Include="Source\Core\EditorEngine.ixx" />
-    <ClCompile Include="Source\Core\Engine.ixx" />
-    <ClCompile Include="Source\Core\EventSystem.ixx" />
-    <ClCompile Include="Source\Core\GameEngine.ixx" />
-    <ClCompile Include="Source\Core\GameObject.ixx" />
-    <ClCompile Include="Source\Core\IComponent.ixx" />
-    <ClCompile Include="Source\Core\IWorldQuery.ixx" />
-    <ClCompile Include="Source\Core\IGameObject.ixx" />
-    <ClCompile Include="Source\Core\ILevelRootGameObjects.ixx" />
-    <ClCompile Include="Source\Core\ITickable.ixx" />
-    <ClCompile Include="Source\Core\Level.ixx" />
-    <ClCompile Include="Source\Core\Logger.ixx" />
-    <ClCompile Include="Source\Core\MeshAsset.ixx" />
-    <ClCompile Include="Source\Core\PrefabAsset.ixx" />
-    <ClCompile Include="Source\Core\PrefabInstanceModifications.ixx" />
-    <ClCompile Include="Source\Core\Project.ixx" />
-    <ClCompile Include="Source\Core\PySripting\py_module.ixx" />
-    <ClCompile Include="Source\Core\PySripting\ScriptAsset.ixx" />
-    <ClCompile Include="Source\Core\PySripting\ScriptHelpers.ixx" />
-    <ClCompile Include="Source\Core\PySripting\ScriptPropertyModifications.ixx" />
-    <ClCompile Include="Source\Core\PySripting\ScriptSystem.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\repos\GiiGaEngine\vendor;D:\repos\GiiGaEngine\/Source;D:\repos\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>D:\repos\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <AdditionalOptions>/bigobj </AdditionalOptions>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Render\Align.ixx" />
-    <ClCompile Include="Source\Core\Render\BufferView.ixx" />
-    <ClCompile Include="Source\Core\Render\EditorRenderSystem.ixx" />
-    <ClCompile Include="Source\Core\Render\GBuffer.ixx" />
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorContext.ixx" />
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\EditorViewport.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\repos\GiiGaEngine\vendor;D:\repos\GiiGaEngine\/Source;D:\repos\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>D:\repos\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\IImGuiWindow.ixx" />
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.ixx" />
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.ixx" />
-    <ClCompile Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.ixx" />
-    <ClCompile Include="Source\Core\Render\Interfaces\IUpdateGPUData.ixx" />
-    <ClCompile Include="Source\Core\Render\IObjectShaderResource.ixx" />
-    <ClCompile Include="Source\Core\Render\ObjectMask.ixx" />
-    <ClCompile Include="Source\Core\Render\DescriptorHeap.ixx" />
-    <ClCompile Include="Source\Core\Render\DirectXUtils.ixx" />
-    <ClCompile Include="Source\Core\Render\FrameContext.ixx" />
-    <ClCompile Include="Source\Core\Render\GPULocalResource.ixx" />
-    <ClCompile Include="Source\Core\Render\Interfaces\IRenderable.ixx" />
-    <ClCompile Include="Source\Core\Render\Interfaces\IRenderContext.ixx" />
-    <ClCompile Include="Source\Core\Render\Interfaces\IRenderDevice.ixx" />
-    <ClCompile Include="Source\Core\Render\Interfaces\RenderTypes.ixx" />
-    <ClCompile Include="Source\Core\Render\Material.ixx" />
-    <ClCompile Include="Source\Core\Render\Mesh.ixx" />
-    <ClCompile Include="Source\Core\Render\PerObjectData.ixx" />
-    <ClCompile Include="Source\Core\Render\PSO.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderContext.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderData.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderDevice.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderGraph.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderPassViewData.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderPass\EditorSwapChainPass.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderPass\ForwardPass.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Proger\GiiGaEngine\vendor;C:\Proger\GiiGaEngine\/Source;C:\Proger\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>C:\Proger\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Render\RenderPass\GBufferPass.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderPass\GLightPass.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderPass\RenderPass.ixx">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>GiiGaEngine\x64\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>GiiGaEngine\x64\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>GiiGaEngine\x64\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>GiiGaEngine\x64\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>GiiGaEngine\x64\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>GiiGaEngine\x64\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>GiiGaEngine\x64\Debug\GiiGaEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>GiiGaEngine\x64\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>GiiGaEngine\x64\Debug\GiiGaEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>GiiGaEngine\x64\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Proger\GiiGaEngine\/Source;C:\Proger\GiiGaEngine\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
-      <AdditionalUsingDirectories>C:\Proger\GiiGaEngine\/Source</AdditionalUsingDirectories>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
-    <ClCompile Include="Source\Core\Render\RenderPass\ShadowPass.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderSystem.ixx" />
-    <ClCompile Include="Source\Core\Misc.ixx" />
-    <ClCompile Include="Source\Core\Render\RenderSystemSettings.ixx" />
-    <ClCompile Include="Source\Core\Render\SceneVisibility.ixx" />
-    <ClCompile Include="Source\Core\Render\Shader.ixx" />
-    <ClCompile Include="Source\Core\Render\ShaderManager.ixx" />
-    <ClCompile Include="Source\Core\Render\SkeletalMesh.ixx" />
-    <ClCompile Include="Source\Core\Render\SwapChain.ixx" />
-    <ClCompile Include="Source\Core\Render\UploadBuffer.ixx" />
-    <ClCompile Include="Source\Core\Render\VariableSizeAllocationsManager.ixx" />
-    <ClCompile Include="Source\Core\Render\VertexTypes.ixx" />
-    <ClCompile Include="Source\Core\Render\Viewport.ixx" />
-    <ClCompile Include="Source\Core\Render\ViewTypes.ixx" />
-    <ClCompile Include="Source\Core\Input.ixx" />
-    <ClCompile Include="Source\Core\DefaultAssetsHandles.ixx" />
-    <ClCompile Include="Source\Core\TextureAsset.ixx" />
-    <ClCompile Include="Source\Core\Time.ixx" />
-    <ClCompile Include="Source\Core\unique_any.ixx" />
-    <ClCompile Include="Source\Core\Uuid.ixx" />
-    <ClCompile Include="Source\Core\Variant.ixx" />
-    <ClCompile Include="Source\Core\Window.ixx" />
-    <ClCompile Include="Source\Core\WindowManager.ixx" />
-    <ClCompile Include="Source\Core\WindowSettings.ixx" />
-    <ClCompile Include="Source\Core\World.ixx" />
-    <ClCompile Include="Source\main.ixx" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -758,6 +199,119 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Components\CameraComponent.h" />
+    <ClInclude Include="Source\Components\ConsoleComponent.h" />
+    <ClInclude Include="Source\Components\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Components\LightComponent.h" />
+    <ClInclude Include="Source\Components\PointLightComponent.h" />
+    <ClInclude Include="Source\Components\PyBehaviourSchemeComponent.h" />
+    <ClInclude Include="Source\Components\PyBehaviourTrampoline.h" />
+    <ClInclude Include="Source\Components\SpectatorMovementComponent.h" />
+    <ClInclude Include="Source\Components\StaticMeshComponent.h" />
+    <ClInclude Include="Source\Components\TransformComponent.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\DDSAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\ImageAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\LevelAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\MaterialLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\MeshAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\PrefabAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\ScriptAssetLoader.h" />
+    <ClInclude Include="Source\Core\Assets\AssetBase.h" />
+    <ClInclude Include="Source\Core\Assets\AssetHandle.h" />
+    <ClInclude Include="Source\Core\Assets\AssetLoader.h" />
+    <ClInclude Include="Source\Core\Assets\AssetMeta.h" />
+    <ClInclude Include="Source\Core\Assets\AssetType.h" />
+    <ClInclude Include="Source\Core\Assets\BaseAssetDatabase.h" />
+    <ClInclude Include="Source\Core\Assets\EditorAssetDatabase.h" />
+    <ClInclude Include="Source\Core\Assets\ProjectWatcher.h" />
+    <ClInclude Include="Source\Core\Assets\ResourceManager.h" />
+    <ClInclude Include="Source\Core\Assets\RuntimeAssetDatabase.h" />
+    <ClInclude Include="Source\Core\Component.h" />
+    <ClInclude Include="Source\Core\CreateComponentsForGameObject.h" />
+    <ClInclude Include="Source\Core\DefaultAssetsHandles.h" />
+    <ClInclude Include="Source\Core\DXMathUtils.h" />
+    <ClInclude Include="Source\Core\EditorEngine.h" />
+    <ClInclude Include="Source\Core\Engine.h" />
+    <ClInclude Include="Source\Core\EventSystem.h" />
+    <ClInclude Include="Source\Core\GameEngine.h" />
+    <ClInclude Include="Source\Core\GameObject.h" />
+    <ClInclude Include="Source\Core\IComponent.h" />
+    <ClInclude Include="Source\Core\IGameObject.h" />
+    <ClInclude Include="Source\Core\ILevelRootGameObjects.h" />
+    <ClInclude Include="Source\Core\Input.h" />
+    <ClInclude Include="Source\Core\ITickable.h" />
+    <ClInclude Include="Source\Core\IWorldQuery.h" />
+    <ClInclude Include="Source\Core\Level.h" />
+    <ClInclude Include="Source\Core\Logger.h" />
+    <ClInclude Include="Source\Core\MeshAsset.h" />
+    <ClInclude Include="Source\Core\Misc.h" />
+    <ClInclude Include="Source\Core\PrefabAsset.h" />
+    <ClInclude Include="Source\Core\PrefabInstanceModifications.h" />
+    <ClInclude Include="Source\Core\Project.h" />
+    <ClInclude Include="Source\Core\PySripting\py_module.h" />
+    <ClInclude Include="Source\Core\PySripting\ScriptAsset.h" />
+    <ClInclude Include="Source\Core\PySripting\ScriptHelpers.h" />
+    <ClInclude Include="Source\Core\PySripting\ScriptPropertyModifications.h" />
+    <ClInclude Include="Source\Core\PySripting\ScriptSystem.h" />
+    <ClInclude Include="Source\Core\Render\Align.h" />
+    <ClInclude Include="Source\Core\Render\BufferView.h" />
+    <ClInclude Include="Source\Core\Render\CommandQueue.h" />
+    <ClInclude Include="Source\Core\Render\DescriptorHeap.h" />
+    <ClInclude Include="Source\Core\Render\DirectXUtils.h" />
+    <ClInclude Include="Source\Core\Render\EditorRenderSystem.h" />
+    <ClInclude Include="Source\Core\Render\FrameContext.h" />
+    <ClInclude Include="Source\Core\Render\GBuffer.h" />
+    <ClInclude Include="Source\Core\Render\GPULocalResource.h" />
+    <ClInclude Include="Source\Core\Render\IDrawable.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorContext.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorViewport.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\IImGuiWindow.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.h" />
+    <ClInclude Include="Source\Core\Render\Interfaces\IRenderable.h" />
+    <ClInclude Include="Source\Core\Render\Interfaces\IRenderContext.h" />
+    <ClInclude Include="Source\Core\Render\Interfaces\IRenderDevice.h" />
+    <ClInclude Include="Source\Core\Render\Interfaces\IUpdateGPUData.h" />
+    <ClInclude Include="Source\Core\Render\Interfaces\RenderTypes.h" />
+    <ClInclude Include="Source\Core\Render\IObjectShaderResource.h" />
+    <ClInclude Include="Source\Core\Render\Material.h" />
+    <ClInclude Include="Source\Core\Render\Mesh.h" />
+    <ClInclude Include="Source\Core\Render\ObjectMask.h" />
+    <ClInclude Include="Source\Core\Render\PerObjectData.h" />
+    <ClInclude Include="Source\Core\Render\PSO.h" />
+    <ClInclude Include="Source\Core\Render\RenderContext.h" />
+    <ClInclude Include="Source\Core\Render\RenderData.h" />
+    <ClInclude Include="Source\Core\Render\RenderDevice.h" />
+    <ClInclude Include="Source\Core\Render\RenderGraph.h" />
+    <ClInclude Include="Source\Core\Render\RenderPassViewData.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\EditorSwapChainPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\ForwardPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\GBufferPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\GLightPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\RenderPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\ShadowPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderSystem.h" />
+    <ClInclude Include="Source\Core\Render\RenderSystemSettings.h" />
+    <ClInclude Include="Source\Core\Render\SceneVisibility.h" />
+    <ClInclude Include="Source\Core\Render\Shader.h" />
+    <ClInclude Include="Source\Core\Render\ShaderManager.h" />
+    <ClInclude Include="Source\Core\Render\SkeletalMesh.h" />
+    <ClInclude Include="Source\Core\Render\SwapChain.h" />
+    <ClInclude Include="Source\Core\Render\UploadBuffer.h" />
+    <ClInclude Include="Source\Core\Render\VariableSizeAllocationsManager.h" />
+    <ClInclude Include="Source\Core\Render\VertexTypes.h" />
+    <ClInclude Include="Source\Core\Render\Viewport.h" />
+    <ClInclude Include="Source\Core\Render\ViewTypes.h" />
+    <ClInclude Include="Source\Core\TextureAsset.h" />
+    <ClInclude Include="Source\Core\Timer.h" />
+    <ClInclude Include="Source\Core\unique_any.h" />
+    <ClInclude Include="Source\Core\Uuid.h" />
+    <ClInclude Include="Source\Core\Variant.h" />
+    <ClInclude Include="Source\Core\Window.h" />
+    <ClInclude Include="Source\Core\WindowManager.h" />
+    <ClInclude Include="Source\Core\WindowSettings.h" />
+    <ClInclude Include="Source\Core\World.h" />
     <ClInclude Include="ThirdParty\FileWatch.hpp" />
     <ClInclude Include="ThirdParty\pybind11\attr.h" />
     <ClInclude Include="ThirdParty\pybind11\buffer_info.h" />
@@ -807,6 +361,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="TemplateProject\Assets\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

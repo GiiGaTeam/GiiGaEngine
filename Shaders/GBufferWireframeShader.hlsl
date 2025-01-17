@@ -1,5 +1,4 @@
 #include "ShaderHeader.hlsl"
-#include "MaterialHeader.hlsl"
 
 /*
  *  GBuffer Structure:
