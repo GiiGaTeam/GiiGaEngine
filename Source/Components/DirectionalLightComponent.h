@@ -67,11 +67,12 @@ namespace GiiGa
     class DirectionalLightComponent : public LightComponent
     {
     public:
-        static inline const uint8_t NUM_CASCADE = 4;
+        static inline const uint8_t NUM_CASCADE = 4; // Если меняешь, то не забудь в CascadeShadowGeomShader.hlsl instance поменять
 
         struct CascadeData
         {
-            Matrix ViewProj;
+            Matrix View;
+            Matrix Proj;
             float Distances;
         };
 
@@ -95,7 +96,7 @@ namespace GiiGa
                 directionLightShaderRes_->directionLightCBV_ = directionLightRes_->CreateConstantBufferView(desc);
             }
 
-            TEXTURE_SIZE = Vector2(1024);
+            TEXTURE_SIZE = Vector2(2048);
             DS_FORMAT_RES = DXGI_FORMAT_R32_TYPELESS;
             DS_FORMAT_DSV = DXGI_FORMAT_D32_FLOAT;
             DS_FORMAT_SRV = DXGI_FORMAT_R32_FLOAT;
@@ -301,6 +302,26 @@ namespace GiiGa
                 // Create the Shader Resource View
                 shadow_SRV_ = shadow_resource_->EmplaceShaderResourceBufferView(srvDesc);
             }
+            {
+                viewport.TopLeftX = 0.0f;
+                viewport.TopLeftY = 0.0f;
+                viewport.Width = TEXTURE_SIZE.x;
+                viewport.Height = TEXTURE_SIZE.y;
+                viewport.MinDepth = 0.0f;
+                viewport.MaxDepth = 1.0f;
+
+                scissorRect = {0, 0, static_cast<LONG>(TEXTURE_SIZE.x), static_cast<LONG>(TEXTURE_SIZE.y)};
+            }
+        }
+
+        const D3D12_VIEWPORT* GetShadowViewport() const
+        {
+            return &viewport;
+        }
+
+        const D3D12_RECT* GetShadowScissorRect() const
+        {
+            return &scissorRect;
         }
 
         void UpdateCascadeViewsByCameraData(const Camera& camera)
@@ -321,7 +342,8 @@ namespace GiiGa
                 const auto tar = center + forward;
                 const auto view = Matrix::CreateLookAt(center, tar, up);
                 const auto proj = GetOrthographicProjByCorners(corners, view);
-                cascadeData_[i].ViewProj = (view * proj).Transpose();
+                cascadeData_[i].View = view.Transpose();
+                cascadeData_[i].Proj = proj.Transpose();
             }
         }
 
@@ -330,7 +352,7 @@ namespace GiiGa
             shadow_views.clear();
             for (const auto& cascade : cascadeData_)
             {
-                shadow_views.push_back(cascade.ViewProj.Transpose());
+                shadow_views.push_back(cascade.View.Transpose() * cascade.Proj.Transpose());
             }
             return shadow_views;
         }
@@ -348,8 +370,6 @@ namespace GiiGa
     protected:
         Matrix GetOrthographicProjByCorners(const std::array<Vector3, 8>& corners, const Matrix& lightView) const
         {
-            if (corners.size() != 8) return Matrix::Identity;
-
             Vector4 FrustumMin;
             Vector4 FrustumMax;
             FrustumMin.x = FLT_MAX;
@@ -386,10 +406,13 @@ namespace GiiGa
         std::shared_ptr<DirectionLightShaderResource> directionLightShaderRes_;
         std::shared_ptr<BufferView<ShaderResource>> shadowShaderRes_;
 
+        D3D12_VIEWPORT viewport;
+        D3D12_RECT scissorRect;
+
         DirectionLightData data_;
         std::array<CascadeData, NUM_CASCADE> cascadeData_;
 
-        const float zMult_ = 10.0f; // Multiplication for Ortho projection
+        float zMult_ = 10.0f; // Multiplication for Ortho projection
 
         bool isStatic_ = false;
         bool isDirty = true;

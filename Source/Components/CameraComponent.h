@@ -69,7 +69,7 @@ namespace GiiGa
             switch (type_)
             {
             case Perspective:
-                return Matrix::CreatePerspectiveFieldOfView(FOV_, aspect_, near_, far_);
+                return Matrix::CreatePerspectiveFieldOfView(RadFromDeg(FOV_), aspect_, near_, far_);
             case Orthographic:
                 return Matrix::CreateOrthographic(width_, height_, near_, far_);
             }
@@ -105,14 +105,14 @@ namespace GiiGa
     class CameraComponent : public Component
     {
     public:
-        CameraComponent(CameraType type = Perspective, float FOV = DirectX::XMConvertToRadians(90), float aspect = 16 / 9, float width = 1280, float height = 720, float Near = 0.01, float Far = 100)
+        CameraComponent(CameraType type = Perspective, float FOV = 90, float aspect = 16 / 9, float width = 1280, float height = 720, float Near = 0.01, float Far = 100)
         {
             camera_ = Camera{type, FOV, aspect, width, height, Near, Far};
         };
 
         void SetType(CameraType type) { camera_.type_ = type; }
 
-        void SetFOVinDeg(float FOV) { camera_.FOV_ = DirectX::XMConvertToRadians(FOV); }
+        void SetFOVinDeg(float FOV) { camera_.FOV_ = FOV; }
 
         void SetAspect(float aspect) { camera_.aspect_ = aspect; }
 

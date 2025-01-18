@@ -8,7 +8,6 @@
 #include<directx/d3dx12_core.h>
 
 
-
 #include<memory>
 #include<vector>
 #include<functional>
@@ -101,6 +100,8 @@ namespace GiiGa
                             dirLight->UpdateCascadeGPUData(context, cam_info.camera);
                             shadow_srv = dirLight->GetCascadeDataSRV();
                             light_srv = dirLight->GetLightDataSRV();
+                            context.GetGraphicsCommandList()->RSSetViewports(1, dirLight->GetShadowViewport());
+                            context.GetGraphicsCommandList()->RSSetScissorRects(1, dirLight->GetShadowScissorRect());
                         }
                         else continue;
 
@@ -135,6 +136,29 @@ namespace GiiGa
                     }
                 }
             }
+
+            ResetVieports(context, cam_info.screenDimensions.screenDimensions);
+        }
+
+    protected:
+        void ResetVieports(RenderContext& context, const Vector2& screen)
+        {
+            D3D12_VIEWPORT viewport;
+            viewport.TopLeftX = 0.0f;
+            viewport.TopLeftY = 0.0f;
+            viewport.Width = screen.x;
+            viewport.Height = screen.y;
+            viewport.MinDepth = 0.0f;
+            viewport.MaxDepth = 1.0f;
+
+            D3D12_RECT scissorRect = {
+                0, 0,
+                static_cast<long>(screen.x),
+                static_cast<long>(screen.y)
+            };
+
+            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
+            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
         }
 
     private:

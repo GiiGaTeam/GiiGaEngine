@@ -68,30 +68,31 @@ PixelShaderOutput PSMain(PS_INPUT input)
 
     int2 texCoord = input.Pos.xy;
     // Sample the textures from the GBuffer
-    float4 DiffuseColor = Diffuse.Load(int3(texCoord,0));
-    float4 MatProps = MatProp.Load(int3(texCoord,0));
-    float4 NormalTex = NormalWS.Load(int3(texCoord,0));
-    //float4 PositionTex = PositionWS.Load(int3(texCoord, 0));
+    float4 DiffuseColor = Diffuse.Load(int3(texCoord, 0));
+    float4 MatProps = MatProp.Load(int3(texCoord, 0));
+    float4 NormalTex = NormalWS.Load(int3(texCoord, 0));
+
     float depth = DiffuseColor.w;
-    matrix ProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
-    float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView, ScreenDimensions);
-    
+    DiffuseColor.w = 1.0f;
+    matrix InvProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
+    float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), InvProjView, ScreenDimensions);
+
     // Retrieve the WorldSpace position and normal from the textures
     float3 fragPosWS = PositionTex.xyz;
     float3 normalWS = normalize(NormalTex.xyz);
-    
+
     // Calculate the view direction
-    float3 viewDir = normalize(fragPosWS - cameraMatricies.CamPos);  // Assuming the camera is at the origin
-    
+    float3 viewDir = normalize(cameraMatricies.CamPos - fragPosWS); // Assuming the camera is at the origin
+
     // Calculate the surface color from the diffuse texture
     float3 surfColor = DiffuseColor.rgb;
-    
+
     // Calculate the light accumulation
     float3 lightAccum = CalcPointLight(surfColor, pointLight.posWS, normalWS, fragPosWS, viewDir, MatProps.z);
-    
+
     // Output the light accumulation
-    output.LightAccumulation = float4(lightAccum, 1.0);  // Alpha can be 1.0 or another value if needed
+    output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed
     //output.LightAccumulation = 1;
-    
+
     return output;
 }

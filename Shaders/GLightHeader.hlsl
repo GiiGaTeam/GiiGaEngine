@@ -20,7 +20,8 @@ struct DirectionLightData
 
 struct CascadeData
 {
-    matrix ViewProj;
+    matrix View;
+    matrix Proj;
     float Distances;
 };
 
@@ -42,37 +43,35 @@ float attenuate_cusp(float distance, float radius, float max_intensity, float fa
     return max_intensity * sqrt(1 - s2) / (1 + falloff * s);
 }
 
-float4 ClipToWorld(float4 clip, matrix inverseProjView)
+float4 ClipToWorld(float4 clip, matrix InverseProjView)
 {
-    float4 posWS = mul(clip, inverseProjView);
+    float4 posWS = mul(clip, InverseProjView);
     posWS = posWS / posWS.w;
 
     return posWS;
 }
 
-float4 ScreenToWorld(float4 screen, matrix inverseProjView, float screenDim)
+float4 ScreenToWorld(float4 screen, matrix invViewProj, float2 screenDim)
 {
     float2 texCoord = screen.xy / screenDim;
     float4 clip = float4(float2(texCoord.x, 1.0f - texCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
 
-    return ClipToWorld(clip, inverseProjView);
+    return ClipToWorld(clip, invViewProj);
 }
 
 float CalcCascadeShadowFactor(SamplerComparisonState samShadow, Texture2DArray shadowMap, float4 shadowPosH, uint idx)
 {
     shadowPosH.xyz /= shadowPosH.w;
-
     float depth = shadowPosH.z - 0.001f;
 
-    float percentLit = 0.0f;
+    //shadowPosH.xy = saturate(shadowPosH.xy);
 
+    float percentLit = 0.0f;
     [unroll]
     for (int i = 0; i < 9; ++i)
     {
         percentLit += shadowMap.SampleCmpLevelZero(samShadow,
-                                                   float3(shadowPosH.xy, idx),
-                                                   depth,
-                                                   int2(i % 3 - 1, i / 3 - 1)).r;
+                                                   float3(shadowPosH.xy, idx), depth, int2(i % 3 - 1, i / 3 - 1)).r;
     }
 
     return percentLit /= 9.0f;

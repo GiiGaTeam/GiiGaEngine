@@ -50,7 +50,7 @@ struct PixelShaderOutput
 
 float3 CalcDirectionalLight(float3 surf_col, float3 normal, float3 viewDir, float shininess)
 {
-    float3 lightDir = directionLight.dirWS;
+    float3 lightDir = normalize(-directionLight.dirWS);
     // diffuse shading
     float diff = max(dot(lightDir, normal), 0.0);
     // specular shading
@@ -78,18 +78,19 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float4 DiffuseColor = Diffuse.Load(int3(texCoord, 0));
     float4 MatProps = MatProp.Load(int3(texCoord, 0));
     float4 NormalTex = NormalWS.Load(int3(texCoord, 0));
+
     float depth = DiffuseColor.w;
-    //float depth = DepthVS.Load(int3(texCoord, 0)).r;
-    matrix ProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
-    float4 PositionTex = ScreenToWorld(float4(texCoord, depth, 1.0f), ProjView, ScreenDimensions);
+    DiffuseColor.w = 1.0f;
+    matrix InvProjView = mul(cameraMatricies.InvProj, cameraMatricies.InvView);
+    float4 PositionWS = ScreenToWorld(float4(texCoord, depth, 1.0f), InvProjView, ScreenDimensions);
 
 
     // Retrieve the WorldSpace position and normal from the textures
-    float3 fragPosWS = PositionTex.xyz;
+    float3 fragPosWS = PositionWS.xyz;
     float3 normalWS = normalize(NormalTex.xyz);
 
     // Calculate the view direction
-    float3 viewDir = normalize(fragPosWS - cameraMatricies.CamPos); // Assuming the camera is at the origin
+    float3 viewDir = normalize(cameraMatricies.CamPos - fragPosWS); // Assuming the camera is at the origin
 
     // Calculate the surface color from the diffuse texture
     float3 surfColor = DiffuseColor.rgb;
@@ -98,11 +99,9 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float3 lightAccum = CalcDirectionalLight(surfColor, normalWS, viewDir, MatProps.y);
 
     uint layer = 0;
-    //const float distance = abs(length(eyePos - P));
 
     matrix ViewProj = mul(cameraMatricies.View, cameraMatricies.Proj);
-    float4 Pvp = mul(float4(fragPosWS.xyz, 1.0f), ViewProj);
-    //const float distance = abs(1.0f-depth);
+    float4 Pvp = mul(PositionWS, ViewProj);
     const float distance = abs(Pvp.w);
     for (int i = 0; i < directionLight.cascadeCount; ++i)
     {
@@ -112,9 +111,10 @@ PixelShaderOutput PSMain(PS_INPUT input)
             break;
         }
     }
-    float4 shadowPosH = mul(float4(fragPosWS.xyz, 1.0f), mul(cascadeData[layer].ViewProj, mT));
-    float shadow = 0;
-    shadow = CalcCascadeShadowFactor(ShadCompSamp, CascadeShadowMaps, shadowPosH, layer);
+    matrix lightViewProj = mul(cascadeData[layer].View, cascadeData[layer].Proj);
+    float4 shadowPosH = mul(PositionWS, lightViewProj);
+    shadowPosH = mul(shadowPosH, mT);
+    float shadow = CalcCascadeShadowFactor(ShadCompSamp, CascadeShadowMaps, shadowPosH, layer);
     lightAccum *= shadow;
     // Output the light accumulation
     output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed

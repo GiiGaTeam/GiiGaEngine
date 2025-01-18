@@ -117,6 +117,7 @@ namespace GiiGa
                     {
                     })
                     .add_static_samplers(sampler_desc)
+                    .add_static_samplers(compression_sampler_desc)
                     .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
             }
 
@@ -194,6 +195,7 @@ namespace GiiGa
                         context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
                     })
                     .add_static_samplers(sampler_desc)
+                    .add_static_samplers(compression_sampler_desc)
                     .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
 
                 shade_mask_to_pso[filter_directionalLight_]
@@ -244,25 +246,26 @@ namespace GiiGa
             context.BindDescriptorHandle(ConstantBufferCount + 0, gbuffer_->GetSRV(GBuffer::GBufferOrder::Diffuse));
             context.BindDescriptorHandle(ConstantBufferCount + 1, gbuffer_->GetSRV(GBuffer::GBufferOrder::Material));
             context.BindDescriptorHandle(ConstantBufferCount + 2, gbuffer_->GetSRV(GBuffer::GBufferOrder::NormalWS));
+            context.BindDescriptorHandle(ConstantBufferCount + 3, gbuffer_->GetDepthSRV());
 
             for (auto& visible : visibles)
             {
                 PSO shade_pso;
                 if (!GetPsoFromMapByMask(shade_mask_to_pso, visible.first, shade_pso)) continue;
 
-                context.SetSignature(shade_pso.GetSignature().get());
                 for (auto& common_resource_group : visible.second.common_resource_renderables)
                 {
+                    shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
+
                     for (auto& renderable : common_resource_group.second.renderables)
                     {
                         gbuffer_->ClearStencil(context, 1);
-                        shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
-                        shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
 
                         if (!filter_directionalLight_.CoversMask(renderable.lock()->GetSortData().object_mask))
                         {
                             // unmar
                             context.BindPSO(unmark_pso.GetState().get());
+                            unmark_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
                             context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr,
                                                                                  false, &depth);
                             renderable.lock()->Draw(context);
@@ -277,10 +280,10 @@ namespace GiiGa
                         {
                             // shade
                             context.BindPSO(shade_pso.GetState().get());
+                            shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
                             context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
                                                                                  false, &depth);
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);
-
                             renderable.lock()->Draw(context);
                         }
                     }
