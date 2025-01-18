@@ -150,7 +150,6 @@ namespace GiiGa
             {
                 auto database = Engine::Instance().ResourceManager()->Database();
                 auto level_asset = levels_[1]->CreateAndReplaceLevelAsset();
-                //std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(level_asset, "~" + levels_[1]->GetLevelName() + ".level");
                 for (auto&& level : levels_)
                 {
                     level->BeginPlay();
@@ -163,9 +162,6 @@ namespace GiiGa
             if (levels_.size() >= 2)
             {
                 std::shared_ptr<LevelAsset> asset = levels_[1]->GetLevelAsset();
-
-                //auto database = Engine::Instance().ResourceManager()->Database();
-                //std::dynamic_pointer_cast<EditorAssetDatabase>(database)->RemoveAssetFile(asset);
                 
                 levels_.erase(levels_.begin() + 1);
 

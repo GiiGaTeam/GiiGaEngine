@@ -143,7 +143,7 @@ namespace GiiGa
         std::shared_ptr<LevelAsset> CreateAndReplaceLevelAsset()
         {
             Json::Value level_json = ToJson();
-            auto asset = std::make_shared<LevelAsset>(AssetHandle{Uuid::New(), 0}, level_json);
+            auto asset = std::make_shared<LevelAsset>(asset_->GetId(), level_json);
             this->asset_ = asset;
             return asset;
         }
