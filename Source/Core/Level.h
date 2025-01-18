@@ -61,6 +61,11 @@ namespace GiiGa
             return name_;
         }
 
+        void SetLevelName(const std::string& name)
+        {
+            name_ = name;
+        }
+
         bool GetIsActive() const
         {
             return isActive_;
@@ -140,10 +145,17 @@ namespace GiiGa
             return asset_;
         }
 
-        std::shared_ptr<LevelAsset> CreateAndReplaceLevelAsset()
+        // new_id = true only if after asset will be registered in database
+        // if not breaks assets system saving
+        std::shared_ptr<LevelAsset> CreateAndReplaceLevelAsset(bool new_id = false)
         {
             Json::Value level_json = ToJson();
-            auto asset = std::make_shared<LevelAsset>(asset_->GetId(), level_json);
+            AssetHandle handle = asset_->GetId();
+            
+            if (new_id)
+                handle = AssetHandle{Uuid::New(), 0};
+            auto asset = std::make_shared<LevelAsset>(handle, level_json);
+            
             this->asset_ = asset;
             return asset;
         }
