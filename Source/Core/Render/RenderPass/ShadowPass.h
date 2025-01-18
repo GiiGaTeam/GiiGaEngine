@@ -43,26 +43,7 @@ namespace GiiGa
             rast_desc.CullMode = D3D12_CULL_MODE_BACK;
             rast_desc.FrontCounterClockwise = TRUE;
 
-            D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = {
-                .DepthEnable = TRUE,
-                .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL,
-                .DepthFunc = D3D12_COMPARISON_FUNC_LESS,
-                .StencilEnable = FALSE,
-                .StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK,
-                .StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK,
-                .FrontFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS,
-                },
-                .BackFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
-                }
-            };
+            D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
             auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
                 .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
@@ -114,10 +95,9 @@ namespace GiiGa
                         if (const auto dirLight = std::dynamic_pointer_cast<DirectionalLightComponent>(light))
                         {
                             const auto dsv = dirLight->GetShadowDSV();
-                            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr, true, &dsv);
                             dirLight->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+                            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr, true, &dsv);
                             dirLight->ClearShadowDSV(context);
-                            dirLight->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_READ);
                             dirLight->UpdateCascadeGPUData(context, cam_info.camera);
                             shadow_srv = dirLight->GetCascadeDataSRV();
                             light_srv = dirLight->GetLightDataSRV();

@@ -24,8 +24,11 @@ cbuffer DirectionLight : register(b3)
 Texture2D Diffuse : register(t0);
 Texture2D MatProp : register(t1);
 Texture2D NormalWS : register(t2);
+Texture2DArray CascadeShadowMaps : register(t3);
+StructuredBuffer<CascadeData> cascadeData : register(t4);
 
 SamplerState sampl : register(s0);
+SamplerComparisonState ShadCompSamp : register(s1);
 
 /*
  *  GBuffer Structure:
@@ -58,6 +61,13 @@ float3 CalcDirectionalLight(float3 surf_col, float3 normal, float3 viewDir, floa
     return directionLight.max_intensity * directionLight.color * (diff + spec) * surf_col;
 }
 
+static matrix mT = {
+    {0.5f, 0.0f, 0.0f, 0.0f},
+    {0.0f, -0.5f, 0.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f, 0.0f},
+    {0.5f, 0.5f, 0.0f, 1.0f}
+};
+
 [earlydepthstencil]
 PixelShaderOutput PSMain(PS_INPUT input)
 {
@@ -87,6 +97,25 @@ PixelShaderOutput PSMain(PS_INPUT input)
     // Calculate the light accumulation
     float3 lightAccum = CalcDirectionalLight(surfColor, normalWS, viewDir, MatProps.y);
 
+    uint layer = 0;
+    //const float distance = abs(length(eyePos - P));
+
+    matrix ViewProj = mul(cameraMatricies.View, cameraMatricies.Proj);
+    float4 Pvp = mul(float4(fragPosWS.xyz, 1.0f), ViewProj);
+    //const float distance = abs(1.0f-depth);
+    const float distance = abs(Pvp.w);
+    for (int i = 0; i < directionLight.cascadeCount; ++i)
+    {
+        if (distance < cascadeData[i].Distances)
+        {
+            layer = i;
+            break;
+        }
+    }
+    float4 shadowPosH = mul(float4(fragPosWS.xyz, 1.0f), mul(cascadeData[layer].ViewProj, mT));
+    float shadow = 0;
+    shadow = CalcCascadeShadowFactor(ShadCompSamp, CascadeShadowMaps, shadowPosH, layer);
+    lightAccum *= shadow;
     // Output the light accumulation
     output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed
 

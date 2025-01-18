@@ -58,4 +58,24 @@ float4 ScreenToWorld(float4 screen, matrix inverseProjView, float screenDim)
     return ClipToWorld(clip, inverseProjView);
 }
 
+float CalcCascadeShadowFactor(SamplerComparisonState samShadow, Texture2DArray shadowMap, float4 shadowPosH, uint idx)
+{
+    shadowPosH.xyz /= shadowPosH.w;
+
+    float depth = shadowPosH.z - 0.001f;
+
+    float percentLit = 0.0f;
+
+    [unroll]
+    for (int i = 0; i < 9; ++i)
+    {
+        percentLit += shadowMap.SampleCmpLevelZero(samShadow,
+                                                   float3(shadowPosH.xy, idx),
+                                                   depth,
+                                                   int2(i % 3 - 1, i / 3 - 1)).r;
+    }
+
+    return percentLit /= 9.0f;
+}
+
 #endif

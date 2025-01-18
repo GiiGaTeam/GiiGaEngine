@@ -199,10 +199,9 @@ namespace GiiGa
 
             UINT SizeInBytes = sizeof(DirectionLightData);
 
-            auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
-            if (!owner_go) return;
+            if (transform_.expired()) return;
 
-            Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();
+            Transform trans = transform_.lock()->GetWorldTransform();
             data_.dirWS = trans.GetForward();
 
             const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
@@ -279,7 +278,7 @@ namespace GiiGa
                 D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
                 dsv_desc.Format = DS_FORMAT_DSV; // Use a format without stencil
                 dsv_desc.ViewDimension = DS_DIMENSION_DSV;
-                dsv_desc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+                dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
                 dsv_desc.Texture2DArray.MipSlice = 0; // Use the first mip level
                 dsv_desc.Texture2DArray.FirstArraySlice = 0;
                 dsv_desc.Texture2DArray.ArraySize = NUM_CASCADE;
@@ -310,14 +309,14 @@ namespace GiiGa
             const auto forward = transform.GetForward();
             const auto up = transform.GetUp();
 
-            float percentDist = 0.24f / static_cast<float>(NUM_CASCADE);
+            float percentDist = 1.0f / static_cast<float>(NUM_CASCADE);
             for (uint32_t i = 0; i < NUM_CASCADE; ++i)
             {
                 Matrix subProj;
                 camera.GetSubProjAndDistanceToFar(percentDist * i, percentDist * static_cast<float>(i + 1), subProj,
                                                   cascadeData_[i].Distances);
                 //cascData.Distances[i] /= 50.0f;
-                const auto corners = ExtractFrustumWorldCorners(subProj);
+                const auto corners = ExtractFrustumWorldCorners(camera.GetView() * subProj);
                 const auto center = GetFrustumCenter(corners);
                 const auto tar = center + forward;
                 const auto view = Matrix::CreateLookAt(center, tar, up);
@@ -351,8 +350,8 @@ namespace GiiGa
         {
             if (corners.size() != 8) return Matrix::Identity;
 
-            Vector3 FrustumMin;
-            Vector3 FrustumMax;
+            Vector4 FrustumMin;
+            Vector4 FrustumMax;
             FrustumMin.x = FLT_MAX;
             FrustumMax.x = std::numeric_limits<float>::lowest();
             FrustumMin.y = FLT_MAX;
@@ -362,10 +361,11 @@ namespace GiiGa
 
             for (const auto& corner : corners)
             {
-                Vector3 vTempTranslateCornerPoints = Vector3::Transform(corner, lightView);
+                const auto corner4 = Vector4(corner.x, corner.y, corner.z, 1.0f);
+                Vector4 vTempTranslateCornerPoints = Vector4::Transform(corner4, lightView);
 
-                Vector3::Min(FrustumMin, vTempTranslateCornerPoints, FrustumMin);
-                Vector3::Max(FrustumMax, vTempTranslateCornerPoints, FrustumMax);
+                Vector4::Min(FrustumMin, vTempTranslateCornerPoints, FrustumMin);
+                Vector4::Max(FrustumMax, vTempTranslateCornerPoints, FrustumMax);
             }
 
             FrustumMin.z = FrustumMin.z < 0 ? FrustumMin.z * zMult_ : FrustumMin.z / zMult_;

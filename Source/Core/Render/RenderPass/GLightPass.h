@@ -6,7 +6,6 @@
 #include<directx/d3dx12_core.h>
 
 
-
 #include<memory>
 #include<vector>
 #include<functional>
@@ -34,6 +33,7 @@ namespace GiiGa
         static inline int LightDataRootIndex = 3;
 
         static inline int ConstantBufferCount = LightDataRootIndex + 1;
+        static inline int SRVCount = 5;
 
     public:
         GLightPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn, std::shared_ptr<GBuffer> gbuffer):
@@ -49,7 +49,19 @@ namespace GiiGa
                 .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
                 .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
                 .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
+                .MaxLOD = D3D12_FLOAT32_MAX,
+                .ShaderRegister = 0
+            };
+
+            auto compression_sampler_desc = D3D12_STATIC_SAMPLER_DESC{
+                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                .ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL,
+                .MinLOD = 0,
+                .MaxLOD = D3D12_FLOAT32_MAX,
+                .ShaderRegister = 1
             };
 
             //unmark PSOs
@@ -105,7 +117,7 @@ namespace GiiGa
                     {
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
             }
 
             // shade PSOs
@@ -182,7 +194,7 @@ namespace GiiGa
                         context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
 
                 shade_mask_to_pso[filter_directionalLight_]
 
@@ -204,7 +216,8 @@ namespace GiiGa
                         context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
                     })
                     .add_static_samplers(sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, GBuffer::NUM_GBUFFERS);
+                    .add_static_samplers(compression_sampler_desc)
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
             }
         }
 
@@ -231,7 +244,6 @@ namespace GiiGa
             context.BindDescriptorHandle(ConstantBufferCount + 0, gbuffer_->GetSRV(GBuffer::GBufferOrder::Diffuse));
             context.BindDescriptorHandle(ConstantBufferCount + 1, gbuffer_->GetSRV(GBuffer::GBufferOrder::Material));
             context.BindDescriptorHandle(ConstantBufferCount + 2, gbuffer_->GetSRV(GBuffer::GBufferOrder::NormalWS));
-            context.BindDescriptorHandle(ConstantBufferCount + 3, gbuffer_->GetDepthSRV());
 
             for (auto& visible : visibles)
             {
@@ -255,6 +267,12 @@ namespace GiiGa
                                                                                  false, &depth);
                             renderable.lock()->Draw(context);
                         }
+                        else if (auto dir_light = std::dynamic_pointer_cast<DirectionalLightComponent>(renderable.lock()))
+                        {
+                            dir_light->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                            context.BindDescriptorHandle(ConstantBufferCount + 3, dir_light->GetShadowSRV()); // в теории работает для любого света, но пока по***
+                            context.BindDescriptorHandle(ConstantBufferCount + 4, dir_light->GetCascadeDataSRV());
+                        }
 
                         {
                             // shade
@@ -262,12 +280,12 @@ namespace GiiGa
                             context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
                                                                                  false, &depth);
                             context.GetGraphicsCommandList()->OMSetStencilRef(1);
+
                             renderable.lock()->Draw(context);
                         }
                     }
                 }
             }
-
         }
 
     private:
