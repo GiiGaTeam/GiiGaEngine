@@ -27,7 +27,7 @@
 #include<Window.h>
 
 #include<GameObject.h>
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
 #include<Material.h>
 
 namespace GiiGa

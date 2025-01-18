@@ -8,7 +8,8 @@
 #include<AssetLoader.h>
 #include<AssetMeta.h>
 #include<AssetHandle.h>
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
+#include<ConcreteAsset/LevelAsset.h>
 #include<Logger.h>
 #include<Level.h>
 
@@ -59,15 +60,13 @@ namespace GiiGa
                 throw std::runtime_error("Failed to parse level file: " + errs);
             }
             
-            return Level::LevelFromJson(handle, level_json);
+            return std::make_shared<LevelAsset>(handle, level_json);
         }
 
         void Save(::std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
-            auto level = std::dynamic_pointer_cast<Level>(asset);
-
-            el::Loggers::getLogger(LogWorld)->info("Saving Level %v in %v", level->GetLevelName(), path);
-
+            auto level = std::dynamic_pointer_cast<LevelAsset>(asset);
+            
             std::ofstream level_file(path, std::ios::out | std::ios::trunc);
 
             if (!level_file.is_open())
@@ -76,7 +75,7 @@ namespace GiiGa
             }
 
             // Ensure ToJson() works correctly
-            Json::Value json = level->ToJson();
+            Json::Value json = level->json_;
             if (json.isNull())
             {
                 throw std::runtime_error("Failed to convert object to JSON");

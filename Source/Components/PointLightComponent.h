@@ -1,26 +1,20 @@
 #pragma once
 #include <pybind11/conduit/wrap_include_python_h.h>
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
+
 #include <directx/d3dx12.h>
 #include <DirectXCollision.h>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 #include <directxtk12/SimpleMath.h>
 
 #include<memory>
 #include<json/value.h>
-#include<bitset>
-#include<filesystem>
 #include<algorithm>
 #include<optional>
 
 #include<Engine.h>
 #include<Component.h>
-#include<MeshAsset.h>
-#include<Material.h>
+#include<ConcreteAsset/MeshAsset.h>
 #include<IRenderable.h>
 #include<SceneVisibility.h>
 #include<TransformComponent.h>

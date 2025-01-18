@@ -12,7 +12,7 @@
 #include<Engine.h>
 #include<EditorAssetDatabase.h>
 #include<AssetBase.h>
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
 
 namespace GiiGa
 {
