@@ -96,6 +96,23 @@ namespace GiiGa
                     auto database = Engine::Instance().ResourceManager()->Database();
                     std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(level->GetLevelAsset());
                 }
+                if (ImGui::BeginMenu("Save As"))
+                {
+                    char level_name[512];
+                    snprintf(level_name, sizeof(level_name), "MyLevel");
+                    if (ImGui::InputText("Level Name", level_name, sizeof(level_name), ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        std::string level_name_str = level_name;
+                        auto database = Engine::Instance().ResourceManager()->Database();
+                        auto new_level_asset = level->CreateAndReplaceLevelAsset(true);
+                        new_level_asset->SetLevelName(level_name_str);
+                        level->SetLevelName(level_name_str);
+                        level_name_str += ".level";
+                        std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(new_level_asset, level_name_str);
+                    }
+
+                    ImGui::EndMenu();
+                }
 
                 ImGui::EndPopup();
             }

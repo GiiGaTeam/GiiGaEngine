@@ -25,6 +25,11 @@ namespace GiiGa
             return json_["LevelSettings"]["Name"].asString();
         }
 
+        void SetLevelName(const std::string& level_name)
+        {
+            json_["LevelSettings"]["Name"] = level_name;
+        }
+
     private:
         Json::Value json_;
     };
