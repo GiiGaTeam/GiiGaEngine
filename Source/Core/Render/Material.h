@@ -1,11 +1,8 @@
 ﻿#pragma once
-#include <pybind11/conduit/wrap_include_python_h.h>
 #include <stdexcept>
 #include <json/json.h>
 #include <json/value.h>
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
+
 #include <directx/d3dx12_core.h>
 #include <directxtk12/SimpleMath.h>
 
@@ -14,15 +11,13 @@
 
 #include<memory>
 #include<array>
-#include<cmath>
-#include<stdexcept>
 #include<exception>
 #include<filesystem>
 
 #include<GPULocalResource.h>
 #include<RenderDevice.h>
 #include<AssetBase.h>
-#include<TextureAsset.h>
+#include<ConcreteAsset/TextureAsset.h>
 #include<ObjectMask.h>
 #include<Misc.h>
 #include<RenderContext.h>

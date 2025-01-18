@@ -1,11 +1,6 @@
 #pragma once
-#include <pybind11/conduit/wrap_include_python_h.h>
 #include<DirectXCollision.h>
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
 #include<assimp/Importer.hpp>
 #include<assimp/scene.h>
 #include<assimp/postprocess.h>
@@ -18,13 +13,13 @@
 #include<Uuid.h>
 #include<AssetLoader.h>
 #include<AssetType.h>
-#include<MeshAsset.h>
+#include<ConcreteAsset/MeshAsset.h>
 #include<Engine.h>
 #include<VertexTypes.h>
 #include<Misc.h>
 #include<AssetHandle.h>
 
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
 #include<TransformComponent.h>
 #include<StaticMeshComponent.h>
 #include<GameObject.h>

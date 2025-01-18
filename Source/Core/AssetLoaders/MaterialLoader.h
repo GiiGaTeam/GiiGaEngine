@@ -8,7 +8,7 @@
 #include<AssetLoader.h>
 #include<Engine.h>
 #include<Material.h>
-#include<TextureAsset.h>
+#include<ConcreteAsset/TextureAsset.h>
 #include<Logger.h>
 #include<AssetMeta.h>
 

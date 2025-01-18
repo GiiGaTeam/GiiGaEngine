@@ -1,9 +1,5 @@
 #pragma once
-#include <pybind11/conduit/wrap_include_python_h.h>
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
 #include<d3d12.h>
 #include<directxtk12/DDSTextureLoader.h>
 #include<directxtk12/ResourceUploadBatch.h>
@@ -13,7 +9,7 @@
 
 #include<AssetLoader.h>
 #include<AssetType.h>
-#include<TextureAsset.h>
+#include<ConcreteAsset/TextureAsset.h>
 #include<Engine.h>
 #include<DirectXUtils.h>
 
