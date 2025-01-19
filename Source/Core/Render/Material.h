@@ -105,6 +105,7 @@ namespace GiiGa
     {
         //todo: temp
         friend class ImGuiInspector;
+        friend class ImGuiAssetEditor;
 
     public:
         struct alignas(256) MaterialData

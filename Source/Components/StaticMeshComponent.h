@@ -38,6 +38,7 @@ namespace GiiGa
     {
         //todo: temp
         friend class ImGuiInspector;
+        friend class ImGuiAssetEditor;
 
     public:
         StaticMeshComponent()=default;

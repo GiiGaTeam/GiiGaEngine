@@ -32,6 +32,7 @@
     <None Include="Shaders\VertexFullQuadShader.hlsl" />
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />
+    <None Include="Shaders\BufferWireframeShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\FileWatch.hpp">
@@ -494,6 +495,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\PySripting\py_module.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Render\RenderPass\DebugPass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiAssetEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

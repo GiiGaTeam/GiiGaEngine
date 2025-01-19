@@ -267,6 +267,7 @@
     <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorContext.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorViewport.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\IImGuiWindow.h" />
+    <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiAssetEditor.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiContentBrowser.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiInspector.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\ImGuiSceneHierarchy.h" />

@@ -23,6 +23,7 @@
 #include<IImGuiWindow.h>
 #include<ImGuiSceneHierarchy.h>
 #include<ImGuiInspector.h>
+#include<ImGuiAssetEditor.h>
 #include<ImGuiContentBrowser.h>
 #include<SceneVisibility.h>
 
@@ -53,6 +54,7 @@ namespace GiiGa
 
             windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
+            windows_.push_back(std::make_unique<ImGuiAssetEditor>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiContentBrowser>());
         }
 
