@@ -224,6 +224,11 @@ namespace GiiGa
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(handle);
         }
 
+        void SetMaterial(std::shared_ptr<Material> mat)
+        {
+            material_ = mat;
+        }
+
         void UpdateGPUData(RenderContext& context) override
         {
             perObjectData_->UpdateGPUData(context);

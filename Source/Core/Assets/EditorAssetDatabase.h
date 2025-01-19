@@ -88,7 +88,7 @@ namespace GiiGa
         }
 
         template <IsAssetBase T>
-        AssetHandle CreateAsset(std::shared_ptr<T> asset, const std::filesystem::path& relative_or_absolute_path)
+        AssetHandle CreateAsset(std::shared_ptr<T> asset, const std::filesystem::path& relative_or_absolute_path, bool save = true)
         {
             AssetHandle handle = asset->GetId();
 
@@ -122,7 +122,8 @@ namespace GiiGa
 
             //TODO: Try catch, if save failed it should remove from registry_map and assets_to_path
             assets_to_path_.emplace(relative_path, handle);
-            loaderIt->second->Save(asset, absolute_path);
+            if (save)
+                loaderIt->second->Save(asset, absolute_path);
 
             return handle;
         }

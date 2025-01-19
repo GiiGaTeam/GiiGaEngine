@@ -154,8 +154,8 @@ namespace GiiGa
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
         }
 
-        Material(std::string name) : 
-            AssetBase(AssetHandle{ Uuid::New(), 0}),
+        Material(std::string name) :
+            AssetBase(AssetHandle{Uuid::New(), 0}),
             shaderResource_(std::make_shared<MaterialShaderResource>()),
             name(name)
         {
@@ -300,7 +300,8 @@ namespace GiiGa
 
             if (isStatic_)
             {
-                MaterialCB_->UpdateContentsImmediate(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                if (MaterialCB_)
+                    MaterialCB_->UpdateContentsImmediate(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
             }
             else
             {
@@ -452,42 +453,43 @@ namespace GiiGa
                     switch (inorder)
                     {
                     case TexturesOrder::BaseColor:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
                         break;
                     case TexturesOrder::Metallic:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Specular:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Roughness:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Anisotropy:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::EmissiveColor:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
                         break;
                     case TexturesOrder::Opacity:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                         break;
                     case TexturesOrder::Normal:
-                        SetTexture(inorder,rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
+                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
                         break;
                     }
                 }
             }
 
             // unload non req textures
-            for (size_t i = 0; i < MaxTextureCount; ++i)
-            {
-                if (!requiredTextures[i] && textures_[i])
-                {
-                    textures_[i].reset();
-                    shaderResource_->texture_srvs_[i].reset();
-                }
-            }
+            // todo: redone
+            //for (size_t i = 0; i < MaxTextureCount; ++i)
+            //{
+            //    if (!requiredTextures[i] && textures_[i])
+            //    {
+            //        textures_[i].reset();
+            //        shaderResource_->texture_srvs_[i].reset();
+            //    }
+            //}
         }
 
         RequiredTexturesMask GetRequiredTextures() const
