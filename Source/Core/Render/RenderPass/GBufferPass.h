@@ -77,28 +77,6 @@ namespace GiiGa
                 }
             };
 
-
-            mask_to_pso[filter_unlit_solid_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueUnlitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 5)
-                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                .set_depth_stencil_state(depth_stencil_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[1]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
-
             mask_to_pso[filter_lit_solid_]
                 .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
                 .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
@@ -154,11 +132,9 @@ namespace GiiGa
         {
             auto cam_info = getCamInfoDataFunction_();
             const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
-            const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum_culling_res);
             const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum_culling_res);
             const auto& vis_wire = SceneVisibility::Extract(filter_wire_, frustum_culling_res);
             std::unordered_map<ObjectMask, DrawPacket> visibles;
-            SceneVisibility::Expand(vis_unlit, visibles);
             SceneVisibility::Expand(vis_lit, visibles);
             SceneVisibility::Expand(vis_wire, visibles);
 
@@ -196,10 +172,6 @@ namespace GiiGa
         }
 
     private:
-        ObjectMask filter_unlit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
-                                                     .SetShadingModel(ShadingModel::Unlit)
-                                                     .SetBlendMode(BlendMode::Opaque)
-                                                     .SetFillMode(FillMode::Solid);
 
         ObjectMask filter_lit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                    .SetShadingModel(ShadingModel::DefaultLit)
