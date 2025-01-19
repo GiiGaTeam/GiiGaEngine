@@ -246,6 +246,7 @@
     <ClInclude Include="Source\Core\Logger.h" />
     <ClInclude Include="Source\Core\MeshAsset.h" />
     <ClInclude Include="Source\Core\Misc.h" />
+    <ClInclude Include="Source\Core\Physics\PhysicsSystem.h" />
     <ClInclude Include="Source\Core\PrefabAsset.h" />
     <ClInclude Include="Source\Core\PrefabInstanceModifications.h" />
     <ClInclude Include="Source\Core\Project.h" />
