@@ -42,6 +42,7 @@ namespace GiiGa
             {
                 try
                 {
+                    el::Loggers::getLogger(LogResourceManager)->warn("Import Asset Callback: %v", path);
                     ImportAsset(path);
                 }
                 catch (std::runtime_error& err)
@@ -87,7 +88,7 @@ namespace GiiGa
         }
 
         template <IsAssetBase T>
-        AssetHandle CreateAsset(std::shared_ptr<T> asset, const std::filesystem::path& path)
+        AssetHandle CreateAsset(std::shared_ptr<T> asset, const std::filesystem::path& relative_or_absolute_path, bool save = true)
         {
             AssetHandle handle = asset->GetId();
 
@@ -98,19 +99,31 @@ namespace GiiGa
                 throw std::runtime_error("No asset loader found for asset type: " + AssetTypeToString(asset->GetType()));
             }
 
-            std::filesystem::path relative_path = std::filesystem::relative(path, asset_path_);
+            std::filesystem::path relative_path;
+            std::filesystem::path absolute_path;
+            if (relative_or_absolute_path.is_absolute())
+            {
+                relative_path = std::filesystem::relative(relative_or_absolute_path, asset_path_);
+                absolute_path = relative_or_absolute_path;
+            }
+            if (relative_or_absolute_path.is_relative())
+            {
+                relative_path = relative_or_absolute_path;
+                absolute_path = asset_path_ / relative_or_absolute_path;
+            }
 
             AssetMeta meta;
             meta.path = relative_path;
             meta.type = asset->GetType();
             meta.loader_id = loaderIt->second->Id();
-            meta.name = path.stem().string();
+            meta.name = relative_or_absolute_path.stem().string();
 
             registry_map_.emplace(handle, std::move(meta));
 
             //TODO: Try catch, if save failed it should remove from registry_map and assets_to_path
             assets_to_path_.emplace(relative_path, handle);
-            loaderIt->second->Save(asset, path);
+            if (save)
+                loaderIt->second->Save(asset, absolute_path);
 
             return handle;
         }
@@ -165,7 +178,8 @@ namespace GiiGa
                 return;
             }
 
-            if (assets_to_path_.contains(path)) {
+            if (assets_to_path_.contains(path))
+            {
                 return;
             }
 
@@ -225,6 +239,22 @@ namespace GiiGa
                     ++it;
                 }
             }
+        }
+
+        std::filesystem::path GetAssetAbsolutePath(const std::shared_ptr<AssetBase> asset)
+        {
+            auto reg_it = registry_map_.find(asset->GetId());
+            if (reg_it != registry_map_.end())
+            {
+                return asset_path_ / reg_it->second.path;
+            }
+        }
+
+        void RemoveAssetFile(std::shared_ptr<AssetBase> asset)
+        {
+            auto path = GetAssetAbsolutePath(asset);
+            std::filesystem::remove(path);
+            RemoveAsset(path);
         }
 
         void UpdateAssetPath(const std::filesystem::path& old_path, const std::filesystem::path& new_path)

@@ -9,7 +9,7 @@
 #include<AssetLoader.h>
 #include<AssetMeta.h>
 #include<AssetHandle.h>
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
 #include<GameObject.h>
 #include<Logger.h>
 #include<CreateComponentsForGameObject.h>

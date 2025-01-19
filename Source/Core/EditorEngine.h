@@ -112,6 +112,7 @@ namespace GiiGa
             editor_asset_database_->RegisterSaver<LevelAssetLoader>();
             editor_asset_database_->RegisterSaver<PrefabAssetLoader>();
             editor_asset_database_->RegisterSaver<MaterialLoader>();
+            editor_asset_database_->RegisterSaver<ImageAssetLoader>();
         }
 
         void CheckAssetUpdateQueue()

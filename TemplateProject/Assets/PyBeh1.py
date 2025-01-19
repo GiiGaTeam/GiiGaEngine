@@ -20,6 +20,3 @@ class MyPyBeh1(gp.Component):
                 dt*rand.randrange(-2,2),
                 dt*rand.randrange(-2,2),
                 dt*rand.randrange(-2,2)))
-
-import inspect
-print(inspect.getmro(MyPyBeh1),flush=True)

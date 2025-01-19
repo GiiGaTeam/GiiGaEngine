@@ -11,14 +11,15 @@
 #include<Component.h>
 #include<Logger.h>
 #include<AssetBase.h>
-#include<PrefabAsset.h>
+#include<ConcreteAsset/PrefabAsset.h>
 #include<CreateComponentsForGameObject.h>
 #include<Engine.h>
 #include<PrefabInstanceModifications.h>
+#include<ConcreteAsset/LevelAsset.h>
 
 namespace GiiGa
 {
-    class Level : public ILevelRootGameObjects, public AssetBase
+    class Level : public ILevelRootGameObjects
     {
     public:
         /*  Level Json:
@@ -39,17 +40,10 @@ namespace GiiGa
          *  }
          */
 
-        Level(const AssetHandle& handle, const Json::Value& level_settings):
-            AssetBase(handle)
+        Level(const Json::Value& level_settings)
         {
             SetIsActive(false);
-
             name_ = level_settings["Name"].asString();
-        }
-
-        AssetType GetType() override
-        {
-            return AssetType::Level;
         }
 
         const auto& GetRootGameObjects() const
@@ -67,6 +61,11 @@ namespace GiiGa
             return name_;
         }
 
+        void SetLevelName(const std::string& name)
+        {
+            name_ = name;
+        }
+
         bool GetIsActive() const
         {
             return isActive_;
@@ -82,11 +81,10 @@ namespace GiiGa
             for (int i = 0; i < root_game_objects_.size(); ++i)
             {
                 std::dynamic_pointer_cast<GameObject>(root_game_objects_[i])->BeginPlay();
-
             }
         }
 
-        Json::Value ToJson()
+        Json::Value ToJson() const
         {
             Json::Value result;
 
@@ -135,9 +133,41 @@ namespace GiiGa
             return jsons;
         }
 
-        static std::shared_ptr<Level> LevelFromJson(const AssetHandle& handle, const Json::Value& json)
+        static std::shared_ptr<Level> LevelFromLevelAsset(std::shared_ptr<LevelAsset> level_asset)
         {
-            auto level = std::make_shared<Level>(handle, json["LevelSettings"]);
+            auto level = LevelFromJson(level_asset->json_);
+            level->asset_ = level_asset;
+            return level;
+        }
+
+        std::shared_ptr<LevelAsset> GetLevelAsset() const
+        {
+            return asset_;
+        }
+
+        // new_id = true only if after asset will be registered in database
+        // if not breaks assets system saving
+        std::shared_ptr<LevelAsset> CreateAndReplaceLevelAsset(bool new_id = false)
+        {
+            Json::Value level_json = ToJson();
+            AssetHandle handle = asset_->GetId();
+            
+            if (new_id)
+                handle = AssetHandle{Uuid::New(), 0};
+            auto asset = std::make_shared<LevelAsset>(handle, level_json);
+            
+            this->asset_ = asset;
+            return asset;
+        }
+
+    private:
+        std::shared_ptr<LevelAsset> asset_;
+        std::string name_;
+        bool isActive_ = false;
+
+        static std::shared_ptr<Level> LevelFromJson(const Json::Value& json)
+        {
+            auto level = std::make_shared<Level>(json["LevelSettings"]);
 
             // creates game objects only
             el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
@@ -176,7 +206,7 @@ namespace GiiGa
             {
                 if (all_gos_jsons[i]["Prefab"].empty()) // is not prefab instance
                 {
-                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->Restore(all_gos_jsons[i]);
+                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->RestoreFromLevelJson(all_gos_jsons[i]);
                 }
             }
 
@@ -190,9 +220,5 @@ namespace GiiGa
 
             return level;
         }
-
-    private:
-        std::string name_;
-        bool isActive_ = false;
     };
 }

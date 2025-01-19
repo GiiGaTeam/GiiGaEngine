@@ -52,7 +52,7 @@ namespace GiiGa
 
         ~GameObject() override
         {
-            el::Loggers::getLogger("")->debug("GameObject::~GameObject");
+            //el::Loggers::getLogger("")->debug("GameObject::~GameObject");
             WorldQuery::RemoveAnyWithUuid(uuid_);
         }
 
@@ -355,7 +355,7 @@ namespace GiiGa
             return this_json;
         }
 
-        void Restore(const Json::Value& json)
+        void RestoreFromLevelJson(const Json::Value& json)
         {
             auto parent_uuid = Uuid::FromString(json["Parent"].asString()).value();
 

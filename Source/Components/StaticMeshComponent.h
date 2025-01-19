@@ -1,31 +1,22 @@
 #pragma once
-#include <pybind11/conduit/wrap_include_python_h.h>
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <directx/d3dx12.h>
+
 #include <DirectXCollision.h>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 
 #include<memory>
 #include<json/value.h>
-#include<bitset>
-#include<filesystem>
 #include<optional>
 
 #include<Engine.h>
 #include<Component.h>
-#include<MeshAsset.h>
+#include<ConcreteAsset/MeshAsset.h>
 #include<Material.h>
 #include<IRenderable.h>
 #include<SceneVisibility.h>
 #include<TransformComponent.h>
 #include<EventSystem.h>
 #include<GameObject.h>
-#include<Misc.h>
-#include<IObjectShaderResource.h>
 #include<PerObjectData.h>
 #include<DefaultAssetsHandles.h>
 #include<IUpdateGPUData.h>
@@ -232,6 +223,11 @@ namespace GiiGa
                 material_.reset();
             else
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(handle);
+        }
+
+        void SetMaterial(std::shared_ptr<Material> mat)
+        {
+            material_ = mat;
         }
 
         void UpdateGPUData(RenderContext& context) override

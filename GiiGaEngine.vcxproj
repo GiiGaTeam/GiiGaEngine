@@ -223,6 +223,10 @@
     <ClInclude Include="Source\Core\Assets\AssetMeta.h" />
     <ClInclude Include="Source\Core\Assets\AssetType.h" />
     <ClInclude Include="Source\Core\Assets\BaseAssetDatabase.h" />
+    <ClInclude Include="Source\Core\Assets\ConcreteAsset\LevelAsset.h" />
+    <ClInclude Include="Source\Core\Assets\ConcreteAsset\MeshAsset.h" />
+    <ClInclude Include="Source\Core\Assets\ConcreteAsset\PrefabAsset.h" />
+    <ClInclude Include="Source\Core\Assets\ConcreteAsset\TextureAsset.h" />
     <ClInclude Include="Source\Core\Assets\EditorAssetDatabase.h" />
     <ClInclude Include="Source\Core\Assets\ProjectWatcher.h" />
     <ClInclude Include="Source\Core\Assets\ResourceManager.h" />
@@ -244,9 +248,7 @@
     <ClInclude Include="Source\Core\IWorldQuery.h" />
     <ClInclude Include="Source\Core\Level.h" />
     <ClInclude Include="Source\Core\Logger.h" />
-    <ClInclude Include="Source\Core\MeshAsset.h" />
     <ClInclude Include="Source\Core\Misc.h" />
-    <ClInclude Include="Source\Core\PrefabAsset.h" />
     <ClInclude Include="Source\Core\PrefabInstanceModifications.h" />
     <ClInclude Include="Source\Core\Project.h" />
     <ClInclude Include="Source\Core\PySripting\py_module.h" />
@@ -306,7 +308,6 @@
     <ClInclude Include="Source\Core\Render\VertexTypes.h" />
     <ClInclude Include="Source\Core\Render\Viewport.h" />
     <ClInclude Include="Source\Core\Render\ViewTypes.h" />
-    <ClInclude Include="Source\Core\TextureAsset.h" />
     <ClInclude Include="Source\Core\Timer.h" />
     <ClInclude Include="Source\Core\unique_any.h" />
     <ClInclude Include="Source\Core\Uuid.h" />

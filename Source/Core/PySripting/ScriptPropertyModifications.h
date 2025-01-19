@@ -54,6 +54,7 @@ namespace GiiGa
                     if (json.isString())
                     {
                         value_or_holder = pybind11::cast(Uuid::FromString(json.asString()).value());
+                        return;
                     }
                 }
                 else
@@ -65,6 +66,7 @@ namespace GiiGa
                     }
                     Todo();
                 }
+                el::Loggers::getLogger(LogPyScript)->fatal("Probably this %v value type is not supported", json.toStyledString());
                 throw std::runtime_error("Invalid value for py script property");
             }
             catch (pybind11::error_already_set& e)
@@ -96,7 +98,7 @@ namespace GiiGa
 
         void SetValuesFromJson(const Json::Value& json)
         {
-            for (const auto& prop_js : json["PropertyModifications"])
+            for (const auto& prop_js : json)
             {
                 SetProperty(prop_js["Name"].asString(), prop_js["Value"]);
             }
@@ -119,8 +121,9 @@ namespace GiiGa
                 Json::Value prop_node;
 
                 prop_node["Name"] = name;
-
-                result.append(ScriptHelpers::EncodeToJSONValue(prop.value_or_holder));
+                prop_node["Value"] = ScriptHelpers::EncodeToJSONValue(prop.value_or_holder);
+                
+                result.append(prop_node);
             }
             return result;
         }

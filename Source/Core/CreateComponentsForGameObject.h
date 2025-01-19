@@ -59,6 +59,10 @@ namespace GiiGa
                 {
                     new_comp = gameObject->CreateComponent<StaticMeshComponent>(comp_js, roll_id);
                 }
+                else if (comp_js["Type"].asString() == typeid(PyBehaviourSchemeComponent).name())
+                {
+                    gameObject->CreateComponent<PyBehaviourSchemeComponent>(comp_js, roll_id);
+                }
 
                 prefab_uuid_to_world_uuid[new_comp->GetInPrefabUuid()] = new_comp->GetUuid();
             }
