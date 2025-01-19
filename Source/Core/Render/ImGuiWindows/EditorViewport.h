@@ -28,6 +28,8 @@
 #include<EditorContext.h>
 #include<ShadowPass.h>
 
+#include "DebugPass.h"
+
 namespace GiiGa
 {
     class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
@@ -57,6 +59,7 @@ namespace GiiGa
             renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);

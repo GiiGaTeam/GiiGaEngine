@@ -116,7 +116,6 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            
         }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
@@ -136,7 +135,7 @@ namespace GiiGa
             Todo();
         }
 
-        std::vector<std::pair<PropertyModificationKey,PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
@@ -155,7 +154,13 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Wire).SetLightType(LightType::Point), .shaderResource = pointLightShaderRes_};
+            return {
+                .object_mask = mesh_->GetObjectMask()
+                                    .SetFillMode(FillMode::Wire)
+                                    .SetLightType(LightType::Point)
+                                    .SetBlendMode(BlendMode::Debug),
+                .shaderResource = pointLightShaderRes_
+            };
         }
 
         void Restore(const Json::Value&) override

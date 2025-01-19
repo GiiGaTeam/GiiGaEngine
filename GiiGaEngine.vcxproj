@@ -178,6 +178,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Shaders\BufferWireframeShader.hlsl" />
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
@@ -285,6 +286,7 @@
     <ClInclude Include="Source\Core\Render\RenderDevice.h" />
     <ClInclude Include="Source\Core\Render\RenderGraph.h" />
     <ClInclude Include="Source\Core\Render\RenderPassViewData.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\DebugPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\EditorSwapChainPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\ForwardPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\GBufferPass.h" />

@@ -148,7 +148,12 @@ namespace GiiGa
 
         SortData GetSortData() override
         {
-            return {.object_mask = mesh_->GetObjectMask().SetFillMode(FillMode::Solid).SetLightType(LightType::Directional), .shaderResource = directionLightShaderRes_};
+            return {
+                .object_mask = mesh_->GetObjectMask()
+                                    .SetFillMode(FillMode::Solid)
+                                    .SetLightType(LightType::Directional),
+                .shaderResource = directionLightShaderRes_
+            };
         }
 
         void Restore(const Json::Value&) override

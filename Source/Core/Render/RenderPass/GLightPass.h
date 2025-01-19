@@ -158,6 +158,9 @@ namespace GiiGa
                     },
                 };
 
+                D3D12_DEPTH_STENCIL_DESC shade_dir_ds = shade_ds;
+                shade_dir_ds.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+
                 D3D12_BLEND_DESC blendDesc = {};
                 blendDesc.AlphaToCoverageEnable = FALSE;
                 blendDesc.IndependentBlendEnable = FALSE;
@@ -205,8 +208,8 @@ namespace GiiGa
                     .set_rasterizer_state(shade_rs)
                     .set_input_layout(VertexPNTBT::InputLayout)
                     .set_rtv_format(g_format_array, 1)
-                    //.set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                    //.set_depth_stencil_state(shade_ds)
+                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                    .set_depth_stencil_state(shade_dir_ds)
                     .set_blend_state(blendDesc)
                     .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
                     {
@@ -294,12 +297,12 @@ namespace GiiGa
     private:
         ObjectMask filter_pointLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                     .SetLightType(LightType::Point)
-                                                    .SetBlendMode(BlendMode::Opaque)
+                                                    .SetBlendMode(BlendMode::Debug)
                                                     .SetFillMode(FillMode::All);
 
         ObjectMask filter_directionalLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                           .SetLightType(LightType::Directional)
-                                                          .SetBlendMode(BlendMode::Opaque)
+                                                          .SetBlendMode(BlendMode::Debug)
                                                           .SetFillMode(FillMode::All);
 
         std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;

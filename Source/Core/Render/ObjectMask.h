@@ -63,7 +63,8 @@ namespace GiiGa
         None = 0,
         Opaque = 1,
         Masked = 2,
-        Translucent = 4
+        Translucent = 4,
+        Debug = 8
     };
 
     enum class ShadingModel
