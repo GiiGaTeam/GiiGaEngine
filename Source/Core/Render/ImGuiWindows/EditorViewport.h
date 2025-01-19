@@ -29,6 +29,7 @@
 #include<ShadowPass.h>
 
 #include "DebugPass.h"
+#include "ForwardPass.h"
 
 namespace GiiGa
 {
@@ -59,6 +60,7 @@ namespace GiiGa
             renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});

@@ -182,7 +182,7 @@
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
-    <None Include="Shaders\GBufferOpaqueUnlitPixelShader.hlsl" />
+    <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\GBufferWireframeShader.hlsl" />
     <None Include="Shaders\GDirectionalLight.hlsl" />
     <None Include="Shaders\GLightHeader.hlsl" />
