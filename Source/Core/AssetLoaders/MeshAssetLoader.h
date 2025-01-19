@@ -54,7 +54,7 @@ namespace GiiGa
                 throw std::runtime_error("File does not exist: " + absolute_path.string());
 
             Assimp::Importer importer;
-            const aiScene* scene = importer.ReadFile(absolute_path.string(), aiProcess_Triangulate | aiProcess_FlipUVs);
+            const aiScene* scene = importer.ReadFile(absolute_path.string(), aiProcess_Triangulate);
 
             if (!scene || !scene->HasMeshes())
             {
@@ -190,7 +190,8 @@ namespace GiiGa
                                         mesh->mName.C_Str()
                                     });
 
-                    staticMeshComponent->SetMaterial(materials_map.at(mesh->mMaterialIndex));
+                    if (materials_map.contains(mesh->mMaterialIndex))
+                        staticMeshComponent->SetMaterial(materials_map.at(mesh->mMaterialIndex));
                 }
             }
 
@@ -314,7 +315,8 @@ namespace GiiGa
 
                 if (mesh->HasTextureCoords(0))
                 {
-                    texCoord = Vector2{mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+                    // flipping "y" coordinate
+                    texCoord = Vector2{mesh->mTextureCoords[0][i].x, 1 - mesh->mTextureCoords[0][i].y};
                 }
 
                 if (mesh->HasTangentsAndBitangents())
