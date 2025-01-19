@@ -55,7 +55,7 @@ namespace GiiGa
             windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiAssetEditor>(editorContext_));
-            windows_.push_back(std::make_unique<ImGuiContentBrowser>());
+            windows_.push_back(std::make_unique<ImGuiContentBrowser>(editorContext_));
         }
 
         ~EditorSwapChainPass() override

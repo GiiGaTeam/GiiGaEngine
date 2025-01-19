@@ -48,6 +48,7 @@ namespace GiiGa
     {
     private:
         std::shared_ptr<EditorAssetDatabase> database_;
+        std::shared_ptr<ResourceManager> rm_;
         std::filesystem::path current_path_;
 
         std::unordered_map<AssetType, std::unique_ptr<GPULocalResource>> icons_;
@@ -59,13 +60,16 @@ namespace GiiGa
         EventHandle<DropFileEvent> drop_file_evt_ = EventHandle<DropFileEvent>::Null();
         CreateAssetState create_asset_state_ = CreateAssetState::None;
 
+        std::shared_ptr<EditorContext> editorContext_;
     public:
+
         ImGuiContentBrowser(const ImGuiContentBrowser& obj) = delete;
         ImGuiContentBrowser& operator=(const ImGuiContentBrowser& obj) = delete;
 
-        ImGuiContentBrowser()
+        ImGuiContentBrowser(std::shared_ptr<EditorContext> ec) : editorContext_(ec)
         {
             database_ = std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().ResourceManager()->Database());
+            rm_ = Engine::Instance().ResourceManager();
             assert(database_);
             current_path_ = database_->AssetPath();
 
@@ -358,7 +362,17 @@ namespace GiiGa
                             //ImGui::PushID(static_cast<int>(std::hash(handle)));
                             auto& icon = icons_srv_[meta.type]->getDescriptor();
                             auto id = handle.id.ToString() + std::to_string(handle.subresource);
-                            ImGui::ImageButton(id.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+
+                            ImGui::ImageButton(id.c_str(), (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+
+                            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                            {
+                                if (meta.type == AssetType::Material) {
+                                    editorContext_->selectedAsset = rm_->GetAsset<Material>(handle);
+                                } else {
+                                    editorContext_->selectedAsset.reset();
+                                }
+                            }
 
                             const char* raw_name = filename.c_str();
 

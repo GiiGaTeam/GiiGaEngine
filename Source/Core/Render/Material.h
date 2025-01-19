@@ -157,7 +157,9 @@ namespace GiiGa
 
         ~Material() override
         {
-            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            if (auto rs = Engine::Instance().RenderSystem()) {
+                rs->UnregisterInUpdateGPUData(this);
+            }
         }
 
         Material(std::string name) : 
