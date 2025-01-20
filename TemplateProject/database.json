@@ -16,6 +16,20 @@
 	{
 		"id" : 
 		{
+			"id" : "50b0a581-b7f2-460a-bfd5-a13bbce5eac8",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "a3227723-70bb-4b66-bab0-1d92d492a75c",
+			"name" : "GrassPlane",
+			"path" : "GrassPlane\\GrassPlane.prefab",
+			"type" : "Prefab"
+		}
+	},
+	{
+		"id" : 
+		{
 			"id" : "00000000-0000-0000-0000-000000000002",
 			"subresource" : 0
 		},
@@ -249,6 +263,48 @@
 			"name" : "PyBeh2",
 			"path" : "PyBeh2.py",
 			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "01ae88b1-3ae0-461f-9aa6-f2229cd89fc9",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "a2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "Material.001",
+			"path" : "GrassPlane\\Material.001.mat",
+			"type" : "Material"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "1721d2ba-bb33-4593-afec-81edc3700fb0",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "ab702a1d-3b4f-4782-bac3-3af95b3145ac",
+			"name" : "Plane",
+			"path" : "GrassPlane\\GrassPlane.fbx",
+			"type" : "Mesh"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "6d8381a1-16ca-4430-b8df-44cb0a49c721",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "a2227622-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "grass",
+			"path" : "GrassPlane\\grass.jpg",
+			"type" : "Texture2D"
 		}
 	}
 ]

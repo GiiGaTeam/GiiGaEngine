@@ -1,0 +1,88 @@
+{
+	"GameObjects" : 
+	[
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "00000000-0000-0000-0000-000000000000",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 1.0
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "faa8a206-eee3-4a6a-a2de-58a79d9a4055"
+				}
+			],
+			"Name" : "RootNode",
+			"Parent" : "00000000-0000-0000-0000-000000000000",
+			"Uuid" : "82a3ec4e-5b80-4127-9059-9f28790f99c3"
+		},
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "faa8a206-eee3-4a6a-a2de-58a79d9a4055",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 100.0,
+							"y" : 100.0,
+							"z" : 100.0
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "f4651b25-454e-44be-8a2a-2f4340fae9c1"
+				},
+				{
+					"Material" : 
+					{
+						"id" : "01ae88b1-3ae0-461f-9aa6-f2229cd89fc9",
+						"subresource" : 0
+					},
+					"Mesh" : 
+					{
+						"id" : "1721d2ba-bb33-4593-afec-81edc3700fb0",
+						"subresource" : 0
+					},
+					"Type" : "class GiiGa::StaticMeshComponent",
+					"Uuid" : "c8bb9b5a-bac5-4eda-bfb9-602941d3499a"
+				}
+			],
+			"Name" : "Plane",
+			"Parent" : "82a3ec4e-5b80-4127-9059-9f28790f99c3",
+			"Uuid" : "2ae8a64b-2f1e-4886-a2ee-bba6c6edae7c"
+		}
+	],
+	"RootGameObject" : "82a3ec4e-5b80-4127-9059-9f28790f99c3"
+}
