@@ -394,7 +394,7 @@ namespace GiiGa
                 const auto corners = ExtractFrustumWorldCorners(camera.GetView() * subProj);
                 const auto center = GetFrustumCenter(corners);
                 const auto tar = center + forward;
-                const auto view = Matrix::CreateLookAt(center, tar, up);
+                const auto view = Matrix::CreateLookAt(center, tar, Vector3::Up);
                 const auto proj = GetOrthographicProjByCorners(corners, view);
                 cascadeData_[i].View = view.Transpose();
                 cascadeData_[i].Proj = proj.Transpose();
@@ -466,7 +466,7 @@ namespace GiiGa
         DirectionLightData data_;
         std::array<CascadeData, NUM_CASCADE> cascadeData_;
 
-        float zMult_ = 10.0f; // Multiplication for Ortho projection
+        float zMult_ = 5; // Multiplication for Ortho projection
 
         bool isStatic_ = false;
         bool isDirty = true;
