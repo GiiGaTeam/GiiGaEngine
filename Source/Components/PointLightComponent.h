@@ -40,6 +40,26 @@ namespace GiiGa
         float radius = 1;
         float max_intensity = 1;
         float falloff = 1;
+
+        PointLightData() = default;
+
+        PointLightData(const Json::Value& json)
+        {
+            max_intensity = json["max_intensity"].asFloat();
+            color = Vector3FromJson(json["color"]);
+            falloff = json["falloff"].asFloat();
+        }
+
+        Json::Value toJson()
+        {
+            Json::Value json;
+
+            json["max_intensity"] = max_intensity;
+            json["color"] = Vector3ToJson(color);
+            json["falloff"] = falloff;
+
+            return json;
+        }
     };
 
     class PointLightShaderResource : public IObjectShaderResource
@@ -61,8 +81,21 @@ namespace GiiGa
     class PointLightComponent : public LightComponent
     {
     public:
+        PointLightComponent(const Json::Value& json, bool roll_id = false):
+            LightComponent(json, roll_id),
+            pointLightShaderRes_(std::make_shared<PointLightShaderResource>()),
+            data_(json["PointLightData"])
+        {
+            ConstructFunction();
+        }
+
         PointLightComponent():
             pointLightShaderRes_(std::make_shared<PointLightShaderResource>())
+        {
+            ConstructFunction();
+        }
+
+        void ConstructFunction()
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
 
@@ -81,7 +114,7 @@ namespace GiiGa
             }
         }
 
-        ~PointLightComponent()
+        ~PointLightComponent() override
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
@@ -144,6 +177,16 @@ namespace GiiGa
         void Draw(RenderContext& context) override
         {
             mesh_->Draw(context.GetGraphicsCommandList());
+        }
+
+        Json::Value ToJson(bool is_prefab_root) override
+        {
+            Json::Value json;
+
+            json["Type"] = typeid(PointLightComponent).name();
+            json["PointLightData"] = data_.toJson();
+
+            return json;
         }
 
         SortData GetSortData() override
