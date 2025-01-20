@@ -12,6 +12,7 @@
 #include<Engine.h>
 #include<EditorAssetDatabase.h>
 #include<AssetBase.h>
+#include <memory>
 #include<ConcreteAsset/PrefabAsset.h>
 
 namespace GiiGa
@@ -70,14 +71,25 @@ namespace GiiGa
                 level_lable.c_str(),
                 flags, level_lable.c_str());
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab))) {
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab)))
+                {
                     AssetHandle* handle = (AssetHandle*)payload->Data;
                     auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(*handle);
                     el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", handle->id.ToString());
 
                     auto new_go = prefab->Instantiate(std::nullopt, std::nullopt);
                     new_go->AttachToLevelRoot(level);
+                }
+
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GameObject"))
+                {
+                    std::shared_ptr<GameObject> go = *static_cast<std::shared_ptr<GameObject>*>(payload->Data);
+
+                    go->TryDetachFromParent();
+
+                    go->AttachToLevelRoot(level);
                 }
 
                 ImGui::EndDragDropTarget();
@@ -146,8 +158,10 @@ namespace GiiGa
                 flags,
                 gameObject->name.c_str());
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab))) {
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Prefab)))
+                {
                     AssetHandle* handle = (AssetHandle*)payload->Data;
                     auto prefab = Engine::Instance().ResourceManager()->GetAsset<PrefabAsset>(*handle);
                     el::Loggers::getLogger(LogWorld)->info("Loaded Prefab %v", handle->id.ToString());
@@ -156,13 +170,20 @@ namespace GiiGa
                     new_go->SetParent(gameObject);
                 }
 
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GameObject"))
+                {
+                    std::shared_ptr<GameObject> go = *static_cast<std::shared_ptr<GameObject>*>(payload->Data);
+
+                    go->SetParent(gameObject);
+                }
+
                 ImGui::EndDragDropTarget();
             }
 
             if (gameObject->prefab_handle_ == AssetHandle{})
             {
-                if (ImGui::BeginDragDropSource()) {
-
+                if (ImGui::BeginDragDropSource())
+                {
                     ImGui::SetDragDropPayload("GOTOPREFAB", &gameObject, sizeof(std::shared_ptr<GameObject>));
                     ImGui::EndDragDropSource();
                 }
@@ -170,8 +191,7 @@ namespace GiiGa
 
             if (ImGui::IsItemActive() && ImGui::BeginDragDropSource())
             {
-                void* t = gameObject.get();
-                ImGui::SetDragDropPayload("GameObject", &t, sizeof(void*));
+                ImGui::SetDragDropPayload("GameObject", &gameObject, sizeof(std::shared_ptr<GameObject>));
                 ImGui::EndDragDropSource();
             }
 
@@ -210,7 +230,8 @@ namespace GiiGa
                     gameObject->prefab_handle_ = std::dynamic_pointer_cast<EditorAssetDatabase>(database)->CreateAsset(prefab, std::string{gameObject->name + ".prefab"});
                 }
 
-                if (gameObject->prefab_handle_ != AssetHandle{}) {
+                if (gameObject->prefab_handle_ != AssetHandle{})
+                {
                     if (ImGui::MenuItem("Unpack Prefab"))
                     {
                         gameObject->prefab_handle_ = {};

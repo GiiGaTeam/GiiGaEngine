@@ -454,8 +454,7 @@ namespace GiiGa
                     {
                         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GameObject"))
                         {
-                            void* t = (payload->Data);
-                            GameObject* go = *static_cast<GameObject**>(t);
+                            std::shared_ptr<GameObject> go = *static_cast<std::shared_ptr<GameObject>*>(payload->Data);
 
                             if (name_prop.second.script_type.is(pybind11::type::of<GameObject>()))
                             {
