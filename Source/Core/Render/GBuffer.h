@@ -142,7 +142,7 @@ namespace GiiGa
 
                 {
                     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                    srvDesc.Format = G_FORMAT; // Specify the format of the SRV
+                    srvDesc.Format = G_FORMAT; // Specify the format of the SRV_
                     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                     srvDesc.Texture2D.MostDetailedMip = 0;        // Use the most detailed mip level
@@ -182,7 +182,7 @@ namespace GiiGa
                 DSV_ = depth_res_->EmplaceDepthStencilView(dsv_desc);
 
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS; // Specify the format of the SRV
+                srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS; // Specify the format of the SRV_
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 srvDesc.Texture2D.MostDetailedMip = 0;        // Use the most detailed mip level
