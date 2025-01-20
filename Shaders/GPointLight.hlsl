@@ -88,7 +88,7 @@ PixelShaderOutput PSMain(PS_INPUT input)
     float3 surfColor = DiffuseColor.rgb;
 
     // Calculate the light accumulation
-    float3 lightAccum = CalcPointLight(surfColor, pointLight.posWS, normalWS, fragPosWS, viewDir, MatProps.z);
+    float3 lightAccum = CalcPointLight(surfColor, pointLight.posWS, normalWS, fragPosWS, viewDir, MatProps.y);
 
     // Output the light accumulation
     output.LightAccumulation = float4(lightAccum, 1.0); // Alpha can be 1.0 or another value if needed

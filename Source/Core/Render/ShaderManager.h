@@ -24,6 +24,7 @@ namespace GiiGa
     const LPCWSTR GDirectionLight = L"Shaders/GDirectionalLight.hlsl";
     const LPCWSTR CascadeShadowShader = L"Shaders/CascadeShadowShader.hlsl";
     const LPCWSTR CascadeShadowGeomShader = L"Shaders/CascadeShadowGeomShader.hlsl";
+    const LPCWSTR GammaCorrectionShader = L"Shaders/GammaCorrectionShader.hlsl";
     
     class ShaderManager
     {
@@ -123,6 +124,10 @@ namespace GiiGa
             shader->CompileShader(&shaderMap_);
 
             shader = std::make_shared<Shader>(GDirectionLight, "PSMain", "ps_5_1" );
+            shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
+            shader->CompileShader(&shaderMap_);
+
+            shader = std::make_shared<Shader>(GammaCorrectionShader, "PSMain", "ps_5_1" );
             shader->SetInclude(D3D_COMPILE_STANDARD_FILE_INCLUDE);
             shader->CompileShader(&shaderMap_);
 

@@ -181,6 +181,7 @@
     <None Include="Shaders\BufferWireframeShader.hlsl" />
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />
+    <None Include="Shaders\GammaCorrectionShader.hlsl" />
     <None Include="Shaders\GBufferOpaqueDefaultLitPixelShader.hlsl" />
     <None Include="Shaders\OpaqueUnlitPixelShader.hlsl" />
     <None Include="Shaders\GBufferWireframeShader.hlsl" />
@@ -296,6 +297,7 @@
     <ClInclude Include="Source\Core\Render\RenderPass\ForwardPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\GBufferPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\GLightPass.h" />
+    <ClInclude Include="Source\Core\Render\RenderPass\PostProcessPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\RenderPass.h" />
     <ClInclude Include="Source\Core\Render\RenderPass\ShadowPass.h" />
     <ClInclude Include="Source\Core\Render\RenderSystem.h" />

@@ -27,6 +27,7 @@
 #include<GBuffer.h>
 #include<EditorContext.h>
 #include<ShadowPass.h>
+#include<PostProcessPass.h>
 
 #include "DebugPass.h"
 #include "ForwardPass.h"
@@ -55,6 +56,7 @@ namespace GiiGa
         void Init(RenderContext& context) override
         {
             Resize(viewport_size_);
+
             renderGraph_ = std::make_shared<RenderGraph>();
 
             renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
@@ -62,6 +64,7 @@ namespace GiiGa
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
+            renderGraph_->AddPass(std::make_shared<PostProcessPass>(context, std::bind(&EditorViewport::GetResultInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
@@ -126,10 +129,10 @@ namespace GiiGa
             renderGraph_->Draw(context);
             // draw here - end
 
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            rtvData_.resource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
             //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-            ImGui::Image((ImTextureID)gbuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation).ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            ImGui::Image((ImTextureID)rtvData_.SRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             // Widgets on viewport
             PostViewportDrawWidgets();

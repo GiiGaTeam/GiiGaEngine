@@ -333,7 +333,7 @@ namespace GiiGa
                 }
 
                 {
-                    TexturesOrder texture_order = TexturesOrder::Metallic;
+                    TexturesOrder texture_order = TexturesOrder::Specular;
                     int texture_index = static_cast<int>(texture_order) - 1;
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
@@ -343,7 +343,7 @@ namespace GiiGa
                         char textureUuidStr[512];
                         snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
 
-                        ImGui::InputText("Metallic Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                        ImGui::InputText("Specular Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
 
                         if (ImGui::BeginDragDropTarget())
                         {
@@ -356,15 +356,15 @@ namespace GiiGa
                             ImGui::EndDragDropTarget();
                         }
 
-                        float val = material->data_.MetallicScale_;
-                        if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                        float val = material->data_.SpecularScale_;
+                        if (ImGui::SliderFloat("Specular Scale", &val, 0.0, 10.0))
                         {
-                            material->SetMetallicScale(val);
+                            material->SetSpecularScale(val);
                         }
                     }
                     else
                     {
-                        ImGui::Text("You Can't Set Metallic");
+                        //ImGui::Text("You Can't Set Metallic");
                     }
                 }
             }

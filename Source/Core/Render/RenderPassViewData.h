@@ -29,4 +29,11 @@ namespace GiiGa
         ScreenDimensions screenDimensions;
         D3D12_GPU_DESCRIPTOR_HANDLE dimensionsDescriptor;
     };
+
+    struct RTVData
+    {
+        std::shared_ptr<GPULocalResource> resource_;
+        std::shared_ptr<BufferView<RenderTarget>> RTV_;
+        std::shared_ptr<BufferView<ShaderResource>> SRV_;
+    };
 }
