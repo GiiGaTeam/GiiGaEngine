@@ -79,6 +79,48 @@ namespace GiiGa
             std::unordered_map<ObjectMask, DrawPacket> lights;
             SceneVisibility::ExpandByFilterFromAll(filter_lights_, lights);
 
+            /*
+            ImGui::Begin("Shadow Pass");
+            if (ImGui::InputInt("DepthBias", &DepthBias) || ImGui::InputFloat("DepthBiasClamp", &DepthBiasClamp) || ImGui::InputFloat("SlopeScaledDepthBias", &SlopeScaledDepthBias))
+            {
+                mask_to_pso.erase(filter_objects_);
+                D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+                rast_desc.CullMode = D3D12_CULL_MODE_BACK;
+                rast_desc.FrontCounterClockwise = TRUE;
+                rast_desc.DepthBias = DepthBias;
+                rast_desc.DepthBiasClamp = DepthBiasClamp;
+                rast_desc.SlopeScaledDepthBias = SlopeScaledDepthBias;
+
+                D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+
+                auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
+                    .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+                    .AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL,
+                    .BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK,
+                    .MinLOD = 0,
+                    .MaxLOD = D3D12_FLOAT32_MAX
+                };
+
+                mask_to_pso[filter_objects_]
+                    .set_vs(ShaderManager::GetShaderByName(CascadeShadowShader))
+                    .set_gs(ShaderManager::GetShaderByName(CascadeShadowGeomShader))
+                    .set_rasterizer_state(rast_desc)
+                    .set_input_layout(VertexPNTBT::InputLayout)
+                    .set_dsv_format(DXGI_FORMAT_D32_FLOAT)
+                    .set_depth_stencil_state(depth_stencil_desc)
+                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                    {
+                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                    })
+                    .add_static_samplers(sampler_desc)
+                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
+            }
+            ImGui::End();
+            */
+
             for (const auto& [mask, lightPacket] : lights)
             {
                 for (const auto lightGroup : lightPacket.common_resource_renderables)
@@ -175,5 +217,8 @@ namespace GiiGa
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
+        int DepthBias = -17000;
+        float DepthBiasClamp = 0;
+        float SlopeScaledDepthBias = 8.000;
     };
 }
