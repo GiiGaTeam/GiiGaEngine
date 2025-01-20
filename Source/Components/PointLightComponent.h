@@ -157,7 +157,7 @@ namespace GiiGa
             };
         }
 
-        void Restore(const Json::Value&) override
+        void RestoreFromLevelJson(const Json::Value&) override
         {
             Todo();
         }
@@ -201,7 +201,7 @@ namespace GiiGa
             return *perObjectData_;
         }
 
-        void SetColor(const DirectX::SimpleMath::Vector3& color) override
+        void SetColor(const DirectX::SimpleMath::Vector3& color)
         {
             data_.color = color;
             isDirty = true;
@@ -214,7 +214,7 @@ namespace GiiGa
             isDirty = true;
         }
 
-        void SetIntensity(float max_intensity) override
+        void SetIntensity(float max_intensity)
         {
             data_.max_intensity = max_intensity;
             isDirty = true;

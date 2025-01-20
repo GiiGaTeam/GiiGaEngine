@@ -369,7 +369,7 @@ namespace GiiGa
             {
                 std::string comp_id_str = comp_js["Uuid"].asString();
                 Uuid comp_id = Uuid::FromString(comp_id_str).value();
-                comps_by_uuid.at(comp_id)->Restore(comp_js);
+                comps_by_uuid.at(comp_id)->RestoreFromLevelJson(comp_js);
             }
         }
 

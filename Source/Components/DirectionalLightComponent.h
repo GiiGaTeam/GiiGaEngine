@@ -39,6 +39,26 @@ namespace GiiGa
         float max_intensity = 1;
         DirectX::SimpleMath::Vector3 color = {1, 0, 0};
         float cascadeCount;
+
+        DirectionLightData() = default;
+
+        DirectionLightData(const Json::Value& json)
+        {
+            max_intensity = json["max_intensity"].asFloat();
+            color = Vector3FromJson(json["color"]);
+            cascadeCount = json["cascadeCount"].asFloat();
+        }
+
+        Json::Value toJson()
+        {
+            Json::Value json;
+
+            json["max_intensity"] = max_intensity;
+            json["color"] = Vector3ToJson(color);
+            json["cascadeCount"] = cascadeCount;
+
+            return json;
+        }
     };
 
     class DirectionLightShaderResource : public IObjectShaderResource
@@ -100,6 +120,48 @@ namespace GiiGa
             shadow_views.reserve(NUM_CASCADE);
         }
 
+        DirectionalLightComponent(const Json::Value& json, bool roll_id = false):
+            LightComponent(json, roll_id),
+            directionLightShaderRes_(std::make_shared<DirectionLightShaderResource>()),
+            data_(json["DirectionLightData"])
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+
+            auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
+            auto& context = Engine::Instance().RenderSystem()->GetRenderContext();
+
+            if (isStatic_)
+            {
+                UINT SizeInBytes = sizeof(DirectionLightData);
+
+                const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
+                directionLightRes_ = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
+                directionLightRes_->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(directionLightRes_->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
+                directionLightShaderRes_->directionLightCBV_ = directionLightRes_->CreateConstantBufferView(desc);
+            }
+
+            TEXTURE_SIZE = Vector2(2048);
+            DS_FORMAT_RES = DXGI_FORMAT_R32_TYPELESS;
+            DS_FORMAT_DSV = DXGI_FORMAT_D32_FLOAT;
+            DS_FORMAT_SRV = DXGI_FORMAT_R32_FLOAT;
+            DS_DIMENSION_RES = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+            DS_DIMENSION_DSV = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+            DS_DIMENSION_SRV = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+            DS_CLEAR_VALUE = {.Format = DS_FORMAT_DSV, .DepthStencil = {.Depth = 1, .Stencil = 1}};
+            shadow_views.reserve(NUM_CASCADE);
+        }
+
+        Json::Value DerivedToJson(bool is_prefab_root) override
+        {
+            Json::Value json;
+            
+            json["Type"] = typeid(DirectionalLightComponent).name();
+            json["DirectionLightData"] = data_.toJson();
+
+            return json;
+        }
+
         ~DirectionalLightComponent() override
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
@@ -149,9 +211,9 @@ namespace GiiGa
             };
         }
 
-        void Restore(const Json::Value&) override
+        void RestoreFromLevelJson(const Json::Value&) override
         {
-            Todo();
+            // nothing to restore
         }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
@@ -179,12 +241,6 @@ namespace GiiGa
         void ApplyModifications(const ::GiiGa::PrefabPropertyModifications& modifications) override
         {
             Todo();
-        }
-
-        Json::Value DerivedToJson(bool is_prefab_root) override
-        {
-            Todo();
-            return {};
         }
 
         void UpdateGPUData(RenderContext& context) override
@@ -238,13 +294,13 @@ namespace GiiGa
             return *perObjectData_;
         }
 
-        void SetColor(const DirectX::SimpleMath::Vector3& color) override
+        void SetColor(const DirectX::SimpleMath::Vector3& color)
         {
             data_.color = color;
             isDirty = true;
         }
 
-        void SetIntensity(float max_intensity) override
+        void SetIntensity(float max_intensity)
         {
             data_.max_intensity = max_intensity;
             isDirty = true;

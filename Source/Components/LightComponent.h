@@ -21,11 +21,11 @@ namespace GiiGa
     {
     public:
         LightComponent() = default;
-        virtual void SetIntensity(float intensity) { maxIntensity_ = intensity; }
-        virtual void SetColor(const DirectX::SimpleMath::Vector3& color) { color_ = color; }
 
-        float GetIntensity() const { return maxIntensity_; }
-        DirectX::SimpleMath::Vector3 GetColor() const { return color_; }
+        LightComponent(const Json::Value& json, bool roll_id = false):
+            Component(json, roll_id)
+        {
+        }
 
         virtual void InitShadowData(RenderDevice& device) = 0;
 
@@ -62,8 +62,6 @@ namespace GiiGa
         }
 
     protected:
-        float maxIntensity_ = 1;
-        DirectX::SimpleMath::Vector3 color_ = {1, 0, 0};
         std::weak_ptr<TransformComponent> transform_;
 
         DirectX::SimpleMath::Vector2 TEXTURE_SIZE = DirectX::SimpleMath::Vector2(800);

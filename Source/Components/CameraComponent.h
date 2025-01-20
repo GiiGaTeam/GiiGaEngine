@@ -136,7 +136,7 @@ namespace GiiGa
             
         }
 
-        void Restore(const ::Json::Value&) override
+        void RestoreFromLevelJson(const ::Json::Value&) override
         {
             Todo();
         }

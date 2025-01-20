@@ -32,7 +32,7 @@ namespace GiiGa
             
         }
 
-        virtual void Restore(const ::Json::Value&) override
+        virtual void RestoreFromLevelJson(const ::Json::Value&) override
         {
         }
 

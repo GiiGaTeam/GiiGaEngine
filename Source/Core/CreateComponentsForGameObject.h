@@ -11,6 +11,7 @@
 #include<ConsoleComponent.h>
 #include<StaticMeshComponent.h>
 #include<PyBehaviourSchemeComponent.h>
+#include<DirectionalLightComponent.h>
 
 namespace GiiGa
 {
@@ -35,6 +36,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(PyBehaviourSchemeComponent).name())
                 {
                     gameObject->CreateComponent<PyBehaviourSchemeComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(DirectionalLightComponent).name())
+                {
+                    gameObject->CreateComponent<DirectionalLightComponent>(comp_js, roll_id);
                 }
             }
         }
@@ -62,6 +67,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(PyBehaviourSchemeComponent).name())
                 {
                     gameObject->CreateComponent<PyBehaviourSchemeComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(DirectionalLightComponent).name())
+                {
+                    gameObject->CreateComponent<DirectionalLightComponent>(comp_js, roll_id);
                 }
 
                 prefab_uuid_to_world_uuid[new_comp->GetInPrefabUuid()] = new_comp->GetUuid();

@@ -75,7 +75,7 @@
 				{
 					"Material" : 
 					{
-						"id" : "00000000-0000-0000-0000-000000000009",
+						"id" : "00000000-0000-0000-0000-00000000000a",
 						"subresource" : 0
 					},
 					"Mesh" : 
@@ -246,6 +246,55 @@
 				"id" : "22473b85-92fb-4608-8a40-98ecd11cfbae",
 				"subresource" : 0
 			}
+		},
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "00000000-0000-0000-0000-000000000000",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 2.9950313568115234,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -37.763427734375,
+							"y" : 49.273754119873047,
+							"z" : -10.416287422180176
+						},
+						"Scale" : 
+						{
+							"x" : 0.99999994039535522,
+							"y" : 0.99999994039535522,
+							"z" : 0.99999964237213135
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "42bfef8a-e0b5-40f6-a5f0-d2aed347885e"
+				},
+				{
+					"DirectionLightData" : 
+					{
+						"cascadeCount" : 4.0,
+						"color" : 
+						{
+							"x" : 1.0,
+							"y" : 0.85337370634078979,
+							"z" : 0.44607841968536377
+						},
+						"max_intensity" : 0.60000002384185791
+					},
+					"Type" : "class GiiGa::DirectionalLightComponent",
+					"Uuid" : "44b7b620-168b-43b0-9db8-1d7d369c07d1"
+				}
+			],
+			"Name" : "Dir Light",
+			"Parent" : "00000000-0000-0000-0000-000000000000",
+			"Uuid" : "962d8d2e-c628-4ea4-98fd-7aaedf7a53a7"
 		}
 	],
 	"LevelSettings" : 
@@ -254,6 +303,7 @@
 	},
 	"RootGameObjects" : 
 	[
-		"e96c756a-b1ee-4763-8a37-0651c1d504c7"
+		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
+		"962d8d2e-c628-4ea4-98fd-7aaedf7a53a7"
 	]
 }

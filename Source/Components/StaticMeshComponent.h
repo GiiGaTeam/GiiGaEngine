@@ -160,7 +160,7 @@ namespace GiiGa
             return {.object_mask = mesh_->GetObjectMask() | material_->GetMaterialMask(), .shaderResource = material_->GetShaderResource()};
         }
 
-        void Restore(const Json::Value&) override
+        void RestoreFromLevelJson(const Json::Value&) override
         {
             //nothing to do
         }

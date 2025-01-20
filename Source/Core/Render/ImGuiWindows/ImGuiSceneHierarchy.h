@@ -94,7 +94,7 @@ namespace GiiGa
                 if (ImGui::MenuItem("Save"))
                 {
                     auto database = Engine::Instance().ResourceManager()->Database();
-                    std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(level->GetLevelAsset());
+                    std::dynamic_pointer_cast<EditorAssetDatabase>(database)->SaveAsset(level->CreateAndReplaceLevelAsset(false));
                 }
                 if (ImGui::BeginMenu("Save As"))
                 {
