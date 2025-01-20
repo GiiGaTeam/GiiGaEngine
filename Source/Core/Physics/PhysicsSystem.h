@@ -1,9 +1,13 @@
-﻿// Jolt Physics Library (https://github.com/jrouwe/JoltPhysics)
+﻿#pragma once
+// Jolt Physics Library (https://github.com/jrouwe/JoltPhysics)
 // SPDX-FileCopyrightText: 2021 Jorrit Rouwe
 // SPDX-License-Identifier: MIT
 
 // The Jolt headers don't include Jolt.h. Always include Jolt.h before including any other Jolt header.
 // You can use Jolt.h in your precompiled header to speed up compilation.
+#define JPH_DEBUG_RENDERER
+#define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
+#define JPH_OBJECT_STREAM
 #include <Jolt/Jolt.h>
 
 // Jolt includes
@@ -346,7 +350,7 @@ namespace GiiGa
                 const int cCollisionSteps = 1;
 
                 // Step the world
-                physics_system.Update(cDeltaTime, cCollisionSteps, 0, &temp_allocator, &job_system);
+                physics_system.Update(cDeltaTime, cCollisionSteps, &temp_allocator, &job_system);
             }
 
             // Remove the sphere from the physics system. Note that the sphere itself keeps all of its state and can be re-added at any time.

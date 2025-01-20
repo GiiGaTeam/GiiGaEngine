@@ -19,14 +19,22 @@
     "sdl2",
     "stduuid",
     "jsoncpp",
-    "sdl2",
     "directxtk12",
     "easyloggingpp",
     "imguizmo",
     "pybind11-smart-holder-fork",
-    "joltphysics"
+    {
+      "name": "joltphysics",
+      "version>=": "5.2.0#1", 
+      "features": [
+        "debugrenderer"
+      ]
+    }
   ],
   "overrides": [
-    { "name": "imguizmo", "version": "2024-05-29#1" }
-    ]
+    {
+      "name": "imguizmo",
+      "version": "2024-05-29#1"
+    }
+  ]
 }
