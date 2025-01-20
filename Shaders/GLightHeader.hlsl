@@ -61,17 +61,29 @@ float4 ScreenToWorld(float4 screen, matrix invViewProj, float2 screenDim)
 
 float CalcCascadeShadowFactor(SamplerComparisonState samShadow, Texture2DArray shadowMap, float4 shadowPosH, uint idx)
 {
+    float depth = shadowPosH.z;
+    depth -= 0.001f; // Смещение глубины
     shadowPosH.xyz /= shadowPosH.w;
-    float depth = shadowPosH.z - 0.001f;
 
-    //shadowPosH.xy = saturate(shadowPosH.xy);
+
+    shadowPosH.xy = saturate(shadowPosH.xy); // Ограничиваем UV координаты в диапазоне от 0 до 1
 
     float percentLit = 0.0f;
+    float2 offset[9] = {
+        float2(-1, -1), float2(0, -1), float2(1, -1),
+        float2(-1, 0), float2(0, 0), float2(1, 0),
+        float2(-1, 1), float2(0, 1), float2(1, 1)
+    };
+
+    float shadowMapSize = 2048; // Размер текстуры shadowMap
+
     [unroll]
     for (int i = 0; i < 9; ++i)
     {
+        float2 uvOffset = offset[i] / shadowMapSize;
         percentLit += shadowMap.SampleCmpLevelZero(samShadow,
-                                                   float3(shadowPosH.xy, idx), depth, int2(i % 3 - 1, i / 3 - 1)).r;
+                                                   float3(shadowPosH.xy + uvOffset, idx),
+                                                   depth).r;
     }
 
     return percentLit /= 9.0f;

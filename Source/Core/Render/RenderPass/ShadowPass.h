@@ -41,6 +41,9 @@ namespace GiiGa
             D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
             rast_desc.CullMode = D3D12_CULL_MODE_BACK;
             rast_desc.FrontCounterClockwise = TRUE;
+            rast_desc.DepthBias = DepthBias;
+            rast_desc.DepthBiasClamp = DepthBiasClamp;
+            rast_desc.SlopeScaledDepthBias = SlopeScaledDepthBias;
 
             D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
@@ -120,6 +123,7 @@ namespace GiiGa
             }
             ImGui::End();
             */
+            
 
             for (const auto& [mask, lightPacket] : lights)
             {
@@ -217,7 +221,7 @@ namespace GiiGa
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
-        int DepthBias = -17000;
+        int DepthBias = -15000;
         float DepthBiasClamp = 0;
         float SlopeScaledDepthBias = 8.000;
     };
