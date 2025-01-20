@@ -24,7 +24,7 @@ namespace GiiGa
         virtual std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
                                                   & instance_uuid) =0;
 
-        virtual void Restore(const ::Json::Value&) =0;
+        virtual void RestoreFromLevelJson(const ::Json::Value&) =0;
 
         virtual void RestoreAsPrefab(const ::Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) =0;
 

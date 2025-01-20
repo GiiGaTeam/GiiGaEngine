@@ -273,7 +273,7 @@ namespace GiiGa
             }
         }
 
-        void Restore(const Json::Value& json) override
+        void RestoreFromLevelJson(const Json::Value& json) override
         {
             auto parentUuid = Uuid::FromString(json["Parent"].asString()).value();
 
