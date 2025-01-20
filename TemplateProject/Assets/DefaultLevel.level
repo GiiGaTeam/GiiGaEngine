@@ -11,14 +11,14 @@
 						"Location" : 
 						{
 							"x" : 0.0,
-							"y" : 0.0,
+							"y" : 1.0,
 							"z" : 0.0
 						},
 						"Rotation" : 
 						{
 							"x" : -0.0,
 							"y" : 0.0,
-							"z" : 0.0
+							"z" : -0.0
 						},
 						"Scale" : 
 						{
@@ -264,7 +264,7 @@
 						{
 							"x" : -37.763427734375,
 							"y" : 49.273754119873047,
-							"z" : -10.416287422180176
+							"z" : -10.416292190551758
 						},
 						"Scale" : 
 						{
@@ -295,6 +295,54 @@
 			"Name" : "Dir Light",
 			"Parent" : "00000000-0000-0000-0000-000000000000",
 			"Uuid" : "962d8d2e-c628-4ea4-98fd-7aaedf7a53a7"
+		},
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "00000000-0000-0000-0000-000000000000",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 20.0,
+							"y" : 1.0,
+							"z" : 20.0
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "1bfe536c-a9a3-4924-a06f-0d0919af7d41"
+				},
+				{
+					"Material" : 
+					{
+						"id" : "01ae88b1-3ae0-461f-9aa6-f2229cd89fc9",
+						"subresource" : 0
+					},
+					"Mesh" : 
+					{
+						"id" : "1721d2ba-bb33-4593-afec-81edc3700fb0",
+						"subresource" : 0
+					},
+					"Type" : "class GiiGa::StaticMeshComponent",
+					"Uuid" : "c0de18d8-072a-48ff-b969-e33fb20fc6b6"
+				}
+			],
+			"Name" : "Plane",
+			"Parent" : "00000000-0000-0000-0000-000000000000",
+			"Uuid" : "bb480148-0eeb-4f64-9659-17e596ba3a95"
 		}
 	],
 	"LevelSettings" : 
@@ -304,6 +352,7 @@
 	"RootGameObjects" : 
 	[
 		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
-		"962d8d2e-c628-4ea4-98fd-7aaedf7a53a7"
+		"962d8d2e-c628-4ea4-98fd-7aaedf7a53a7",
+		"bb480148-0eeb-4f64-9659-17e596ba3a95"
 	]
 }

@@ -1,0 +1,92 @@
+{
+	"BlendMode" : 1,
+	"Name" : "Material.001",
+	"Properties" : 
+	{
+		"AnisotropyScale_" : 1.0,
+		"BaseColorTint_" : 
+		{
+			"x" : 0.80000001192092896,
+			"y" : 0.80000001192092896,
+			"z" : 0.80000001192092896
+		},
+		"EmissiveColorTint_" : 
+		{
+			"x" : 0.0049019455909729004,
+			"y" : 0.0049019455909729004,
+			"z" : 0.0049019455909729004
+		},
+		"MetallicScale_" : 1.0,
+		"OpacityScale_" : 1.0,
+		"RoughnessScale_" : 1.0,
+		"SpecularScale_" : 1.0
+	},
+	"ShadingModel" : 1,
+	"Textures" : 
+	[
+		{
+			"AssetHandle" : 
+			{
+				"id" : "6d8381a1-16ca-4430-b8df-44cb0a49c721",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000002",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000003",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000004",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000005",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000006",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000000",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		},
+		{
+			"AssetHandle" : 
+			{
+				"id" : "00000000-0000-0000-0000-000000000008",
+				"subresource" : 0
+			},
+			"Mapping" : 5768
+		}
+	]
+}

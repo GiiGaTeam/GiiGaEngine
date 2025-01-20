@@ -151,11 +151,11 @@ namespace GiiGa
         {
             Json::Value level_json = ToJson();
             AssetHandle handle = asset_->GetId();
-            
+
             if (new_id)
                 handle = AssetHandle{Uuid::New(), 0};
             auto asset = std::make_shared<LevelAsset>(handle, level_json);
-            
+
             this->asset_ = asset;
             return asset;
         }
@@ -173,7 +173,7 @@ namespace GiiGa
             el::Loggers::getLogger(LogWorld)->info("Creating game objects, children, components");
 
             auto&& all_gos_jsons = json["GameObjects"];
-            std::vector<std::shared_ptr<GameObject>> created_game_objects;
+            std::vector<std::pair<std::shared_ptr<GameObject>, Json::Value>> created_game_objects;
             std::unordered_map<std::shared_ptr<PrefabAsset>,
                                std::vector<std::pair<std::shared_ptr<GameObject>, PrefabInstanceModifications>>> created_prefab_instances;
             for (auto&& gameobject_js : all_gos_jsons)
@@ -182,7 +182,7 @@ namespace GiiGa
                 {
                     auto new_go = GameObject::CreateGameObjectFromJson(gameobject_js);
                     CreateComponentsForGameObject::Create(new_go, gameobject_js, false);
-                    created_game_objects.push_back(new_go);
+                    created_game_objects.push_back({new_go, gameobject_js});
                 }
                 else
                 {
@@ -204,10 +204,7 @@ namespace GiiGa
             el::Loggers::getLogger(LogWorld)->info("Restoring components references");
             for (int i = 0; i < created_game_objects.size(); ++i)
             {
-                if (all_gos_jsons[i]["Prefab"].empty()) // is not prefab instance
-                {
-                    std::dynamic_pointer_cast<GameObject>(created_game_objects[i])->RestoreFromLevelJson(all_gos_jsons[i]);
-                }
+                std::dynamic_pointer_cast<GameObject>(created_game_objects[i].first)->RestoreFromLevelJson(created_game_objects[i].second);
             }
 
             for (auto&& prefab_assets : created_prefab_instances)
