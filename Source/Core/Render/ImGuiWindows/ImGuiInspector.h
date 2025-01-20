@@ -473,14 +473,15 @@ namespace GiiGa
                                             el::Loggers::getLogger(LogPyScript)->debug("FUCK");
                                             name_prop.second.value_or_holder = pybind11::cast(go_comp->GetUuid());
                                         }
-                                    }else
+                                    }
+                                    else
                                     {
                                         pybind11::object py_obj = pybind11::none();
-                                        py_obj = pybind11::cast(go_comp,pybind11::return_value_policy::reference);
-                                    
+                                        py_obj = pybind11::cast(go_comp, pybind11::return_value_policy::reference);
+
                                         if (py_obj.ptr() == nullptr)
                                             continue;
-                                    
+
                                         pybind11::type obj_type = pybind11::type::of(py_obj);
                                         if (obj_type.is(name_prop.second.script_type))
                                         {
@@ -568,6 +569,7 @@ namespace GiiGa
             {
                 if (ImGui::TreeNodeEx("Camera Component", ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ComponentContextMenu(comp);
                     DrawCameraComponent(camera_comp);
                     ImGui::TreePop();
                 }
@@ -576,6 +578,7 @@ namespace GiiGa
             {
                 if (ImGui::TreeNodeEx("StaticMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ComponentContextMenu(comp);
                     DrawStaticMeshComponent(static_mesh_comp);
                     ImGui::TreePop();
                 }
@@ -584,6 +587,7 @@ namespace GiiGa
             {
                 if (ImGui::TreeNodeEx("PointLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ComponentContextMenu(comp);
                     DrawPointLightComponent(point_light);
                     ImGui::TreePop();
                 }
@@ -592,23 +596,38 @@ namespace GiiGa
             {
                 if (ImGui::TreeNodeEx("DirectionalLightComponent", ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ComponentContextMenu(comp);
                     DrawDirectionLightComponent(direction_light);
                     ImGui::TreePop();
                 }
             }
             else if (auto py_beh = std::dynamic_pointer_cast<PyBehaviourSchemeComponent>(comp))
             {
-                //todo: add script Class name to TreeNodeEx
                 std::string comp_name = "PyBehaviourSchemeComponent";
                 if (py_beh->script_asset_)
                     comp_name = py_beh->GetUserClassName();
                 if (ImGui::TreeNodeEx(comp_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {
+                    ComponentContextMenu(comp);
                     DrawBehaviourComponent(py_beh);
                     ImGui::TreePop();
                 }
             }
             ImGui::PopID();
+        }
+
+        void ComponentContextMenu(std::shared_ptr<IComponent> comp)
+        {
+            if (ImGui::BeginPopupContextItem("##ComponentContextMenu"))
+            {
+                if (ImGui::MenuItem("Remove Component"))
+                {
+                    auto igo = std::dynamic_pointer_cast<Component>(comp)->GetOwner();
+                    std::dynamic_pointer_cast<GameObject>(igo)->RemoveComponent(comp);
+                }
+
+                ImGui::EndPopup();
+            }
         }
 
         static bool DrawVec3Control(const std::string& label, DirectX::SimpleMath::Vector3& values, float resetValue = 0.0f,
