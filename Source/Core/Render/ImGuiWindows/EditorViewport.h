@@ -91,6 +91,7 @@ namespace GiiGa
                 {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
                     {
+                        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
                         movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
                     }
                 }
@@ -99,6 +100,11 @@ namespace GiiGa
             UpdateCameraInfo(context);
 
             auto current_size = ImGui::GetContentRegionAvail();
+            if (current_size.y < 0)
+            {
+                current_size.y = 2; // Или skip
+                ImGui::Text("Content height is negative!");
+            }
 
             if (current_size.x != viewport_size_.x || current_size.y != viewport_size_.y)
                 Resize({current_size.x, current_size.y});

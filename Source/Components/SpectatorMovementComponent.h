@@ -109,11 +109,12 @@ namespace GiiGa
             velocity.x -= mouseDelta.dy * cameraSensitivity_;
             velocity.y -= mouseDelta.dx * cameraSensitivity_;
             velocity = Vector3(velocity.x, velocity.y, 0) * dt;
+            if (transf->GetRotation().x + velocity.x > 89.0f || transf->GetRotation().x + velocity.x < -89.0f) velocity.x = 0.0f;
             transf->AddRotation(velocity);
         }
 
         float speed_ = 1.0f;
-        float cameraSensitivity_ = 50.0f;
+        float cameraSensitivity_ = 100.0f;
 
         bool active_ = false;
 

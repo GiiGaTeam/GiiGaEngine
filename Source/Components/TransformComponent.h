@@ -28,7 +28,7 @@ namespace GiiGa
         Transform(Vector3 loc = Vector3::Zero, Vector3 rot = Vector3::Zero, Vector3 scale = Vector3::One)
             : location_(loc), scale_(scale)
         {
-            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
+            SetRotation(rot);
         }
 
         Transform(Vector3 loc, Quaternion rot, Vector3 scale)
@@ -39,7 +39,7 @@ namespace GiiGa
         Transform(Json::Value json)
             : location_(Vector3FromJson(json["Location"])), scale_(Vector3FromJson(json["Scale"]))
         {
-            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(Vector3FromJson(json["Rotation"])));
+            SetRotation(Vector3FromJson(json["Rotation"]));
         }
 
         Transform(const Transform& transform) = default;
@@ -124,8 +124,24 @@ namespace GiiGa
             return resTrans;
         }
 
-        Vector3 GetRotation() const { return DegFromRad(rotate_.ToEuler()); }
-        void SetRotation(const Vector3& rot) { rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot)); }
+        Vector3 GetRotation() const
+        {
+            auto temp_rot = DegFromRad(rotate_.ToEuler());
+            //temp_rot = Vector3(temp_rot.y, temp_rot.x, temp_rot.z);
+            return temp_rot;
+        }
+
+        void SetRotation(const Vector3& rot)
+        {
+            const auto rad_rot = RadFromDeg(rot);
+            rotate_ = Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
+        }
+
+        static Quaternion QuatFromRot(const Vector3& rot)
+        {
+            const auto rad_rot = RadFromDeg(rot);
+            return Quaternion::CreateFromYawPitchRoll(RadFromDeg(rot));
+        }
 
         static const Transform Identity;
 
@@ -293,7 +309,6 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            
         }
 
         Transform GetTransform() const { return transform_; }
@@ -335,7 +350,14 @@ namespace GiiGa
         void AddRotation(const Vector3& rotation)
         {
             auto rot = GetRotation() + rotation;
-            //const auto rot = transform_.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            SetRotation(rot);
+        }
+
+        void AddQuatRotation(const Vector3& rotation)
+        {
+            auto q_new = Transform::QuatFromRot(rotation);
+            auto rot = q_new * transform_.rotate_;
+            rot.Normalize();
             SetRotation(rot);
         }
 
@@ -405,7 +427,7 @@ namespace GiiGa
         void AddWorldRotation(const Vector3& rotation)
         {
             const auto world_trans = Transform::TransformFromMatrix(world_matrix_);
-            const auto new_quat = world_trans.rotate_ * Quaternion::CreateFromYawPitchRoll(RadFromDeg(rotation));
+            const auto new_quat = Transform::QuatFromRot(rotation) * world_trans.rotate_;
             SetWorldRotation(new_quat);
         }
 
