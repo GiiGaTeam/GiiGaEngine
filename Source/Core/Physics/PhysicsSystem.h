@@ -5,7 +5,7 @@
 
 // The Jolt headers don't include Jolt.h. Always include Jolt.h before including any other Jolt header.
 // You can use Jolt.h in your precompiled header to speed up compilation.
-#define JPH_DEBUG_RENDERER
+//#define JPH_DEBUG_RENDERER
 #define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
 #define JPH_OBJECT_STREAM
 #include <Jolt/Jolt.h>
@@ -327,7 +327,7 @@ namespace GiiGa
             }
             }
 
-            instance.body_interface->AddBody(floor->GetID(), JPH::EActivation::Activate);
+            instance.body_interface->AddBody(body->GetID(), JPH::EActivation::Activate);
             instance.objects_map_.emplace(collision_comp->GetUuid(), body);
         }
 

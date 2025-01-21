@@ -202,6 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Components\CameraComponent.h" />
+    <ClInclude Include="Source\Components\CollisionComponent.cpp" />
     <ClInclude Include="Source\Components\CollisionComponent.h" />
     <ClInclude Include="Source\Components\ConsoleComponent.h" />
     <ClInclude Include="Source\Components\DirectionalLightComponent.h" />

@@ -1,5 +1,22 @@
 ﻿#pragma once
+/*#include "DefaultAssetsHandles.h"
+#include "GameObject.h"
+#include "Assets/ConcreteAsset/MeshAsset.h"
+#include "SceneVisibility.h"
+#include "TransformComponent.h"
+#include "VertexTypes.h"*/
+#include "DefaultAssetsHandles.h"
+#include "Engine.h"
+#include "IUpdateGPUData.h"
+#include "IRenderable.h"
+#include "SceneVisibility.h"
+#include "TransformComponent.h"
+#include "ConcreteAsset/MeshAsset.h"
 
+namespace JPH
+{
+    enum class EMotionType : uint8;
+}
 
 namespace GiiGa
 {
@@ -14,11 +31,7 @@ namespace GiiGa
     public:
         CollisionComponent() = default;
 
-        CollisionComponent(const Json::Value& json, bool roll_id = false) :
-            TransformComponent(json, roll_id)
-        {
-            collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
-        }
+        CollisionComponent(const Json::Value& json, bool roll_id = false);
 
         Json::Value DerivedToJson(bool is_prefab_root) override
         {
@@ -93,12 +106,7 @@ namespace GiiGa
             return *perObjectData_;
         }
 
-        void UpdateGPUData(RenderContext& context) override
-        {
-            if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()), motion_type_ == JPH::EMotionType::Static);
-            perObjectData_->UpdateGPUData(context);
-        }
+        void UpdateGPUData(RenderContext& context) override;
 
         void SetColliderType(ColliderType new_type)
         {
@@ -116,12 +124,9 @@ namespace GiiGa
 
     protected:
         ColliderType collider_type_;
-        JPH::EMotionType motion_type_ = JPH::EMotionType::Static;
+        JPH::EMotionType motion_type_;
 
-        virtual void RegisterInPhysics()
-        {
-            //PhysicsSystem::RegisterCollision(shared_from_this());
-        }
+        virtual void RegisterInPhysics();
 
     private:
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
@@ -132,7 +137,7 @@ namespace GiiGa
         void RegisterInVisibility()
         {
             visibilityEntry_.reset();
-            visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<IRenderable>(shared_from_this()), mesh_->GetAABB());
+            visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), mesh_->GetAABB());
             if (cashed_event_.isValid())
             {
                 OnUpdateTransform.Unregister(cashed_event_);
