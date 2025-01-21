@@ -193,6 +193,9 @@ namespace GiiGa
     {
         int32_t x;
         int32_t y;
+
+        int32_t xrel;
+        int32_t yrel;
     };
 
     struct MouseWheelEvent
@@ -232,16 +235,16 @@ namespace GiiGa
         int device_id;
     };
 
-struct WindowResizeEvent
-{
-    int width;
-    int height;
-};
+    struct WindowResizeEvent
+    {
+        int width;
+        int height;
+    };
 
-struct DropFileEvent
-{
-    std::filesystem::path path;
-};
+    struct DropFileEvent
+    {
+        std::filesystem::path path;
+    };
 
 
     // todo we should split window on Editor and Game modes
@@ -319,7 +322,7 @@ struct DropFileEvent
                 break;
                 case SDL_MOUSEMOTION:
                 {
-                    MouseMotionEvent t{event.motion.x, event.motion.y};
+                    MouseMotionEvent t{event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel};
                     OnMouseMotion.Invoke(t);
                 }
                 break;
@@ -382,26 +385,26 @@ struct DropFileEvent
                 }
                 break;
                 case SDL_CONTROLLERDEVICEADDED:
-                    {
-                        GamepadAddedEvent t{event.cdevice.which};
-                        OnGamepadAdded.Invoke(t);
-                    }
-                    break;
-                case SDL_CONTROLLERDEVICEREMOVED: 
-                    {
-                        GamepadRemovedEvent t{event.cdevice.which};
-                        OnGamepadRemoved.Invoke(t);
-                    }
-                    break;
-                case SDL_DROPFILE: 
-                    {
-                        DropFileEvent t{ event.drop.file };
-                        OnDropFile.Invoke(t);
-                    }
-                    break;
+                {
+                    GamepadAddedEvent t{event.cdevice.which};
+                    OnGamepadAdded.Invoke(t);
+                }
+                break;
+                case SDL_CONTROLLERDEVICEREMOVED:
+                {
+                    GamepadRemovedEvent t{event.cdevice.which};
+                    OnGamepadRemoved.Invoke(t);
+                }
+                break;
+                case SDL_DROPFILE:
+                {
+                    DropFileEvent t{event.drop.file};
+                    OnDropFile.Invoke(t);
+                }
+                break;
+                }
             }
         }
-    }
 
         SDL_Window* GetSdlWindow() const
         {
@@ -417,6 +420,22 @@ struct DropFileEvent
             return wmInfo.info.win.window;
         }
 
+        void SetMouseLock(bool lock, int x, int y)
+        {
+            if (lock)
+            {
+                int window_x, window_y;
+                SDL_GetWindowPosition(window_, &window_x, &window_y);
+                SDL_WarpMouseInWindow(window_, x - window_x, y - window_y);
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+            }
+            else
+            {
+                //
+                SDL_SetRelativeMouseMode(SDL_FALSE);
+            }
+        }
+
         ~Window()
         {
             ImGui_ImplSDL2_Shutdown();
@@ -424,19 +443,19 @@ struct DropFileEvent
             SDL_DestroyWindow(window_);
         }
 
-    EventDispatcher<BeginProcessEvent> OnBeginProcess;
-    EventDispatcher<WindowCloseEvent> OnWindowClose;
-    EventDispatcher<QuitEvent> OnQuit;
-    EventDispatcher<KeyEvent> OnKey;
-    EventDispatcher<MouseMotionEvent> OnMouseMotion;
-    EventDispatcher<MouseWheelEvent> OnMouseWheel;
-    EventDispatcher<MouseButtonEvent> OnMouseButton;
-    EventDispatcher<GamepadButtonEvent> OnGamepadButton;
-    EventDispatcher<GamepadAxisMotionEvent> OnGamepadAxisMotion;
-    EventDispatcher<GamepadAddedEvent> OnGamepadAdded;
-    EventDispatcher<GamepadRemovedEvent> OnGamepadRemoved;
-    EventDispatcher<WindowResizeEvent> OnWindowResize;
-    EventDispatcher<DropFileEvent> OnDropFile;
+        EventDispatcher<BeginProcessEvent> OnBeginProcess;
+        EventDispatcher<WindowCloseEvent> OnWindowClose;
+        EventDispatcher<QuitEvent> OnQuit;
+        EventDispatcher<KeyEvent> OnKey;
+        EventDispatcher<MouseMotionEvent> OnMouseMotion;
+        EventDispatcher<MouseWheelEvent> OnMouseWheel;
+        EventDispatcher<MouseButtonEvent> OnMouseButton;
+        EventDispatcher<GamepadButtonEvent> OnGamepadButton;
+        EventDispatcher<GamepadAxisMotionEvent> OnGamepadAxisMotion;
+        EventDispatcher<GamepadAddedEvent> OnGamepadAdded;
+        EventDispatcher<GamepadRemovedEvent> OnGamepadRemoved;
+        EventDispatcher<WindowResizeEvent> OnWindowResize;
+        EventDispatcher<DropFileEvent> OnDropFile;
 
     private:
         SDL_Window* window_;

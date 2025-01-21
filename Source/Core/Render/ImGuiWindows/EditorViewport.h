@@ -69,6 +69,8 @@ namespace GiiGa
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
             camera_.lock()->CreateComponent<SpectatorMovementComponent>();
+            std::dynamic_pointer_cast<GameObject>(cameraComponent->GetOwner())->GetTransformComponent().lock()->SetLocation({-5, 3, 4});
+            std::dynamic_pointer_cast<GameObject>(cameraComponent->GetOwner())->GetTransformComponent().lock()->SetRotation({-21, -40, 0});
         }
 
         RenderPassViewData GetCameraInfo() override
@@ -85,13 +87,19 @@ namespace GiiGa
 
             if (camera_.expired()) return;
 
-            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str()))
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+
+            if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str(), nullptr, ImGuiWindowFlags_NoScrollWithMouse))
             {
+                //ImGui::SetScrollX(0);
                 if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
                 {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
                     {
-                        ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPos().x + 5, ImGui::GetCursorPos().y));
+                        auto pos = ImGui::GetCursorScreenPos();
+                        pos.x += ImGui::GetContentRegionAvail().x * 0.5;
+                        pos.y += ImGui::GetContentRegionAvail().y * 0.5;
+                        Engine::Instance().Window()->SetMouseLock(ImGui::IsMouseDown(ImGuiMouseButton_Right), pos.x, pos.y);
                         movement->active_ = ImGui::IsMouseDown(ImGuiMouseButton_Right);
                     }
                 }
@@ -144,6 +152,7 @@ namespace GiiGa
             PostViewportDrawWidgets();
 
             ImGui::End();
+            ImGui::PopStyleVar();
         }
 
     private:
