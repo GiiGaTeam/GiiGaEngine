@@ -161,6 +161,9 @@
     <ClInclude Include="Source\Components\CameraComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Components\CollisionComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Components\ConsoleComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>

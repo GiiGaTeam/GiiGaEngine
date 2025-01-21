@@ -25,12 +25,8 @@
     "pybind11-smart-holder-fork",
     {
       "name": "joltphysics",
-      "version>=": "5.2.0#1",
-      "features": [
-        "debugrenderer",
-        "profiler",
-        "rtti"
-      ]
+      "version>=": "5.2.0#1"
+      
     }
   ],
   "overrides": [

@@ -25,8 +25,7 @@
 #include <iostream>
 #include <cstdarg>
 #include <thread>
-
-#include "CollisionComponent.h"
+#include <CollisionComponent.h>
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
 JPH_SUPPRESS_WARNINGS
@@ -228,8 +227,6 @@ namespace GiiGa
             else return *std::static_pointer_cast<PhysicsSystem>(instance_ = std::shared_ptr<PhysicsSystem>(new PhysicsSystem()));
         }
 
-        ~PhysicsSystem() = default;
-
         void Initialize()
         {
             JPH::RegisterDefaultAllocator();
@@ -271,18 +268,18 @@ namespace GiiGa
             instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, instance.job_system_.get());
         }
 
-        static void RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
+        static JPH::Body* RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
         {
             auto& instance = GetInstance();
-            if (!collision_comp) return;
+            if (!collision_comp) return nullptr;
 
             DirectX::SimpleMath::Vector3 range = collision_comp->GetScale() / 2;
             Transform trans = collision_comp->GetWorldTransform();
-            JPH::Body* body;
+            JPH::Body* body = nullptr;
 
             switch (collision_comp->GetColliderType())
             {
-            case ColliderType::Box:
+            case ColliderType::Cube:
             {
                 JPH::BoxShapeSettings box_shape_settings(VecToJoltVec(range));
                 box_shape_settings.SetEmbedded(); // A ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
@@ -291,13 +288,13 @@ namespace GiiGa
                 if (box_shape_result.HasError())
                 {
                     //log(floor_shape_result.GetError());
-                    return;
+                    return nullptr;
                 }
                 JPH::ShapeRefC box_shape = box_shape_result.Get();
 
                 //TODO Испрвить Слои - пока все moving
                 trans = collision_comp->GetWorldTransform();
-                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), collision_comp->GetMotionType(), Layers::MOVING);
+                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layers::MOVING);
 
                 body = instance.body_interface->CreateBody(box_settings);
                 break;
@@ -311,13 +308,13 @@ namespace GiiGa
                 if (sphere_shape_result.HasError())
                 {
                     //log(floor_shape_result.GetError());
-                    return;
+                    return nullptr;
                 }
                 JPH::ShapeRefC sphere_shape = sphere_shape_result.Get();
 
                 //TODO Испрвить Слои - пока все moving
 
-                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), collision_comp->GetMotionType(), Layers::MOVING);
+                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layers::MOVING);
 
                 body = instance.body_interface->CreateBody(sphere_settings);
                 break;
@@ -326,10 +323,19 @@ namespace GiiGa
 
             instance.body_interface->AddBody(body->GetID(), JPH::EActivation::Activate);
             instance.objects_map_.emplace(collision_comp->GetUuid(), body);
+            return body;
         }
 
         static void BeginPlay()
         {
+            const auto& collisions = WorldQuery::getComponentsOfType<CollisionComponent>();
+            for (const auto& collision : collisions)
+            {
+                auto body = RegisterCollision(collision);
+                if (body && collision->GetMotionType() == GiiGa::EMotionType::Dynamic)
+                    body->AddForce({0.0f, 9.8f, 0.0f});
+            }
+
             GetInstance().physics_system.OptimizeBroadPhase();
         }
 
@@ -355,7 +361,9 @@ namespace GiiGa
 
             JPH::UnregisterTypes();
 
-            delete JPH::Factory::sInstance;
+            if (temp_allocator) delete temp_allocator;
+            temp_allocator = nullptr;
+            if (JPH::Factory::sInstance) delete JPH::Factory::sInstance;
             JPH::Factory::sInstance = nullptr;
         }
 
@@ -377,7 +385,6 @@ namespace GiiGa
     private:
         PhysicsSystem()
         {
-            
         };
     };
 }

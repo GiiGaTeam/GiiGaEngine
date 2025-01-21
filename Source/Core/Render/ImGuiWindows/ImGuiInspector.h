@@ -116,6 +116,15 @@ namespace GiiGa
                         ImGui::CloseCurrentPopup();
                     }
 
+                    if (ImGui::MenuItem("Collision Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<CollisionComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+
                     ImGui::EndPopup();
                 }
             }
@@ -613,7 +622,57 @@ namespace GiiGa
                     ImGui::TreePop();
                 }
             }
+            else if (auto col_comp = std::dynamic_pointer_cast<CollisionComponent>(comp))
+            {
+                std::string comp_name = "CollisionComponent";
+                if (ImGui::TreeNodeEx(comp_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ComponentContextMenu(comp);
+                    DrawCollisionComponent(col_comp);
+                    ImGui::TreePop();
+                }
+            }
             ImGui::PopID();
+        }
+
+        void DrawCollisionComponent(std::shared_ptr<CollisionComponent> comp)
+        {
+            auto location = comp->GetLocation();
+            auto rot_deg = comp->GetRotation();
+            auto scale = comp->GetScale();
+
+            if (DrawVec3Control("Translation", location))
+            {
+                comp->SetLocation(location);
+            }
+
+            if (DrawVec3Control("Rotation", rot_deg))
+            {
+                comp->SetRotation(rot_deg);
+            }
+
+            if (DrawVec3Control("Scale", scale, 1.0f))
+            {
+                comp->SetScale(scale);
+            }
+
+            static const char* motionNames[] = {
+                "Static", "Kinematic", "Dynamic"
+            };
+            int motionType = static_cast<int>(comp->GetMotionType());
+            if (ImGui::Combo("MotionType", &motionType, motionNames, IM_ARRAYSIZE(motionNames)))
+            {
+                comp->SetMotionType(static_cast<EMotionType>(motionType));
+            }
+
+            static const char* colliderNames[] = {
+                "Cube", "Sphere"
+            };
+            int colliderType = comp->GetColliderType();
+            if (ImGui::Combo("ColliderType", &colliderType, colliderNames, IM_ARRAYSIZE(colliderNames)))
+            {
+                comp->SetColliderType(static_cast<ColliderType>(colliderType));
+            }
         }
 
         void ComponentContextMenu(std::shared_ptr<IComponent> comp)

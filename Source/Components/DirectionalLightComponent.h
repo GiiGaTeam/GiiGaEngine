@@ -186,7 +186,6 @@ namespace GiiGa
         {
             return {
                 .object_mask = mesh_->GetObjectMask()
-                                    .SetFillMode(FillMode::Solid)
                                     .SetLightType(LightType::Directional),
                 .shaderResource = directionLightShaderRes_
             };

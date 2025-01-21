@@ -1,32 +1,87 @@
 ﻿#pragma once
 #include "DefaultAssetsHandles.h"
-#include "Engine.h"
 #include "IUpdateGPUData.h"
 #include "IRenderable.h"
 #include "TransformComponent.h"
 #include "ConcreteAsset/MeshAsset.h"
 #include <json/value.h>
+#include "SceneVisibility.h"
+#include "Engine.h"
 
-namespace JPH
-{
-    enum class EMotionType : uint8;
-}
 
 namespace GiiGa
 {
+    struct alignas(256) ColorData
+    {
+        DirectX::SimpleMath::Vector3 color = {0.5f, 0.0f, 0.5f};
+    };
+
+    enum class EMotionType
+    {
+        Static,    ///< Non movable
+        Kinematic, ///< Movable using velocities only, does not respond to forces
+        Dynamic,   ///< Responds to forces as a normal physics object
+    };
+
     enum ColliderType
     {
-        Box = 0,
+        Cube = 0,
         Sphere = 1,
+    };
+
+    class CollisionShaderResource : public IObjectShaderResource
+    {
+    public:
+        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
+        {
+            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
+            result[0] = colorCBV_->getDescriptor().getGPUHandle();
+            return result;
+        }
+
+        std::shared_ptr<BufferView<Constant>> colorCBV_;
     };
 
     class CollisionComponent : public TransformComponent, public IRenderable, public IUpdateGPUData
     {
     public:
-        CollisionComponent();
-        CollisionComponent(const Json::Value& json, bool roll_id = false);
+        CollisionComponent()
+            : colorShaderRes_(std::make_shared<CollisionShaderResource>())
+        {
+            collider_type_ = ColliderType::Cube;
+            motion_type_ = EMotionType::Static;
+            ConstructFunction();
+        }
 
-        Json::Value DerivedToJson(bool is_prefab_root) override;
+        CollisionComponent(const Json::Value& json, bool roll_id = false) : TransformComponent(json, roll_id),
+                                                                            colorShaderRes_(std::make_shared<CollisionShaderResource>())
+        {
+            motion_type_ = static_cast<EMotionType>(json["MotionType"].asInt());
+            collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
+            ConstructFunction();
+        }
+
+        void ConstructFunction()
+        {
+            Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+        }
+
+        Json::Value DerivedToJson(bool is_prefab_root) override
+        {
+            Json::Value result;
+
+            result["Type"] = typeid(CollisionComponent).name();
+
+            if (!is_prefab_root)
+                result["Transform"] = transform_.ToJson();
+            else
+                result["Transform"] = Transform{}.ToJson();
+
+            result["ColliderType"] = collider_type_;
+            result["MotionType"] = static_cast<int32_t>(motion_type_);
+
+            return result;
+        }
 
         void Init() override
         {
@@ -42,7 +97,7 @@ namespace GiiGa
                 AssetHandle mesh_asset;
                 switch (collider_type_)
                 {
-                case Box:
+                case Cube:
                     mesh_asset = DefaultAssetsHandles::Cube;
                     break;
                 case Sphere:
@@ -53,17 +108,16 @@ namespace GiiGa
 
                 RegisterInVisibility();
             }
-
-            RegisterInPhysics();
         }
 
         void BeginPlay() override
         {
             TransformComponent::BeginPlay();
-            RegisterInPhysics();
         }
 
-        void Tick(float dt) override;
+        void Tick(float dt) override
+        {
+        }
 
         void Draw(RenderContext& context) override
         {
@@ -76,7 +130,7 @@ namespace GiiGa
                 .object_mask = mesh_->GetObjectMask()
                                     .SetFillMode(FillMode::Wire)
                                     .SetBlendMode(BlendMode::Debug),
-                .shaderResource = nullptr
+                .shaderResource = colorShaderRes_
             };
         }
 
@@ -85,7 +139,21 @@ namespace GiiGa
             return *perObjectData_;
         }
 
-        void UpdateGPUData(RenderContext& context) override;
+        void UpdateGPUData(RenderContext& context) override
+        {
+            if (!perObjectData_)
+                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()), motion_type_ == EMotionType::Static);
+            perObjectData_->UpdateGPUData(context);
+
+            UINT SizeInBytes = sizeof(ColorData);
+
+            ColorData colorData;
+
+            const auto span = std::span{reinterpret_cast<uint8_t*>(&colorData), SizeInBytes};
+
+            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
+            colorShaderRes_->colorCBV_ = context.AllocateDynamicConstantView(span, desc);
+        }
 
         void SetColliderType(ColliderType new_type)
         {
@@ -95,17 +163,18 @@ namespace GiiGa
 
         ColliderType GetColliderType() const { return collider_type_; }
 
-        JPH::EMotionType GetMotionType() const { return motion_type_; }
+        EMotionType GetMotionType() const { return motion_type_; }
 
-        void SetMotionType(JPH::EMotionType motion_type) { motion_type_ = motion_type; }
+        void SetMotionType(EMotionType motion_type) { motion_type_ = motion_type; }
 
         EventDispatcher<ColliderType> OnUpdateType;
 
     protected:
         ColliderType collider_type_;
-        JPH::EMotionType motion_type_;
+        EMotionType motion_type_;
 
-        virtual void RegisterInPhysics();
+        std::unique_ptr<GPULocalResource> colorRes_;
+        std::shared_ptr<CollisionShaderResource> colorShaderRes_;
 
     private:
         std::unique_ptr<VisibilityEntry> visibilityEntry_;

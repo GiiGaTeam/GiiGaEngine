@@ -124,7 +124,7 @@ namespace GiiGa
             {
                 for (const auto& component : it->second)
                 {
-                    if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
+                    if (auto castedComponent = std::dynamic_pointer_cast<T>(component.lock()))
                     {
                         result.push_back(castedComponent);
                     }

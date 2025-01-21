@@ -12,9 +12,8 @@
 #include<StaticMeshComponent.h>
 #include<PyBehaviourSchemeComponent.h>
 #include<DirectionalLightComponent.h>
-#include <PointLightComponent.h>
-
-#include "CollisionComponent.h"
+#include<PointLightComponent.h>
+#include<CollisionComponent.h>
 
 namespace GiiGa
 {
