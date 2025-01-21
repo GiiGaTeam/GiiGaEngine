@@ -202,7 +202,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Components\CameraComponent.h" />
-    <ClInclude Include="Source\Components\CollisionComponent.cpp" />
     <ClInclude Include="Source\Components\CollisionComponent.h" />
     <ClInclude Include="Source\Components\ConsoleComponent.h" />
     <ClInclude Include="Source\Components\DirectionalLightComponent.h" />
@@ -374,6 +373,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\Components\CollisionComponent.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,7 @@
-﻿#include "Components/CollisionComponent.h"
+﻿#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include "Components/CollisionComponent.h"
 #include "Assets/ConcreteAsset/MeshAsset.h"
 #include "TransformComponent.h"
 #include "Physics/PhysicsSystem.h"
