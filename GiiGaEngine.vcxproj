@@ -142,7 +142,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor;$(SolutionDir)/Source;$(SolutionDir)/ThirdParty/Include</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>$(SolutionDir)/Source</AdditionalUsingDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -303,7 +303,6 @@
     <ClInclude Include="Source\Core\Render\SceneVisibility.h" />
     <ClInclude Include="Source\Core\Render\Shader.h" />
     <ClInclude Include="Source\Core\Render\ShaderManager.h" />
-    <ClInclude Include="Source\Core\Render\SkeletalMesh.h" />
     <ClInclude Include="Source\Core\Render\SwapChain.h" />
     <ClInclude Include="Source\Core\Render\UploadBuffer.h" />
     <ClInclude Include="Source\Core\Render\VariableSizeAllocationsManager.h" />
@@ -363,6 +362,9 @@
   <ItemGroup>
     <Content Include=".gitmodules" />
     <Content Include="ThirdParty\pybind11\conduit\README.txt" />
+    <Content Include="Tools\fbx2mesh.exe" />
+    <Content Include="Tools\fbx2ozz.exe" />
+    <Content Include="Tools\fbx_import_config.json" />
     <Content Include="vcpkg-configuration.json" />
   </ItemGroup>
   <ItemGroup>
@@ -370,6 +372,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\ozz-animation\ozz_animation.cc" />
+    <ClCompile Include="Source\ozz-animation\ozz_animation_offline.cc" />
+    <ClCompile Include="Source\ozz-animation\ozz_animation_tools.cc" />
+    <ClCompile Include="Source\ozz-animation\ozz_base.cc" />
+    <ClCompile Include="Source\ozz-animation\ozz_geometry.cc" />
+    <ClCompile Include="Source\ozz-animation\ozz_options.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

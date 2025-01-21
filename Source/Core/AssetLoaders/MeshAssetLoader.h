@@ -61,6 +61,35 @@ namespace GiiGa
                 throw std::runtime_error("Failed to load mesh from file: " + absolute_path.string());
             }
 
+            if (scene->HasAnimations())
+            {
+                auto current_directory = std::filesystem::current_path();
+                auto fbx2ozz_directory = current_directory / R"(Tools\fbx2ozz)";
+                auto fbx2mesh_directory = current_directory / R"(Tools\fbx2mesh)";
+                auto config_file_directory = current_directory / R"(Tools\fbx_import_config.json)";
+                current_path(absolute_path.parent_path());
+                
+                auto animation_data_directory = relative_path.filename().string() + "_animation_data";
+                std::filesystem::create_directory(animation_data_directory);
+                system(std::format(R"({} --file="{}" --config_file="{}")", fbx2ozz_directory.string(), relative_path.string(), config_file_directory.string()).c_str());
+                //system(std::format(R"({} --file="{}" --mesh="{}" --skeleton="{}")", fbx2mesh_directory.string(), relative_path.string(), animation_data_directory + R"(\mesh.ozz)", "skeleton.ozz").c_str());
+                for (auto const& dir_entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
+                {
+                    if (dir_entry.path().extension() == ".ozz" && is_regular_file(dir_entry))
+                    {
+                        auto new_path = animation_data_directory / dir_entry.path().filename();
+                        std::filesystem::rename(dir_entry.path(), new_path);
+                        /*copy_file(dir_entry, animation_data_directory);
+                        std::filesystem::remove(dir_entry);*/
+                    }
+                }
+                
+                //std::filesystem::copy_file(std::filesystem::path("skeleton.ozz"), animation_data_directory);
+                //std::filesystem::remove(std::filesystem::path("skeleton.ozz"));
+                current_path(current_directory);
+                
+            }
+
             auto materials_map = PreprocessMaterial(scene, scene->mNumMaterials, scene->mMaterials, absolute_path);
 
             std::unordered_map<AssetHandle, AssetMeta> handles;
