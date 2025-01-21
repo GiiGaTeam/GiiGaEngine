@@ -68,8 +68,7 @@ int main(int argc, char* argv[])
         DxReportLiveObjects();
         return 1;
     }*/
-    GiiGa::PhysicsSys::main(argc, argv);
 
-
+    GiiGa::PhysicsSystem::main(argc, argv);
     return 0;
 }

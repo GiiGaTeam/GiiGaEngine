@@ -11,27 +11,27 @@ namespace GiiGa
 {
     constexpr float Pi = 3.14159265f;
 
-     float RadFromDeg(float deg)
+    float RadFromDeg(float deg)
     {
         return deg * Pi / 180;
     }
 
-     float DegFromRad(float rad)
+    float DegFromRad(float rad)
     {
         return rad * 180 / Pi;
     }
 
-     Vector3 RadFromDeg(const Vector3& vec)
+    Vector3 RadFromDeg(const Vector3& vec)
     {
         return vec * Pi / 180;
     }
 
-     Vector3 DegFromRad(const Vector3& vec)
+    Vector3 DegFromRad(const Vector3& vec)
     {
         return vec * 180 / Pi;
     }
 
-     Vector3 Vector3FromJson(const Json::Value& json)
+    Vector3 Vector3FromJson(const Json::Value& json)
     {
         Vector3 vec;
 
@@ -42,7 +42,7 @@ namespace GiiGa
         return vec;
     }
 
-     Json::Value Vector3ToJson(const Vector3& vec)
+    Json::Value Vector3ToJson(const Vector3& vec)
     {
         Json::Value json;
 
@@ -55,7 +55,7 @@ namespace GiiGa
 
     // note:
     // Do NOT change order of points
-     std::array<Vector3, 8> ExtractFrustumWorldCorners(const Matrix& viewProjMatrix)
+    std::array<Vector3, 8> ExtractFrustumWorldCorners(const Matrix& viewProjMatrix)
     {
         std::array<Vector3, 8> corners_world;
         const auto inv = viewProjMatrix.Invert();
@@ -82,7 +82,7 @@ namespace GiiGa
         return corners_world;
     }
 
-     Vector3 GetFrustumCenter(const std::array<Vector3, 8>& corners)
+    Vector3 GetFrustumCenter(const std::array<Vector3, 8>& corners)
     {
         Vector3 center = Vector3::Zero;
 
@@ -95,7 +95,7 @@ namespace GiiGa
         return center;
     }
 
-     std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
+    std::vector<Plane> ExtractFrustumPlanesPointInside(const Matrix& viewProjMatrix)
     {
         std::vector<Plane> planes_world(6);
 
@@ -128,5 +128,15 @@ namespace GiiGa
         }
 
         return planes_world;
+    }
+
+    JPH::Vec3 VecToJoltVec(DirectX::SimpleMath::Vector3 vec)
+    {
+        return JPH::Vec3(vec.x, vec.y, vec.z);
+    }
+
+    DirectX::SimpleMath::Vector3 VecJoltToVec(JPH::Vec3 vec)
+    {
+        return DirectX::SimpleMath::Vector3(vec.GetX(), vec.GetY(), vec.GetZ());
     }
 }

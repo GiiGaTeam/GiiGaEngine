@@ -18,6 +18,8 @@
 
 namespace GiiGa
 {
+    class PhysicsSystem;
+
     class Engine
     {
     protected:
@@ -26,6 +28,7 @@ namespace GiiGa
         bool quit_ = false;
         std::shared_ptr<Window> window_;
         std::shared_ptr<RenderSystem> render_system_ = nullptr;
+        std::shared_ptr<PhysicsSystem> physics_system_ = nullptr;
         std::shared_ptr<Project> project_;
         Input input;
 

@@ -313,7 +313,7 @@ namespace GiiGa
 
         Transform GetTransform() const { return transform_; }
 
-        void SetTransform(const Transform& transform)
+        virtual void SetTransform(const Transform& transform)
         {
             transform_ = transform;
             UpdateTransformMatrices();
@@ -321,13 +321,13 @@ namespace GiiGa
 
         Vector3 GetLocation() const { return transform_.location_; }
 
-        void SetLocation(const Vector3& location)
+        virtual void SetLocation(const Vector3& location)
         {
             transform_.location_ = location;
             UpdateTransformMatrices();
         }
 
-        void AddLocation(const Vector3& location)
+        virtual void AddLocation(const Vector3& location)
         {
             const auto new_location = GetLocation() + location;
             SetLocation(new_location);
@@ -335,19 +335,19 @@ namespace GiiGa
 
         Vector3 GetRotation() const { return transform_.GetRotation(); }
 
-        void SetRotation(const Vector3& rotation)
+        virtual void SetRotation(const Vector3& rotation)
         {
             transform_.SetRotation(rotation);
             UpdateTransformMatrices();
         }
 
-        void SetRotation(const Quaternion& rotation)
+        virtual void SetRotation(const Quaternion& rotation)
         {
             transform_.rotate_ = rotation;
             UpdateTransformMatrices();
         }
 
-        void AddRotation(const Vector3& rotation)
+        virtual void AddRotation(const Vector3& rotation)
         {
             auto rot = GetRotation() + rotation;
             SetRotation(rot);
@@ -363,13 +363,13 @@ namespace GiiGa
 
         Vector3 GetScale() const { return transform_.scale_; }
 
-        void SetScale(const Vector3& scale)
+        virtual void SetScale(const Vector3& scale)
         {
             transform_.scale_ = scale;
             UpdateTransformMatrices();
         }
 
-        void AddScale(const Vector3& scale)
+        virtual void AddScale(const Vector3& scale)
         {
             const auto new_scale = GetScale() + scale;
             SetScale(new_scale);
@@ -377,7 +377,7 @@ namespace GiiGa
 
         Transform GetWorldTransform() const { return Transform::TransformFromMatrix(world_matrix_); }
 
-        void SetWorldTransform(const Transform& transform)
+        virtual void SetWorldTransform(const Transform& transform)
         {
             const auto pref_world_matrix = world_matrix_;
             world_matrix_ = transform.GetMatrix();
@@ -392,14 +392,14 @@ namespace GiiGa
             return Transform::TransformFromMatrix(world_matrix_).location_;
         }
 
-        void SetWorldLocation(const Vector3& location)
+        virtual void SetWorldLocation(const Vector3& location)
         {
             Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
             world_trans.location_ = location;
             SetWorldTransform(world_trans);
         }
 
-        void AddWorldLocation(const Vector3& location)
+        virtual void AddWorldLocation(const Vector3& location)
         {
             const auto new_location = GetWorldLocation() + location;
             SetWorldLocation(new_location);
@@ -410,21 +410,21 @@ namespace GiiGa
             return Transform::TransformFromMatrix(world_matrix_).GetRotation();
         }
 
-        void SetWorldRotation(const Vector3& rotation)
+        virtual void SetWorldRotation(const Vector3& rotation)
         {
             Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
             world_trans.SetRotation(rotation);
             SetWorldTransform(world_trans);
         }
 
-        void SetWorldRotation(const Quaternion& rotation)
+        virtual void SetWorldRotation(const Quaternion& rotation)
         {
             Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
             world_trans.rotate_ = rotation;
             SetWorldTransform(world_trans);
         }
 
-        void AddWorldRotation(const Vector3& rotation)
+        virtual void AddWorldRotation(const Vector3& rotation)
         {
             const auto world_trans = Transform::TransformFromMatrix(world_matrix_);
             const auto new_quat = Transform::QuatFromRot(rotation) * world_trans.rotate_;
@@ -436,14 +436,14 @@ namespace GiiGa
             return Transform::TransformFromMatrix(world_matrix_).scale_;
         }
 
-        void SetWorldScale(const Vector3& scale)
+        virtual void SetWorldScale(const Vector3& scale)
         {
             Transform world_trans = Transform::TransformFromMatrix(world_matrix_);
             world_trans.scale_ = scale;
             SetWorldTransform(world_trans);
         }
 
-        void AddWorldScale(const Vector3& scale)
+        virtual void AddWorldScale(const Vector3& scale)
         {
             const auto new_scale = GetScale() + scale;
             SetWorldScale(new_scale);
@@ -479,7 +479,7 @@ namespace GiiGa
         bool attach_rotate = true;
         bool attach_scale = true;
 
-    private:
+    protected:
         bool is_dirty_ = true;
         Transform transform_;
         Matrix world_matrix_;
@@ -487,6 +487,7 @@ namespace GiiGa
         std::weak_ptr<TransformComponent> parent_;
         EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
 
+    private:
         void UpdateTransformMatrices()
         {
             const auto pref_local_matrix = local_matrix_;
