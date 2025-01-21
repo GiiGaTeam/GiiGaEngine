@@ -4,6 +4,7 @@
 #include<json/config.h>
 #include<json/value.h>
 #include<directxtk12/SimpleMath.h>
+#include <Jolt/Jolt.h>
 
 using namespace DirectX::SimpleMath;
 
@@ -135,8 +136,18 @@ namespace GiiGa
         return JPH::Vec3(vec.x, vec.y, vec.z);
     }
 
-    DirectX::SimpleMath::Vector3 VecJoltToVec(JPH::Vec3 vec)
+    DirectX::SimpleMath::Vector3 JoltVecToVec(JPH::Vec3 vec)
     {
         return DirectX::SimpleMath::Vector3(vec.GetX(), vec.GetY(), vec.GetZ());
+    }
+
+    JPH::Quat QuatToJoltQuat(DirectX::SimpleMath::Quaternion quat)
+    {
+        return JPH::Quat(quat.x, quat.y, quat.z, quat.w);
+    }
+
+    DirectX::SimpleMath::Quaternion JoltQuatToQuat(JPH::Quat quat)
+    {
+        return DirectX::SimpleMath::Quaternion(quat.GetX(), quat.GetY(), quat.GetZ(), quat.GetW());
     }
 }

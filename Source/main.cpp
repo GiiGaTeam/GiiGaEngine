@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "easylogging++.h"
-#include "Physics/PhysicsSystem.h"
 INITIALIZE_EASYLOGGINGPP
 
 #include<World.h>
@@ -38,7 +37,7 @@ extern "C"
 #endif
 int main(int argc, char* argv[])
 {
-    /*SDL_SetMainReady();
+    SDL_SetMainReady();
     START_EASYLOGGINGPP(argc, argv);
     el::Loggers::configureFromGlobal("logging.conf");
     LOG(INFO) << "Main Function Start";
@@ -67,8 +66,5 @@ int main(int argc, char* argv[])
         std::cerr << "Error: " << e.what() << "\n";
         DxReportLiveObjects();
         return 1;
-    }*/
-
-    GiiGa::PhysicsSystem::main(argc, argv);
-    return 0;
+    }
 }

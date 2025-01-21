@@ -15,6 +15,8 @@
 #include<Engine.h>
 #include<EditorAssetDatabase.h>
 
+#include "Physics/PhysicsSystem.h"
+
 namespace GiiGa
 {
     enum class WorldState
@@ -154,6 +156,7 @@ namespace GiiGa
                 {
                     level->BeginPlay();
                 }
+                GiiGa::PhysicsSystem::BeginPlay();
             }
         }
 

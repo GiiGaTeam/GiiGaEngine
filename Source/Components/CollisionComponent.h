@@ -1,14 +1,5 @@
 ﻿#pragma once
-#include "DefaultAssetsHandles.h"
-#include "Engine.h"
-#include "GameObject.h"
-#include "IRenderable.h"
-#include "IUpdateGPUData.h"
-#include "MeshAsset.h"
-#include "SceneVisibility.h"
-#include "TransformComponent.h"
-#include "VertexTypes.h"
-#include "ConcreteAsset/MeshAsset.h"
+
 
 namespace GiiGa
 {
@@ -40,7 +31,7 @@ namespace GiiGa
             else
                 result["Transform"] = Transform{}.ToJson();
 
-            result["ColliderType"] = Json::intValue(collider_type_);
+            result["ColliderType"] = collider_type_;
 
             return result;
         }
@@ -77,6 +68,7 @@ namespace GiiGa
         void BeginPlay() override
         {
             TransformComponent::BeginPlay();
+            RegisterInPhysics();
         }
 
         void Tick(float dt) override;
@@ -104,7 +96,7 @@ namespace GiiGa
         void UpdateGPUData(RenderContext& context) override
         {
             if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, this, isStatic_);
+                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()), motion_type_ == JPH::EMotionType::Static);
             perObjectData_->UpdateGPUData(context);
         }
 
@@ -113,16 +105,22 @@ namespace GiiGa
             OnUpdateType.Invoke(new_type);
             collider_type_ = new_type;
         }
+
         ColliderType GetColliderType() const { return collider_type_; }
+
+        JPH::EMotionType GetMotionType() const { return motion_type_; }
+
+        void SetMotionType(JPH::EMotionType motion_type) { motion_type_ = motion_type; }
 
         EventDispatcher<ColliderType> OnUpdateType;
 
     protected:
         ColliderType collider_type_;
-        bool isStatic_ = false;
+        JPH::EMotionType motion_type_ = JPH::EMotionType::Static;
 
         virtual void RegisterInPhysics()
         {
+            //PhysicsSystem::RegisterCollision(shared_from_this());
         }
 
     private:
