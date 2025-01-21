@@ -58,11 +58,10 @@ namespace GiiGa
                 return;
             }
 
-            ImGui::Text("Material: %s", material->name.c_str());
-            
-            auto material_handle = material->GetId();
-            std::string text_handle = material_handle.id.ToString() + " " + std::to_string(material_handle.subresource);
+            auto& meta = database_->GetAssetMeta(material->GetId(), false).value().get();
 
+            ImGui::Text("Material: %s", meta.name.c_str());
+            
             // Shading Model
             static const char* shadingModelNames[] = {
                 "None", "DefaultLit", "Unlit"
@@ -91,11 +90,27 @@ namespace GiiGa
                 if (requiredTextures[texture_index] && material->textures_[texture_index])
                 {
                     AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                    std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                    char textureUuidStr[512];
-                    snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
-                    ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                    auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
+
+                    if (ImGui::BeginCombo("Base Color Texture", texture_handle.IsValid() ?
+                        database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                        "None"
+                    )) {
+                        for (const auto& tex : texs) {
+                            bool is_selected = (texture_handle == tex);
+
+                            if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                texture_handle = tex;
+                                material->SetTexture(texture_order, tex);
+                            }
+
+                            if (is_selected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
 
                     if (ImGui::BeginDragDropTarget())
                     {
@@ -126,12 +141,27 @@ namespace GiiGa
                 if (requiredTextures[texture_index] && material->textures_[texture_index])
                 {
                     AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                    std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                    char textureUuidStr[512];
-                    snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                    auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
 
-                    ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                    if (ImGui::BeginCombo("Emissive Texture", texture_handle.IsValid() ?
+                        database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                        "None"
+                    )) {
+                        for (const auto& tex : texs) {
+                            bool is_selected = (texture_handle == tex);
+
+                            if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                texture_handle = tex;
+                                material->SetTexture(texture_order, tex);
+                            }
+
+                            if (is_selected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
 
                     if (ImGui::BeginDragDropTarget())
                     {
@@ -157,17 +187,32 @@ namespace GiiGa
             }
 
             {
-                TexturesOrder texture_order = TexturesOrder::Metallic;
+                TexturesOrder texture_order = TexturesOrder::Specular;
                 int texture_index = static_cast<int>(texture_order) - 1;
                 if (requiredTextures[texture_index] && material->textures_[texture_index])
                 {
                     AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                    std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                    char textureUuidStr[512];
-                    snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                    auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
 
-                    ImGui::InputText("Metallic Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                    if (ImGui::BeginCombo("Specular Texture", texture_handle.IsValid() ?
+                        database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                        "None"
+                    )) {
+                        for (const auto& tex : texs) {
+                            bool is_selected = (texture_handle == tex);
+
+                            if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                texture_handle = tex;
+                                material->SetTexture(texture_order, tex);
+                            }
+
+                            if (is_selected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
 
                     if (ImGui::BeginDragDropTarget())
                     {
@@ -180,15 +225,15 @@ namespace GiiGa
                         ImGui::EndDragDropTarget();
                     }
 
-                    float val = material->data_.MetallicScale_;
-                    if (ImGui::SliderFloat("Metallic Scale", &val, 0.0, 1.0))
+                    float val = material->data_.SpecularScale_;
+                    if (ImGui::SliderFloat("Specular Scale", &val, 0.0, 10.0))
                     {
-                        material->SetMetallicScale(val);
+                        material->SetSpecularScale(val);
                     }
                 }
                 else
                 {
-                    ImGui::Text("You Can't Set Metallic");
+                    //ImGui::Text("You Can't Set Metallic");
                 }
             }
 

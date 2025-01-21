@@ -54,7 +54,7 @@ namespace GiiGa
         {
             if (loaded_assets_.contains(handle))
             {
-                auto asset_meta_opt = database_->GetAssetMeta(handle);
+                auto asset_meta_opt = database_->GetAssetMeta(handle, true);
                 if (!asset_meta_opt)
                 {
                     throw std::runtime_error("Asset metadata not found for handle: " + handle.id.ToString());
@@ -85,7 +85,7 @@ namespace GiiGa
 
         template <typename T>
         std::shared_ptr<T> LoadAsset(AssetHandle handle) {
-            auto asset_meta_opt = database_->GetAssetMeta(handle);
+            auto asset_meta_opt = database_->GetAssetMeta(handle, true);
             if (!asset_meta_opt)
             {
                 throw std::runtime_error("Asset metadata not found for handle: " + handle.id.ToString());

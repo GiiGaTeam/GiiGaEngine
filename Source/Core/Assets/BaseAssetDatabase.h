@@ -47,15 +47,20 @@ namespace GiiGa
         {
         }
 
-        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle)
+        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle, bool verbose)
         {
-            el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v", handle.id.ToString());
+            if (verbose) {
+                el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v", handle.id.ToString());
+            }
 
             auto it = registry_map_.find(handle);
 
             if (it != registry_map_.end())
             {
-                el::Loggers::getLogger(LogResourceManager)->debug("Found asset: %v", handle.id.ToString());
+                if (verbose) {
+                    el::Loggers::getLogger(LogResourceManager)->debug("Found asset: %v", handle.id.ToString());
+                }
+                
                 return std::ref(it->second);
             }
 
@@ -133,6 +138,10 @@ namespace GiiGa
             }
 
             return results;
+        }
+
+        const std::vector<AssetHandle>& AssetHandlesByType(AssetType ty) const {
+            return assets_to_type_.at(ty);
         }
 
     private:
