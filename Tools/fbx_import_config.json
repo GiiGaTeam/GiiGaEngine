@@ -1,0 +1,19 @@
+{
+    //  Skeleton to import
+    "skeleton" : 
+    {
+      "filename" : "skeleton.ozz", //  Specifies skeleton input/output filename. The file will be outputted if import is true. It will also be used as an input reference during animations import.
+      "import" :
+      {
+        "enable" : true //  Imports (from source data file) and writes skeleton output file.
+      }
+    },
+    //  Animations to import.
+    "animations" : 
+    [
+      {
+        "clip" : "*", //  Specifies clip name (take) of the animation to import from the source file. Wildcard characters '*' and '?' are supported
+        "filename" : "*_animation.ozz" //  Specifies animation output filename. Use a '*' character to specify part(s) of the filename that should be replaced by the clip name.
+      }
+    ]
+  }
