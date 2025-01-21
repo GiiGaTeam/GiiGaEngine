@@ -14,6 +14,8 @@
 #include<DirectionalLightComponent.h>
 #include <PointLightComponent.h>
 
+#include "CollisionComponent.h"
+
 namespace GiiGa
 {
     struct CreateComponentsForGameObject
@@ -45,6 +47,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(PointLightComponent).name())
                 {
                     gameObject->CreateComponent<PointLightComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(CollisionComponent).name())
+                {
+                    gameObject->CreateComponent<CollisionComponent>(comp_js, roll_id);
                 }
             }
         }
@@ -80,6 +86,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(PointLightComponent).name())
                 {
                     gameObject->CreateComponent<PointLightComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(CollisionComponent).name())
+                {
+                    gameObject->CreateComponent<CollisionComponent>(comp_js, roll_id);
                 }
 
                 prefab_uuid_to_world_uuid[new_comp->GetInPrefabUuid()] = new_comp->GetUuid();

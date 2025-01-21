@@ -1,17 +1,11 @@
 ﻿#pragma once
-/*#include "DefaultAssetsHandles.h"
-#include "GameObject.h"
-#include "Assets/ConcreteAsset/MeshAsset.h"
-#include "SceneVisibility.h"
-#include "TransformComponent.h"
-#include "VertexTypes.h"*/
 #include "DefaultAssetsHandles.h"
 #include "Engine.h"
 #include "IUpdateGPUData.h"
 #include "IRenderable.h"
-#include "SceneVisibility.h"
 #include "TransformComponent.h"
 #include "ConcreteAsset/MeshAsset.h"
+#include <json/value.h>
 
 namespace JPH
 {
@@ -29,25 +23,10 @@ namespace GiiGa
     class CollisionComponent : public TransformComponent, public IRenderable, public IUpdateGPUData
     {
     public:
-        CollisionComponent() = default;
-
+        CollisionComponent();
         CollisionComponent(const Json::Value& json, bool roll_id = false);
 
-        Json::Value DerivedToJson(bool is_prefab_root) override
-        {
-            Json::Value result;
-
-            result["Type"] = typeid(CollisionComponent).name();
-
-            if (!is_prefab_root)
-                result["Transform"] = transform_.ToJson();
-            else
-                result["Transform"] = Transform{}.ToJson();
-
-            result["ColliderType"] = collider_type_;
-
-            return result;
-        }
+        Json::Value DerivedToJson(bool is_prefab_root) override;
 
         void Init() override
         {

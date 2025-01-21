@@ -5,10 +5,9 @@
 
 // The Jolt headers don't include Jolt.h. Always include Jolt.h before including any other Jolt header.
 // You can use Jolt.h in your precompiled header to speed up compilation.
-//#define JPH_DEBUG_RENDERER
-#define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
-#define JPH_OBJECT_STREAM
+
 #include <Jolt/Jolt.h>
+#include "easylogging++.h"
 
 // Jolt includes
 #include <Jolt/RegisterTypes.h>
@@ -31,10 +30,12 @@
 
 // Disable common warnings triggered by Jolt, you can use JPH_SUPPRESS_WARNING_PUSH / JPH_SUPPRESS_WARNING_POP to store and restore the warning state
 JPH_SUPPRESS_WARNINGS
-
 // If you want your code to compile using single or double precision write 0.0_r to get a Real value that compiles to double or float depending if JPH_DOUBLE_PRECISION is set or not.
 using namespace JPH::literals;
 
+#define JPH_DEBUG_RENDERER
+#define JPH_FLOATING_POINT_EXCEPTIONS_ENABLED
+#define JPH_OBJECT_STREAM
 // We're also using STL classes in this example
 using namespace std;
 
@@ -223,13 +224,8 @@ namespace GiiGa
     public:
         static PhysicsSystem& GetInstance()
         {
-            if (instance_)
-                return *instance_;
-            else
-            {
-                el::Loggers::getLogger(LogWorld)->fatal("Failed to get instance of WorldQuery, Call To World Init first!");
-                throw std::runtime_error("Failed to get instance of WorldQuery, Call To World Init first!");
-            }
+            if (instance_) return *std::static_pointer_cast<PhysicsSystem>(instance_);
+            else return *std::static_pointer_cast<PhysicsSystem>(instance_ = std::shared_ptr<PhysicsSystem>(new PhysicsSystem()));
         }
 
         ~PhysicsSystem() = default;
@@ -237,6 +233,7 @@ namespace GiiGa
         void Initialize()
         {
             JPH::RegisterDefaultAllocator();
+            temp_allocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 
             JPH::Trace = TraceImpl;
             JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
@@ -271,7 +268,7 @@ namespace GiiGa
 
             const int cCollisionSteps = 1;
 
-            instance.physics_system.Update(dt, cCollisionSteps, &instance.temp_allocator, instance.job_system_.get());
+            instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, instance.job_system_.get());
         }
 
         static void RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
@@ -336,8 +333,9 @@ namespace GiiGa
             GetInstance().physics_system.OptimizeBroadPhase();
         }
 
-        void DestroyBody(const std::shared_ptr<JPH::Body>& body) const
+        void DestroyBody(const JPH::Body* body) const
         {
+            if (!body) return;
             body_interface->RemoveBody(body->JPH::Body::GetID());
             body_interface->DeactivateBody(body->JPH::Body::GetID());
         }
@@ -362,7 +360,7 @@ namespace GiiGa
         }
 
     protected:
-        std::unordered_map<Uuid, std::shared_ptr<JPH::Body>> objects_map_;
+        std::unordered_map<Uuid, JPH::Body*> objects_map_;
 
         JPH::PhysicsSystem physics_system;
         BPLayerInterfaceImpl broad_phase_layer_interface;
@@ -372,10 +370,14 @@ namespace GiiGa
         GiiGaContactListener contact_listener;
         std::shared_ptr<JPH::BodyInterface> body_interface;
         std::shared_ptr<JPH::JobSystemThreadPool> job_system_;
-        JPH::TempAllocatorImpl temp_allocator = JPH::TempAllocatorImpl{10 * 1024 * 1024};
+        JPH::TempAllocatorImpl* temp_allocator = nullptr;
+
+        static inline std::shared_ptr<PhysicsSystem> instance_;
 
     private:
-        static inline std::shared_ptr<PhysicsSystem> instance_;
-        PhysicsSystem() = default;
+        PhysicsSystem()
+        {
+            
+        };
     };
 }
