@@ -82,13 +82,12 @@ namespace GiiGa
 
             window->OnMouseMotion.Register([this](const MouseMotionEvent& e)
             {
-                float dx = e.x - mouse_position_.x;
-                float dy = e.y - mouse_position_.y;
+                float dx = e.xrel;
+                float dy = e.yrel;
 
-                float len = sqrtf(dx * dx + dy * dy);
-
-                if (len) dx /= len;
-                if (len) dy /= len;
+                //float len = sqrtf(dx * dx + dy * dy);
+                //if (len) dx /= len;
+                //if (len) dy /= len;
 
                 mouse_position_ = MousePosition(e.x, e.y);
                 mouse_delta_ = MouseDelta(dx, dy);

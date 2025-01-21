@@ -80,7 +80,7 @@ namespace GiiGa
                 // Tick scene visibility in case it was changed in imgui
                 SceneVisibility::Tick();
 
-                ImGui::ShowDemoWindow();
+                //ImGui::ShowDemoWindow();
 
                 for (auto viewport : viewports_)
                 {

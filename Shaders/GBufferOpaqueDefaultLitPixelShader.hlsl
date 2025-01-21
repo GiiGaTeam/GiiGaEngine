@@ -21,17 +21,26 @@ struct PixelShaderOutput
     //float4 PositionWS : SV_Target4;
 };
 
+struct Ambient
+{
+    float3 color;
+    float intensity;
+};
+
+static const Ambient ambient = {float3(1.0f, 1.0f, 1.0f), 0.01f}; 
+
 PixelShaderOutput PSMain(PS_INPUT input)
 {
     PixelShaderOutput output = (PixelShaderOutput)0;
 
     // Sample base color texture
     float3 emiss_col = EmissiveColor.Sample(sampl, input.Tex).xyz * material.EmissiveColorTint_;
+    float3 base_col = BaseColor.Sample(sampl, input.Tex).xyz * material.BaseColorTint_;
     // Set Light Accumulation to the base color
-    output.LightAccumulation.xyz = emiss_col.rgb;
+    output.LightAccumulation.xyz = emiss_col.rgb + ambient.intensity * ambient.color * base_col;
     output.LightAccumulation.w = input.Pos.z;
 
-    output.Diffuse.xyz = BaseColor.Sample(sampl, input.Tex).xyz * material.BaseColorTint_;
+    output.Diffuse.xyz = base_col;
     output.Diffuse.w = input.Pos.z;
 
     output.MatProp.x = Metallic.Sample(sampl, input.Tex).x * material.MetallicScale_;
