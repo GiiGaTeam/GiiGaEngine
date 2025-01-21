@@ -271,7 +271,7 @@ namespace GiiGa
             auto& instance = GetInstance();
             if (!collision_comp) return nullptr;
 
-            DirectX::SimpleMath::Vector3 range = collision_comp->GetScale() / 2;
+            DirectX::SimpleMath::Vector3 range = collision_comp->GetWorldScale() / 2;
             Transform trans = collision_comp->GetWorldTransform();
             JPH::Body* body = nullptr;
 
@@ -335,9 +335,9 @@ namespace GiiGa
                 {
                     GetInstance().body_interface->SetGravityFactor(body->GetID(), 1.0);
                     GetInstance().body_interface->ActivateBody(body->GetID());
+                    body->AddForce({0.0f, 9.8f, 0.0f});
                 }
 
-                //ActivateActCtx(body, JPH::EActivation::Activate);body->AddForce({0.0f, 9.8f, 0.0f});
             }
 
             GetInstance().physics_system.OptimizeBroadPhase();

@@ -85,9 +85,6 @@ namespace GiiGa
 
         void Init() override
         {
-            attach_rotate = false;
-            SetWorldRotation(Vector3::Zero);
-
             AttachTo(std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent());
 
             if (!mesh_)
