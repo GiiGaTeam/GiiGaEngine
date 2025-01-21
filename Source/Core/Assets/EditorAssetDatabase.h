@@ -122,6 +122,7 @@ namespace GiiGa
 
             //TODO: Try catch, if save failed it should remove from registry_map and assets_to_path
             assets_to_path_.emplace(relative_path, handle);
+            assets_to_type_[meta.type].emplace_back(handle);
             if (save)
                 loaderIt->second->Save(asset, absolute_path);
 
@@ -212,6 +213,7 @@ namespace GiiGa
 
             for (auto& [handle, meta] : handles)
             {
+                assets_to_type_[meta.type].emplace_back(handle);
                 registry_map_.emplace(handle, std::move(meta));
             }
 
@@ -232,6 +234,11 @@ namespace GiiGa
                     el::Loggers::getLogger(LogResourceManager)->debug("File removed: %v", asset_path);
 
                     assets_to_path_.erase(it->second.path);
+
+                    auto& vec = assets_to_type_[it->second.type];
+                    auto new_end = std::remove(vec.begin(), vec.end(), it->first);
+                    vec.erase(new_end, vec.end());
+
                     it = registry_map_.erase(it);
                 }
                 else

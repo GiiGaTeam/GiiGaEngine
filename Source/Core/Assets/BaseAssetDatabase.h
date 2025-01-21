@@ -32,6 +32,7 @@ namespace GiiGa
 
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
         std::unordered_map<std::filesystem::path, AssetHandle> assets_to_path_;
+        std::unordered_map<AssetType, std::vector<AssetHandle>> assets_to_type_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
         std::unordered_map<AssetType, std::shared_ptr<AssetLoader>> asset_savers_;
@@ -173,6 +174,7 @@ namespace GiiGa
                 auto handle_temp = handle;
                 handle_temp.subresource = 0;
                 assets_to_path_.emplace(meta.path, handle_temp);
+                assets_to_type_[meta.type].emplace_back(handle);
                 registry_map_.emplace(handle, meta);
             }
         }
