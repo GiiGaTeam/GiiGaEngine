@@ -110,6 +110,16 @@ namespace GiiGa
             }
         }
 
+        void SetOwnerWorldLocation(DirectX::SimpleMath::Vector3 loc)
+        {
+            if (!parent_.expired()) parent_.lock()->SetWorldLocation(loc);
+        };
+
+        void SetOwnerWorldRotation(DirectX::SimpleMath::Quaternion quat)
+        {
+            if (!parent_.expired()) parent_.lock()->SetWorldRotation(quat);
+        };
+
         void BeginPlay() override
         {
             TransformComponent::BeginPlay();

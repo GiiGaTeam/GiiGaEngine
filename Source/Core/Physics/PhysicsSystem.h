@@ -237,9 +237,6 @@ namespace GiiGa
             JPH::Factory::sInstance = new JPH::Factory();
             JPH::RegisterTypes();
 
-            auto temp_job_sys = JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
-            job_system_ = std::shared_ptr<JPH::JobSystemThreadPool>(&temp_job_sys);
-
             physics_system.Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
 
             physics_system.SetBodyActivationListener(&body_activation_listener);
@@ -251,6 +248,7 @@ namespace GiiGa
 
         static void Simulate(float dt)
         {
+            JPH::JobSystemThreadPool job_system(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
             auto& instance = GetInstance();
             for (auto [uuid, body] : instance.objects_map_)
             {
@@ -259,13 +257,13 @@ namespace GiiGa
 
                 JPH::RVec3 position = instance.body_interface->GetCenterOfMassPosition(body->GetID());
                 JPH::Quat rotation = instance.body_interface->GetRotation(body->GetID());
-                col_comp->SetWorldLocation(JoltVecToVec(position));
-                col_comp->SetWorldRotation(JoltQuatToQuat(rotation));
+                col_comp->SetOwnerWorldLocation(JoltVecToVec(position));
+                col_comp->SetOwnerWorldRotation(JoltQuatToQuat(rotation));
             }
 
             const int cCollisionSteps = 1;
 
-            instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, instance.job_system_.get());
+            instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, &job_system);
         }
 
         static JPH::Body* RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
@@ -277,6 +275,7 @@ namespace GiiGa
             Transform trans = collision_comp->GetWorldTransform();
             JPH::Body* body = nullptr;
 
+            const auto Layer = collision_comp->GetMotionType() == GiiGa::EMotionType::Static ? Layers::NON_MOVING : Layers::MOVING;
             switch (collision_comp->GetColliderType())
             {
             case ColliderType::Cube:
@@ -294,7 +293,7 @@ namespace GiiGa
 
                 //TODO Испрвить Слои - пока все moving
                 trans = collision_comp->GetWorldTransform();
-                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layers::MOVING);
+                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
                 body = instance.body_interface->CreateBody(box_settings);
                 break;
@@ -314,14 +313,14 @@ namespace GiiGa
 
                 //TODO Испрвить Слои - пока все moving
 
-                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layers::MOVING);
+                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
                 body = instance.body_interface->CreateBody(sphere_settings);
                 break;
             }
             }
 
-            instance.body_interface->AddBody(body->GetID(), JPH::EActivation::Activate);
+            instance.body_interface->AddBody(body->GetID(), JPH::EActivation::DontActivate);
             instance.objects_map_.emplace(collision_comp->GetUuid(), body);
             return body;
         }
@@ -333,7 +332,12 @@ namespace GiiGa
             {
                 auto body = RegisterCollision(collision);
                 if (body && collision->GetMotionType() == GiiGa::EMotionType::Dynamic)
-                    body->AddForce({0.0f, 9.8f, 0.0f});
+                {
+                    GetInstance().body_interface->SetGravityFactor(body->GetID(), 1.0);
+                    GetInstance().body_interface->ActivateBody(body->GetID());
+                }
+
+                //ActivateActCtx(body, JPH::EActivation::Activate);body->AddForce({0.0f, 9.8f, 0.0f});
             }
 
             GetInstance().physics_system.OptimizeBroadPhase();
@@ -377,7 +381,6 @@ namespace GiiGa
         MyBodyActivationListener body_activation_listener;
         GiiGaContactListener contact_listener;
         std::shared_ptr<JPH::BodyInterface> body_interface;
-        std::shared_ptr<JPH::JobSystemThreadPool> job_system_;
         JPH::TempAllocatorImpl* temp_allocator = nullptr;
 
         static inline std::shared_ptr<PhysicsSystem> instance_;
