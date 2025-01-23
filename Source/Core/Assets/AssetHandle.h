@@ -19,6 +19,10 @@ namespace GiiGa
         {
         }
 
+        bool IsValid() const {
+            return id != Uuid::Null();
+        }
+
         bool operator==(const AssetHandle& other) const
         {
             return id == other.id && subresource == other.subresource;

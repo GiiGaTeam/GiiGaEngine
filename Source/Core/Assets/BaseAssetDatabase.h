@@ -32,6 +32,7 @@ namespace GiiGa
 
         std::unordered_map<AssetHandle, AssetMeta> registry_map_;
         std::unordered_map<std::filesystem::path, AssetHandle> assets_to_path_;
+        std::unordered_map<AssetType, std::vector<AssetHandle>> assets_to_type_;
 
         std::unordered_map<AssetType, std::vector<std::shared_ptr<AssetLoader>>> asset_loaders_;
         std::unordered_map<AssetType, std::shared_ptr<AssetLoader>> asset_savers_;
@@ -46,15 +47,20 @@ namespace GiiGa
         {
         }
 
-        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle)
+        std::optional<std::reference_wrapper<AssetMeta>> GetAssetMeta(AssetHandle handle, bool verbose)
         {
-            el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v", handle.id.ToString());
+            if (verbose) {
+                el::Loggers::getLogger(LogResourceManager)->debug("Request for asset: %v", handle.id.ToString());
+            }
 
             auto it = registry_map_.find(handle);
 
             if (it != registry_map_.end())
             {
-                el::Loggers::getLogger(LogResourceManager)->debug("Found asset: %v", handle.id.ToString());
+                if (verbose) {
+                    el::Loggers::getLogger(LogResourceManager)->debug("Found asset: %v", handle.id.ToString());
+                }
+                
                 return std::ref(it->second);
             }
 
@@ -134,6 +140,10 @@ namespace GiiGa
             return results;
         }
 
+        const std::vector<AssetHandle>& AssetHandlesByType(AssetType ty) const {
+            return assets_to_type_.at(ty);
+        }
+
     private:
         virtual void _MakeVirtual()
         {
@@ -173,6 +183,7 @@ namespace GiiGa
                 auto handle_temp = handle;
                 handle_temp.subresource = 0;
                 assets_to_path_.emplace(meta.path, handle_temp);
+                assets_to_type_[meta.type].emplace_back(handle);
                 registry_map_.emplace(handle, meta);
             }
         }

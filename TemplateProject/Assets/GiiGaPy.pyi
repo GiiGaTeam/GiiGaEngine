@@ -138,9 +138,6 @@ class Vector3:
     Up: typing.ClassVar[Vector3]  # value = <GiiGaPy.Vector3 object>
     Zero: typing.ClassVar[Vector3]  # value = <GiiGaPy.Vector3 object>
     __hash__: typing.ClassVar[None] = None
-    x: float
-    y: float
-    z: float
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...

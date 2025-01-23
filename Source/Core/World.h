@@ -39,6 +39,7 @@ namespace GiiGa
             Json::Value level_settings;
             level_settings["Name"] = "PersistentLevel";
             auto p_level = std::make_shared<Level>(level_settings);
+            auto p_level = std::make_shared<Level>(level_settings);
             GetInstance().AddLevel(p_level);
         }
 
@@ -73,6 +74,7 @@ namespace GiiGa
                 }
             }
 
+
             for (auto& level : GetLevels())
             {
                 if (!level->GetIsActive())
@@ -97,10 +99,18 @@ namespace GiiGa
         {
             el::Loggers::getLogger(LogWorld)->info("Loading level with uuid: %v", uuid.ToString());
             AddLevel(Engine::Instance().ResourceManager()->GetAsset<LevelAsset>({uuid, 0}), setIsActive);
+            AddLevel(Engine::Instance().ResourceManager()->GetAsset<LevelAsset>({uuid, 0}), setIsActive);
         }
 
         static void AddLevel(std::shared_ptr<Level> level, bool setIsActive = true)
         {
+            level->SetIsActive(setIsActive);
+            GetInstance().levels_.push_back(level);
+        }
+
+        static void AddLevel(std::shared_ptr<LevelAsset> asset, bool setIsActive = true)
+        {
+            auto level = Level::LevelFromLevelAsset(asset);
             level->SetIsActive(setIsActive);
             GetInstance().levels_.push_back(level);
         }
@@ -173,6 +183,7 @@ namespace GiiGa
 
                 levels_.erase(levels_.begin() + 1);
 
+                AddLevel(asset);
                 AddLevel(asset);
             }
         }

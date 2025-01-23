@@ -30,6 +30,7 @@ namespace GiiGa
 
     public:
         PyBehaviourSchemeComponent() = default;
+        ~PyBehaviourSchemeComponent() override = default;
 
         PyBehaviourSchemeComponent(const PyBehaviourSchemeComponent& other) = delete;
         PyBehaviourSchemeComponent(PyBehaviourSchemeComponent&& other) noexcept = default;
@@ -56,9 +57,9 @@ namespace GiiGa
             Json::Value result;
             result["Type"] = typeid(PyBehaviourSchemeComponent).name();
             result["Script"] = script_asset_ ? script_asset_->GetId().ToJson() : AssetHandle{}.ToJson();
-            
+
             result["PropertyModifications"] = prop_modifications.toJson();
-            
+
             return result;
         }
 
@@ -74,12 +75,12 @@ namespace GiiGa
                 {
                     auto l_owner_go = std::dynamic_pointer_cast<GameObject>(l_owner);
                     substituter_component_ = script_asset_->CreateBehaviourComponent(this->uuid_);
-                    
+
                     el::Loggers::getLogger("")->debug("PyBehaviourSchemeComponent Unregister");
                     WorldQuery::RemoveComponent(this);
                     WorldQuery::RemoveAnyWithUuid(uuid_);
                     this->uuid_ = {};
-                    
+
                     substituter_component_->RegisterInWorld();
                     l_owner_go->AddComponent(substituter_component_);
                     WorldQuery::AddComponentToBeginPlayQueue(shared_from_this());
@@ -147,7 +148,6 @@ namespace GiiGa
 
             prop_modifications.clear();
             prop_modifications = script_asset_->GetPropertyAnnotaions();
-            
         }
 
         std::string GetUserClassName() const

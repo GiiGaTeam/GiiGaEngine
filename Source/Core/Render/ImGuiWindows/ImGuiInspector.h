@@ -38,6 +38,7 @@ namespace GiiGa
         ImGuiInspector(std::shared_ptr<EditorContext> ec):
             editorContext_(ec)
         {
+            database_ = std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().ResourceManager()->Database());
         }
 
         void RecordImGui() override
@@ -134,6 +135,7 @@ namespace GiiGa
 
     private:
         std::shared_ptr<EditorContext> editorContext_;
+        std::shared_ptr<EditorAssetDatabase> database_;
 
         void DrawTransformComponent(std::shared_ptr<TransformComponent> comp)
         {
@@ -207,13 +209,27 @@ namespace GiiGa
 
         void DrawStaticMeshComponent(std::shared_ptr<StaticMeshComponent> comp)
         {
-            auto mesh_handle = comp->GetMeshHandle();
-            std::string text_handle = mesh_handle.id.ToString() + " " + std::to_string(mesh_handle.subresource);
+            AssetHandle selected_mesh_handle = comp->GetMeshHandle();
+            auto& meshes = database_->AssetHandlesByType(AssetType::Mesh);
 
-            char meshUuidStr[512];
-            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", text_handle.c_str());
+            if (ImGui::BeginCombo("Mesh", selected_mesh_handle.IsValid() ?
+                database_->GetAssetMeta(selected_mesh_handle, false).value().get().name.c_str() :
+                "None"
+            )) {
+                for (const auto& mesh : meshes) {
+                    bool is_selected = (selected_mesh_handle == mesh);
 
-            ImGui::InputText("Mesh Handle", meshUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                    if (ImGui::Selectable(database_->GetAssetMeta(mesh, false).value().get().name.c_str(), is_selected)) {
+                        selected_mesh_handle = mesh;
+                        comp->SetMeshHandle(mesh);
+                    }
+
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
 
             if (ImGui::BeginDragDropTarget())
             {
@@ -230,12 +246,27 @@ namespace GiiGa
 
             if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                auto material_handle = comp->GetMaterialHandle();
-                std::string text_handle = material_handle.id.ToString() + " " + std::to_string(material_handle.subresource);
+                AssetHandle selected_material_handle = comp->GetMaterialHandle();
+                auto& mats = database_->AssetHandlesByType(AssetType::Material);
 
-                char materialUuidStr[512];
-                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", text_handle.c_str());
-                ImGui::InputText("Material Handle", materialUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                if (ImGui::BeginCombo("Material", selected_material_handle.IsValid() ?
+                    database_->GetAssetMeta(selected_material_handle, false).value().get().name.c_str() :
+                    "None"
+                )) {
+                    for (const auto& mat : mats) {
+                        bool is_selected = (selected_material_handle == mat);
+
+                        if (ImGui::Selectable(database_->GetAssetMeta(mat, false).value().get().name.c_str(), is_selected)) {
+                            selected_material_handle = mat;
+                            comp->SetMaterialHandle(mat);
+                        }
+
+                        if (is_selected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
 
                 if (ImGui::BeginDragDropTarget())
                 {
@@ -276,11 +307,27 @@ namespace GiiGa
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
                         AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                        char textureUuidStr[512];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
-                        ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                        auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
+
+                        if (ImGui::BeginCombo("Base Color Texture", texture_handle.IsValid() ?
+                            database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                            "None"
+                        )) {
+                            for (const auto& tex : texs) {
+                                bool is_selected = (texture_handle == tex);
+
+                                if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                    texture_handle = tex;
+                                    material->SetTexture(texture_order, tex);
+                                }
+
+                                if (is_selected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
 
                         if (ImGui::BeginDragDropTarget())
                         {
@@ -311,12 +358,27 @@ namespace GiiGa
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
                         AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                        char textureUuidStr[512];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                        auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
 
-                        ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                        if (ImGui::BeginCombo("Emissive Texture", texture_handle.IsValid() ?
+                            database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                            "None"
+                        )) {
+                            for (const auto& tex : texs) {
+                                bool is_selected = (texture_handle == tex);
+
+                                if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                    texture_handle = tex;
+                                    material->SetTexture(texture_order, tex);
+                                }
+
+                                if (is_selected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
 
                         if (ImGui::BeginDragDropTarget())
                         {
@@ -347,12 +409,28 @@ namespace GiiGa
                     if (requiredTextures[texture_index] && material->textures_[texture_index])
                     {
                         AssetHandle texture_handle = material->textures_[texture_index]->GetId();
-                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
 
-                        char textureUuidStr[512];
-                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                        auto& texs = database_->AssetHandlesByType(AssetType::Texture2D);
 
-                        ImGui::InputText("Specular Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+                        if (ImGui::BeginCombo("Specular Texture", texture_handle.IsValid() ?
+                            database_->GetAssetMeta(texture_handle, false).value().get().name.c_str() :
+                            "None"
+                        )) {
+                            for (const auto& tex : texs) {
+                                bool is_selected = (texture_handle == tex);
+
+                                if (ImGui::Selectable(database_->GetAssetMeta(tex, false).value().get().name.c_str(), is_selected)) {
+                                    texture_handle = tex;
+                                    material->SetTexture(texture_order, tex);
+                                }
+
+                                if (is_selected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+>>>>>>> origin/main
 
                         if (ImGui::BeginDragDropTarget())
                         {
@@ -432,12 +510,26 @@ namespace GiiGa
         void DrawBehaviourComponent(std::shared_ptr<PyBehaviourSchemeComponent> comp)
         {
             auto script_handle = comp->GetScriptHandle();
-            std::string text_handle = script_handle.id.ToString() + " " + std::to_string(script_handle.subresource);
+            
+            auto& behs = database_->AssetHandlesByType(AssetType::Behaviour);
 
-            {
-                char raw_str_buf[512];
-                snprintf(raw_str_buf, sizeof(raw_str_buf), "%s", text_handle.c_str());
-                ImGui::InputText("Script Handle", raw_str_buf, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+            if (ImGui::BeginCombo("Script", script_handle.IsValid() ?
+                database_->GetAssetMeta(script_handle, false).value().get().name.c_str() :
+                "None"
+            )) {
+                for (const auto& beh : behs) {
+                    bool is_selected = (script_handle == beh);
+
+                    if (ImGui::Selectable(database_->GetAssetMeta(beh, false).value().get().name.c_str(), is_selected)) {
+                        script_handle = beh;
+                        comp->SetScriptHandle(beh);
+                    }
+
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
             }
 
             if (ImGui::BeginDragDropTarget())

@@ -45,6 +45,27 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<float>())               // Single float constructor
         .def(pybind11::init<float, float, float>()) // Three float constructor
         .def(pybind11::init(&GiiGa::Vector3FromJson))
+        .def_property("x", [](Vector3* self)
+                      {
+                          return self->x;
+                      }, [](Vector3* self, float v)
+                      {
+                          self->x = v;
+                      })
+        .def_property("y", [](Vector3* self)
+                      {
+                          return self->y;
+                      }, [](Vector3* self, float v)
+                      {
+                          self->y = v;
+                      })
+        .def_property("z", [](Vector3* self)
+                      {
+                          return self->z;
+                      }, [](Vector3* self, float v)
+                      {
+                          self->z = v;
+                      })
         // Comparison operators using magic methods
         .def("__eq__", &Vector3::operator==)
         .def("__ne__", &Vector3::operator!=)
