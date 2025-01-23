@@ -40,6 +40,8 @@ using namespace std;
 
 namespace GiiGa
 {
+    class PhysicsSystem;
+
     // Callback for traces, connect this to your own trace function if you have one
     static void TraceImpl(const char* inFMT, ...)
     {
@@ -168,52 +170,71 @@ namespace GiiGa
         }
     };
 
-    // An example contact listener
-    class GiiGaContactListener : public JPH::ContactListener
-    {
-    public:
-        // See: ContactListener
-        virtual JPH::ValidateResult OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override
-        {
-            cout << "Contact validate callback" << endl;
-
-            // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
-            return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
-        }
-
-        virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
-        {
-            cout << "A contact was added" << endl;
-        }
-
-        virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
-        {
-            cout << "A contact was persisted" << endl;
-        }
-
-        virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override
-        {
-            cout << "A contact was removed" << endl;
-        }
-    };
-
     // An example activation listener
     class MyBodyActivationListener : public JPH::BodyActivationListener
     {
     public:
         virtual void OnBodyActivated(const JPH::BodyID& inBodyID, JPH::uint64 inBodyUserData) override
         {
-            cout << "A body got activated" << endl;
+            el::Loggers::getLogger(LogPhysics)->debug("A body got activated");
         }
 
         virtual void OnBodyDeactivated(const JPH::BodyID& inBodyID, JPH::uint64 inBodyUserData) override
         {
-            cout << "A body went to sleep" << endl;
+            el::Loggers::getLogger(LogPhysics)->debug("A body went to sleep");
         }
     };
 
     class PhysicsSystem
     {
+        // An example contact listener
+        class GiiGaContactListener : public JPH::ContactListener
+        {
+        public:
+            virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
+            {
+                el::Loggers::getLogger(LogPhysics)->debug("A contact was added");
+                const auto collision1 = GetCollisionByBody(inBody1.GetID());
+                const auto collision2 = GetCollisionByBody(inBody2.GetID());
+                CollideInfo collideInfo
+                {
+                    JoltVecToVec(inManifold.mBaseOffset),
+                    JoltVecToVec(inManifold.mWorldSpaceNormal),
+                    inManifold.mPenetrationDepth
+                };
+
+                collision1->OnContactAdded(collision2, collideInfo);
+                collision1->OnContactAdded(collision1, collideInfo);
+            }
+
+            virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
+            {
+                el::Loggers::getLogger(LogPhysics)->debug("A contact was persisted");
+                const auto collision1 = GetCollisionByBody(inBody1.GetID());
+                const auto collision2 = GetCollisionByBody(inBody2.GetID());
+                CollideInfo collideInfo
+                {
+                    JoltVecToVec(inManifold.mBaseOffset),
+                    JoltVecToVec(inManifold.mWorldSpaceNormal),
+                    inManifold.mPenetrationDepth
+                };
+
+                collision1->OnContactPersisted(collision2, collideInfo);
+                collision1->OnContactPersisted(collision1, collideInfo);
+            }
+
+            virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override
+            {
+                el::Loggers::getLogger(LogPhysics)->debug("A contact was added");
+                const auto collision1 = GetCollisionByBody(inSubShapePair.GetBody1ID());
+                const auto collision2 = GetCollisionByBody(inSubShapePair.GetBody2ID());
+
+                collision1->OnContactRemoved(collision2);
+                collision1->OnContactRemoved(collision1);
+                el::Loggers::getLogger(LogPhysics)->debug("A contact was removed");
+            }
+        };
+
     protected:
         JPH::uint cMaxBodies = 65536;
         JPH::uint cNumBodyMutexes = 0;
@@ -250,13 +271,13 @@ namespace GiiGa
 
             JPH::JobSystemThreadPool job_system(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
             auto& instance = GetInstance();
-            for (auto [uuid, body] : instance.objects_map_)
+            for (auto [uuid, body] : instance.collision_body_map_)
             {
                 const auto col_comp = WorldQuery::GetWithUUID<CollisionComponent>(uuid);
                 if (!col_comp) continue;
 
-                JPH::RVec3 position = body_interface.GetCenterOfMassPosition(body->GetID());
-                JPH::Quat rotation = body_interface.GetRotation(body->GetID());
+                JPH::RVec3 position = body_interface.GetCenterOfMassPosition(body);
+                JPH::Quat rotation = body_interface.GetRotation(body);
                 col_comp->SetOwnerWorldLocation(JoltVecToVec(position));
                 col_comp->SetOwnerWorldRotation(JoltQuatToQuat(rotation));
             }
@@ -266,18 +287,18 @@ namespace GiiGa
             instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, &job_system);
         }
 
-        static JPH::Body* RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
+        static JPH::BodyID RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
         {
             auto& body_interface = GetInstance().physics_system.GetBodyInterface();
 
+            JPH::BodyID body{};
             auto& instance = GetInstance();
-            if (!collision_comp) return nullptr;
+            if (!collision_comp) return body;
 
             DirectX::SimpleMath::Vector3 range = collision_comp->GetWorldScale();
             Transform trans = collision_comp->GetWorldTransform();
-            JPH::Body* body = nullptr;
 
-            const auto Layer = collision_comp->GetMotionType() == GiiGa::EMotionType::Static ? Layers::NON_MOVING : Layers::MOVING;
+            const auto Layer = collision_comp->GetLayer();
             switch (collision_comp->GetColliderType())
             {
             case ColliderType::Cube:
@@ -289,7 +310,7 @@ namespace GiiGa
                 if (box_shape_result.HasError())
                 {
                     //log(floor_shape_result.GetError());
-                    return nullptr;
+                    return body;
                 }
                 JPH::ShapeRefC box_shape = box_shape_result.Get();
 
@@ -297,7 +318,7 @@ namespace GiiGa
                 trans = collision_comp->GetWorldTransform();
                 JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
-                body = body_interface.CreateBody(box_settings);
+                body = body_interface.CreateBody(box_settings)->GetID();
                 break;
             }
             case ColliderType::Sphere:
@@ -309,7 +330,7 @@ namespace GiiGa
                 if (sphere_shape_result.HasError())
                 {
                     //log(floor_shape_result.GetError());
-                    return nullptr;
+                    return body;
                 }
                 JPH::ShapeRefC sphere_shape = sphere_shape_result.Get();
 
@@ -317,13 +338,14 @@ namespace GiiGa
 
                 JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
-                body = body_interface.CreateBody(sphere_settings);
+                body = body_interface.CreateBody(sphere_settings)->GetID();
                 break;
             }
             }
 
-            body_interface.AddBody(body->GetID(), JPH::EActivation::DontActivate);
-            instance.objects_map_.emplace(collision_comp->GetUuid(), body);
+            body_interface.AddBody(body, JPH::EActivation::DontActivate);
+            instance.collision_body_map_.emplace(collision_comp->GetUuid(), body);
+            instance.body_collision_map_.emplace(body, collision_comp->GetUuid());
             return body;
         }
 
@@ -335,11 +357,10 @@ namespace GiiGa
             {
                 if (collision.expired()) continue;
                 auto body = RegisterCollision(collision.lock());
-                if (body && collision.lock()->GetMotionType() == GiiGa::EMotionType::Dynamic)
+                if (!body.IsInvalid() && collision.lock()->GetMotionType() == GiiGa::EMotionType::Dynamic)
                 {
-                    body_interface.SetGravityFactor(body->GetID(), 1.0);
-                    body_interface.ActivateBody(body->GetID());
-                    body->AddForce({0.0f, 9.8f, 0.0f});
+                    body_interface.SetGravityFactor(body, 1.0);
+                    body_interface.AddForce(body, {0.0f, 9.8f, 0.0f});
                 }
             }
 
@@ -351,22 +372,26 @@ namespace GiiGa
             GetInstance().FreshObjects();
         }
 
-        void DestroyBody(const JPH::Body* body) const
+        void DestroyBody(const JPH::BodyID& bodyID) const
         {
-            auto& body_interface = GetInstance().physics_system.GetBodyInterface();
-
-            if (!body) return;
-            body_interface.RemoveBody(body->JPH::Body::GetID());
-            body_interface.DeactivateBody(body->JPH::Body::GetID());
+            GetBodyInterface().RemoveBody(bodyID);
+            GetBodyInterface().DeactivateBody(bodyID);
         }
 
         void FreshObjects()
         {
-            for (auto [uuid, body] : objects_map_)
+            for (auto [uuid, body] : collision_body_map_)
             {
                 DestroyBody(body);
             }
-            objects_map_.clear();
+            collision_body_map_.clear();
+            body_collision_map_.clear();
+        }
+
+        static std::shared_ptr<CollisionComponent> GetCollisionByBody(const JPH::BodyID& inBodyID)
+        {
+            if (!GetInstance().body_collision_map_.contains(inBodyID)) return nullptr;
+            return WorldQuery::GetWithUUID<CollisionComponent>(GetInstance().body_collision_map_.at(inBodyID));
         }
 
         void Destroy()
@@ -382,7 +407,8 @@ namespace GiiGa
         }
 
     protected:
-        std::unordered_map<Uuid, JPH::Body*> objects_map_;
+        std::unordered_map<Uuid, JPH::BodyID> collision_body_map_;
+        std::unordered_map<JPH::BodyID, Uuid> body_collision_map_;
 
         JPH::PhysicsSystem physics_system;
         BPLayerInterfaceImpl broad_phase_layer_interface;
@@ -398,5 +424,8 @@ namespace GiiGa
         PhysicsSystem()
         {
         };
+
+        static JPH::PhysicsSystem& GetJoltPhysicsSystem() { return GetInstance().physics_system; }
+        static JPH::BodyInterface& GetBodyInterface() { return GetInstance().physics_system.GetBodyInterface(); }
     };
 }

@@ -764,6 +764,15 @@ namespace GiiGa
             {
                 comp->SetColliderType(static_cast<ColliderType>(colliderType));
             }
+
+            static const char* layerNames[] = {
+                "NoMoving", "Moving"
+            };
+            int layer = comp->GetLayer();
+            if (ImGui::Combo("Layer", &layer, layerNames, IM_ARRAYSIZE(layerNames)))
+            {
+                comp->SetLayer(static_cast<Layer>(layer));
+            }
         }
 
         void ComponentContextMenu(std::shared_ptr<IComponent> comp)

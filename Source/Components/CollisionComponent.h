@@ -29,6 +29,19 @@ namespace GiiGa
         Sphere = 1,
     };
 
+    enum Layer
+    {
+        NoMoving = 0,
+        Moving = 1,
+    };
+
+    struct CollideInfo
+    {
+        Vector3 baseOffset;
+        Vector3 normal;
+        float depthPenetration;
+    };
+
     class CollisionShaderResource : public IObjectShaderResource
     {
     public:
@@ -58,6 +71,7 @@ namespace GiiGa
         {
             motion_type_ = static_cast<EMotionType>(json["MotionType"].asInt());
             collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
+            layer_ = static_cast<Layer>(json["Layer"].asInt());
             ConstructFunction();
         }
 
@@ -78,6 +92,7 @@ namespace GiiGa
             result["Type"] = typeid(CollisionComponent).name();
             result["ColliderType"] = collider_type_;
             result["MotionType"] = static_cast<int32_t>(motion_type_);
+            result["Layer"] = layer_;
 
             return result;
         }
@@ -185,11 +200,42 @@ namespace GiiGa
 
         void SetMotionType(EMotionType motion_type) { motion_type_ = motion_type; }
 
+        Layer GetLayer() const { return layer_; }
+
+        void SetLayer(Layer layer) { layer_ = layer; }
+
         EventDispatcher<ColliderType> OnUpdateType;
+
+        void OnContactAdded(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo)
+        {
+            if (!other_comp || other_comp == shared_from_this()) return;
+            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+
+            GetOwner()->OnBeginOverlap(other_comp, collideInfo);
+        }
+
+        void OnContactPersisted(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo)
+        {
+            if (!other_comp || other_comp == shared_from_this()) return;
+            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+
+            GetOwner()->OnOverlapping(other_comp, collideInfo);
+        }
+
+        void OnContactRemoved(const std::shared_ptr<CollisionComponent>& other_comp)
+        {
+            if (!other_comp || other_comp == shared_from_this()) return;
+            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+
+            GetOwner()->OnEndOverlap(other_comp);
+        }
+
+        bool canCollideSelf_ = false;
 
     protected:
         ColliderType collider_type_;
         EMotionType motion_type_;
+        Layer layer_;
 
         std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;

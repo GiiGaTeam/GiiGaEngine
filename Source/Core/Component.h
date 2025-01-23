@@ -120,5 +120,11 @@ namespace GiiGa
             derived_clone->RegisterInWorld();
             prefab_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();
         }
+
+    public:
+        //TODO: добавить вызов в скриптах
+        void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override {};
+        void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override {};
+        void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) override {};
     };
 } // namespace GiiGa

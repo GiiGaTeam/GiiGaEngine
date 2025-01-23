@@ -46,7 +46,7 @@ namespace GiiGa
         void Destroy() override
         {
             TryDetachFromParent();
-            
+
             TryRemoveFromLevelRoot();
         }
 
@@ -73,7 +73,7 @@ namespace GiiGa
                 component->BeginPlay();
             }
         }
-        
+
         void EndPlay()
         {
             for (auto& kid : children_)
@@ -566,6 +566,31 @@ namespace GiiGa
 
         AssetHandle prefab_handle_;
 
+    protected:
+        void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override
+        {
+            for (auto& component : components_)
+            {
+                component->OnBeginOverlap(other_comp, collideInfo);
+            }
+        }
+
+        void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override
+        {
+            for (auto& component : components_)
+            {
+                component->OnOverlapping(other_comp, collideInfo);
+            }
+        }
+
+        void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) override
+        {
+            for (auto& component : components_)
+            {
+                component->OnEndOverlap(other_comp);
+            }
+        }
+
     private:
         Uuid uuid_ = Uuid::New();
         Uuid inprefab_uuid_ = Uuid::Null();
@@ -577,7 +602,7 @@ namespace GiiGa
         std::shared_ptr<TransformComponent> transform_;
 
         std::shared_ptr<PerObjectData> perObjectData_;
-        
+
         void TryRemoveFromLevelRoot()
         {
             auto l_level = level_root_gos_.lock();
