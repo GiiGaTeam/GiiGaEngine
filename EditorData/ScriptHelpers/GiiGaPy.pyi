@@ -1,8 +1,23 @@
 from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
-__all__ = ['CameraComponent', 'Component', 'Engine', 'GameObject', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Engine', 'GameObject', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class CameraComponent(Component):
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
+        ...
+class CollideInfo:
+    baseOffset: Vector3
+    depthPenetration: float
+    normal: Vector3
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
+        ...
+class CollisionComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
@@ -13,6 +28,8 @@ class Component:
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
     def BeginPlay(self) -> None:
+        ...
+    def Destroy(self) -> None:
         ...
     def Init(self) -> None:
         ...
@@ -39,6 +56,8 @@ class GameObject:
     name: str
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def Destroy(self) -> None:
         ...
     def GetTransformComponent(self) -> ...:
         """

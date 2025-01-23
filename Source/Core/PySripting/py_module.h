@@ -216,7 +216,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                       {
                           self->normal = normal;
                       })
-        .def_property("normal", [](GiiGa::CollideInfo* self)
+        .def_property("depthPenetration", [](GiiGa::CollideInfo* self)
                       {
                           return self->depthPenetration;
                       },
