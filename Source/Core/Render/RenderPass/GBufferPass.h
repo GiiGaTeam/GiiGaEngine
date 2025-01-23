@@ -181,8 +181,8 @@ namespace GiiGa
         ObjectMask filter_wire_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                               .SetShadingModel(ShadingModel::DefaultLit)
                                               .SetBlendMode(BlendMode::Opaque)
-                                              .SetFillMode(FillMode::Wire)
-                                              .SetLightType(LightType::All);
+                                              .SetFillMode(FillMode::Wire);
+                                              //.SetLightType(LightType::All);
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

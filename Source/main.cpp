@@ -67,7 +67,4 @@ int main(int argc, char* argv[])
         DxReportLiveObjects();
         return 1;
     }
-
-
-    return 0;
 }

@@ -193,9 +193,7 @@ namespace GiiGa
         {
             return {
                 .object_mask = mesh_->GetObjectMask()
-                                    .SetFillMode(FillMode::Wire)
-                                    .SetLightType(LightType::Point)
-                                    .SetBlendMode(BlendMode::Debug),
+                                    .SetLightType(LightType::Point),
                 .shaderResource = pointLightShaderRes_
             };
         }

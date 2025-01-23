@@ -44,7 +44,7 @@ namespace GiiGa
         {
             if (uuid == Uuid::Null())
                 return;
-            
+
             if (!GetInstance().uuid_to_any_.contains(uuid))
                 throw std::runtime_error("Failed to RemoveAnyWithUuid, not found uuid!");
             el::Loggers::getLogger(LogWorldQuery)->debug("RemoveAnyWithUuid any with uuid %v", uuid.ToString());
@@ -58,7 +58,7 @@ namespace GiiGa
 
             if (!inst.uuid_to_any_.contains(uuid))
                 throw std::runtime_error("Failed to GetWithUUID, not found uuid!");
-            
+
             auto any = inst.uuid_to_any_.at(uuid);
 
             std::shared_ptr<void> shared_ptr = nullptr;
@@ -117,29 +117,24 @@ namespace GiiGa
             */
         }
 
-        /*
         template <typename T>
-        static std::vector<std::shared_ptr<T>> getComponentsOfType()
+        static std::vector<std::weak_ptr<T>> GetComponentsOfType()
         {
             static_assert(std::is_base_of<IComponent, T>::value, "T must be derived from Component");
 
-            std::type_index typeIndex(typeid(T));
-            std::vector<std::shared_ptr<T>> result;
+            std::vector<std::weak_ptr<T>> result;
 
-            auto it = GetInstance().type_to_components_.find(typeIndex);
-            if (it != GetInstance().type_to_components_.end())
+            for (const auto& [uuid, some] : GetInstance().uuid_to_any_)
             {
-                for (const auto& component : it->second)
+                if (auto castedComponent = std::dynamic_pointer_cast<T>(std::static_pointer_cast<IComponent>(some.lock())))
                 {
-                    if (auto castedComponent = std::dynamic_pointer_cast<T>(component))
-                    {
-                        result.push_back(castedComponent);
-                    }
+                    result.push_back(castedComponent);
                 }
             }
 
+
             return result;
-        }*/
+        }
 
         static std::shared_ptr<ILevelRootGameObjects> GetPersistentLevel()
         {

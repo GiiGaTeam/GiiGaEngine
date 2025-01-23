@@ -15,6 +15,8 @@
 #include<Engine.h>
 #include<EditorAssetDatabase.h>
 
+#include "Physics/PhysicsSystem.h"
+
 namespace GiiGa
 {
     enum class WorldState
@@ -70,6 +72,7 @@ namespace GiiGa
                     comp_to_bp.lock()->BeginPlay();
                 }
             }
+
 
             for (auto& level : GetLevels())
             {
@@ -154,6 +157,7 @@ namespace GiiGa
                 {
                     level->BeginPlay();
                 }
+                GiiGa::PhysicsSystem::BeginPlay();
             }
         }
 
@@ -161,6 +165,12 @@ namespace GiiGa
         {
             if (levels_.size() >= 2)
             {
+                GiiGa::PhysicsSystem::EndPlay();
+                for (auto&& level : levels_)
+                {
+                    level->EndPlay();
+                }
+
                 for (auto& pers_go:levels_[0]->GetRootGameObjects())
                 {
                     for (auto& comp:std::dynamic_pointer_cast<GameObject>(pers_go)->GetComponents())
@@ -171,7 +181,7 @@ namespace GiiGa
                 }
                 
                 std::shared_ptr<LevelAsset> asset = levels_[1]->GetLevelAsset();
-                
+
                 levels_.erase(levels_.begin() + 1);
 
                 AddLevel(asset);

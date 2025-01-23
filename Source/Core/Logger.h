@@ -1,5 +1,6 @@
 #pragma once
-#include<string>;
+#include<string>
+#include<easylogging++.h>
 
 namespace GiiGa
 {
@@ -12,4 +13,5 @@ namespace GiiGa
     const std::string LogWorldQuery = "WorldQuery";
     const std::string LogEditor = "Editor";
     const std::string LogPyScript = "PyScripting";
+    const std::string LogPhysics = "Physics";
 }

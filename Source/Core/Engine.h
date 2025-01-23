@@ -2,11 +2,7 @@
 
 
 #include <pybind11/conduit/wrap_include_python_h.h>
-
-
-
 #include<memory>
-
 #include<ResourceManager.h>
 #include<BaseAssetDatabase.h>
 #include<Input.h>
@@ -92,7 +88,7 @@ namespace GiiGa
         {
             return window_;
         }
-        
+
         std::shared_ptr<ScriptSystem> ScriptSystem()
         {
             return script_system_;

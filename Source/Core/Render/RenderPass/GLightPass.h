@@ -297,13 +297,11 @@ namespace GiiGa
     private:
         ObjectMask filter_pointLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                     .SetLightType(LightType::Point)
-                                                    .SetBlendMode(BlendMode::Debug)
-                                                    .SetFillMode(FillMode::All);
+                                                    .SetBlendMode(BlendMode::Debug);
 
         ObjectMask filter_directionalLight_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                           .SetLightType(LightType::Directional)
-                                                          .SetBlendMode(BlendMode::Debug)
-                                                          .SetFillMode(FillMode::All);
+                                                          .SetBlendMode(BlendMode::Debug);
 
         std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;
         PSO unmark_pso;

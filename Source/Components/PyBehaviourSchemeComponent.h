@@ -48,7 +48,7 @@ namespace GiiGa
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
 
             prop_modifications = script_asset_->GetPropertyAnnotaions();
-
+            
             prop_modifications.SetValuesFromJson(json["PropertyModifications"]);
         }
 

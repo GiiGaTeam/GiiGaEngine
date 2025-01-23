@@ -1,27 +1,15 @@
 #pragma once
 
-
-#include <pybind11/embed.h>
-
-
-
-#include<filesystem>
 #include<memory>
-#include<json/reader.h>
-#include<fstream>
-
 #include<Engine.h>
 #include<Timer.h>
-#include<Misc.h>
 #include<EditorRenderSystem.h>
 #include<EditorAssetDatabase.h>
 #include"World.h"
-#include<TransformComponent.h>
 #include<DDSAssetLoader.h>
 #include<ImageAssetLoader.h>
 #include<MeshAssetLoader.h>
 #include<VertexTypes.h>
-#include<MaterialLoader.h>
 #include<MaterialLoader.h>
 #include<LevelAssetLoader.h>
 #include<PrefabAssetLoader.h>
@@ -44,6 +32,7 @@ namespace GiiGa
                 CheckAssetUpdateQueue();
                 Timer::UpdateTime();
                 World::Tick(static_cast<float>(Timer::GetDeltaTime()));
+                PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
                 render_system_->Tick();
             }
 
@@ -67,6 +56,7 @@ namespace GiiGa
         {
             Engine::Initialize(proj);
             World::Initialize();
+            PhysicsSystem::GetInstance().Initialize();
            
             editor_asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
             resource_manager_->SetDatabase(editor_asset_database_);
@@ -96,6 +86,7 @@ namespace GiiGa
             World::DeInitialize();
             render_system_.reset();
             Engine::DeInitialize();
+            PhysicsSystem::GetInstance().Destroy();
         }
 
         void SetupDefaultLoader()

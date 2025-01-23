@@ -37,6 +37,8 @@ namespace GiiGa
         virtual void Init() = 0;
 
         virtual void BeginPlay() = 0;
+        
+        virtual void EndPlay() = 0;
 
         virtual void Destroy() =0;
 
@@ -45,5 +47,11 @@ namespace GiiGa
         virtual Uuid GetInPrefabUuid() const = 0;
 
         virtual void SetOwner(std::shared_ptr<IGameObject> newOwner) = 0;
+
+        virtual void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) = 0;
+
+        virtual void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) = 0;
+
+        virtual void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) = 0;
     };
 }

@@ -7,9 +7,10 @@
 #include<Uuid.h>
 #include<ITickable.h>
 
-
 namespace GiiGa
 {
+    class CollisionComponent;
+    struct CollideInfo;
     struct IComponent;
 
     struct IGameObject : public ITickable, public std::enable_shared_from_this<IGameObject>
@@ -25,5 +26,11 @@ namespace GiiGa
         virtual void Destroy() =0;
 
         virtual Uuid GetInPrefabUuid() const =0;
+
+        virtual void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) = 0;
+
+        virtual void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) = 0;
+
+        virtual void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) = 0;
     };
 }

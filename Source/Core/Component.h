@@ -54,7 +54,7 @@ namespace GiiGa
 
         virtual ~Component() override
         {
-            el::Loggers::getLogger("")->debug("Component::~Component");
+            //el::Loggers::getLogger("")->debug("Component::~Component");
             WorldQuery::RemoveComponent(this);
             WorldQuery::RemoveAnyWithUuid(uuid_);
         }
@@ -72,6 +72,10 @@ namespace GiiGa
         Uuid GetUuid() const override
         {
             return uuid_;
+        }
+
+        void EndPlay() override
+        {
         }
 
         Uuid GetInPrefabUuid() const override
@@ -116,5 +120,11 @@ namespace GiiGa
             derived_clone->RegisterInWorld();
             prefab_uuid_to_world_uuid[this->GetUuid()] = derived_clone->GetUuid();
         }
+
+    public:
+        //TODO: добавить вызов в скриптах
+        void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override {};
+        void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override {};
+        void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) override {};
     };
 } // namespace GiiGa
