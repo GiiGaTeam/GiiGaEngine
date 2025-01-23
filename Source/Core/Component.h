@@ -74,6 +74,10 @@ namespace GiiGa
             return uuid_;
         }
 
+        void EndPlay() override
+        {
+        }
+
         Uuid GetInPrefabUuid() const override
         {
             return inprefab_uuid_;

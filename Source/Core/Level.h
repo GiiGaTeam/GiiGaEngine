@@ -84,6 +84,14 @@ namespace GiiGa
             }
         }
 
+        void EndPlay()
+        {
+            for (int i = 0; i < root_game_objects_.size(); ++i)
+            {
+                std::dynamic_pointer_cast<GameObject>(root_game_objects_[i])->EndPlay();
+            }
+        }
+
         Json::Value ToJson() const
         {
             Json::Value result;

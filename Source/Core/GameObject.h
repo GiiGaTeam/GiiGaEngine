@@ -73,6 +73,19 @@ namespace GiiGa
                 component->BeginPlay();
             }
         }
+        
+        void EndPlay()
+        {
+            for (auto& kid : children_)
+            {
+                kid->EndPlay();
+            }
+
+            for (auto& component : components_)
+            {
+                component->EndPlay();
+            }
+        }
 
         void RemoveComponent(std::shared_ptr<IComponent> comp) override
         {

@@ -339,9 +339,14 @@ namespace GiiGa
             return std::unique_ptr<VisibilityEntry>(new VisibilityEntry(SceneVisibility::Register(renderable, OrthoTree::BoundingBox3D{min, max})));
         }
 
-        ~VisibilityEntry()
+        void Unregister()
         {
             SceneVisibility::Unregister(entity_index_);
+        }
+
+        ~VisibilityEntry()
+        {
+            Unregister();
         }
 
         void Update(DirectX::BoundingBox aabb)

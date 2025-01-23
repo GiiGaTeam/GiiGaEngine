@@ -164,8 +164,13 @@ namespace GiiGa
         {
             if (levels_.size() >= 2)
             {
+                GiiGa::PhysicsSystem::EndPlay();
+                for (auto&& level : levels_)
+                {
+                    level->EndPlay();
+                }
                 std::shared_ptr<LevelAsset> asset = levels_[1]->GetLevelAsset();
-                
+
                 levels_.erase(levels_.begin() + 1);
 
                 AddLevel(asset);

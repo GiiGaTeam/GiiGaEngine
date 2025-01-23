@@ -61,6 +61,12 @@ namespace GiiGa
             ConstructFunction();
         }
 
+        ~CollisionComponent() override
+        {
+            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            OnUpdateTransform.Unregister(cashed_event_);
+        }
+
         void ConstructFunction()
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
@@ -83,25 +89,36 @@ namespace GiiGa
             return result;
         }
 
+        void ChooseMeshAsset()
+        {
+            if (mesh_)
+            {
+                visibilityEntry_->Unregister();
+            }
+
+            auto rm = Engine::Instance().ResourceManager();
+
+            AssetHandle mesh_asset;
+            switch (collider_type_)
+            {
+            case Cube:
+                mesh_asset = DefaultAssetsHandles::Cube;
+                break;
+            case Sphere:
+                mesh_asset = DefaultAssetsHandles::Sphere;
+                break;
+            }
+            mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(mesh_asset);
+            visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), mesh_->GetAABB());
+        }
+
         void Init() override
         {
             AttachTo(std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent());
 
             if (!mesh_)
             {
-                auto rm = Engine::Instance().ResourceManager();
-
-                AssetHandle mesh_asset;
-                switch (collider_type_)
-                {
-                case Cube:
-                    mesh_asset = DefaultAssetsHandles::Cube;
-                    break;
-                case Sphere:
-                    mesh_asset = DefaultAssetsHandles::Sphere;
-                    break;
-                }
-                mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(mesh_asset);
+                ChooseMeshAsset();
 
                 RegisterInVisibility();
             }
@@ -166,6 +183,7 @@ namespace GiiGa
         {
             OnUpdateType.Invoke(new_type);
             collider_type_ = new_type;
+            ChooseMeshAsset();
         }
 
         ColliderType GetColliderType() const { return collider_type_; }
@@ -191,8 +209,6 @@ namespace GiiGa
 
         void RegisterInVisibility()
         {
-            visibilityEntry_.reset();
-            visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), mesh_->GetAABB());
             if (cashed_event_.isValid())
             {
                 OnUpdateTransform.Unregister(cashed_event_);

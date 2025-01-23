@@ -37,6 +37,8 @@ namespace GiiGa
         virtual void Init() = 0;
 
         virtual void BeginPlay() = 0;
+        
+        virtual void EndPlay() = 0;
 
         virtual void Destroy() =0;
 

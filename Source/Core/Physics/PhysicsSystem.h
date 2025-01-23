@@ -242,12 +242,12 @@ namespace GiiGa
             physics_system.SetBodyActivationListener(&body_activation_listener);
 
             physics_system.SetContactListener(&contact_listener);
-
-            body_interface = std::shared_ptr<JPH::BodyInterface>(&physics_system.GetBodyInterface());
         }
 
         static void Simulate(float dt)
         {
+            auto& body_interface = GetInstance().physics_system.GetBodyInterface();
+
             JPH::JobSystemThreadPool job_system(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
             auto& instance = GetInstance();
             for (auto [uuid, body] : instance.objects_map_)
@@ -255,8 +255,8 @@ namespace GiiGa
                 const auto col_comp = WorldQuery::GetWithUUID<CollisionComponent>(uuid);
                 if (!col_comp) continue;
 
-                JPH::RVec3 position = instance.body_interface->GetCenterOfMassPosition(body->GetID());
-                JPH::Quat rotation = instance.body_interface->GetRotation(body->GetID());
+                JPH::RVec3 position = body_interface.GetCenterOfMassPosition(body->GetID());
+                JPH::Quat rotation = body_interface.GetRotation(body->GetID());
                 col_comp->SetOwnerWorldLocation(JoltVecToVec(position));
                 col_comp->SetOwnerWorldRotation(JoltQuatToQuat(rotation));
             }
@@ -268,6 +268,8 @@ namespace GiiGa
 
         static JPH::Body* RegisterCollision(const std::shared_ptr<CollisionComponent>& collision_comp)
         {
+            auto& body_interface = GetInstance().physics_system.GetBodyInterface();
+
             auto& instance = GetInstance();
             if (!collision_comp) return nullptr;
 
@@ -295,7 +297,7 @@ namespace GiiGa
                 trans = collision_comp->GetWorldTransform();
                 JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
-                body = instance.body_interface->CreateBody(box_settings);
+                body = body_interface.CreateBody(box_settings);
                 break;
             }
             case ColliderType::Sphere:
@@ -315,39 +317,46 @@ namespace GiiGa
 
                 JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
 
-                body = instance.body_interface->CreateBody(sphere_settings);
+                body = body_interface.CreateBody(sphere_settings);
                 break;
             }
             }
 
-            instance.body_interface->AddBody(body->GetID(), JPH::EActivation::DontActivate);
+            body_interface.AddBody(body->GetID(), JPH::EActivation::DontActivate);
             instance.objects_map_.emplace(collision_comp->GetUuid(), body);
             return body;
         }
 
         static void BeginPlay()
         {
+            auto& body_interface = GetInstance().physics_system.GetBodyInterface();
             const auto& collisions = WorldQuery::getComponentsOfType<CollisionComponent>();
             for (const auto& collision : collisions)
             {
                 auto body = RegisterCollision(collision);
                 if (body && collision->GetMotionType() == GiiGa::EMotionType::Dynamic)
                 {
-                    GetInstance().body_interface->SetGravityFactor(body->GetID(), 1.0);
-                    GetInstance().body_interface->ActivateBody(body->GetID());
+                    body_interface.SetGravityFactor(body->GetID(), 1.0);
+                    body_interface.ActivateBody(body->GetID());
                     body->AddForce({0.0f, 9.8f, 0.0f});
                 }
-
             }
 
             GetInstance().physics_system.OptimizeBroadPhase();
         }
 
+        static void EndPlay()
+        {
+            GetInstance().FreshObjects();
+        }
+
         void DestroyBody(const JPH::Body* body) const
         {
+            auto& body_interface = GetInstance().physics_system.GetBodyInterface();
+
             if (!body) return;
-            body_interface->RemoveBody(body->JPH::Body::GetID());
-            body_interface->DeactivateBody(body->JPH::Body::GetID());
+            body_interface.RemoveBody(body->JPH::Body::GetID());
+            body_interface.DeactivateBody(body->JPH::Body::GetID());
         }
 
         void FreshObjects()
@@ -380,7 +389,6 @@ namespace GiiGa
         ObjectLayerPairFilterImpl object_vs_object_layer_filter;
         MyBodyActivationListener body_activation_listener;
         GiiGaContactListener contact_listener;
-        std::shared_ptr<JPH::BodyInterface> body_interface;
         JPH::TempAllocatorImpl* temp_allocator = nullptr;
 
         static inline std::shared_ptr<PhysicsSystem> instance_;
