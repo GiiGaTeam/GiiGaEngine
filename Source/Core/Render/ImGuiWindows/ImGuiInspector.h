@@ -430,7 +430,6 @@ namespace GiiGa
                             }
                             ImGui::EndCombo();
                         }
->>>>>>> origin/main
 
                         if (ImGui::BeginDragDropTarget())
                         {

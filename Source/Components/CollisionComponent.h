@@ -74,15 +74,8 @@ namespace GiiGa
 
         Json::Value DerivedToJson(bool is_prefab_root) override
         {
-            Json::Value result;
-
+            Json::Value result = TransformComponent::DerivedToJson(is_prefab_root);
             result["Type"] = typeid(CollisionComponent).name();
-
-            if (!is_prefab_root)
-                result["Transform"] = transform_.ToJson();
-            else
-                result["Transform"] = Transform{}.ToJson();
-
             result["ColliderType"] = collider_type_;
             result["MotionType"] = static_cast<int32_t>(motion_type_);
 
@@ -166,7 +159,7 @@ namespace GiiGa
         void UpdateGPUData(RenderContext& context) override
         {
             if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<TransformComponent>(shared_from_this()), motion_type_ == EMotionType::Static);
+                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), motion_type_ == EMotionType::Static);
             perObjectData_->UpdateGPUData(context);
 
             UINT SizeInBytes = sizeof(ColorData);
@@ -216,11 +209,9 @@ namespace GiiGa
             cashed_event_ = OnUpdateTransform.Register(
                 [this](const UpdateTransformEvent& e)
                 {
-                    auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
-                    Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
 
-                    origaabb.Transform(origaabb, trans.GetMatrix());
+                    origaabb.Transform(origaabb, GetWorldMatrix());
 
                     visibilityEntry_->Update(origaabb);
                 });

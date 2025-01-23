@@ -273,7 +273,7 @@ namespace GiiGa
             auto& instance = GetInstance();
             if (!collision_comp) return nullptr;
 
-            DirectX::SimpleMath::Vector3 range = collision_comp->GetWorldScale() / 2;
+            DirectX::SimpleMath::Vector3 range = collision_comp->GetWorldScale();
             Transform trans = collision_comp->GetWorldTransform();
             JPH::Body* body = nullptr;
 
@@ -330,11 +330,12 @@ namespace GiiGa
         static void BeginPlay()
         {
             auto& body_interface = GetInstance().physics_system.GetBodyInterface();
-            const auto& collisions = WorldQuery::getComponentsOfType<CollisionComponent>();
+            const auto& collisions = WorldQuery::GetComponentsOfType<CollisionComponent>();
             for (const auto& collision : collisions)
             {
-                auto body = RegisterCollision(collision);
-                if (body && collision->GetMotionType() == GiiGa::EMotionType::Dynamic)
+                if (collision.expired()) continue;
+                auto body = RegisterCollision(collision.lock());
+                if (body && collision.lock()->GetMotionType() == GiiGa::EMotionType::Dynamic)
                 {
                     body_interface.SetGravityFactor(body->GetID(), 1.0);
                     body_interface.ActivateBody(body->GetID());
