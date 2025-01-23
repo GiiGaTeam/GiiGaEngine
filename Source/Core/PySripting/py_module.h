@@ -20,6 +20,7 @@ using namespace DirectX::SimpleMath;
 #include<Logger.h>
 #include<Engine.h>
 #include<Input.h>
+#include<CollisionComponent.h>
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
@@ -153,7 +154,8 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetTransformComponent", [](GiiGa::GameObject* self)
         {
             return self->GetTransformComponent().lock();
-        },"Returns TransformComponent type");
+        }, "Returns TransformComponent type")
+        .def("Destroy", &GiiGa::GameObject::Destroy);
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
@@ -164,7 +166,8 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                       &GiiGa::Component::SetOwner)
         .def("Init", &GiiGa::Component::Init)
         .def("BeginPlay", &GiiGa::Component::BeginPlay)
-        .def("Tick", &GiiGa::Component::Tick);
+        .def("Tick", &GiiGa::Component::Tick)
+        .def("Destroy", &GiiGa::Component::Destroy);
 
     pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
         .def(pybind11::init<>())
@@ -193,5 +196,35 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetParent", &GiiGa::TransformComponent::GetParent);
 
     pybind11::class_<GiiGa::CameraComponent, std::shared_ptr<GiiGa::CameraComponent>, GiiGa::Component>(m, "CameraComponent")
+        .def(pybind11::init<>());
+
+    pybind11::class_<GiiGa::CollideInfo>(m, "CollideInfo")
+        .def(pybind11::init<>())
+        .def_property("baseOffset", [](GiiGa::CollideInfo* self)
+                      {
+                          return self->baseOffset;
+                      },
+                      [](GiiGa::CollideInfo* self, const Vector3& baseOffset)
+                      {
+                          self->baseOffset = baseOffset;
+                      })
+        .def_property("normal", [](GiiGa::CollideInfo* self)
+                      {
+                          return self->normal;
+                      },
+                      [](GiiGa::CollideInfo* self, const Vector3& normal)
+                      {
+                          self->normal = normal;
+                      })
+        .def_property("normal", [](GiiGa::CollideInfo* self)
+                      {
+                          return self->depthPenetration;
+                      },
+                      [](GiiGa::CollideInfo* self, float depthPenetration)
+                      {
+                          self->depthPenetration = depthPenetration;
+                      });
+
+    pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::Component>(m, "CollisionComponent")
         .def(pybind11::init<>());
 }

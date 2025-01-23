@@ -74,6 +74,59 @@ namespace GiiGa
             }
         }
 
+        void OnBeginOverlap(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override
+        {
+            try
+            {
+                PYBIND11_OVERRIDE(
+                    void,
+                    GiiGa::Component,
+                    OnBeginOverlap,
+                    other_comp,
+                    collideInfo
+                );
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Tick %v", e.what());
+            }
+        }
+
+        void OnOverlapping(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo) override
+        {
+            try
+            {
+                PYBIND11_OVERRIDE(
+                    void,
+                    GiiGa::Component,
+                    OnOverlapping,
+                    other_comp,
+                    collideInfo
+                );
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Tick %v", e.what());
+            }
+        }
+
+        void OnEndOverlap(const std::shared_ptr<CollisionComponent>& other_comp) override
+        {
+            try
+            {
+                PYBIND11_OVERRIDE(
+                    void,
+                    GiiGa::Component,
+                    OnEndOverlap,
+                    other_comp
+                );
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::Tick %v", e.what());
+            }
+        }
+
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
         {
             Todo();
