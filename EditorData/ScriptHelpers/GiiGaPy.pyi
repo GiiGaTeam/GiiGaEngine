@@ -1,7 +1,7 @@
 from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
-__all__ = ['CameraComponent', 'Component', 'Engine', 'GameObject', 'JsonValue', 'RenderSystem', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['CameraComponent', 'Component', 'Engine', 'GameObject', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -41,6 +41,23 @@ class GameObject:
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
     def GetTransformComponent(self) -> ...:
+        """
+        Returns TransformComponent type
+        """
+class Input:
+    @staticmethod
+    def GetMouseDelta() -> ...:
+        ...
+    @staticmethod
+    @typing.overload
+    def IsKeyHeld(arg0: MouseButton) -> bool:
+        ...
+    @staticmethod
+    @typing.overload
+    def IsKeyHeld(arg0: KeyCode) -> bool:
+        ...
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
         ...
 class JsonValue:
     @staticmethod
@@ -60,6 +77,95 @@ class JsonValue:
         ...
     @typing.overload
     def __init__(self, arg0: str) -> None:
+        ...
+class KeyCode:
+    """
+    Members:
+    
+      KeyW
+    
+      KeyA
+    
+      KeyS
+    
+      KeyD
+    
+      KeySpace
+    """
+    KeyA: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyA: 1>
+    KeyD: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyD: 4>
+    KeyS: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyS: 19>
+    KeySpace: typing.ClassVar[KeyCode]  # value = <KeyCode.KeySpace: 59>
+    KeyW: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyW: 23>
+    __members__: typing.ClassVar[dict[str, KeyCode]]  # value = {'KeyW': <KeyCode.KeyW: 23>, 'KeyA': <KeyCode.KeyA: 1>, 'KeyS': <KeyCode.KeyS: 19>, 'KeyD': <KeyCode.KeyD: 4>, 'KeySpace': <KeyCode.KeySpace: 59>}
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __eq__(self, other: typing.Any) -> bool:
+        ...
+    def __getstate__(self) -> int:
+        ...
+    def __hash__(self) -> int:
+        ...
+    def __index__(self) -> int:
+        ...
+    def __init__(self, value: int) -> None:
+        ...
+    def __int__(self) -> int:
+        ...
+    def __ne__(self, other: typing.Any) -> bool:
+        ...
+    def __repr__(self) -> str:
+        ...
+    def __setstate__(self, state: int) -> None:
+        ...
+    def __str__(self) -> str:
+        ...
+    @property
+    def name(self) -> str:
+        ...
+    @property
+    def value(self) -> int:
+        ...
+class MouseButton:
+    """
+    Members:
+    
+      Left
+    
+      Right
+    """
+    Left: typing.ClassVar[MouseButton]  # value = <MouseButton.Left: 1>
+    Right: typing.ClassVar[MouseButton]  # value = <MouseButton.Right: 2>
+    __members__: typing.ClassVar[dict[str, MouseButton]]  # value = {'Left': <MouseButton.Left: 1>, 'Right': <MouseButton.Right: 2>}
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __eq__(self, other: typing.Any) -> bool:
+        ...
+    def __getstate__(self) -> int:
+        ...
+    def __hash__(self) -> int:
+        ...
+    def __index__(self) -> int:
+        ...
+    def __init__(self, value: int) -> None:
+        ...
+    def __int__(self) -> int:
+        ...
+    def __ne__(self, other: typing.Any) -> bool:
+        ...
+    def __repr__(self) -> str:
+        ...
+    def __setstate__(self, state: int) -> None:
+        ...
+    def __str__(self) -> str:
+        ...
+    @property
+    def name(self) -> str:
+        ...
+    @property
+    def value(self) -> int:
         ...
 class RenderSystem:
     @staticmethod
@@ -211,3 +317,10 @@ def Vector3FromJson(arg0: JsonValue) -> Vector3:
     ...
 def Vector3ToJson(arg0: Vector3) -> JsonValue:
     ...
+KeyA: KeyCode  # value = <KeyCode.KeyA: 1>
+KeyD: KeyCode  # value = <KeyCode.KeyD: 4>
+KeyS: KeyCode  # value = <KeyCode.KeyS: 19>
+KeySpace: KeyCode  # value = <KeyCode.KeySpace: 59>
+KeyW: KeyCode  # value = <KeyCode.KeyW: 23>
+Left: MouseButton  # value = <MouseButton.Left: 1>
+Right: MouseButton  # value = <MouseButton.Right: 2>

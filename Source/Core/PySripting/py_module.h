@@ -19,6 +19,7 @@ using namespace DirectX::SimpleMath;
 #include<CameraComponent.h>
 #include<Logger.h>
 #include<Engine.h>
+#include<Input.h>
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
@@ -31,6 +32,30 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                     },
                     pybind11::return_value_policy::reference)
         .def("RenderSystem", &GiiGa::Engine::RenderSystem, pybind11::return_value_policy::reference_internal);
+
+    pybind11::enum_<GiiGa::MouseButton>(m, "MouseButton")
+        .value("Left", GiiGa::MouseButton::MouseLeft)
+        .value("Right", GiiGa::MouseButton::MouseRight)
+        .export_values();
+
+    pybind11::enum_<GiiGa::KeyCode>(m, "KeyCode")
+        .value("KeyW", GiiGa::KeyCode::KeyW)
+        .value("KeyA", GiiGa::KeyCode::KeyA)
+        .value("KeyS", GiiGa::KeyCode::KeyS)
+        .value("KeyD", GiiGa::KeyCode::KeyD)
+        .value("KeySpace", GiiGa::KeyCode::KeySpace)
+        .export_values();
+
+    pybind11::class_<GiiGa::Input>(m, "Input")
+        .def_static("GetMouseDelta", &GiiGa::Input::GetMouseDelta)
+        .def_static("IsKeyHeld", [](GiiGa::MouseButton button)
+        {
+            return GiiGa::Input::IsKeyHeld(button);
+        })
+        .def_static("IsKeyHeld", [](GiiGa::KeyCode button)
+        {
+            return GiiGa::Input::IsKeyHeld(button);
+        });
 
     pybind11::class_<GiiGa::Uuid>(m, "Uuid")
         .def(pybind11::init<>())
@@ -128,7 +153,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetTransformComponent", [](GiiGa::GameObject* self)
         {
             return self->GetTransformComponent().lock();
-        });
+        },"Returns TransformComponent type");
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
