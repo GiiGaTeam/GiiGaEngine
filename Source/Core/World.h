@@ -161,6 +161,15 @@ namespace GiiGa
         {
             if (levels_.size() >= 2)
             {
+                for (auto& pers_go:levels_[0]->GetRootGameObjects())
+                {
+                    for (auto& comp:std::dynamic_pointer_cast<GameObject>(pers_go)->GetComponents())
+                        if (auto cam_comp = std::dynamic_pointer_cast<CameraComponent>(comp))
+                        {
+                            Engine::Instance().RenderSystem()->SetCamera(cam_comp);
+                        }
+                }
+                
                 std::shared_ptr<LevelAsset> asset = levels_[1]->GetLevelAsset();
                 
                 levels_.erase(levels_.begin() + 1);

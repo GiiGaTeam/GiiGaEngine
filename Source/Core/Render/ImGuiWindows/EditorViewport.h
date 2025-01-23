@@ -73,6 +73,12 @@ namespace GiiGa
             std::dynamic_pointer_cast<GameObject>(cameraComponent->GetOwner())->GetTransformComponent().lock()->SetRotation({-21, -40, 0});
         }
 
+        void SetCamera(std::shared_ptr<CameraComponent> camera) override
+        {
+            camera_ = std::dynamic_pointer_cast<GameObject>(camera->GetOwner());
+            camera->SetAspect(viewport_size_.x / viewport_size_.y);
+        }
+
         RenderPassViewData GetCameraInfo() override
         {
             return RenderPassViewData{

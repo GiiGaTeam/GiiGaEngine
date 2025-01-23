@@ -46,6 +46,8 @@ namespace GiiGa
             CreateRenderTargetResult();
         }
 
+        virtual void SetCamera(std::shared_ptr<CameraComponent> camera) =0;
+
         virtual void CreateRenderTargetResult()
         {
             {

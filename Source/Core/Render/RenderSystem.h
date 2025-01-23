@@ -13,12 +13,18 @@
 #include<ShaderManager.h>
 #include<Viewport.h>
 #include<IUpdateGPUData.h>
+#include<CameraComponent.h>
 
 namespace GiiGa
 {
     class RenderSystem
     {
     public:
+        RenderSystem(const RenderSystem& other) = delete;
+        RenderSystem(RenderSystem&& other) noexcept = delete;
+        RenderSystem& operator=(const RenderSystem& other) = delete;
+        RenderSystem& operator=(RenderSystem&& other) noexcept = delete;
+
         virtual ~RenderSystem()
         {
             context_.ContextIdle();
@@ -33,6 +39,8 @@ namespace GiiGa
             window.OnWindowResize.Register(std::bind(&RenderSystem::ResizeSwapChain, this, std::placeholders::_1));
             //shaderManager_ = std::make_unique<ShaderManager>();
         }
+
+        virtual void SetCamera(std::shared_ptr<CameraComponent> camera) =0;
 
         virtual void Initialize() = 0;
 

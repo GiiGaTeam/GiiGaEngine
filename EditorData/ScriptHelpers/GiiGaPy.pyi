@@ -1,7 +1,13 @@
 from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
-__all__ = ['Component', 'GameObject', 'JsonValue', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['CameraComponent', 'Component', 'Engine', 'GameObject', 'JsonValue', 'RenderSystem', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+class CameraComponent(Component):
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
+        ...
 class Component:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -19,6 +25,15 @@ class Component:
         ...
     @owner.setter
     def owner(self, arg1: ...) -> None:
+        ...
+class Engine:
+    @staticmethod
+    def Instance() -> Engine:
+        ...
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def RenderSystem(self) -> RenderSystem:
         ...
 class GameObject:
     name: str
@@ -45,6 +60,12 @@ class JsonValue:
         ...
     @typing.overload
     def __init__(self, arg0: str) -> None:
+        ...
+class RenderSystem:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def SetCamera(self, arg0: ...) -> None:
         ...
 class Transform:
     __hash__: typing.ClassVar[None] = None

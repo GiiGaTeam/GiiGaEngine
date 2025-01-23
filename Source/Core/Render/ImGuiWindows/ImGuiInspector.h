@@ -116,6 +116,15 @@ namespace GiiGa
                         }
                         ImGui::CloseCurrentPopup();
                     }
+                    
+                    if (ImGui::MenuItem("Camera Component"))
+                    {
+                        if (auto l_go = editorContext_->selectedGameObject.lock())
+                        {
+                            l_go->CreateComponent<CameraComponent>();
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
 
                     ImGui::EndPopup();
                 }

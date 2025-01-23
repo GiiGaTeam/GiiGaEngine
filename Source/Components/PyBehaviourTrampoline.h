@@ -51,6 +51,10 @@ namespace GiiGa
             {
                 el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::BeginPlay %v", e.what());
             }
+            catch (std::exception& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->debug("PyBehaviourTrampoline::BeginPlay %v", e.what());
+            }
         }
 
         void Tick(float dt) override
@@ -121,7 +125,7 @@ namespace GiiGa
                     std::shared_ptr<IGameObject> value = WorldQuery::GetWithUUID<IGameObject>(uuid);
                     setattr(pybind11::cast(this),
                             pybind11::cast(name),
-                            pybind11::cast(value));
+                            pybind11::cast(value, pybind11::return_value_policy::reference));
                 }
                 else if (Engine::Instance().ScriptSystem()->IsTypeComponent(prop.script_type))
                 {

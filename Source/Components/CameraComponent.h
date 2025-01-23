@@ -59,6 +59,46 @@ namespace GiiGa
 
         Matrix view_;
 
+        Camera() = default;
+
+        Camera(CameraType type, float fov, float aspect, float width, float height, float in_near, float in_far):
+            type_(type), FOV_(fov), aspect_(aspect), width_(width), height_(height), near_(in_near), far_(in_far)
+        {
+        }
+
+        Camera(Json::Value& json)
+        {
+            if (json["Type"].asString() == "Perspective")
+                type_ = Perspective;
+            else if (json["Type"].asString() == "Orthographic")
+                type_ = Orthographic;
+
+            FOV_ = json["FOV"].asFloat();
+            aspect_ = json["aspect"].asFloat();
+            width_ = json["width"].asFloat();
+            height_ = json["height"].asFloat();
+            near_ = json["near"].asFloat();
+            far_ = json["far"].asFloat();
+        }
+
+        Json::Value ToJson()
+        {
+            Json::Value json;
+            if (type_ == Perspective)
+                json["Type"] = "Perspective";
+            else if (type_ == Orthographic)
+                json["Type"] = "Orthographic";
+
+            json["FOV"] = FOV_;
+            json["aspect"] = aspect_;
+            json["width"] = width_;
+            json["height"] = height_;
+            json["near"] = near_;
+            json["far"] = far_;
+
+            return json;
+        }
+
         Matrix GetView() const
         {
             return view_;
@@ -110,6 +150,20 @@ namespace GiiGa
             camera_ = Camera{type, FOV, aspect, width, height, Near, Far};
         };
 
+        CameraComponent(Json::Value json, bool roll_id = false):
+            Component(json, roll_id)
+        {
+            camera_ = Camera(json["Camera"]);
+        }
+
+        ::Json::Value DerivedToJson(bool is_prefab_root) override
+        {
+            Json::Value json;
+            json["Type"] = typeid(CameraComponent).name();
+            json["Camera"] = camera_.ToJson();
+            return json;
+        }
+
         void SetType(CameraType type) { camera_.type_ = type; }
 
         void SetFOVinDeg(float FOV) { camera_.FOV_ = FOV; }
@@ -133,12 +187,10 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            
         }
 
         void RestoreFromLevelJson(const ::Json::Value&) override
         {
-            Todo();
         }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid, const std::optional<std::unordered_map<Uuid, Uuid>>
@@ -156,7 +208,7 @@ namespace GiiGa
         {
         }
 
-        std::vector<std::pair<PropertyModificationKey,PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
+        std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent>) const override
         {
             Todo();
             return {};
@@ -165,12 +217,6 @@ namespace GiiGa
         void ApplyModifications(const PrefabPropertyModifications& modifications) override
         {
             Todo();
-        }
-
-        ::Json::Value DerivedToJson(bool is_prefab_root) override
-        {
-            Todo();
-            return Json::Value();
         }
 
         void Tick(float dt) override

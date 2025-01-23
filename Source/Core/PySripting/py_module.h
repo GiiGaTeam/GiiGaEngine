@@ -16,10 +16,22 @@ using namespace DirectX::SimpleMath;
 #include<TransformComponent.h>
 #include<Uuid.h>
 #include<DXMathUtils.h>
+#include<CameraComponent.h>
 #include<Logger.h>
+#include<Engine.h>
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
+    pybind11::class_<GiiGa::RenderSystem, std::shared_ptr<GiiGa::RenderSystem>>(m, "RenderSystem")
+        .def("SetCamera", &GiiGa::RenderSystem::SetCamera);
+
+    pybind11::class_<GiiGa::Engine>(m, "Engine")
+        .def_static("Instance", []()-> GiiGa::Engine& {
+                        return GiiGa::Engine::Instance();
+                    },
+                    pybind11::return_value_policy::reference)
+        .def("RenderSystem", &GiiGa::Engine::RenderSystem, pybind11::return_value_policy::reference_internal);
+
     pybind11::class_<GiiGa::Uuid>(m, "Uuid")
         .def(pybind11::init<>())
         .def("__str__", &GiiGa::Uuid::ToString);
@@ -154,4 +166,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("SetWorldScale", &GiiGa::TransformComponent::SetWorldScale)
         .def("AddWorldScale", &GiiGa::TransformComponent::AddWorldScale)
         .def("GetParent", &GiiGa::TransformComponent::GetParent);
+
+    pybind11::class_<GiiGa::CameraComponent, std::shared_ptr<GiiGa::CameraComponent>, GiiGa::Component>(m, "CameraComponent")
+        .def(pybind11::init<>());
 }

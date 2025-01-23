@@ -46,6 +46,10 @@ namespace GiiGa
                 {
                     gameObject->CreateComponent<PointLightComponent>(comp_js, roll_id);
                 }
+                else if (comp_js["Type"].asString() == typeid(CameraComponent).name())
+                {
+                    gameObject->CreateComponent<CameraComponent>(comp_js, roll_id);
+                }
             }
         }
 
@@ -80,6 +84,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(PointLightComponent).name())
                 {
                     gameObject->CreateComponent<PointLightComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(CameraComponent).name())
+                {
+                    gameObject->CreateComponent<CameraComponent>(comp_js, roll_id);
                 }
 
                 prefab_uuid_to_world_uuid[new_comp->GetInPrefabUuid()] = new_comp->GetUuid();
