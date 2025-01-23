@@ -17,9 +17,6 @@ namespace GiiGa
 {
     using namespace DirectX::SimpleMath;
 
-    struct UpdateTransformEvent
-    {
-    };
 
 #pragma region TransfromStructure
     struct Transform
@@ -384,7 +381,7 @@ namespace GiiGa
             Matrix world_to_local = pref_world_matrix.Invert() * local_matrix_;
             local_matrix_ = world_matrix_ * world_to_local;
             transform_ = Transform::TransformFromMatrix(local_matrix_);
-            OnUpdateTransform.Invoke(UpdateTransformEvent{});
+            OnUpdateTransform.Invoke(std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
         }
 
         Vector3 GetWorldLocation() const
@@ -408,6 +405,11 @@ namespace GiiGa
         Vector3 GetWorldRotation() const
         {
             return Transform::TransformFromMatrix(world_matrix_).GetRotation();
+        }
+
+        Quaternion GetWorldQuatRotation() const
+        {
+            return Transform::TransformFromMatrix(world_matrix_).rotate_;
         }
 
         virtual void SetWorldRotation(const Vector3& rotation)
@@ -461,7 +463,7 @@ namespace GiiGa
             if (parent.expired() || parent.lock() == parent_.lock()) return;
             if (!parent_.expired()) Detach();
             parent_ = parent;
-            cashed_event_ = parent_.lock()->OnUpdateTransform.Register([this](const UpdateTransformEvent& e) { ParentUpdateTransform(e); });
+            cashed_event_ = parent_.lock()->OnUpdateTransform.Register([this](const std::shared_ptr<TransformComponent>& e) { ParentUpdateTransform(e); });
             UpdateTransformMatrices();
         }
 
@@ -473,7 +475,7 @@ namespace GiiGa
             UpdateTransformMatrices();
         }
 
-        EventDispatcher<UpdateTransformEvent> OnUpdateTransform;
+        EventDispatcher<std::shared_ptr<TransformComponent>> OnUpdateTransform;
 
         bool attach_translation = true;
         bool attach_rotate = true;
@@ -485,7 +487,7 @@ namespace GiiGa
         Matrix world_matrix_;
         Matrix local_matrix_;
         std::weak_ptr<TransformComponent> parent_;
-        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+        EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
 
     private:
         void UpdateTransformMatrices()
@@ -502,7 +504,7 @@ namespace GiiGa
                 CalcWorldTransformMatrix();
                 is_dirty_ = false;
             }
-            OnUpdateTransform.Invoke(UpdateTransformEvent{});
+            OnUpdateTransform.Invoke(std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
         }
 
         void CalcWorldTransformMatrix()
@@ -550,7 +552,7 @@ namespace GiiGa
             }
         }
 
-        void ParentUpdateTransform(const UpdateTransformEvent& e)
+        void ParentUpdateTransform(const std::shared_ptr<TransformComponent>& e)
         {
             is_dirty_ = true;
             UpdateTransformMatrices();

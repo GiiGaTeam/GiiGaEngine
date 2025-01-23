@@ -243,6 +243,7 @@
     <ClInclude Include="Source\Core\EventSystem.h" />
     <ClInclude Include="Source\Core\GameEngine.h" />
     <ClInclude Include="Source\Core\GameObject.h" />
+    <ClInclude Include="Source\Core\ICollision.h" />
     <ClInclude Include="Source\Core\IComponent.h" />
     <ClInclude Include="Source\Core\IGameObject.h" />
     <ClInclude Include="Source\Core\ILevelRootGameObjects.h" />

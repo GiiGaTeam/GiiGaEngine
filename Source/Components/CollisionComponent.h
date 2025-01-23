@@ -7,6 +7,8 @@
 #include <json/value.h>
 #include "SceneVisibility.h"
 #include "Engine.h"
+#include "ICollision.h"
+#include "Physics/PhysicsSystem.h"
 
 
 namespace GiiGa
@@ -14,32 +16,6 @@ namespace GiiGa
     struct alignas(256) ColorData
     {
         DirectX::SimpleMath::Vector3 color = {0.5f, 0.0f, 0.5f};
-    };
-
-    enum class EMotionType
-    {
-        Static,    ///< Non movable
-        Kinematic, ///< Movable using velocities only, does not respond to forces
-        Dynamic,   ///< Responds to forces as a normal physics object
-    };
-
-    enum ColliderType
-    {
-        Cube = 0,
-        Sphere = 1,
-    };
-
-    enum Layer
-    {
-        NoMoving = 0,
-        Moving = 1,
-    };
-
-    struct CollideInfo
-    {
-        Vector3 baseOffset;
-        Vector3 normal;
-        float depthPenetration;
     };
 
     class CollisionShaderResource : public IObjectShaderResource
@@ -55,7 +31,7 @@ namespace GiiGa
         std::shared_ptr<BufferView<Constant>> colorCBV_;
     };
 
-    class CollisionComponent : public TransformComponent, public IRenderable, public IUpdateGPUData
+    class CollisionComponent : public IRenderable, public IUpdateGPUData, public ICollision
     {
     public:
         CollisionComponent()
@@ -66,18 +42,20 @@ namespace GiiGa
             ConstructFunction();
         }
 
-        CollisionComponent(const Json::Value& json, bool roll_id = false) : TransformComponent(json, roll_id),
+        CollisionComponent(const Json::Value& json, bool roll_id = false) : ICollision(json, roll_id),
                                                                             colorShaderRes_(std::make_shared<CollisionShaderResource>())
         {
             motion_type_ = static_cast<EMotionType>(json["MotionType"].asInt());
             collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
             layer_ = static_cast<Layer>(json["Layer"].asInt());
+            is_gravity_active_ = static_cast<Layer>(json["ActiveGravity"].asBool());
             ConstructFunction();
         }
 
         ~CollisionComponent() override
         {
             Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            PhysicsSystem::UnRegisterCollision(this);
             OnUpdateTransform.Unregister(cashed_event_);
         }
 
@@ -93,6 +71,7 @@ namespace GiiGa
             result["ColliderType"] = collider_type_;
             result["MotionType"] = static_cast<int32_t>(motion_type_);
             result["Layer"] = layer_;
+            result["ActiveGravity"] = is_gravity_active_;
 
             return result;
         }
@@ -132,12 +111,12 @@ namespace GiiGa
             }
         }
 
-        void SetOwnerWorldLocation(DirectX::SimpleMath::Vector3 loc)
+        void SetOwnerWorldLocation(DirectX::SimpleMath::Vector3 loc) override
         {
             if (!parent_.expired()) parent_.lock()->SetWorldLocation(loc);
         };
 
-        void SetOwnerWorldRotation(DirectX::SimpleMath::Quaternion quat)
+        void SetOwnerWorldRotation(DirectX::SimpleMath::Quaternion quat) override
         {
             if (!parent_.expired()) parent_.lock()->SetWorldRotation(quat);
         };
@@ -145,6 +124,8 @@ namespace GiiGa
         void BeginPlay() override
         {
             TransformComponent::BeginPlay();
+
+            RegisterInPhysics();
         }
 
         void Tick(float dt) override
@@ -187,47 +168,70 @@ namespace GiiGa
             colorShaderRes_->colorCBV_ = context.AllocateDynamicConstantView(span, desc);
         }
 
-        void SetColliderType(ColliderType new_type)
+        void SetColliderType(ColliderType new_type) override
         {
             OnUpdateType.Invoke(new_type);
             collider_type_ = new_type;
             ChooseMeshAsset();
         }
 
-        ColliderType GetColliderType() const { return collider_type_; }
+        ColliderType GetColliderType() const override { return collider_type_; }
 
-        EMotionType GetMotionType() const { return motion_type_; }
+        EMotionType GetMotionType() const override { return motion_type_; }
 
-        void SetMotionType(EMotionType motion_type) { motion_type_ = motion_type; }
+        void SetMotionType(EMotionType motion_type) override { motion_type_ = motion_type; }
 
-        Layer GetLayer() const { return layer_; }
+        Layer GetLayer() const override { return layer_; }
 
-        void SetLayer(Layer layer) { layer_ = layer; }
+        void SetLayer(Layer layer) override { layer_ = layer; }
 
-        EventDispatcher<ColliderType> OnUpdateType;
+        bool IsGravityActive() const override { return is_gravity_active_; }
 
-        void OnContactAdded(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo)
+        void SetGravityActive(bool gravity) override { is_gravity_active_ = gravity; }
+
+        void OnContactAdded(const std::shared_ptr<ICollision>& other_comp, const CollideInfo& collideInfo) override
         {
             if (!other_comp || other_comp == shared_from_this()) return;
-            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+            auto col_comp = std::dynamic_pointer_cast<CollisionComponent>(other_comp);
+            if (col_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
 
-            GetOwner()->OnBeginOverlap(other_comp, collideInfo);
+            GetOwner()->OnBeginOverlap(col_comp, collideInfo);
         }
 
-        void OnContactPersisted(const std::shared_ptr<CollisionComponent>& other_comp, const CollideInfo& collideInfo)
+        void OnContactPersisted(const std::shared_ptr<ICollision>& other_comp, const CollideInfo& collideInfo) override
         {
             if (!other_comp || other_comp == shared_from_this()) return;
-            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+            auto col_comp = std::dynamic_pointer_cast<CollisionComponent>(other_comp);
+            if (col_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
 
-            GetOwner()->OnOverlapping(other_comp, collideInfo);
+            GetOwner()->OnOverlapping(col_comp, collideInfo);
         }
 
-        void OnContactRemoved(const std::shared_ptr<CollisionComponent>& other_comp)
+        void OnContactRemoved(const std::shared_ptr<ICollision>& other_comp) override
         {
             if (!other_comp || other_comp == shared_from_this()) return;
-            if (other_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
+            auto col_comp = std::dynamic_pointer_cast<CollisionComponent>(other_comp);
+            if (col_comp->GetOwner() == GetOwner() && !canCollideSelf_) return;
 
-            GetOwner()->OnEndOverlap(other_comp);
+            GetOwner()->OnEndOverlap(col_comp);
+        }
+
+        void AddForce(const DirectX::SimpleMath::Vector3& force) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().AddForce(body_id_, VecToJoltVec(force));
+        }
+
+        void AddImpulse(const DirectX::SimpleMath::Vector3& impulse) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().AddImpulse(body_id_, VecToJoltVec(impulse));
+        }
+
+        void AddVelocity(const DirectX::SimpleMath::Vector3& velocity) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().AddLinearVelocity(body_id_, VecToJoltVec(velocity));
         }
 
         bool canCollideSelf_ = false;
@@ -236,6 +240,7 @@ namespace GiiGa
         ColliderType collider_type_;
         EMotionType motion_type_;
         Layer layer_;
+        bool is_gravity_active_;
 
         std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;
@@ -244,7 +249,9 @@ namespace GiiGa
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         std::shared_ptr<PerObjectData> perObjectData_;
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
-        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+        EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
+
+        JPH::BodyID body_id_;
 
         void RegisterInVisibility()
         {
@@ -253,7 +260,7 @@ namespace GiiGa
                 OnUpdateTransform.Unregister(cashed_event_);
             }
             cashed_event_ = OnUpdateTransform.Register(
-                [this](const UpdateTransformEvent& e)
+                [this](const std::shared_ptr<TransformComponent>& e)
                 {
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
 
@@ -261,6 +268,11 @@ namespace GiiGa
 
                     visibilityEntry_->Update(origaabb);
                 });
+        }
+
+        void RegisterInPhysics()
+        {
+            body_id_ = PhysicsSystem::RegisterCollision(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()));
         }
     };
 }

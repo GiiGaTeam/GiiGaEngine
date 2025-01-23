@@ -782,6 +782,12 @@ namespace GiiGa
             {
                 comp->SetLayer(static_cast<Layer>(layer));
             }
+
+            bool gravite = comp->IsGravityActive();
+            if (ImGui::Checkbox("Is Gravit Active", &gravite))
+            {
+                comp->SetGravityActive(gravite);
+            }
         }
 
         void ComponentContextMenu(std::shared_ptr<IComponent> comp)

@@ -272,7 +272,7 @@ namespace GiiGa
     private:
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
-        EventHandle<UpdateTransformEvent> cashed_event_ = EventHandle<UpdateTransformEvent>::Null();
+        EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
         std::shared_ptr<PerObjectData> perObjectData_;
         std::unique_ptr<GPULocalResource> poinLightRes;
         std::shared_ptr<PointLightShaderResource> pointLightShaderRes_;
@@ -289,7 +289,7 @@ namespace GiiGa
                 std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Unregister(cashed_event_);
             }
             cashed_event_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Register(
-                [this](const UpdateTransformEvent& e)
+                [this](const std::shared_ptr<TransformComponent>& e)
                 {
                     auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
                     Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();

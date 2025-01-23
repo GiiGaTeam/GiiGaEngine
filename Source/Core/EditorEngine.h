@@ -32,7 +32,7 @@ namespace GiiGa
                 CheckAssetUpdateQueue();
                 Timer::UpdateTime();
                 World::Tick(static_cast<float>(Timer::GetDeltaTime()));
-                PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
+                if (World::GetInstance().GetState() == WorldState::Play) PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
                 render_system_->Tick();
             }
 
@@ -57,14 +57,14 @@ namespace GiiGa
             Engine::Initialize(proj);
             World::Initialize();
             PhysicsSystem::GetInstance().Initialize();
-           
+
             editor_asset_database_ = std::make_shared<EditorAssetDatabase>(proj);
             resource_manager_->SetDatabase(editor_asset_database_);
             asset_database_ = editor_asset_database_;
 
             editor_asset_database_->Initialize();
             SetupDefaultLoader();
-            
+
             editor_asset_database_->StartProjectWatcher();
 
             render_system_ = std::make_shared<EditorRenderSystem>(*window_);
@@ -78,10 +78,9 @@ namespace GiiGa
 
         void DeInitialize() override
         {
-
             editor_asset_database_->Shutdown();
             editor_asset_database_->SaveRegistry();
-            
+
             editor_asset_database_.reset();
             World::DeInitialize();
             render_system_.reset();
