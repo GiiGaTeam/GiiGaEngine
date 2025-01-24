@@ -38,6 +38,7 @@ namespace GiiGa
     {
         NoMoving = 0,
         Moving = 1,
+        Trigger = 2,
     };
 
 

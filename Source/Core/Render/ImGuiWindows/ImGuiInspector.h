@@ -775,7 +775,7 @@ namespace GiiGa
             }
 
             static const char* layerNames[] = {
-                "NoMoving", "Moving"
+                "NoMoving", "Moving", "Trigger"
             };
             int layer = comp->GetLayer();
             if (ImGui::Combo("Layer", &layer, layerNames, IM_ARRAYSIZE(layerNames)))
@@ -784,7 +784,7 @@ namespace GiiGa
             }
 
             bool gravite = comp->IsGravityActive();
-            if (ImGui::Checkbox("Is Gravit Active", &gravite))
+            if (ImGui::Checkbox("Is Gravity Active", &gravite))
             {
                 comp->SetGravityActive(gravite);
             }
