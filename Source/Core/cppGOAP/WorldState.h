@@ -16,9 +16,9 @@ namespace goap
 {
     struct WorldState
     {
-        float priority_;           // useful if this is a goal state, to distinguish from other possible goals
-        std::string name_;         // the human-readable name of the state
-        std::map<int, bool> vars_; // the variables that in aggregate describe a worldstate
+        float priority_;                   // useful if this is a goal state, to distinguish from other possible goals
+        std::string name_;                 // the human-readable name of the state
+        std::unordered_map<std::string, bool> vars_; // the variables that in aggregate describe a worldstate
 
         WorldState(const std::string name = ""):
             priority_(0), name_(name)
@@ -31,7 +31,7 @@ namespace goap
          @param var_id the unique ID of the state variable
          @param value the boolean value of the variable
          */
-        void setVariable(const int var_id, const bool value)
+        void setVariable(const std::string& var_id, const bool value)
         {
             vars_[var_id] = value;
         }
@@ -41,7 +41,7 @@ namespace goap
          @param var_id the unique ID of the state variable
          @return the value of the variable
         */
-        bool getVariable(const int var_id) const
+        bool getVariable(const std::string& var_id) const
         {
             return vars_.at(var_id);
         }
