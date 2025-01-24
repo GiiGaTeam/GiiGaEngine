@@ -20,6 +20,8 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
 
 // STL includes
 #include <iostream>
@@ -174,8 +176,6 @@ namespace GiiGa
     class MyBodyActivationListener : public JPH::BodyActivationListener
     {
     public:
-
-        
         virtual void OnBodyActivated(const JPH::BodyID& inBodyID, JPH::uint64 inBodyUserData) override
         {
             el::Loggers::getLogger(LogPhysics)->debug("A body got activated");
@@ -187,21 +187,37 @@ namespace GiiGa
         }
     };
 
+    struct ShapeCastResult
+    {
+        std::shared_ptr<ICollision> collisionComponent;
+    };
+    
+
+    class CastShapeCollector : public JPH::CastShapeCollector
+    {
+    public:
+        void AddHit(const ResultType& inResult) override
+        {
+            results.push_back(inResult);
+        }
+
+        std::vector<ResultType> results;
+    };
+
     class PhysicsSystem
     {
         // An example contact listener
         class GiiGaContactListener : public JPH::ContactListener
         {
         public:
-            
-            virtual JPH::ValidateResult	OnContactValidate(const JPH::Body &inBody1, const JPH::Body &inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult &inCollisionResult) override
+            virtual JPH::ValidateResult OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override
             {
                 el::Loggers::getLogger(LogPhysics)->debug("Contact validate callback");
 
                 // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
                 return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
             }
-            
+
             virtual void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
             {
                 el::Loggers::getLogger(LogPhysics)->debug("A contact was added");
@@ -403,6 +419,35 @@ namespace GiiGa
                 GetInstance().update_transform_cashed_.erase(collision_comp->GetUuid());
                 GetInstance().body_collision_map_.erase(GetInstance().collision_body_map_.at(collision_comp->GetUuid()));
                 GetInstance().collision_body_map_.erase(collision_comp->GetUuid());
+            }
+        }
+
+        static ShapeCastResult ShapeCast(float sphereRadius, Vector3 startPositionD, Vector3 endPositionD)
+        {
+            JPH::SphereShape sphereShape(sphereRadius);
+
+            JPH::Vec3 startPosition = VecToJoltVec(startPositionD);
+            JPH::Vec3 endPosition = VecToJoltVec(endPositionD);
+            JPH::Vec3 sweepDirection = (endPosition - startPosition).Normalized();
+            float maxDistance = (endPosition - startPosition).Length();
+
+            // Define motion
+            JPH::RShapeCast shapeCast(&sphereShape, JPH::Vec3(1, 1, 1), JPH::Mat44::sIdentity(), sweepDirection * maxDistance);
+
+            // Prepare for the result
+            JPH::ShapeCastResult shapeCastResult;
+
+            JPH::ShapeCastSettings settings{};
+
+            CastShapeCollector collector{};
+
+            // Perform the sphere trace
+            GetInstance().physics_system.GetNarrowPhaseQuery().CastShape(shapeCast, settings, startPosition, collector);
+            if (!collector.results.empty())
+            {
+                ShapeCastResult res;
+                res.collisionComponent = GetInstance().GetCollisionByBody(collector.results[0].mBodyID2);
+                return res;
             }
         }
 
