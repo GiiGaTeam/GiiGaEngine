@@ -14,10 +14,11 @@ class MyPyBeh1(gp.Component):
         print("MyPyBeh1 Init", flush=True)
         
     def BeginPlay(self):
-        print("MyPyBeh1 BeginPlay start",flush=True)
-        if self.cam is not None:
-            gp.Engine.Instance().RenderSystem().SetCamera(self.cam)
-        print("MyPyBeh1 BeginPlay end",flush=True)
+        #print("MyPyBeh1 BeginPlay start",flush=True)
+        #if self.cam is not None:
+        #    gp.Engine.Instance().RenderSystem().SetCamera(self.cam)
+        #print("MyPyBeh1 BeginPlay end",flush=True)
+        pass
 
     def Tick(self, dt: float):
         pass

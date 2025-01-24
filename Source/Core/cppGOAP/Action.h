@@ -22,28 +22,22 @@ namespace goap
     class Action
     {
     private:
-        std::string name_; // The human-readable action name
-        int cost_;         // The numeric cost of this action
+        std::string name_ = ""; // The human-readable action name
+        int cost_ = 0;          // The numeric cost of this action
 
         // Preconditions are things that must be satisfied before this
         // action can be taken. Only preconditions that "matter" are here.
-        std::unordered_map<int, bool> preconditions_;
+        std::unordered_map<std::string, bool> preconditions_{};
 
         // Effects are things that happen when this action takes place.
-        std::unordered_map<int, bool> effects_;
+        std::unordered_map<std::string, bool> effects_{};
 
     public:
-        Action()
-            : cost_(0)
+        Action(std::unordered_map<std::string, bool> preconditions, std::unordered_map<std::string, bool> effects, int cost = 0)
         {
-        }
-
-        Action(std::string name, int cost)
-            : Action()
-        {
-            // Because delegating constructors cannot initialize & delegate at the same time...
-            name_ = name;
             cost_ = cost;
+            preconditions_ = preconditions;
+            effects_ = effects;
         }
 
         /**
@@ -92,7 +86,7 @@ namespace goap
          @param key the name of the precondition
          @param value the value the precondition must hold
          */
-        void setPrecondition(const int key, const bool value)
+        void setPrecondition(const std::string& key, const bool value)
         {
             preconditions_[key] = value;
         }
@@ -102,7 +96,7 @@ namespace goap
          @param key the name of the effect
          @param value the value that will result
          */
-        void setEffect(const int key, const bool value)
+        void setEffect(const std::string& key, const bool value)
         {
             effects_[key] = value;
         }

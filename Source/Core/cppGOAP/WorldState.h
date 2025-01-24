@@ -16,14 +16,15 @@ namespace goap
 {
     struct WorldState
     {
-        float priority_;                   // useful if this is a goal state, to distinguish from other possible goals
-        std::string name_;                 // the human-readable name of the state
-        std::unordered_map<std::string, bool> vars_; // the variables that in aggregate describe a worldstate
+        float priority_ = 0;                           // useful if this is a goal state, to distinguish from other possible goals
+        std::string name_ = "";                        // the human-readable name of the state
+        std::unordered_map<std::string, bool> vars_{}; // the variables that in aggregate describe a worldstate
 
-        WorldState(const std::string name = ""):
-            priority_(0), name_(name)
+        WorldState() = default;
+        
+        WorldState(const std::unordered_map<std::string, bool>& vars)
         {
-            //nop
+            vars_ = vars;
         }
 
         /**
@@ -44,6 +45,11 @@ namespace goap
         bool getVariable(const std::string& var_id) const
         {
             return vars_.at(var_id);
+        }
+
+        bool hasKey(const std::string& key)
+        {
+            return vars_.contains(key);
         }
 
         /**

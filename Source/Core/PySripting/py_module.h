@@ -1,11 +1,14 @@
 #pragma once
 #include <pybind11/embed.h>
 #include <pybind11/smart_holder.h>
+#include <pybind11/stl.h>
 
 #include<directxtk12/SimpleMath.h>
 
 
 #include<json/json.h>
+
+#include "Planner.h"
 
 using namespace DirectX::SimpleMath;
 
@@ -227,4 +230,20 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 
     pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::Component>(m, "CollisionComponent")
         .def(pybind11::init<>());
+
+
+    auto goap_m = m.def_submodule("GOAP");
+
+    pybind11::class_<goap::WorldState, std::shared_ptr<goap::WorldState>>(goap_m, "WorldState")
+        .def(pybind11::init<>())
+        .def(pybind11::init<const std::unordered_map<std::string, bool>&>())
+        .def("hasKey", &goap::WorldState::hasKey)
+        .def("setValue", &goap::WorldState::setVariable);
+
+    pybind11::classh<goap::Action>(goap_m, "Action")
+        .def(pybind11::init<const std::unordered_map<std::string, bool>&, const std::unordered_map<std::string, bool>&, int>());
+
+    pybind11::class_<goap::Planner>(goap_m, "Planner")
+        .def(pybind11::init<>())
+        .def("plan", &goap::Planner::plan);
 }

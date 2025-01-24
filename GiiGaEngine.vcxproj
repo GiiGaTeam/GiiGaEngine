@@ -179,6 +179,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="C:\Users\olege\AppData\Local\Temp\TemplateProject\Assets\Agent.py" />
     <None Include="Shaders\BufferWireframeShader.hlsl" />
     <None Include="Shaders\CascadeShadowGeomShader.hlsl" />
     <None Include="Shaders\CascadeShadowShader.hlsl" />

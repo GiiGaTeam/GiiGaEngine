@@ -15,14 +15,14 @@ namespace goap
 {
     struct Node
     {
-        static int last_id_; // a static that lets us assign incrementing, unique IDs to nodes
+        inline static int last_id_ = 0; // a static that lets us assign incrementing, unique IDs to nodes
 
-        WorldState ws_;        // The state of the world at this node.
+        WorldState ws_{};      // The state of the world at this node.
         int id_;               // the unique ID of this node
         int parent_id_;        // the ID of this node's immediate predecessor
         int g_;                // The A* cost from 'start' to 'here'
         int h_;                // The estimated remaining cost to 'goal' form 'here'
-        const Action* action_; // The action that got us here (for replay purposes)
+        std::shared_ptr<Action> action_; // The action that got us here (for replay purposes)
 
         Node()
             : g_(0), h_(0)
@@ -30,7 +30,7 @@ namespace goap
             id_ = ++last_id_;
         }
 
-        Node(const WorldState state, int g, int h, int parent_id, const Action* action)
+        Node(const WorldState state, int g, int h, int parent_id, std::shared_ptr<Action> action)
             :
             ws_(state), g_(g), h_(h), parent_id_(parent_id), action_(action)
         {

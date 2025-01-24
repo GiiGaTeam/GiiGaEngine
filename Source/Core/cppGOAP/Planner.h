@@ -30,8 +30,8 @@ namespace goap
     class Planner
     {
     private:
-        std::vector<Node> open_;   // The A* open list
-        std::vector<Node> closed_; // The A* closed list
+        std::vector<Node> open_ = {};   // The A* open list
+        std::vector<Node> closed_ = {}; // The A* closed list
 
         /**
          Is the given worldstate a member of the closed list? (And by that we mean,
@@ -100,7 +100,7 @@ namespace goap
         }
 
     public:
-        Planner();
+        Planner() = default;
 
         /**
          Useful when you're debugging a GOAP plan: simply dumps the open list to stdout.
@@ -133,12 +133,12 @@ namespace goap
          @return a vector of Actions in REVERSE ORDER - use a reverse_iterator on this to get stepwise-order
          @exception std::runtime_error if no plan could be made with the available actions and states
          */
-        std::vector<Action> plan(const WorldState& start, const WorldState& goal, const std::vector<Action>& actions)
+        std::vector<std::shared_ptr<Action>> plan(const WorldState& start, const WorldState& goal, const std::vector<std::shared_ptr<Action>>& actions)
         {
             if (start.meetsGoal(goal))
             {
                 //throw std::runtime_error("Planner cannot plan when the start state and the goal state are the same!");
-                return std::vector<goap::Action>();
+                return std::vector<std::shared_ptr<Action>>();
             }
 
             // Feasible we'd re-use a planner, so clear out the prior results
@@ -169,10 +169,10 @@ namespace goap
                 // Is our current state the goal state? If so, we've found a path, yay.
                 if (current.ws_.meetsGoal(goal))
                 {
-                    std::vector<Action> the_plan;
+                    std::vector<std::shared_ptr<Action>> the_plan;
                     do
                     {
-                        the_plan.push_back(*current.action_);
+                        the_plan.push_back(current.action_);
                         auto itr = std::find_if(begin(open_), end(open_), [&](const Node& n) { return n.id_ == current.parent_id_; });
                         if (itr == end(open_))
                         {
@@ -186,9 +186,9 @@ namespace goap
                 // Check each node REACHABLE from current -- in other words, where can we go from here?
                 for (const auto& potential_action : actions)
                 {
-                    if (potential_action.operableOn(current.ws_))
+                    if (potential_action->operableOn(current.ws_))
                     {
-                        WorldState outcome = potential_action.actOn(current.ws_);
+                        WorldState outcome = potential_action->actOn(current.ws_);
 
                         // Skip if already closed
                         if (memberOfClosed(outcome))
@@ -204,7 +204,7 @@ namespace goap
                         {
                             // not a member of open list
                             // Make a new node, with current as its parent, recording G & H
-                            Node found(outcome, current.g_ + potential_action.cost(), calculateHeuristic(outcome, goal), current.id_, &potential_action);
+                            Node found(outcome, current.g_ + potential_action->cost(), calculateHeuristic(outcome, goal), current.id_, potential_action);
                             // Add it to the open list (maintaining sort-order therein)
                             addToOpenList(std::move(found));
                         }
@@ -212,13 +212,13 @@ namespace goap
                         {
                             // already a member of the open list
                             // check if the current G is better than the recorded G
-                            if (current.g_ + potential_action.cost() < p_outcome_node->g_)
+                            if (current.g_ + potential_action->cost() < p_outcome_node->g_)
                             {
                                 //std::cout << "My path to " << p_outcome_node->ws_ << " using " << potential_action.name() << " (combined cost " << current.g_ + potential_action.cost() << ") is better than existing (cost " <<  p_outcome_node->g_ << "\n";
                                 p_outcome_node->parent_id_ = current.id_;                  // make current its parent
-                                p_outcome_node->g_ = current.g_ + potential_action.cost(); // recalc G & H
+                                p_outcome_node->g_ = current.g_ + potential_action->cost(); // recalc G & H
                                 p_outcome_node->h_ = calculateHeuristic(outcome, goal);
-                                p_outcome_node->action_ = &potential_action;
+                                p_outcome_node->action_ = potential_action;
 
                                 // resort open list to account for the new F
                                 // sorting likely invalidates the p_outcome_node iterator, but we don't need it anymore

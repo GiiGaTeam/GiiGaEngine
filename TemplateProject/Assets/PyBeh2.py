@@ -18,6 +18,3 @@ class MyPyBeh2(gp.Component):
     def Tick(self, dt: float):
         #print("MyPyBeh2 say: beh1 owner name is" + self.beh1.owner.name,flush=True)
         pass
-
-import inspect
-print(inspect.getmro(MyPyBeh1),flush=True)
