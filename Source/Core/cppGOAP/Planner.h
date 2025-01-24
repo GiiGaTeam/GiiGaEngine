@@ -169,10 +169,10 @@ namespace goap
                 // Is our current state the goal state? If so, we've found a path, yay.
                 if (current.ws_.meetsGoal(goal))
                 {
-                    std::vector<std::shared_ptr<Action>> the_plan;
+                    std::vector<std::shared_ptr<Action>> revers_plan;
                     do
                     {
-                        the_plan.push_back(current.action_);
+                        revers_plan.push_back(current.action_);
                         auto itr = std::find_if(begin(open_), end(open_), [&](const Node& n) { return n.id_ == current.parent_id_; });
                         if (itr == end(open_))
                         {
@@ -180,7 +180,14 @@ namespace goap
                         }
                         current = *itr;
                     } while (current.parent_id_ != 0);
-                    return the_plan;
+                    
+                    std::vector<std::shared_ptr<Action>> plan;
+                    for (auto it_rev = revers_plan.rbegin(); it_rev != revers_plan.rend(); ++it_rev)
+                    {
+                        plan.push_back(*it_rev);
+                    }
+
+                    return plan;
                 }
 
                 // Check each node REACHABLE from current -- in other words, where can we go from here?
@@ -200,7 +207,7 @@ namespace goap
 
                         // Look for a Node with this WorldState on the open list.
                         auto p_outcome_node = memberOfOpen(outcome);
-                        if (p_outcome_node == end(open_))
+                        if (p_outcome_node == open_.end())
                         {
                             // not a member of open list
                             // Make a new node, with current as its parent, recording G & H
@@ -215,14 +222,14 @@ namespace goap
                             if (current.g_ + potential_action->cost() < p_outcome_node->g_)
                             {
                                 //std::cout << "My path to " << p_outcome_node->ws_ << " using " << potential_action.name() << " (combined cost " << current.g_ + potential_action.cost() << ") is better than existing (cost " <<  p_outcome_node->g_ << "\n";
-                                p_outcome_node->parent_id_ = current.id_;                  // make current its parent
+                                p_outcome_node->parent_id_ = current.id_;                   // make current its parent
                                 p_outcome_node->g_ = current.g_ + potential_action->cost(); // recalc G & H
                                 p_outcome_node->h_ = calculateHeuristic(outcome, goal);
                                 p_outcome_node->action_ = potential_action;
 
                                 // resort open list to account for the new F
                                 // sorting likely invalidates the p_outcome_node iterator, but we don't need it anymore
-                                std::sort(begin(open_), end(open_));
+                                std::sort(begin(open_), open_.end());
                             }
                         }
                     }

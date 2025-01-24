@@ -267,7 +267,8 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<>())
         .def(pybind11::init<const std::unordered_map<std::string, bool>&>())
         .def("hasKey", &goap::WorldState::hasKey)
-        .def("setValue", &goap::WorldState::setVariable);
+        .def("setValue", &goap::WorldState::setVariable)
+        .def("print", &goap::WorldState::Print);
 
     pybind11::classh<goap::Action>(goap_m, "Action")
         .def(pybind11::init<const std::unordered_map<std::string, bool>&, const std::unordered_map<std::string, bool>&, int>());

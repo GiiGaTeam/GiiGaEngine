@@ -5,24 +5,24 @@ pred_type = Callable[[BlackBoard], bool]
 
 
 def IsHighHP(bb: BlackBoard) -> bool:
-    return bb.getKey["HP"] > 50
+    return bb.get("HP") > 50
 
 
 def EnemySet(bb: BlackBoard) -> bool:
-    return bb.getKey["Enemy"] is not None
-
-
-def target_acquired(bb: BlackBoard) -> bool:
-    return False
-
-
-def target_lost(bb: BlackBoard) -> bool:
-    return True
-
-
-def target_in_warhead_range(bb: BlackBoard) -> bool:
-    return False
+    return bb.get("Enemy") is not None
 
 
 def target_dead(bb: BlackBoard) -> bool:
-    return False
+    return bb.get("target_dead", False)
+
+
+def HasAmmo(bb: BlackBoard) -> bool:
+    return bb.get("ammo", 0) > 0
+
+
+def IsAimed(bb: BlackBoard) -> bool:
+    return bb.get("is_aimed", False)
+
+
+def CanShoot(bb: BlackBoard) -> bool:
+    return bb.get("cooldown_remaining", 0) <= 0

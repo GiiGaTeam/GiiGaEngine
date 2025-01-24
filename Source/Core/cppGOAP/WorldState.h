@@ -52,6 +52,12 @@ namespace goap
             return vars_.contains(key);
         }
 
+        void Print()
+        {
+            for (const auto& var : vars_)
+                std::cout << var.first << " = " << var.second << std::endl;
+        }
+
         /**
          Useful if this state is a goal state. It asks, does state 'other'
          meet the requirements of this goal? Takes into account not only this goal's
