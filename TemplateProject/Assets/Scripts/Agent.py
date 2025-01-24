@@ -1,10 +1,10 @@
 from typing import List
 import GiiGaPy as gp
 import GiiGaPy.GOAP as gpGoap
-from BlackBoard import BlackBoard
-from GOAPBrain import GOAPBrain
-from PyAction import PyAction
-import Predicates as preds
+from .BlackBoard import BlackBoard
+from .GOAPBrain import GOAPBrain
+from .PyAction import PyAction
+from . import Predicates as preds
 
 
 class Agent(gp.Component):

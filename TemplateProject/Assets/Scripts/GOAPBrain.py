@@ -1,7 +1,7 @@
 from typing import List
 import GiiGaPy.GOAP as gpGoap
-from BlackBoard import BlackBoard
-from PyAction import PyAction, ActionState
+from .BlackBoard import BlackBoard
+from .PyAction import PyAction, ActionState
 
 
 class GOAPBrain:

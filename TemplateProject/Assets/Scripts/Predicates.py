@@ -1,5 +1,5 @@
 from typing import Callable
-from BlackBoard import BlackBoard
+from .BlackBoard import BlackBoard
 
 pred_type = Callable[[BlackBoard], bool]
 

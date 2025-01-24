@@ -1,5 +1,5 @@
-import Predicates as pred
-from BlackBoard import BlackBoard
+from . import Predicates as pred
+from .BlackBoard import BlackBoard
 from GiiGaPy.GOAP import Action
 from enum import Enum
 
