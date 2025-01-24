@@ -114,20 +114,6 @@
 	{
 		"id" : 
 		{
-			"id" : "d3555a2e-3b96-4910-af2f-72d6a3bb6197",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
-			"name" : "PyBeh1",
-			"path" : "PyBeh1.py",
-			"type" : "Behaviour"
-		}
-	},
-	{
-		"id" : 
-		{
 			"id" : "00000000-0000-0000-0000-000000000007",
 			"subresource" : 0
 		},
@@ -249,20 +235,6 @@
 			"name" : "Sphere",
 			"path" : "Sphere.prefab",
 			"type" : "Prefab"
-		}
-	},
-	{
-		"id" : 
-		{
-			"id" : "3ee7fb39-f9f0-4601-b710-ae3a9b53fcab",
-			"subresource" : 0
-		},
-		"meta" : 
-		{
-			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
-			"name" : "PyBeh2",
-			"path" : "PyBeh2.py",
-			"type" : "Behaviour"
 		}
 	},
 	{

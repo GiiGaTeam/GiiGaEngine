@@ -46,9 +46,27 @@ namespace GiiGa
             //todo: replace all \ wiht . after Assets
             pybind11::module_ module;
 
+            auto asset_path = Engine::Instance().AssetDatabase()->AssetPath();
+
+            auto script_rel_path = std::filesystem::relative(script_path, asset_path);
+
+            auto script_rel_path_str = script_rel_path.string();
+
+            std::string from = "\\";
+            std::string to = ".";
+
+            size_t start_pos = 0;
+            while ((start_pos = script_rel_path_str.find(from, start_pos)) != std::string::npos)
+            {
+                script_rel_path_str.replace(start_pos, from.length(), to);
+                start_pos += to.length(); // Move past the last replaced position
+            }
+
+            script_rel_path_str = script_rel_path_str.substr(0, script_rel_path_str.length() - 3);
+
             try
             {
-                module = pybind11::module::import(script_path.stem().string().c_str());
+                module = pybind11::module::import(script_rel_path_str.c_str());
             }
             catch (pybind11::error_already_set& e)
             {
@@ -69,7 +87,7 @@ namespace GiiGa
 
         void Update(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override
         {
-            auto script_asset = std::dynamic_pointer_cast<ScriptAsset>(asset);            
+            auto script_asset = std::dynamic_pointer_cast<ScriptAsset>(asset);
 
             script_asset->module_.reload();
 
@@ -80,7 +98,7 @@ namespace GiiGa
                 el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while gather name");
                 throw std::exception("cant find subclass name");
             }
-            
+
             script_asset->user_class_name_ = name.c_str();
         }
 

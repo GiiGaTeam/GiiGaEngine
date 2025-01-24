@@ -43,26 +43,6 @@
 					},
 					"Type" : "class GiiGa::StaticMeshComponent",
 					"Uuid" : "2bf1aa1a-978b-4147-bf79-63176da8d30d"
-				},
-				{
-					"PropertyModifications" : 
-					[
-						{
-							"Name" : "speed",
-							"Value" : 0
-						},
-						{
-							"Name" : "trans",
-							"Value" : "00000000-0000-0000-0000-000000000000"
-						}
-					],
-					"Script" : 
-					{
-						"id" : "d3555a2e-3b96-4910-af2f-72d6a3bb6197",
-						"subresource" : 0
-					},
-					"Type" : "class GiiGa::PyBehaviourSchemeComponent",
-					"Uuid" : "70d33505-8024-47e4-ad6f-bf242634cf32"
 				}
 			],
 			"Name" : "Cube",
@@ -111,26 +91,6 @@
 					},
 					"Type" : "class GiiGa::TransformComponent",
 					"Uuid" : "491f087e-2d2f-470b-91b4-33eea4bef244"
-				},
-				{
-					"PropertyModifications" : 
-					[
-						{
-							"Name" : "speed",
-							"Value" : 0
-						},
-						{
-							"Name" : "beh1",
-							"Value" : "70d33505-8024-47e4-ad6f-bf242634cf32"
-						}
-					],
-					"Script" : 
-					{
-						"id" : "3ee7fb39-f9f0-4601-b710-ae3a9b53fcab",
-						"subresource" : 0
-					},
-					"Type" : "class GiiGa::PyBehaviourSchemeComponent",
-					"Uuid" : "5c71bdcf-cc11-42fa-83da-6fee80625a9c"
 				}
 			],
 			"Name" : "Sphere 1",
