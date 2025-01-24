@@ -75,10 +75,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
+    <IncludePath>$(SolutionDir)Source/Core/cppGOAP;$(SolutionDir)Source/Core/Render/RenderPass;$(SolutionDir)Source/Core/Render/Interfaces;$(SolutionDir)Source/Core/Render/ImGuiWindows;$(SolutionDir)Source/Core/Render;$(SolutionDir)Source/Core/PySripting;$(SolutionDir)Source/Core/Assets;$(SolutionDir)Source/Core/AssetLoaders;$(SolutionDir)Source/Core;$(SolutionDir)Source/Components;$(SolutionDir)Source;$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
+    <IncludePath>$(SolutionDir)Source/Core/cppGOAP;$(SolutionDir)Source/Core/Render/RenderPass;$(SolutionDir)Source/Core/Render/Interfaces;$(SolutionDir)Source/Core/Render/ImGuiWindows;$(SolutionDir)Source/Core/Render;$(SolutionDir)Source/Core/PySripting;$(SolutionDir)Source/Core/Assets;$(SolutionDir)Source/Core/AssetLoaders;$(SolutionDir)Source/Core;$(SolutionDir)Source/Components;$(SolutionDir)Source;$(Python_path)\include;$(SolutionDir)\ThirdParty;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/Source;</IncludePath>
@@ -235,6 +235,10 @@
     <ClInclude Include="Source\Core\Assets\ResourceManager.h" />
     <ClInclude Include="Source\Core\Assets\RuntimeAssetDatabase.h" />
     <ClInclude Include="Source\Core\Component.h" />
+    <ClInclude Include="Source\Core\cppGOAP\Action.h" />
+    <ClInclude Include="Source\Core\cppGOAP\Node.h" />
+    <ClInclude Include="Source\Core\cppGOAP\Planner.h" />
+    <ClInclude Include="Source\Core\cppGOAP\WorldState.h" />
     <ClInclude Include="Source\Core\CreateComponentsForGameObject.h" />
     <ClInclude Include="Source\Core\DefaultAssetsHandles.h" />
     <ClInclude Include="Source\Core\DXMathUtils.h" />
