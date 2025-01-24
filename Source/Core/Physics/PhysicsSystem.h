@@ -80,7 +80,8 @@ namespace GiiGa
     {
         static constexpr JPH::ObjectLayer NON_MOVING = 0;
         static constexpr JPH::ObjectLayer MOVING = 1;
-        static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
+        static constexpr JPH::ObjectLayer TRIGGER = 2;
+        static constexpr JPH::ObjectLayer NUM_LAYERS = 3;
     };
 
     /// Class that determines if two object layers can collide
@@ -89,16 +90,9 @@ namespace GiiGa
     public:
         virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override
         {
-            switch (inObject1)
-            {
-            case Layers::NON_MOVING:
-                return inObject2 == Layers::MOVING; // Non moving only collides with moving
-            case Layers::MOVING:
-                return true; // Moving collides with everything
-            default:
-                JPH_ASSERT(false);
-                return false;
-            }
+            if (inObject1 == Layers::TRIGGER || inObject2 == Layers::TRIGGER) return true;
+            if (inObject1 == Layers::MOVING || inObject2 == Layers::MOVING) return true;
+            return false;
         }
     };
 
@@ -111,7 +105,8 @@ namespace GiiGa
     {
         static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
         static constexpr JPH::BroadPhaseLayer MOVING(1);
-        static constexpr JPH::uint NUM_LAYERS(2);
+        static constexpr JPH::BroadPhaseLayer TRIGGER(2);
+        static constexpr JPH::uint NUM_LAYERS(3);
     };
 
     // BroadPhaseLayerInterface implementation
@@ -124,6 +119,7 @@ namespace GiiGa
             // Create a mapping table from object to broad phase layer
             mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
             mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
+            mObjectToBroadPhase[Layers::TRIGGER] = BroadPhaseLayers::TRIGGER;
         }
 
         virtual JPH::uint GetNumBroadPhaseLayers() const override
@@ -144,6 +140,7 @@ namespace GiiGa
             {
             case (BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
             case (BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
+            case (BroadPhaseLayer::Type)BroadPhaseLayers::TRIGGER:		return "TRIGGER";
             default:													JPH_ASSERT(false); return "INVALID";
             }
         }
@@ -159,16 +156,9 @@ namespace GiiGa
     public:
         virtual bool ShouldCollide(JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer inLayer2) const override
         {
-            switch (inLayer1)
-            {
-            case Layers::NON_MOVING:
-                return inLayer2 == BroadPhaseLayers::MOVING;
-            case Layers::MOVING:
-                return true;
-            default:
-                JPH_ASSERT(false);
-                return false;
-            }
+            if (inLayer1 == Layers::TRIGGER || inLayer2 == BroadPhaseLayers::TRIGGER) return true;
+            if (inLayer1 == Layers::MOVING || inLayer2 == BroadPhaseLayers::MOVING) return true;
+            return false;
         }
     };
 
@@ -367,7 +357,7 @@ namespace GiiGa
                 //TODO Испрвить Слои - пока все moving
                 trans = collision_comp->GetWorldTransform();
                 JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-
+                box_settings.mIsSensor = Layer == Trigger; 
                 body = body_interface.CreateBody(box_settings)->GetID();
                 break;
             }
@@ -387,7 +377,7 @@ namespace GiiGa
                 //TODO Испрвить Слои - пока все moving
 
                 JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-
+                sphere_settings.mIsSensor = Layer == Trigger; 
                 body = body_interface.CreateBody(sphere_settings)->GetID();
                 break;
             }
