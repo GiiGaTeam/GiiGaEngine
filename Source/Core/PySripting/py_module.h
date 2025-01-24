@@ -228,8 +228,37 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                           self->depthPenetration = depthPenetration;
                       });
 
-    pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::Component>(m, "CollisionComponent")
-        .def(pybind11::init<>());
+    pybind11::class_<GiiGa::ICollision, std::shared_ptr<GiiGa::ICollision>, GiiGa::TransformComponent>(m, "ICollision")
+        .def("AddForce", &GiiGa::ICollision::AddForce);
+
+    pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::ICollision>(m, "CollisionComponent")
+        .def(pybind11::init<>())
+        .def("AddForce", &GiiGa::CollisionComponent::AddForce)
+        .def("AddImpulse", &GiiGa::CollisionComponent::AddImpulse)
+        .def("AddVelocity", &GiiGa::CollisionComponent::AddVelocity)
+        .def_property("owner", [](std::shared_ptr<GiiGa::CollisionComponent> self)
+                      {
+                          return std::dynamic_pointer_cast<GiiGa::GameObject>(self->GetOwner());
+                      },
+                      &GiiGa::ICollision::SetOwner);
+
+    pybind11::class_<GiiGa::ShapeCastResult, std::shared_ptr<GiiGa::ShapeCastResult>>(m, "ShapeCastResult")
+        .def(pybind11::init<>())
+        .def_property("collisionComponent", [](std::shared_ptr<GiiGa::ShapeCastResult> self)
+                      {
+                          return std::dynamic_pointer_cast<GiiGa::CollisionComponent>(self->collision);
+                      },
+                      [](GiiGa::ShapeCastResult* self, std::shared_ptr<GiiGa::CollisionComponent> comp)
+                      {
+                          self->collision = comp;
+                      });
+
+    m.def("ShapeCast", [](float sphereRadius, Vector3 startPosition, Vector3 endPosition)
+    {
+        auto res = GiiGa::PhysicsSystem::ShapeCast(sphereRadius, startPosition, endPosition);
+        //el::Loggers::getLogger(GiiGa::LogPyScript)->debug("%v",std::dynamic_pointer_cast<GiiGa::GameObject>(res.collision->GetOwner())->name);
+        return res;
+    });
 
 
     auto goap_m = m.def_submodule("GOAP");

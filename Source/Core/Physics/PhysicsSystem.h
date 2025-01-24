@@ -179,9 +179,9 @@ namespace GiiGa
 
     struct ShapeCastResult
     {
-        std::shared_ptr<ICollision> collisionComponent;
+        std::shared_ptr<ICollision> collision;
     };
-    
+
 
     class CastShapeCollector : public JPH::CastShapeCollector
     {
@@ -357,7 +357,7 @@ namespace GiiGa
                 //TODO Испрвить Слои - пока все moving
                 trans = collision_comp->GetWorldTransform();
                 JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-                box_settings.mIsSensor = Layer == Trigger; 
+                box_settings.mIsSensor = Layer == Trigger;
                 body = body_interface.CreateBody(box_settings)->GetID();
                 break;
             }
@@ -377,7 +377,7 @@ namespace GiiGa
                 //TODO Испрвить Слои - пока все moving
 
                 JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-                sphere_settings.mIsSensor = Layer == Trigger; 
+                sphere_settings.mIsSensor = Layer == Trigger;
                 body = body_interface.CreateBody(sphere_settings)->GetID();
                 break;
             }
@@ -412,8 +412,9 @@ namespace GiiGa
             }
         }
 
-        static ShapeCastResult ShapeCast(float sphereRadius, Vector3 startPositionD, Vector3 endPositionD)
+        static std::shared_ptr<ShapeCastResult> ShapeCast(float sphereRadius, Vector3 startPositionD, Vector3 endPositionD)
         {
+            std::shared_ptr<ShapeCastResult> res{};
             JPH::SphereShape sphereShape(sphereRadius);
 
             JPH::Vec3 startPosition = VecToJoltVec(startPositionD);
@@ -432,13 +433,15 @@ namespace GiiGa
             CastShapeCollector collector{};
 
             // Perform the sphere trace
-            GetInstance().physics_system.GetNarrowPhaseQuery().CastShape(shapeCast, settings, startPosition, collector);
+            GetInstance().physics_system.GetNarrowPhaseQuery().CastShape(shapeCast, settings, startPosition, collector,
+                                                                         JPH::DefaultBroadPhaseLayerFilter{GetInstance().object_vs_broadphase_layer_filter, Layers::MOVING});
             if (!collector.results.empty())
             {
-                ShapeCastResult res;
-                res.collisionComponent = GetInstance().GetCollisionByBody(collector.results[0].mBodyID2);
-                return res;
+                res = std::make_shared<ShapeCastResult>();
+                res->collision = GetInstance().GetCollisionByBody(collector.results[0].mBodyID2);
             }
+
+            return res;
         }
 
         static void BeginPlay()

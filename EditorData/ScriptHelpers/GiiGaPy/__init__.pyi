@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Engine', 'GOAP', 'GameObject', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'ShapeCast', 'ShapeCastResult', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -18,11 +18,23 @@ class CollideInfo:
         ...
     def __init__(self) -> None:
         ...
-class CollisionComponent(Component):
+class CollisionComponent(ICollision):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
+    def AddForce(self, arg0: Vector3) -> None:
+        ...
+    def AddImpulse(self, arg0: Vector3) -> None:
+        ...
+    def AddVelocity(self, arg0: Vector3) -> None:
+        ...
     def __init__(self) -> None:
+        ...
+    @property
+    def owner(self) -> GameObject:
+        ...
+    @owner.setter
+    def owner(self, arg1: ...) -> None:
         ...
 class Component:
     @staticmethod
@@ -64,6 +76,12 @@ class GameObject:
         """
         Returns TransformComponent type
         """
+class ICollision(TransformComponent):
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def AddForce(self, arg0: Vector3) -> None:
+        ...
 class Input:
     @staticmethod
     def GetMouseDelta() -> ...:
@@ -192,6 +210,13 @@ class RenderSystem:
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
     def SetCamera(self, arg0: ...) -> None:
+        ...
+class ShapeCastResult:
+    collisionComponent: CollisionComponent
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
         ...
 class Transform:
     __hash__: typing.ClassVar[None] = None
@@ -333,6 +358,8 @@ class Vector3:
         ...
     def normalize(self) -> None:
         ...
+def ShapeCast(arg0: float, arg1: Vector3, arg2: Vector3) -> ShapeCastResult:
+    ...
 def Vector3FromJson(arg0: JsonValue) -> Vector3:
     ...
 def Vector3ToJson(arg0: Vector3) -> JsonValue:
