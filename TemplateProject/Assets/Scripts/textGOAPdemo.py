@@ -5,6 +5,7 @@ from .BlackBoard import BlackBoard
 from .GOAPBrain import GOAPBrain
 from .PyAction import PyAction, ActionState
 from . import Predicates as preds
+from .Projectile import Projectile
 
 import random as rand
 
@@ -23,9 +24,9 @@ class Agent(gp.Component):
         )
 
         actions = [
-            SearchForEnemyAction(),
+            SearchForEnemyAction(self),
             AimAction(),
-            ShootAction(),
+            ShootAction(self),
             ReloadAction(),
             FleeAction(),
             HealAction(),
@@ -48,7 +49,8 @@ class Agent(gp.Component):
 
 
 class SearchForEnemyAction(PyAction):
-    def __init__(self):
+    def __init__(self, agent: Agent):
+        self.agent = agent
         preconditions = {}
         effects = {preds.EnemySet: True}
         super().__init__(preconditions, effects)
@@ -58,7 +60,19 @@ class SearchForEnemyAction(PyAction):
 
     def Tick(self, bb: BlackBoard):
         # Assume sphere trace finds enemy
-        bb["Enemy"] = "EnemyObject"
+        trans: gp.TransformComponent = self.agent.owner.GetTransformComponent()
+        trans.AddWorldRotation(gp.Vector3(0, 10, 0))
+        res = gp.ShapeCast(
+            1,
+            trans.GetWorldLocation(),
+            trans.GetWorldLocation() + trans.Forward().MulFloat(100.0),
+        )
+
+        if res is not None:
+            print(f"Hit some one {res.collisionComponent.owner.name}", flush=True)
+            bb["Enemy"] = res.collisionComponent.owner
+        else:
+            bb["Enemy"] = None
 
         print("SearchForEnemyAction Ticked", flush=True)
         return ActionState.Completed
@@ -80,7 +94,8 @@ class AimAction(PyAction):
 
 
 class ShootAction(PyAction):
-    def __init__(self):
+    def __init__(self, agent: Agent):
+        self.agent = agent
         preconditions = {
             preds.EnemySet: True,
             preds.IsAimed: True,
@@ -104,14 +119,25 @@ class ShootAction(PyAction):
         bb["ammo"] -= 1
         bb["cooldown_remaining"] = 3  # Задержка 3 тика между выстрелами
 
-        if rand.randint(0, 10) > 7:
-            print("- hp", flush=True)
-            bb["HP"] -= rand.randint(0, 10)
+        sp = gp.SpawnParameters()
+        sp.name = "Projectile"
+        sp.owner = self.agent.owner
 
-        if rand.randint(0, 10) > 7:
-            print("target_dead", flush=True)
-            bb["target_dead"] = True
-            bb["Enemy"] = None
+        agent_trans: gp.TransformComponent = self.agent.owner.GetTransformComponent()
+
+        bul = gp.GameObject.CreateEmptyGameObject(sp)
+
+        bul_trans: gp.TransformComponent = bul.GetTransformComponent()
+        bul_trans.SetLocation(
+            agent_trans.GetLocation() + bul_trans.Forward().MulFloat(2)
+        )
+        bul_trans.SetRotation(agent_trans.GetRotation())
+
+        proj = Projectile()
+        print("1", flush=True)
+        proj.RegisterInWorld()
+        print("2", flush=True)
+        bul.AddComponent(proj)
 
         print("ShootAction Ticked", flush=True)
         return ActionState.Completed

@@ -113,9 +113,17 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 
         // Arithmetic operators using magic methods
         .def("__iadd__", &Vector3::operator+=)
+        .def("__add__", [](Vector3* self, Vector3* other)
+        {
+            return *self + *other;
+        })
         .def("__isub__", &Vector3::operator-=)
         .def("__imul__", pybind11::overload_cast<const Vector3&>(&Vector3::operator*=))
         .def("__imul__", pybind11::overload_cast<float>(&Vector3::operator*=))
+        .def("MulFloat", [](Vector3* self, float v)
+        {
+            return *self * v;
+        })
         .def("__itruediv__", &Vector3::operator/=)
         .def("__neg__", &Vector3::operator-)
 
@@ -152,13 +160,42 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("__eq__", &GiiGa::Transform::operator==)
         .def("__ne__", &GiiGa::Transform::operator!=);
 
+    pybind11::class_<GiiGa::SpawnParameters>(m, "SpawnParameters")
+        .def(pybind11::init())
+        .def_property("name", [](GiiGa::SpawnParameters* self)
+                      {
+                          return self->name;
+                      },
+                      [](GiiGa::SpawnParameters* self, const std::string& name)
+                      {
+                          self->name = name;
+                      })
+        .def_property("owner", [](GiiGa::SpawnParameters* self)
+                      {
+                          return self->Owner;
+                      },
+                      [](GiiGa::SpawnParameters* self, const std::shared_ptr<GiiGa::GameObject>& owner)
+                      {
+                          self->Owner = owner;
+                      });
+
     pybind11::class_<GiiGa::GameObject, std::shared_ptr<GiiGa::GameObject>>(m, "GameObject")
         .def_readwrite("name", &GiiGa::GameObject::name)
         .def("GetTransformComponent", [](GiiGa::GameObject* self)
         {
             return self->GetTransformComponent().lock();
         }, "Returns TransformComponent type")
-        .def("Destroy", &GiiGa::GameObject::Destroy);
+        .def("CreateCollisionComponent", &GiiGa::GameObject::CreateComponent<GiiGa::CollisionComponent>)
+        .def("Destroy", &GiiGa::GameObject::Destroy)
+        .def_static("CreateEmptyGameObject", &GiiGa::GameObject::CreateEmptyGameObject)
+        .def("AddComponent", [](std::shared_ptr<GiiGa::GameObject> self, std::shared_ptr<GiiGa::PyBehaviourTrampoline> comp)
+        {
+            self->AddComponent(std::dynamic_pointer_cast<GiiGa::Component>(comp));
+        })
+        .def("AddComponent", [](std::shared_ptr<GiiGa::GameObject> self, std::shared_ptr<GiiGa::Component> comp)
+        {
+            self->AddComponent(comp);
+        });
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
@@ -170,7 +207,15 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("Init", &GiiGa::Component::Init)
         .def("BeginPlay", &GiiGa::Component::BeginPlay)
         .def("Tick", &GiiGa::Component::Tick)
-        .def("Destroy", &GiiGa::Component::Destroy);
+        .def("Destroy", &GiiGa::Component::Destroy)
+        .def("RegisterInWorld", [](std::shared_ptr<GiiGa::PyBehaviourTrampoline> self)
+        {
+            std::dynamic_pointer_cast<GiiGa::Component>(self)->RegisterInWorld();
+        })
+        .def("RegisterInWorld", [](std::shared_ptr<GiiGa::Component> self)
+        {
+            self->RegisterInWorld();
+        });
 
     pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
         .def(pybind11::init<>())
@@ -196,7 +241,11 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("GetWorldScale", &GiiGa::TransformComponent::GetWorldScale)
         .def("SetWorldScale", &GiiGa::TransformComponent::SetWorldScale)
         .def("AddWorldScale", &GiiGa::TransformComponent::AddWorldScale)
-        .def("GetParent", &GiiGa::TransformComponent::GetParent);
+        .def("GetParent", &GiiGa::TransformComponent::GetParent)
+        .def("Forward", [](std::shared_ptr<GiiGa::TransformComponent> self)
+        {
+            return self->GetWorldMatrix().Forward();
+        });
 
     pybind11::class_<GiiGa::CameraComponent, std::shared_ptr<GiiGa::CameraComponent>, GiiGa::Component>(m, "CameraComponent")
         .def(pybind11::init<>());
@@ -231,6 +280,18 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
     pybind11::class_<GiiGa::ICollision, std::shared_ptr<GiiGa::ICollision>, GiiGa::TransformComponent>(m, "ICollision")
         .def("AddForce", &GiiGa::ICollision::AddForce);
 
+    pybind11::enum_<GiiGa::EMotionType>(m, "EMotionType")
+        .value("Dynamic", GiiGa::EMotionType::Dynamic)
+        .value("Kinematic", GiiGa::EMotionType::Kinematic)
+        .value("Static", GiiGa::EMotionType::Static)
+        .export_values();
+
+    pybind11::enum_<GiiGa::Layer>(m, "Layer")
+        .value("Moving", GiiGa::Layer::Moving)
+        .value("Trigger", GiiGa::Layer::Trigger)
+        .value("NoMoving", GiiGa::Layer::NoMoving)
+        .export_values();
+
     pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::ICollision>(m, "CollisionComponent")
         .def(pybind11::init<>())
         .def("AddForce", &GiiGa::CollisionComponent::AddForce)
@@ -240,7 +301,9 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
                       {
                           return std::dynamic_pointer_cast<GiiGa::GameObject>(self->GetOwner());
                       },
-                      &GiiGa::ICollision::SetOwner);
+                      &GiiGa::ICollision::SetOwner)
+        .def_property("MotionType", &GiiGa::CollisionComponent::GetMotionType, &GiiGa::CollisionComponent::SetMotionType)
+        .def_property("Layer", &GiiGa::CollisionComponent::GetLayer, &GiiGa::CollisionComponent::SetLayer);
 
     pybind11::class_<GiiGa::ShapeCastResult, std::shared_ptr<GiiGa::ShapeCastResult>>(m, "ShapeCastResult")
         .def(pybind11::init<>())

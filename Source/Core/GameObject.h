@@ -67,10 +67,10 @@ namespace GiiGa
             {
                 kid->BeginPlay();
             }
-
-            for (auto& component : components_)
+            
+            for (int i = 0; i < components_.size(); ++i)
             {
-                component->BeginPlay();
+                WorldQuery::AddComponentToBeginPlayQueue(components_[i]);
             }
         }
 

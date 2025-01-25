@@ -237,10 +237,10 @@ namespace GiiGa
         bool canCollideSelf_ = false;
 
     protected:
-        ColliderType collider_type_;
-        EMotionType motion_type_;
-        Layer layer_;
-        bool is_gravity_active_;
+        ColliderType collider_type_ = ColliderType::Cube;
+        EMotionType motion_type_ = EMotionType::Static;
+        Layer layer_ = Layer::NoMoving;
+        bool is_gravity_active_ = false;
 
         std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;
