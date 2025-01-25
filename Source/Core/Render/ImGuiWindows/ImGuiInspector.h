@@ -71,9 +71,9 @@ namespace GiiGa
                     ImGui::PopID();
                 }
 
-                for (auto&& comp : gameobject->GetComponents())
+                for (int i = 0; i<gameobject->GetComponents().size();++i)
                 {
-                    ImGuiComponentWidgetFactory(comp);
+                    ImGuiComponentWidgetFactory(gameobject->GetComponents().at(i));
                 }
 
                 if (ImGui::Button("Add Component"))
