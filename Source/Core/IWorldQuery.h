@@ -33,11 +33,12 @@ namespace GiiGa
 
         static void AddAnyWithUuid(const Uuid& uuid, std::shared_ptr<void> value)
         {
+            auto& instance = GetInstance();
             el::Loggers::getLogger(LogWorldQuery)->debug("Registering any with uuid %v", uuid.ToString());
-            if (GetInstance().uuid_to_any_.contains(uuid))
+            if (instance.uuid_to_any_.contains(uuid))
                 throw std::runtime_error("Failed to AddAnyWithUuid, duplicated uuid!");
 
-            GetInstance().uuid_to_any_.insert({uuid, value});
+            instance.uuid_to_any_.insert({uuid, value});
         }
 
         static void RemoveAnyWithUuid(const Uuid& uuid)

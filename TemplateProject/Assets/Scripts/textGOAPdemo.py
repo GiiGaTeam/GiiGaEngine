@@ -6,6 +6,7 @@ from .GOAPBrain import GOAPBrain
 from .PyAction import PyAction, ActionState
 from . import Predicates as preds
 from .Projectile import Projectile
+import weakref
 
 import random as rand
 
@@ -70,7 +71,9 @@ class SearchForEnemyAction(PyAction):
 
         if res is not None:
             print(f"Hit some one {res.collisionComponent.owner.name}", flush=True)
-            bb["Enemy"] = res.collisionComponent.owner
+            if res.collisionComponent.owner is not self.agent.owner:
+                bb["Enemy"] = weakref.ref(res.collisionComponent.owner)
+                print(type(bb["Enemy"]), flush=True)
         else:
             bb["Enemy"] = None
 

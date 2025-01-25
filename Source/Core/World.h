@@ -184,6 +184,9 @@ namespace GiiGa
 
                 levels_.erase(levels_.begin() + 1);
 
+                pybind11::module mod = pybind11::module::import("gc");
+                mod.attr("collect")();
+                
                 AddLevel(asset);
             }
         }
