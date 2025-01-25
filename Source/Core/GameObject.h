@@ -122,7 +122,7 @@ namespace GiiGa
             if (auto l_parent = parent_.lock())
             {
                 l_parent->RemoveChild(std::static_pointer_cast<GameObject>(shared_from_this()));
-                l_parent->GetComponent<TransformComponent>()->Detach();
+                this->GetComponent<TransformComponent>()->Detach();
             }
             parent_.reset();
             if (!level_root_gos_.expired())
