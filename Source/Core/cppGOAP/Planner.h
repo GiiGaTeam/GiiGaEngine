@@ -124,6 +124,12 @@ namespace goap
             }
         }
 
+        std::vector<std::shared_ptr<Action>> plan(const WorldState& start, const WorldState& goal, const std::vector<std::shared_ptr<Action>>& actions)
+        {
+            return planA(start,goal,actions);
+            //planD(start,goal,actions);
+        }
+        
         /**
          Actually attempt to formulate a plan to get from start to goal, given a pool of
          available actions.
@@ -133,7 +139,85 @@ namespace goap
          @return a vector of Actions in REVERSE ORDER - use a reverse_iterator on this to get stepwise-order
          @exception std::runtime_error if no plan could be made with the available actions and states
          */
-        std::vector<std::shared_ptr<Action>> plan(const WorldState& start, const WorldState& goal, const std::vector<std::shared_ptr<Action>>& actions)
+        std::vector<std::shared_ptr<Action>> planD(const WorldState& start, const WorldState& goal, const std::vector<std::shared_ptr<Action>>& actions)
+        {
+            if (start.meetsGoal(goal))
+            {
+                return std::vector<std::shared_ptr<Action>>();
+            }
+
+            open_.clear();
+            closed_.clear();
+
+            Node starting_node(start, 0, 0, 0, nullptr); // No heuristic for Dijkstra
+            open_.push_back(std::move(starting_node));
+
+            while (!open_.empty())
+            {
+                Node& current = popAndClose();
+
+                if (current.ws_.meetsGoal(goal))
+                {
+                    std::vector<std::shared_ptr<Action>> reverse_plan;
+                    do
+                    {
+                        reverse_plan.push_back(current.action_);
+                        auto itr = std::find_if(begin(open_), end(open_), [&](const Node& n) { return n.id_ == current.parent_id_; });
+                        if (itr == end(open_))
+                        {
+                            itr = std::find_if(begin(closed_), end(closed_), [&](const Node& n) { return n.id_ == current.parent_id_; });
+                        }
+                        current = *itr;
+                    } while (current.parent_id_ != 0);
+
+                    std::vector<std::shared_ptr<Action>> plan;
+                    for (auto it_rev = reverse_plan.rbegin(); it_rev != reverse_plan.rend(); ++it_rev)
+                    {
+                        plan.push_back(*it_rev);
+                    }
+
+                    return plan;
+                }
+
+                for (const auto& potential_action : actions)
+                {
+                    if (potential_action->operableOn(current.ws_))
+                    {
+                        WorldState outcome = potential_action->actOn(current.ws_);
+
+                        if (memberOfClosed(outcome))
+                        {
+                            continue;
+                        }
+
+                        auto p_outcome_node = memberOfOpen(outcome);
+                        if (p_outcome_node == open_.end())
+                        {
+                            Node found(outcome, current.g_ + potential_action->cost(), 0, current.id_, potential_action);
+                            addToOpenList(std::move(found));
+                        }
+                        else
+                        {
+                            if (current.g_ + potential_action->cost() < p_outcome_node->g_)
+                            {
+                                p_outcome_node->parent_id_ = current.id_;
+                                p_outcome_node->g_ = current.g_ + potential_action->cost();
+                                p_outcome_node->action_ = potential_action;
+
+                                std::sort(begin(open_), end(open_), [](const Node& a, const Node& b)
+                                {
+                                    return a.g_ < b.g_;
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            throw std::runtime_error("Dijkstra planner could not find a path from start to goal");
+        }
+
+        std::vector<std::shared_ptr<Action>> planA(const WorldState& start, const WorldState& goal, const std::vector<std::shared_ptr<Action>>& actions)
         {
             if (start.meetsGoal(goal))
             {
@@ -180,7 +264,7 @@ namespace goap
                         }
                         current = *itr;
                     } while (current.parent_id_ != 0);
-                    
+
                     std::vector<std::shared_ptr<Action>> plan;
                     for (auto it_rev = revers_plan.rbegin(); it_rev != revers_plan.rend(); ++it_rev)
                     {

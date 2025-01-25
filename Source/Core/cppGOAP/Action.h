@@ -23,7 +23,7 @@ namespace goap
     {
     private:
         std::string name_ = ""; // The human-readable action name
-        int cost_ = 0;          // The numeric cost of this action
+        int cost_ = 1;          // The numeric cost of this action
 
         // Preconditions are things that must be satisfied before this
         // action can be taken. Only preconditions that "matter" are here.
