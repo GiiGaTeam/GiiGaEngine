@@ -645,7 +645,7 @@ namespace GiiGa
             else if (js.isDouble())
             {
                 float value = js.asDouble();
-                if (ImGui::InputFloat("##float", &value))
+                if (ImGui::InputFloat("##float", &value, 0.1f, 1.0f))
                 {
                     js = value;
                     edited = true;

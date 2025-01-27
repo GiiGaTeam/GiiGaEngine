@@ -69,6 +69,11 @@ namespace GiiGa
 
         void BeginPlay() override
         {
+            if (!script_asset_)
+            {
+                el::Loggers::getLogger(LogPyScript)->error("PyScript was not initialized. uuid: %v", uuid_.ToString());
+                return;
+            }
             if (!substituter_component_)
             {
                 if (auto l_owner = owner_.lock())
@@ -144,6 +149,11 @@ namespace GiiGa
                 script_asset_->OnUpdate.Unregister(script_updated_handle_);
 
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(handle);
+            if (!script_asset_)
+            {
+                el::Loggers::getLogger(LogPyScript)->error("Some problem in SetScriptHandle: script_asset_ is nullptr");
+                return;
+            }
             script_asset_->OnUpdate.Register(std::bind(&PyBehaviourSchemeComponent::OnScriptUpdated, this, std::placeholders::_1));
 
             prop_modifications.clear();
