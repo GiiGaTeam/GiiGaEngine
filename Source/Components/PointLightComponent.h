@@ -179,16 +179,6 @@ namespace GiiGa
             mesh_->Draw(context.GetGraphicsCommandList());
         }
 
-        Json::Value ToJson(bool is_prefab_root) override
-        {
-            Json::Value json;
-
-            json["Type"] = typeid(PointLightComponent).name();
-            json["PointLightData"] = data_.toJson();
-
-            return json;
-        }
-
         SortData GetSortData() override
         {
             return {
@@ -200,13 +190,14 @@ namespace GiiGa
 
         void RestoreFromLevelJson(const Json::Value&) override
         {
-            Todo();
         }
 
         Json::Value DerivedToJson(bool is_prefab_root) override
         {
-            Todo();
-            return {};
+            Json::Value result;
+            result["Type"] = typeid(PointLightComponent).name();
+            result["PointLightData"] = data_.toJson();;
+            return result;
         }
 
         void UpdateGPUData(RenderContext& context) override
