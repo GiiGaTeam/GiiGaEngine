@@ -47,6 +47,8 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .value("KeyA", GiiGa::KeyCode::KeyA)
         .value("KeyS", GiiGa::KeyCode::KeyS)
         .value("KeyD", GiiGa::KeyCode::KeyD)
+        .value("KeyE", GiiGa::KeyCode::KeyE)
+        .value("KeyQ", GiiGa::KeyCode::KeyQ)
         .value("KeySpace", GiiGa::KeyCode::KeySpace)
         .export_values();
 
