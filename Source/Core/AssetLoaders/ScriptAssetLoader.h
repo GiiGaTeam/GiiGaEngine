@@ -91,6 +91,11 @@ namespace GiiGa
         {
             auto script_asset = std::dynamic_pointer_cast<ScriptAsset>(asset);
 
+            if (!script_asset)
+            {
+                el::Loggers::getLogger(LogPyScript)->error("ScriptAssetLoader::Update() error"); 
+                return;
+            }
             script_asset->module_.reload();
 
             std::string name = ScriptHelpers::GetComponentSubclassNameInModule(script_asset->module_);

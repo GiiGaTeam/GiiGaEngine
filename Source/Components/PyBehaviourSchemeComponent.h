@@ -47,6 +47,12 @@ namespace GiiGa
 
             script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
 
+            if (!script_asset_)
+            {
+                el::Loggers::getLogger(LogPyScript)->error("Failed to get script asset.");
+                return;
+            }
+
             prop_modifications = script_asset_->GetPropertyAnnotaions();
             
             prop_modifications.SetValuesFromJson(json["PropertyModifications"]);
