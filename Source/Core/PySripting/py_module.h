@@ -188,14 +188,14 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("CreateCollisionComponent", &GiiGa::GameObject::CreateComponent<GiiGa::CollisionComponent>)
         .def("Destroy", &GiiGa::GameObject::Destroy)
         .def_static("CreateEmptyGameObject", &GiiGa::GameObject::CreateEmptyGameObject)
-        .def("AddComponent", [](std::shared_ptr<GiiGa::GameObject> self, std::shared_ptr<GiiGa::PyBehaviourTrampoline> comp)
+        .def("CreateComponent", [](std::shared_ptr<GiiGa::GameObject> self, pybind11::object type)
         {
-            self->AddComponent(std::dynamic_pointer_cast<GiiGa::Component>(comp));
-        })
-        .def("AddComponent", [](std::shared_ptr<GiiGa::GameObject> self, std::shared_ptr<GiiGa::Component> comp)
-        {
+            auto inst = type();
+            auto comp = inst.cast<std::shared_ptr<GiiGa::Component>>();
+            comp->RegisterInWorld();
             self->AddComponent(comp);
-        });
+            return comp;
+        },"Argument Any Component subclass type");
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
@@ -208,10 +208,6 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("BeginPlay", &GiiGa::Component::BeginPlay)
         .def("Tick", &GiiGa::Component::Tick)
         .def("Destroy", &GiiGa::Component::Destroy)
-        .def("RegisterInWorld", [](std::shared_ptr<GiiGa::PyBehaviourTrampoline> self)
-        {
-            std::dynamic_pointer_cast<GiiGa::Component>(self)->RegisterInWorld();
-        })
         .def("RegisterInWorld", [](std::shared_ptr<GiiGa::Component> self)
         {
             self->RegisterInWorld();
