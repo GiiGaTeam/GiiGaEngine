@@ -86,27 +86,9 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<float>())               // Single float constructor
         .def(pybind11::init<float, float, float>()) // Three float constructor
         .def(pybind11::init(&GiiGa::Vector3FromJson))
-        .def_property("x", [](Vector3* self)
-                      {
-                          return self->x;
-                      }, [](Vector3* self, float v)
-                      {
-                          self->x = v;
-                      })
-        .def_property("y", [](Vector3* self)
-                      {
-                          return self->y;
-                      }, [](Vector3* self, float v)
-                      {
-                          self->y = v;
-                      })
-        .def_property("z", [](Vector3* self)
-                      {
-                          return self->z;
-                      }, [](Vector3* self, float v)
-                      {
-                          self->z = v;
-                      })
+        .def_readwrite("x", &Vector3::x)
+        .def_readwrite("y", &Vector3::y)
+        .def_readwrite("z", &Vector3::z)
         // Comparison operators using magic methods
         .def("__eq__", &Vector3::operator==)
         .def("__ne__", &Vector3::operator!=)
@@ -162,14 +144,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 
     pybind11::class_<GiiGa::SpawnParameters>(m, "SpawnParameters")
         .def(pybind11::init())
-        .def_property("name", [](GiiGa::SpawnParameters* self)
-                      {
-                          return self->name;
-                      },
-                      [](GiiGa::SpawnParameters* self, const std::string& name)
-                      {
-                          self->name = name;
-                      })
+        .def_readwrite("name", &GiiGa::SpawnParameters::name)
         .def_property("owner", [](GiiGa::SpawnParameters* self)
                       {
                           return self->Owner;
@@ -247,30 +222,9 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 
     pybind11::class_<GiiGa::CollideInfo>(m, "CollideInfo")
         .def(pybind11::init<>())
-        .def_property("baseOffset", [](GiiGa::CollideInfo* self)
-                      {
-                          return self->baseOffset;
-                      },
-                      [](GiiGa::CollideInfo* self, const Vector3& baseOffset)
-                      {
-                          self->baseOffset = baseOffset;
-                      })
-        .def_property("normal", [](GiiGa::CollideInfo* self)
-                      {
-                          return self->normal;
-                      },
-                      [](GiiGa::CollideInfo* self, const Vector3& normal)
-                      {
-                          self->normal = normal;
-                      })
-        .def_property("depthPenetration", [](GiiGa::CollideInfo* self)
-                      {
-                          return self->depthPenetration;
-                      },
-                      [](GiiGa::CollideInfo* self, float depthPenetration)
-                      {
-                          self->depthPenetration = depthPenetration;
-                      });
+        .def_readwrite("baseOffset", &GiiGa::CollideInfo::baseOffset)
+        .def_readwrite("normal", &GiiGa::CollideInfo::normal)
+        .def_readwrite("depthPenetration", &GiiGa::CollideInfo::depthPenetration);
 
     pybind11::class_<GiiGa::ICollision, std::shared_ptr<GiiGa::ICollision>, GiiGa::TransformComponent>(m, "ICollision")
         .def("AddForce", &GiiGa::ICollision::AddForce);

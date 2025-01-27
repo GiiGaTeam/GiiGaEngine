@@ -27,7 +27,7 @@ class MyPyBeh1(gp.Component):
         if self.time > 3 and not self.created:
             self.created = True
             sp = gp.SpawnParameters()
-            sp.name = "Fuck YOU"
+            sp.name = "Name"
             sp.owner = self.owner
             new_go: gp.GameObject = gp.GameObject.CreateEmptyGameObject(sp)
             # new_comp: MyPyBeh2 = MyPyBeh2()
