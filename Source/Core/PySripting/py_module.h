@@ -171,7 +171,11 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
             comp->RegisterInWorld();
             self->AddComponent(comp);
             return comp;
-        }, "First arg Any Component subclass type, than args and kwargs");
+        }, "First arg Any Component subclass type, than args and kwargs")
+        .def("GetChildren", &GiiGa::GameObject::GetChildren)
+        .def("AddChild", &GiiGa::GameObject::AddChild)
+        .def("RemoveChild", &GiiGa::GameObject::RemoveChild)
+        .def("SetParent", &GiiGa::GameObject::SetParent);
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())
