@@ -2,7 +2,19 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+class AssetHandle:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def ToJson(self) -> JsonValue:
+        ...
+    @typing.overload
+    def __init__(self) -> None:
+        ...
+    @typing.overload
+    def __init__(self, arg0: JsonValue) -> None:
+        ...
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -48,6 +60,18 @@ class Component:
         ...
     def Init(self) -> None:
         ...
+    def OnBeginOverlap(self, arg0: ..., arg1: ...) -> None:
+        """
+        arg0: CollisionComponent, arg1: CollideInfo
+        """
+    def OnEndOverlap(self, arg0: ...) -> None:
+        """
+        arg0: CollisionComponent
+        """
+    def OnOverlapping(self, arg0: ..., arg1: ...) -> None:
+        """
+        arg0: CollisionComponent, arg1: CollideInfo
+        """
     def RegisterInWorld(self) -> None:
         ...
     def Tick(self, arg0: float) -> None:
@@ -112,6 +136,8 @@ class Engine:
         ...
     def RenderSystem(self) -> RenderSystem:
         ...
+    def ResourceManager(self) -> ResourceManager:
+        ...
 class GameObject:
     name: str
     @staticmethod
@@ -120,16 +146,24 @@ class GameObject:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
+    def AddChild(self, arg0: GameObject) -> None:
+        ...
     def CreateComponent(self, arg0: typing.Any, *args, **kwargs) -> ...:
         """
         First arg Any Component subclass type, than args and kwargs
         """
     def Destroy(self) -> None:
         ...
+    def GetChildren(self) -> list[GameObject]:
+        ...
     def GetTransformComponent(self) -> ...:
         """
         Returns TransformComponent type
         """
+    def RemoveChild(self, arg0: GameObject) -> None:
+        ...
+    def SetParent(self, arg0: GameObject, arg1: bool) -> None:
+        ...
 class ICollision(TransformComponent):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -182,14 +216,20 @@ class KeyCode:
     
       KeyD
     
+      KeyE
+    
+      KeyQ
+    
       KeySpace
     """
     KeyA: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyA: 1>
     KeyD: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyD: 4>
+    KeyE: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyE: 5>
+    KeyQ: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyQ: 17>
     KeyS: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyS: 19>
     KeySpace: typing.ClassVar[KeyCode]  # value = <KeyCode.KeySpace: 59>
     KeyW: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyW: 23>
-    __members__: typing.ClassVar[dict[str, KeyCode]]  # value = {'KeyW': <KeyCode.KeyW: 23>, 'KeyA': <KeyCode.KeyA: 1>, 'KeyS': <KeyCode.KeyS: 19>, 'KeyD': <KeyCode.KeyD: 4>, 'KeySpace': <KeyCode.KeySpace: 59>}
+    __members__: typing.ClassVar[dict[str, KeyCode]]  # value = {'KeyW': <KeyCode.KeyW: 23>, 'KeyA': <KeyCode.KeyA: 1>, 'KeyS': <KeyCode.KeyS: 19>, 'KeyD': <KeyCode.KeyD: 4>, 'KeyE': <KeyCode.KeyE: 5>, 'KeyQ': <KeyCode.KeyQ: 17>, 'KeySpace': <KeyCode.KeySpace: 59>}
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
@@ -262,6 +302,14 @@ class Layer:
     @property
     def value(self) -> int:
         ...
+class Material:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+class MeshAsset:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
 class MouseButton:
     """
     Members:
@@ -308,6 +356,14 @@ class RenderSystem:
         ...
     def SetCamera(self, arg0: ...) -> None:
         ...
+class ResourceManager:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def GetMaterialAsset(self, arg0: AssetHandle) -> Material:
+        ...
+    def GetMeshAsset(self, arg0: AssetHandle) -> MeshAsset:
+        ...
 class ShapeCastResult:
     collisionComponent: CollisionComponent
     @staticmethod
@@ -327,6 +383,14 @@ class SpawnParameters:
         ...
     @owner.setter
     def owner(self, arg1: ...) -> None:
+        ...
+class StaticMeshComponent(Component):
+    MaterialHandle: AssetHandle
+    MeshHandle: AssetHandle
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
         ...
 class Transform:
     __hash__: typing.ClassVar[None] = None
@@ -428,8 +492,6 @@ class Vector3:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
-    def MulFloat(self, arg0: float) -> Vector3:
-        ...
     def __add__(self, arg0: Vector3) -> Vector3:
         ...
     def __eq__(self, arg0: Vector3) -> bool:
@@ -458,9 +520,13 @@ class Vector3:
         ...
     def __itruediv__(self, arg0: float) -> Vector3:
         ...
+    def __mul__(self, arg0: float) -> Vector3:
+        ...
     def __ne__(self, arg0: Vector3) -> bool:
         ...
     def __neg__(self) -> Vector3:
+        ...
+    def __rmul__(self, arg0: float) -> Vector3:
         ...
     def clamp(self, arg0: Vector3, arg1: Vector3) -> None:
         ...
@@ -483,6 +549,8 @@ def Vector3ToJson(arg0: Vector3) -> JsonValue:
 Dynamic: EMotionType  # value = <EMotionType.Dynamic: 2>
 KeyA: KeyCode  # value = <KeyCode.KeyA: 1>
 KeyD: KeyCode  # value = <KeyCode.KeyD: 4>
+KeyE: KeyCode  # value = <KeyCode.KeyE: 5>
+KeyQ: KeyCode  # value = <KeyCode.KeyQ: 17>
 KeyS: KeyCode  # value = <KeyCode.KeyS: 19>
 KeySpace: KeyCode  # value = <KeyCode.KeySpace: 59>
 KeyW: KeyCode  # value = <KeyCode.KeyW: 23>

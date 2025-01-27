@@ -598,11 +598,17 @@ namespace GiiGa
                                     else
                                     {
                                         pybind11::object py_obj = pybind11::none();
-                                        py_obj = pybind11::cast(go_comp, pybind11::return_value_policy::reference);
-
-                                        if (py_obj.ptr() == nullptr)
+                                        try
+                                        {
+                                            py_obj = pybind11::cast(go_comp);
+                                            if (py_obj.ptr() == nullptr)
+                                                continue;
+                                        }
+                                        catch (std::exception& e)
+                                        {
+                                            el::Loggers::getLogger(LogPyScript)->error(e.what());
                                             continue;
-
+                                        }
                                         pybind11::type obj_type = pybind11::type::of(py_obj);
                                         if (obj_type.is(name_prop.second.script_type))
                                         {
