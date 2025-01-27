@@ -120,10 +120,10 @@ class GameObject:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
-    def CreateCollisionComponent(self) -> ...:
-        ...
-    def CreateComponent(self, arg0: typing.Any) -> ...:
-        ...
+    def CreateComponent(self, arg0: typing.Any, *args, **kwargs) -> ...:
+        """
+        First arg Any Component subclass type, than args and kwargs
+        """
     def Destroy(self) -> None:
         ...
     def GetTransformComponent(self) -> ...:

@@ -185,17 +185,16 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         {
             return self->GetTransformComponent().lock();
         }, "Returns TransformComponent type")
-        .def("CreateCollisionComponent", &GiiGa::GameObject::CreateComponent<GiiGa::CollisionComponent>)
         .def("Destroy", &GiiGa::GameObject::Destroy)
         .def_static("CreateEmptyGameObject", &GiiGa::GameObject::CreateEmptyGameObject)
-        .def("CreateComponent", [](std::shared_ptr<GiiGa::GameObject> self, pybind11::object type)
+        .def("CreateComponent", [](std::shared_ptr<GiiGa::GameObject> self, pybind11::object type, pybind11::args args, pybind11::kwargs kwargs)
         {
-            auto inst = type();
+            auto inst = type(*args, **kwargs);
             auto comp = inst.cast<std::shared_ptr<GiiGa::Component>>();
             comp->RegisterInWorld();
             self->AddComponent(comp);
             return comp;
-        },"Argument Any Component subclass type");
+        }, "First arg Any Component subclass type, than args and kwargs");
 
     pybind11::classh<GiiGa::Component, GiiGa::PyBehaviourTrampoline>(m, "Component")
         .def(pybind11::init<>())

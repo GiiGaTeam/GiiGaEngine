@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Engine', 'GOAP', 'GameObject', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Left', 'MouseButton', 'RenderSystem', 'Right', 'Transform', 'TransformComponent', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -18,11 +18,25 @@ class CollideInfo:
         ...
     def __init__(self) -> None:
         ...
-class CollisionComponent(Component):
+class CollisionComponent(ICollision):
+    Layer: Layer
+    MotionType: EMotionType
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
+    def AddForce(self, arg0: Vector3) -> None:
+        ...
+    def AddImpulse(self, arg0: Vector3) -> None:
+        ...
+    def AddVelocity(self, arg0: Vector3) -> None:
+        ...
     def __init__(self) -> None:
+        ...
+    @property
+    def owner(self) -> GameObject:
+        ...
+    @owner.setter
+    def owner(self, arg1: ...) -> None:
         ...
 class Component:
     @staticmethod
@@ -34,6 +48,8 @@ class Component:
         ...
     def Init(self) -> None:
         ...
+    def RegisterInWorld(self) -> None:
+        ...
     def Tick(self, arg0: float) -> None:
         ...
     def __init__(self) -> None:
@@ -43,6 +59,49 @@ class Component:
         ...
     @owner.setter
     def owner(self, arg1: ...) -> None:
+        ...
+class EMotionType:
+    """
+    Members:
+    
+      Dynamic
+    
+      Kinematic
+    
+      Static
+    """
+    Dynamic: typing.ClassVar[EMotionType]  # value = <EMotionType.Dynamic: 2>
+    Kinematic: typing.ClassVar[EMotionType]  # value = <EMotionType.Kinematic: 1>
+    Static: typing.ClassVar[EMotionType]  # value = <EMotionType.Static: 0>
+    __members__: typing.ClassVar[dict[str, EMotionType]]  # value = {'Dynamic': <EMotionType.Dynamic: 2>, 'Kinematic': <EMotionType.Kinematic: 1>, 'Static': <EMotionType.Static: 0>}
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __eq__(self, other: typing.Any) -> bool:
+        ...
+    def __getstate__(self) -> int:
+        ...
+    def __hash__(self) -> int:
+        ...
+    def __index__(self) -> int:
+        ...
+    def __init__(self, value: int) -> None:
+        ...
+    def __int__(self) -> int:
+        ...
+    def __ne__(self, other: typing.Any) -> bool:
+        ...
+    def __repr__(self) -> str:
+        ...
+    def __setstate__(self, state: int) -> None:
+        ...
+    def __str__(self) -> str:
+        ...
+    @property
+    def name(self) -> str:
+        ...
+    @property
+    def value(self) -> int:
         ...
 class Engine:
     @staticmethod
@@ -56,14 +115,27 @@ class Engine:
 class GameObject:
     name: str
     @staticmethod
+    def CreateEmptyGameObject(arg0: SpawnParameters) -> GameObject:
+        ...
+    @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
+    def CreateComponent(self, arg0: typing.Any, *args, **kwargs) -> ...:
+        """
+        First arg Any Component subclass type, than args and kwargs
+        """
     def Destroy(self) -> None:
         ...
     def GetTransformComponent(self) -> ...:
         """
         Returns TransformComponent type
         """
+class ICollision(TransformComponent):
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def AddForce(self, arg0: Vector3) -> None:
+        ...
 class Input:
     @staticmethod
     def GetMouseDelta() -> ...:
@@ -147,6 +219,49 @@ class KeyCode:
     @property
     def value(self) -> int:
         ...
+class Layer:
+    """
+    Members:
+    
+      Moving
+    
+      Trigger
+    
+      NoMoving
+    """
+    Moving: typing.ClassVar[Layer]  # value = <Layer.Moving: 1>
+    NoMoving: typing.ClassVar[Layer]  # value = <Layer.NoMoving: 0>
+    Trigger: typing.ClassVar[Layer]  # value = <Layer.Trigger: 2>
+    __members__: typing.ClassVar[dict[str, Layer]]  # value = {'Moving': <Layer.Moving: 1>, 'Trigger': <Layer.Trigger: 2>, 'NoMoving': <Layer.NoMoving: 0>}
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __eq__(self, other: typing.Any) -> bool:
+        ...
+    def __getstate__(self) -> int:
+        ...
+    def __hash__(self) -> int:
+        ...
+    def __index__(self) -> int:
+        ...
+    def __init__(self, value: int) -> None:
+        ...
+    def __int__(self) -> int:
+        ...
+    def __ne__(self, other: typing.Any) -> bool:
+        ...
+    def __repr__(self) -> str:
+        ...
+    def __setstate__(self, state: int) -> None:
+        ...
+    def __str__(self) -> str:
+        ...
+    @property
+    def name(self) -> str:
+        ...
+    @property
+    def value(self) -> int:
+        ...
 class MouseButton:
     """
     Members:
@@ -193,6 +308,26 @@ class RenderSystem:
         ...
     def SetCamera(self, arg0: ...) -> None:
         ...
+class ShapeCastResult:
+    collisionComponent: CollisionComponent
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
+        ...
+class SpawnParameters:
+    name: str
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
+        ...
+    @property
+    def owner(self) -> ...:
+        ...
+    @owner.setter
+    def owner(self, arg1: ...) -> None:
+        ...
 class Transform:
     __hash__: typing.ClassVar[None] = None
     @staticmethod
@@ -233,6 +368,8 @@ class TransformComponent(Component):
     def AddWorldRotation(self, arg0: Vector3) -> None:
         ...
     def AddWorldScale(self, arg0: Vector3) -> None:
+        ...
+    def Forward(self) -> Vector3:
         ...
     def GetLocation(self) -> Vector3:
         ...
@@ -291,6 +428,10 @@ class Vector3:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
+    def MulFloat(self, arg0: float) -> Vector3:
+        ...
+    def __add__(self, arg0: Vector3) -> Vector3:
+        ...
     def __eq__(self, arg0: Vector3) -> bool:
         ...
     def __iadd__(self, arg0: Vector3) -> Vector3:
@@ -333,14 +474,22 @@ class Vector3:
         ...
     def normalize(self) -> None:
         ...
+def ShapeCast(arg0: float, arg1: Vector3, arg2: Vector3) -> ShapeCastResult:
+    ...
 def Vector3FromJson(arg0: JsonValue) -> Vector3:
     ...
 def Vector3ToJson(arg0: Vector3) -> JsonValue:
     ...
+Dynamic: EMotionType  # value = <EMotionType.Dynamic: 2>
 KeyA: KeyCode  # value = <KeyCode.KeyA: 1>
 KeyD: KeyCode  # value = <KeyCode.KeyD: 4>
 KeyS: KeyCode  # value = <KeyCode.KeyS: 19>
 KeySpace: KeyCode  # value = <KeyCode.KeySpace: 59>
 KeyW: KeyCode  # value = <KeyCode.KeyW: 23>
+Kinematic: EMotionType  # value = <EMotionType.Kinematic: 1>
 Left: MouseButton  # value = <MouseButton.Left: 1>
+Moving: Layer  # value = <Layer.Moving: 1>
+NoMoving: Layer  # value = <Layer.NoMoving: 0>
 Right: MouseButton  # value = <MouseButton.Right: 2>
+Static: EMotionType  # value = <EMotionType.Static: 0>
+Trigger: Layer  # value = <Layer.Trigger: 2>
