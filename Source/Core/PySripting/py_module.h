@@ -104,9 +104,13 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("__isub__", &Vector3::operator-=)
         .def("__imul__", pybind11::overload_cast<const Vector3&>(&Vector3::operator*=))
         .def("__imul__", pybind11::overload_cast<float>(&Vector3::operator*=))
-        .def("MulFloat", [](Vector3* self, float v)
+        .def("__mul__", [](Vector3* self, float v)
         {
-            return *self * v;
+            return v * (*self);
+        })
+        .def("__rmul__", [](Vector3* self, float v)
+        {
+            return (*self) * v;
         })
         .def("__itruediv__", &Vector3::operator/=)
         .def("__neg__", &Vector3::operator-)
