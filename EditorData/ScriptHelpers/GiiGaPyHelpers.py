@@ -4,6 +4,7 @@ import GiiGaPy as gp
 
 print("Helpers Import", flush=True)
 
+
 def get_subclass_name_in_module(module, base_type) -> str:
     for name, obj in inspect.getmembers(module):
         if (
@@ -12,25 +13,35 @@ def get_subclass_name_in_module(module, base_type) -> str:
             and obj.__module__ == module.__name__
         ):
             return name
-        
-def get_type_with_name_in_module(module, name:str) -> object:
+
+
+def get_type_with_name_in_module(module, name: str) -> object:
     attr = getattr(module, name)
-    print(str(attr),flush=True)
+    print(str(attr), flush=True)
     return attr
 
-def IsEqOrSubClass(cls, base_type)-> bool:
-    return cls == base_type or issubclass(cls,base_type)
 
-def EncodeToJSONValue(obj: object)->gp.JsonValue:
-    
+def IsEqOrSubClass(cls, base_type) -> bool:
+    return cls == base_type or issubclass(cls, base_type)
+
+
+def EncodeToJSONValue(obj: object) -> gp.JsonValue:
+
+    if obj is None:
+        return gp.JsonValue()
+
     if isinstance(obj, gp.Vector3):
         return gp.Vector3ToJson(obj)
-    
+
     if isinstance(obj, gp.Uuid):
         return gp.JsonValue(str(obj))
-    
+
+    if isinstance(obj, gp.AssetHandle):
+        return obj.ToJson()
+
     # case for default types (int, str etc), looks strange
     return gp.JsonValue(obj)
+
 
 # Example usage:
 # import your_module

@@ -32,8 +32,8 @@ namespace GiiGa
         friend class ImGuiAssetEditor;
 
     public:
-        StaticMeshComponent()=default;
-        
+        StaticMeshComponent() = default;
+
         StaticMeshComponent(Json::Value json, bool roll_id = false):
             Component(json, roll_id)
         {
@@ -99,7 +99,6 @@ namespace GiiGa
 
         void BeginPlay() override
         {
-            
         }
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid,
@@ -122,7 +121,7 @@ namespace GiiGa
 
         std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
-            std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>>  result;
+            std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> result;
 
             auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
 
@@ -198,7 +197,8 @@ namespace GiiGa
             else
             {
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_handle);
-                RegisterInVisibility();
+                if (perObjectData_)
+                    RegisterInVisibility();
 
                 if (!material_)
                 {

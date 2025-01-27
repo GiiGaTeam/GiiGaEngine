@@ -2,7 +2,19 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+class AssetHandle:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def ToJson(self) -> JsonValue:
+        ...
+    @typing.overload
+    def __init__(self) -> None:
+        ...
+    @typing.overload
+    def __init__(self, arg0: JsonValue) -> None:
+        ...
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -49,11 +61,17 @@ class Component:
     def Init(self) -> None:
         ...
     def OnBeginOverlap(self, arg0: ..., arg1: ...) -> None:
-        ...
+        """
+        arg0: CollisionComponent, arg1: CollideInfo
+        """
     def OnEndOverlap(self, arg0: ...) -> None:
-        ...
+        """
+        arg0: CollisionComponent
+        """
     def OnOverlapping(self, arg0: ..., arg1: ...) -> None:
-        ...
+        """
+        arg0: CollisionComponent, arg1: CollideInfo
+        """
     def RegisterInWorld(self) -> None:
         ...
     def Tick(self, arg0: float) -> None:
@@ -117,6 +135,8 @@ class Engine:
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
     def RenderSystem(self) -> RenderSystem:
+        ...
+    def ResourceManager(self) -> ResourceManager:
         ...
 class GameObject:
     name: str
@@ -282,6 +302,14 @@ class Layer:
     @property
     def value(self) -> int:
         ...
+class Material:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+class MeshAsset:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
 class MouseButton:
     """
     Members:
@@ -328,6 +356,14 @@ class RenderSystem:
         ...
     def SetCamera(self, arg0: ...) -> None:
         ...
+class ResourceManager:
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def GetMaterialAsset(self, arg0: AssetHandle) -> Material:
+        ...
+    def GetMeshAsset(self, arg0: AssetHandle) -> MeshAsset:
+        ...
 class ShapeCastResult:
     collisionComponent: CollisionComponent
     @staticmethod
@@ -347,6 +383,14 @@ class SpawnParameters:
         ...
     @owner.setter
     def owner(self, arg1: ...) -> None:
+        ...
+class StaticMeshComponent(Component):
+    MaterialHandle: AssetHandle
+    MeshHandle: AssetHandle
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
         ...
 class Transform:
     __hash__: typing.ClassVar[None] = None

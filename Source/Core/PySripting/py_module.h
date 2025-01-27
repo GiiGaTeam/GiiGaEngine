@@ -24,18 +24,53 @@ using namespace DirectX::SimpleMath;
 #include<Engine.h>
 #include<Input.h>
 #include<CollisionComponent.h>
+#include<VertexTypes.h>
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
+    pybind11::class_<GiiGa::Uuid>(m, "Uuid")
+        .def(pybind11::init<>())
+        .def("__str__", &GiiGa::Uuid::ToString);
+
+    pybind11::class_<Json::Value>(m, "JsonValue")
+        .def(pybind11::init<>())
+        .def(pybind11::init<int>())
+        .def(pybind11::init<double>())
+        .def(pybind11::init([](const std::string& s)
+        {
+            return Json::Value(s);
+        }))
+        .def_static("FromStyledString", [](const std::string& str)
+        {
+            Json::Value json;
+            Json::Reader reader;
+            reader.parse(str, json);
+            return json;
+        });
+
     pybind11::class_<GiiGa::RenderSystem, std::shared_ptr<GiiGa::RenderSystem>>(m, "RenderSystem")
         .def("SetCamera", &GiiGa::RenderSystem::SetCamera);
+
+    pybind11::class_<GiiGa::MeshAsset<GiiGa::VertexPNTBT>, std::shared_ptr<GiiGa::MeshAsset<GiiGa::VertexPNTBT>>>(m, "MeshAsset");
+
+    pybind11::class_<GiiGa::Material, std::shared_ptr<GiiGa::Material>>(m, "Material");
+
+    pybind11::class_<GiiGa::AssetHandle>(m, "AssetHandle")
+        .def(pybind11::init<>())
+        .def(pybind11::init<Json::Value>())
+        .def("ToJson", &GiiGa::AssetHandle::ToJson);
+
+    pybind11::class_<GiiGa::ResourceManager, std::shared_ptr<GiiGa::ResourceManager>>(m, "ResourceManager")
+        .def("GetMeshAsset", &GiiGa::ResourceManager::GetAsset<GiiGa::MeshAsset<GiiGa::VertexPNTBT>>)
+        .def("GetMaterialAsset", &GiiGa::ResourceManager::GetAsset<GiiGa::Material>);
 
     pybind11::class_<GiiGa::Engine>(m, "Engine")
         .def_static("Instance", []()-> GiiGa::Engine& {
                         return GiiGa::Engine::Instance();
                     },
                     pybind11::return_value_policy::reference)
-        .def("RenderSystem", &GiiGa::Engine::RenderSystem, pybind11::return_value_policy::reference_internal);
+        .def("RenderSystem", &GiiGa::Engine::RenderSystem, pybind11::return_value_policy::reference_internal)
+        .def("ResourceManager", &GiiGa::Engine::ResourceManager, pybind11::return_value_policy::reference_internal);
 
     pybind11::enum_<GiiGa::MouseButton>(m, "MouseButton")
         .value("Left", GiiGa::MouseButton::MouseLeft)
@@ -61,26 +96,6 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def_static("IsKeyHeld", [](GiiGa::KeyCode button)
         {
             return GiiGa::Input::IsKeyHeld(button);
-        });
-
-    pybind11::class_<GiiGa::Uuid>(m, "Uuid")
-        .def(pybind11::init<>())
-        .def("__str__", &GiiGa::Uuid::ToString);
-
-    pybind11::class_<Json::Value>(m, "JsonValue")
-        .def(pybind11::init<>())
-        .def(pybind11::init<int>())
-        .def(pybind11::init<double>())
-        .def(pybind11::init([](const std::string& s)
-        {
-            return Json::Value(s);
-        }))
-        .def_static("FromStyledString", [](const std::string& str)
-        {
-            Json::Value json;
-            Json::Reader reader;
-            reader.parse(str, json);
-            return json;
         });
 
     pybind11::class_<Vector3>(m, "Vector3")
@@ -176,6 +191,10 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
             self->AddComponent(comp);
             return comp;
         }, "First arg Any Component subclass type, than args and kwargs")
+        //.def("CreateStaticMeshComponent", [](std::shared_ptr<GiiGa::GameObject> self)
+        //{
+        //    return self->CreateComponent<GiiGa::StaticMeshComponent>();
+        //}, "First arg Any Component subclass type, than args and kwargs")
         .def("GetChildren", &GiiGa::GameObject::GetChildren)
         .def("AddChild", &GiiGa::GameObject::AddChild)
         .def("RemoveChild", &GiiGa::GameObject::RemoveChild)
@@ -196,9 +215,9 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         {
             self->RegisterInWorld();
         })
-        .def("OnBeginOverlap", &GiiGa::Component::OnBeginOverlap)
-        .def("OnOverlapping", &GiiGa::Component::OnOverlapping)
-        .def("OnEndOverlap", &GiiGa::Component::OnEndOverlap);
+        .def("OnBeginOverlap", &GiiGa::Component::OnBeginOverlap, "arg0: CollisionComponent, arg1: CollideInfo")
+        .def("OnOverlapping", &GiiGa::Component::OnOverlapping, "arg0: CollisionComponent, arg1: CollideInfo")
+        .def("OnEndOverlap", &GiiGa::Component::OnEndOverlap, "arg0: CollisionComponent");
 
     pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
         .def(pybind11::init<>())
@@ -285,6 +304,10 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         return res;
     });
 
+    pybind11::classh<GiiGa::StaticMeshComponent, GiiGa::Component>(m, "StaticMeshComponent")
+        .def(pybind11::init<>())
+        .def_property("MeshHandle", &GiiGa::StaticMeshComponent::GetMeshHandle, &GiiGa::StaticMeshComponent::SetMeshHandle)
+        .def_property("MaterialHandle", &GiiGa::StaticMeshComponent::GetMaterialHandle, &GiiGa::StaticMeshComponent::SetMaterialHandle);
 
     auto goap_m = m.def_submodule("GOAP");
 

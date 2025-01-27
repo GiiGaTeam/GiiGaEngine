@@ -57,6 +57,19 @@ namespace GiiGa
 
             return handle;
         }
+
+        AssetHandle(const Json::Value& json)
+        {
+            auto uuid = Uuid::FromString(json["id"].asString());
+
+            if (!uuid)
+            {
+                throw std::invalid_argument("Invalid JSON: Wrong UUID");
+            }
+
+            id = *uuid;
+            subresource = json["subresource"].asInt();
+        }
     };
 }
 

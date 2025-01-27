@@ -613,6 +613,20 @@ namespace GiiGa
                             }
                         }
 
+                        if (name_prop.second.script_type.is(pybind11::type::of<AssetHandle>()))
+                        {
+                            AssetHandle handle;
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh)))
+                            {
+                                handle = *(AssetHandle*)payload->Data;
+                            }
+                            else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material)))
+                            {
+                                handle = *(AssetHandle*)payload->Data;
+                            }
+                            name_prop.second.value_or_holder = pybind11::cast(handle);
+                        }
+
                         ImGui::EndDragDropTarget();
                     }
 
