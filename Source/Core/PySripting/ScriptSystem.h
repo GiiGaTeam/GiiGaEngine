@@ -47,6 +47,7 @@ sys.path.append(r'{}'))", ScriptsPath.c_str());
 sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             }
 
+#ifdef _DEBUG
             try
             {
                 if (!std::filesystem::exists("./EditorData/ScriptHelpers/GiiGaPy.pyi"))
@@ -57,6 +58,8 @@ sys.path.append(os.getcwd() + '/EditorData/ScriptHelpers'))");
             {
                 el::Loggers::getLogger(LogPyScript)->debug("ScriptSystem():: %v", e.what());
             }
+#endif
+            
 
             reference_types_holders =
             {

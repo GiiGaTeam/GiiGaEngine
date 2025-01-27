@@ -201,7 +201,10 @@ namespace GiiGa
             }
             else
             {
-                result.push_back({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+                Uuid parent_id = Uuid::Null();
+                if (auto l_parent = this->parent_.lock())
+                    parent_id = l_parent->GetUuid();
+                result.push_back({{this->inprefab_uuid_, "Parent"}, parent_id.ToString()});
             }
 
             return result;

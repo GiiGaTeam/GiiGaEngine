@@ -67,7 +67,7 @@ namespace GiiGa
             {
                 kid->BeginPlay();
             }
-            
+
             for (int i = 0; i < components_.size(); ++i)
             {
                 WorldQuery::AddComponentToBeginPlayQueue(components_[i]);
@@ -242,7 +242,10 @@ namespace GiiGa
             }
             else
             {
-                modifications.insert({{this->inprefab_uuid_, "Parent"}, this->parent_.lock()->GetUuid().ToString()});
+                Uuid parent_id = Uuid::Null();
+                if (auto l_parent = this->parent_.lock())
+                    parent_id = l_parent->GetUuid();
+                modifications.insert({{this->inprefab_uuid_, "Parent"}, parent_id.ToString()});
             }
 
             const auto& prefab_components_prefab_uuids = prefab_other->GetComponentsByPrefabUuid();
