@@ -37,8 +37,11 @@ namespace GiiGa
             {
                 return loaded_asset;
             }
-
-             throw std::runtime_error("Failed to load asset with handle: " + handle.id.ToString());
+            else
+            {
+                el::Loggers::getLogger(LogResourceManager)->error("Failed to load asset with handle: " + handle.id.ToString());
+                return nullptr;
+            }
         }
 
         void SetDatabase(std::shared_ptr<BaseAssetDatabase> database) {
@@ -99,6 +102,11 @@ namespace GiiGa
             }
 
             auto asset = loader_it->second->Load(handle, database_->asset_path_ / asset_meta.path);
+            if (!asset)
+            {
+                el::Loggers::getLogger(LogResourceManager)->error("Failed to load asset: " + handle.id.ToString());
+                return nullptr;
+            }
             loaded_assets_[handle] = asset;
             asset->OnDestroy.Register([this](const auto& handle) {
                 RemoveAsset(handle);

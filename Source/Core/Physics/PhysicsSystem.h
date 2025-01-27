@@ -226,7 +226,7 @@ namespace GiiGa
 
             virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
             {
-                el::Loggers::getLogger(LogPhysics)->debug("A contact was persisted");
+                //el::Loggers::getLogger(LogPhysics)->debug("A contact was persisted");
                 const auto collision1 = GetCollisionByBody(inBody1.GetID());
                 const auto collision2 = GetCollisionByBody(inBody2.GetID());
                 CollideInfo collideInfo

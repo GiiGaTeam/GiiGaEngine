@@ -70,16 +70,18 @@ namespace GiiGa
             }
             catch (pybind11::error_already_set& e)
             {
-                el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while importing %v", e.what());
-                throw std::exception("cant #include<module");
+                el::Loggers::getLogger(LogPyScript)->error("ScriptAssetLoader()::Load error while importing %v", e.what());
+                el::Loggers::getLogger(LogPyScript)->error("cant #include<module");
+                return nullptr;
             }
 
             std::string name = ScriptHelpers::GetComponentSubclassNameInModule(module);
 
             if (name.empty())
             {
-                el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while gather name");
-                throw std::exception("cant find subclass name");
+                el::Loggers::getLogger(LogPyScript)->error("ScriptAssetLoader()::Load error while gather name");
+                el::Loggers::getLogger(LogPyScript)->error("cant find subclass name");
+                return nullptr;
             }
 
             return std::make_shared<ScriptAsset>(handle, module, name);
@@ -96,7 +98,8 @@ namespace GiiGa
             if (name.empty())
             {
                 el::Loggers::getLogger(LogPyScript)->info("ScriptAssetLoader()::Load error while gather name");
-                throw std::exception("cant find subclass name");
+                el::Loggers::getLogger(LogPyScript)->info("cant find subclass name");
+                return;
             }
 
             script_asset->user_class_name_ = name.c_str();
