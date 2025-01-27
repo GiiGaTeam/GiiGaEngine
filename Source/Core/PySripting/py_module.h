@@ -191,7 +191,10 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("RegisterInWorld", [](std::shared_ptr<GiiGa::Component> self)
         {
             self->RegisterInWorld();
-        });
+        })
+        .def("OnBeginOverlap", &GiiGa::Component::OnBeginOverlap)
+        .def("OnOverlapping", &GiiGa::Component::OnOverlapping)
+        .def("OnEndOverlap", &GiiGa::Component::OnEndOverlap);
 
     pybind11::class_<GiiGa::TransformComponent, std::shared_ptr<GiiGa::TransformComponent>, GiiGa::Component>(m, "TransformComponent")
         .def(pybind11::init<>())
