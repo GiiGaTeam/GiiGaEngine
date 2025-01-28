@@ -202,7 +202,7 @@ namespace GiiGa
         public:
             virtual JPH::ValidateResult OnContactValidate(const JPH::Body& inBody1, const JPH::Body& inBody2, JPH::RVec3Arg inBaseOffset, const JPH::CollideShapeResult& inCollisionResult) override
             {
-                el::Loggers::getLogger(LogPhysics)->debug("Contact validate callback");
+                //el::Loggers::getLogger(LogPhysics)->debug("Contact validate callback");
 
                 // Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
                 return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
@@ -221,7 +221,7 @@ namespace GiiGa
                 };
                 if (!collision1 || !collision2) return;
                 collision1->OnContactAdded(collision2, collideInfo);
-                collision1->OnContactAdded(collision1, collideInfo);
+                collision2->OnContactAdded(collision1, collideInfo);
             }
 
             virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
@@ -237,7 +237,7 @@ namespace GiiGa
                 };
                 if (!collision1 || !collision2) return;
                 collision1->OnContactPersisted(collision2, collideInfo);
-                collision1->OnContactPersisted(collision1, collideInfo);
+                collision2->OnContactPersisted(collision1, collideInfo);
             }
 
             virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override
@@ -248,7 +248,7 @@ namespace GiiGa
 
                 if (!collision1 || !collision2) return;
                 collision1->OnContactRemoved(collision2);
-                collision1->OnContactRemoved(collision1);
+                collision2->OnContactRemoved(collision1);
                 el::Loggers::getLogger(LogPhysics)->debug("A contact was removed");
             }
         };
@@ -338,7 +338,7 @@ namespace GiiGa
             DirectX::SimpleMath::Vector3 range = collision_comp->GetWorldScale();
             Transform trans = collision_comp->GetWorldTransform();
 
-            const auto Layer = collision_comp->GetLayer();
+            const auto colData = collision_comp->GetData();
             switch (collision_comp->GetColliderType())
             {
             case ColliderType::Cube:
@@ -356,8 +356,11 @@ namespace GiiGa
 
                 //TODO Испрвить Слои - пока все moving
                 trans = collision_comp->GetWorldTransform();
-                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-                box_settings.mIsSensor = Layer == Trigger;
+                JPH::BodyCreationSettings box_settings(box_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), colData.layer_);
+                box_settings.mFriction = colData.friction_;
+                box_settings.mRestitution = colData.restitution_;
+                box_settings.mGravityFactor = colData.gravityFactor_;
+                box_settings.mIsSensor = colData.layer_ == Trigger;
                 body = body_interface.CreateBody(box_settings)->GetID();
                 break;
             }
@@ -376,8 +379,12 @@ namespace GiiGa
 
                 //TODO Испрвить Слои - пока все moving
 
-                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), Layer);
-                sphere_settings.mIsSensor = Layer == Trigger;
+                JPH::BodyCreationSettings sphere_settings(sphere_shape, VecToJoltVec(trans.location_), QuatToJoltQuat(trans.rotate_), static_cast<JPH::EMotionType>(collision_comp->GetMotionType()), colData.layer_);
+                sphere_settings.mFriction = colData.friction_;
+                sphere_settings.mRestitution = colData.restitution_;
+                sphere_settings.mGravityFactor = colData.gravityFactor_;
+                sphere_settings.mIsSensor = colData.layer_ == Trigger;
+
                 body = body_interface.CreateBody(sphere_settings)->GetID();
                 break;
             }
@@ -387,16 +394,6 @@ namespace GiiGa
             instance.collision_body_map_.emplace(collision_comp->GetUuid(), body);
             instance.body_collision_map_.emplace(body, collision_comp->GetUuid());
             GetInstance().BindOnTransformUpdate(collision_comp);
-
-            if (collision_comp->IsGravityActive())
-            {
-                body_interface.SetGravityFactor(body, 1.0);
-                body_interface.AddForce(body, {0.0f, 9.8f, 0.0f});
-            }
-            if (!collision_comp->IsGravityActive())
-            {
-                body_interface.SetGravityFactor(body, 0.0);
-            }
 
             return body;
         }

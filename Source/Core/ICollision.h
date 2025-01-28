@@ -41,6 +41,16 @@ namespace GiiGa
         Trigger = 2,
     };
 
+    struct CollisionData
+    {
+        ColliderType collider_type_ = ColliderType::Cube;
+        EMotionType motion_type_ = EMotionType::Static;
+        Layer layer_ = Layer::NoMoving;
+
+        float friction_ = 0.2f;
+        float restitution_ = 0.0f;
+        float gravityFactor_ = 1.0f;
+    };
 
     struct ICollision : public TransformComponent
     {
@@ -70,8 +80,8 @@ namespace GiiGa
         virtual Layer GetLayer() const =0;
         virtual void SetLayer(Layer layer) =0;
 
-        virtual bool IsGravityActive() const =0;
-        virtual void SetGravityActive(bool gravity) =0;
+        virtual CollisionData GetData() const =0;
+        virtual void SetData(CollisionData layer) =0;
 
         EventDispatcher<ColliderType> OnUpdateType;
         EventDispatcher<EMotionType> OnUpdateMotion;

@@ -18,7 +18,7 @@
 						{
 							"x" : -0.0,
 							"y" : 0.0,
-							"z" : -0.0
+							"z" : 0.0
 						},
 						"Scale" : 
 						{
@@ -222,9 +222,9 @@
 						},
 						"Rotation" : 
 						{
-							"x" : -37.763427734375,
-							"y" : 49.273754119873047,
-							"z" : -10.416292190551758
+							"x" : -37.763431549072266,
+							"y" : 49.273757934570312,
+							"z" : -10.416297912597656
 						},
 						"Scale" : 
 						{
@@ -298,11 +298,123 @@
 					},
 					"Type" : "class GiiGa::StaticMeshComponent",
 					"Uuid" : "c0de18d8-072a-48ff-b969-e33fb20fc6b6"
+				},
+				{
+					"ColliderType" : 0,
+					"Friction" : 0.20000000298023224,
+					"GravityFactor" : 1.0,
+					"Layer" : 0,
+					"MotionType" : 0,
+					"Parent" : "1bfe536c-a9a3-4924-a06f-0d0919af7d41",
+					"Restitution" : 0.0,
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 1.0
+						}
+					},
+					"Type" : "class GiiGa::CollisionComponent",
+					"Uuid" : "aa0d6b0b-bf6d-4009-8e6f-5539328371bd"
 				}
 			],
 			"Name" : "Plane",
 			"Parent" : "00000000-0000-0000-0000-000000000000",
 			"Uuid" : "bb480148-0eeb-4f64-9659-17e596ba3a95"
+		},
+		{
+			"Components" : 
+			[
+				{
+					"Parent" : "00000000-0000-0000-0000-000000000000",
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 6.8618736267089844,
+							"z" : 6.5214595794677734
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 1.0
+						}
+					},
+					"Type" : "class GiiGa::TransformComponent",
+					"Uuid" : "6d9dd6d5-4a5a-48e0-908e-3b7648660451"
+				},
+				{
+					"ColliderType" : 0,
+					"Friction" : 0.20000000298023224,
+					"GravityFactor" : 9.8000001907348633,
+					"Layer" : 1,
+					"MotionType" : 2,
+					"Parent" : "6d9dd6d5-4a5a-48e0-908e-3b7648660451",
+					"Restitution" : 0.20000000298023224,
+					"Transform" : 
+					{
+						"Location" : 
+						{
+							"x" : 0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Rotation" : 
+						{
+							"x" : -0.0,
+							"y" : 0.0,
+							"z" : 0.0
+						},
+						"Scale" : 
+						{
+							"x" : 1.0,
+							"y" : 1.0,
+							"z" : 1.0
+						}
+					},
+					"Type" : "class GiiGa::CollisionComponent",
+					"Uuid" : "588a0d81-7c79-43f3-9146-1d8e0f2f8fa6"
+				},
+				{
+					"Material" : 
+					{
+						"id" : "00000000-0000-0000-0000-000000000009",
+						"subresource" : 0
+					},
+					"Mesh" : 
+					{
+						"id" : "00000000-0000-0000-0000-00000000000b",
+						"subresource" : 0
+					},
+					"Type" : "class GiiGa::StaticMeshComponent",
+					"Uuid" : "86f76565-dd5f-46a8-b745-4921772c78a2"
+				}
+			],
+			"Name" : "GameObject",
+			"Parent" : "00000000-0000-0000-0000-000000000000",
+			"Uuid" : "f46830c6-4e80-439d-b3ba-c40a1b0ca0de"
 		}
 	],
 	"LevelSettings" : 
@@ -313,6 +425,7 @@
 	[
 		"e96c756a-b1ee-4763-8a37-0651c1d504c7",
 		"962d8d2e-c628-4ea4-98fd-7aaedf7a53a7",
-		"bb480148-0eeb-4f64-9659-17e596ba3a95"
+		"bb480148-0eeb-4f64-9659-17e596ba3a95",
+		"f46830c6-4e80-439d-b3ba-c40a1b0ca0de"
 	]
 }

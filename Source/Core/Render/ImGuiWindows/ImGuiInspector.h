@@ -825,11 +825,19 @@ namespace GiiGa
             {
                 comp->SetLayer(static_cast<Layer>(layer));
             }
-
-            bool gravite = comp->IsGravityActive();
-            if (ImGui::Checkbox("Is Gravity Active", &gravite))
+            
+            auto colData = comp->GetData();
+            if (ImGui::DragFloat("Friction", &colData.friction_, 0.01f, 0.0f, 1.0f))
             {
-                comp->SetGravityActive(gravite);
+                comp->SetData(colData);
+            }
+            if (ImGui::DragFloat("Restitution", &colData.restitution_, 0.01f, 0.0f, 1.0f))
+            {
+                comp->SetData(colData);
+            }
+            if (ImGui::DragFloat("Gravity Factor", &colData.gravityFactor_, 0.1f, 0.0f, 100.0f))
+            {
+                comp->SetData(colData);
             }
         }
 

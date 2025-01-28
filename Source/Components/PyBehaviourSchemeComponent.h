@@ -45,7 +45,7 @@ namespace GiiGa
             if (script_handle == AssetHandle())
                 return;
 
-            script_asset_ = Engine::Instance().ResourceManager()->GetAsset<ScriptAsset>(script_handle);
+            SetScriptHandle(script_handle);
 
             if (!script_asset_)
             {
