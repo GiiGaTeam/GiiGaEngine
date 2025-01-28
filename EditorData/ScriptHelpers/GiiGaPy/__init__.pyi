@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'PointLightComponent', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class AssetHandle:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -349,6 +349,16 @@ class MouseButton:
         ...
     @property
     def value(self) -> int:
+        ...
+class PointLightComponent(Component):
+    color: Vector3
+    fall_off: float
+    intensity: float
+    radius: float
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
         ...
 class RenderSystem:
     @staticmethod

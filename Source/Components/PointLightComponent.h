@@ -239,11 +239,21 @@ namespace GiiGa
             isDirty = true;
         }
 
+        Vector3 GetColor() const
+        {
+            return data_.color;
+        }
+
         void SetRadius(float radius)
         {
             data_.radius = radius;
             std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->SetScale({radius, radius, radius});
             isDirty = true;
+        }
+
+        float GetRadius()const
+        {
+            return data_.radius;
         }
 
         void SetIntensity(float max_intensity)
@@ -252,10 +262,20 @@ namespace GiiGa
             isDirty = true;
         }
 
+        float GetIntensity()const
+        {
+            return data_.max_intensity;
+        }
+
         void SetFallOff(float falloff)
         {
             data_.falloff = falloff;
             isDirty = true;
+        }
+
+        float GetFallOff()const
+        {
+            return data_.falloff;
         }
 
         PointLightData GetData() const { return data_; }

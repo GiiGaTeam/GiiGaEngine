@@ -25,6 +25,7 @@ using namespace DirectX::SimpleMath;
 #include<Input.h>
 #include<CollisionComponent.h>
 #include<VertexTypes.h>
+#include<PointLightComponent.h>
 
 PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
 {
@@ -273,7 +274,7 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .value("NoMoving", GiiGa::Layer::NoMoving)
         .export_values();
 
-    pybind11::class_<GiiGa::CollisionComponent, std::shared_ptr<GiiGa::CollisionComponent>, GiiGa::ICollision>(m, "CollisionComponent")
+    pybind11::classh<GiiGa::CollisionComponent, GiiGa::ICollision>(m, "CollisionComponent")
         .def(pybind11::init<>())
         .def("AddForce", &GiiGa::CollisionComponent::AddForce)
         .def("AddImpulse", &GiiGa::CollisionComponent::AddImpulse)
@@ -308,6 +309,13 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def(pybind11::init<>())
         .def_property("MeshHandle", &GiiGa::StaticMeshComponent::GetMeshHandle, &GiiGa::StaticMeshComponent::SetMeshHandle)
         .def_property("MaterialHandle", &GiiGa::StaticMeshComponent::GetMaterialHandle, &GiiGa::StaticMeshComponent::SetMaterialHandle);
+
+    pybind11::classh<GiiGa::PointLightComponent, GiiGa::Component>(m, "PointLightComponent")
+        .def(pybind11::init<>())
+        .def_property("color", &GiiGa::PointLightComponent::GetColor, &GiiGa::PointLightComponent::SetColor)
+        .def_property("radius", &GiiGa::PointLightComponent::GetRadius, &GiiGa::PointLightComponent::SetRadius)
+        .def_property("intensity", &GiiGa::PointLightComponent::GetIntensity, &GiiGa::PointLightComponent::SetIntensity)
+        .def_property("fall_off", &GiiGa::PointLightComponent::GetFallOff, &GiiGa::PointLightComponent::SetFallOff);
 
     auto goap_m = m.def_submodule("GOAP");
 
