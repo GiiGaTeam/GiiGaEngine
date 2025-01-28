@@ -258,6 +258,14 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def_readwrite("normal", &GiiGa::CollideInfo::normal)
         .def_readwrite("depthPenetration", &GiiGa::CollideInfo::depthPenetration);
 
+    pybind11::class_<GiiGa::CollisionData>(m, "CollisionData")
+        .def(pybind11::init<>())
+        .def_readwrite("motion_type", &GiiGa::CollisionData::motion_type_)
+        .def_readwrite("layer", &GiiGa::CollisionData::layer_)
+        .def_readwrite("friction", &GiiGa::CollisionData::friction_)
+        .def_readwrite("restitution", &GiiGa::CollisionData::restitution_)
+        .def_readwrite("gravityFactor", &GiiGa::CollisionData::gravityFactor_);
+
     pybind11::class_<GiiGa::ICollision, std::shared_ptr<GiiGa::ICollision>, GiiGa::TransformComponent>(m, "ICollision")
         .def("AddForce", &GiiGa::ICollision::AddForce);
 
@@ -278,13 +286,15 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def("AddForce", &GiiGa::CollisionComponent::AddForce)
         .def("AddImpulse", &GiiGa::CollisionComponent::AddImpulse)
         .def("AddVelocity", &GiiGa::CollisionComponent::AddVelocity)
+        .def("AddLinearAndAngularVelocity", &GiiGa::CollisionComponent::AddLinearAndAngularVelocity)
+        .def("SetVelocity", &GiiGa::CollisionComponent::SetVelocity)
+        .def("SetAngularVelocity", &GiiGa::CollisionComponent::SetAngularVelocity)
         .def_property("owner", [](std::shared_ptr<GiiGa::CollisionComponent> self)
                       {
                           return std::dynamic_pointer_cast<GiiGa::GameObject>(self->GetOwner());
                       },
                       &GiiGa::ICollision::SetOwner)
-        .def_property("MotionType", &GiiGa::CollisionComponent::GetMotionType, &GiiGa::CollisionComponent::SetMotionType)
-        .def_property("Layer", &GiiGa::CollisionComponent::GetLayer, &GiiGa::CollisionComponent::SetLayer);
+        .def_property("Data", &GiiGa::CollisionComponent::GetData, &GiiGa::CollisionComponent::SetData);
 
     pybind11::class_<GiiGa::ShapeCastResult, std::shared_ptr<GiiGa::ShapeCastResult>>(m, "ShapeCastResult")
         .def(pybind11::init<>())

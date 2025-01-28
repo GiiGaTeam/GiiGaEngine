@@ -253,6 +253,24 @@ namespace GiiGa
                 PhysicsSystem::GetBodyInterface().AddLinearVelocity(body_id_, VecToJoltVec(velocity));
         }
 
+        void AddLinearAndAngularVelocity(const DirectX::SimpleMath::Vector3& velocity, const DirectX::SimpleMath::Vector3& angular) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().AddLinearAndAngularVelocity(body_id_, VecToJoltVec(velocity), VecToJoltVec(angular));
+        }
+
+        void SetVelocity(const DirectX::SimpleMath::Vector3& velocity) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().SetLinearVelocity(body_id_, VecToJoltVec(velocity));
+        }
+
+        void SetAngularVelocity(const DirectX::SimpleMath::Vector3& angular) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().SetAngularVelocity(body_id_, VecToJoltVec(angular));
+        }
+
         bool canCollideSelf_ = false;
 
     protected:

@@ -70,6 +70,10 @@ namespace GiiGa
         virtual void AddForce(const DirectX::SimpleMath::Vector3& force) = 0;
         virtual void AddImpulse(const DirectX::SimpleMath::Vector3& impulse) = 0;
         virtual void AddVelocity(const DirectX::SimpleMath::Vector3& velocity) = 0;
+        virtual void AddLinearAndAngularVelocity(const DirectX::SimpleMath::Vector3& velocity, const DirectX::SimpleMath::Vector3& angular) = 0;
+
+        virtual void SetVelocity(const DirectX::SimpleMath::Vector3& velocity) = 0;
+        virtual void SetAngularVelocity(const DirectX::SimpleMath::Vector3& velocity) = 0;
 
         virtual void SetColliderType(ColliderType new_type) =0;
         virtual ColliderType GetColliderType() const =0;
