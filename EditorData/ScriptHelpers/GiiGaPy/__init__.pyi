@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'CollisionData', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class AssetHandle:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -31,8 +31,7 @@ class CollideInfo:
     def __init__(self) -> None:
         ...
 class CollisionComponent(ICollision):
-    Layer: Layer
-    MotionType: EMotionType
+    Data: CollisionData
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
@@ -40,7 +39,13 @@ class CollisionComponent(ICollision):
         ...
     def AddImpulse(self, arg0: Vector3) -> None:
         ...
+    def AddLinearAndAngularVelocity(self, arg0: Vector3, arg1: Vector3) -> None:
+        ...
     def AddVelocity(self, arg0: Vector3) -> None:
+        ...
+    def SetAngularVelocity(self, arg0: Vector3) -> None:
+        ...
+    def SetVelocity(self, arg0: Vector3) -> None:
         ...
     def __init__(self) -> None:
         ...
@@ -49,6 +54,17 @@ class CollisionComponent(ICollision):
         ...
     @owner.setter
     def owner(self, arg1: ...) -> None:
+        ...
+class CollisionData:
+    friction: float
+    gravityFactor: float
+    layer: ...
+    motion_type: ...
+    restitution: float
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def __init__(self) -> None:
         ...
 class Component:
     @staticmethod
