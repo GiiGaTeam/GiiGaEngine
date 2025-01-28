@@ -220,8 +220,10 @@ namespace GiiGa
                     inManifold.mPenetrationDepth
                 };
                 if (!collision1 || !collision2) return;
-                collision1->OnContactAdded(collision2, collideInfo);
-                collision2->OnContactAdded(collision1, collideInfo);
+                std::lock_guard lock{GetInstance().event_queue_mutex};
+                GetInstance().on_contact_add_queue.push_back({{collision1, collision2}, collideInfo});
+                //collision1->OnContactAdded(collision2, collideInfo);
+                //collision2->OnContactAdded(collision1, collideInfo);
             }
 
             virtual void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold, JPH::ContactSettings& ioSettings) override
@@ -236,8 +238,10 @@ namespace GiiGa
                     inManifold.mPenetrationDepth
                 };
                 if (!collision1 || !collision2) return;
-                collision1->OnContactPersisted(collision2, collideInfo);
-                collision2->OnContactPersisted(collision1, collideInfo);
+                std::lock_guard lock{GetInstance().event_queue_mutex};
+                GetInstance().on_contact_persisted_queue.push_back({{collision1, collision2}, collideInfo});
+                //collision1->OnContactPersisted(collision2, collideInfo);
+                //collision2->OnContactPersisted(collision1, collideInfo);
             }
 
             virtual void OnContactRemoved(const JPH::SubShapeIDPair& inSubShapePair) override
@@ -247,8 +251,10 @@ namespace GiiGa
                 const auto collision2 = GetCollisionByBody(inSubShapePair.GetBody2ID());
 
                 if (!collision1 || !collision2) return;
-                collision1->OnContactRemoved(collision2);
-                collision2->OnContactRemoved(collision1);
+                std::lock_guard lock{GetInstance().event_queue_mutex};
+                GetInstance().on_contact_removed_queue.push_back({collision1, collision2});
+                //collision1->OnContactRemoved(collision2);
+                //collision2->OnContactRemoved(collision1);
                 el::Loggers::getLogger(LogPhysics)->debug("A contact was removed");
             }
         };
@@ -305,6 +311,30 @@ namespace GiiGa
             const int cCollisionSteps = 1;
 
             instance.physics_system.Update(dt, cCollisionSteps, instance.temp_allocator, &job_system);
+
+            // todo: ugly as f but should work
+            std::lock_guard lock{instance.event_queue_mutex};
+            while (instance.on_contact_add_queue.size() > 0)
+            {
+                auto& [pair,collideInfo] = instance.on_contact_add_queue.back();
+                instance.on_contact_add_queue.pop_back();
+                pair.first->OnContactAdded(pair.second, collideInfo);
+                pair.second->OnContactAdded(pair.first, collideInfo);
+            }
+            while (instance.on_contact_persisted_queue.size() > 0)
+            {
+                auto& [pair,collideInfo] = instance.on_contact_persisted_queue.back();
+                instance.on_contact_persisted_queue.pop_back();
+                pair.first->OnContactPersisted(pair.second, collideInfo);
+                pair.second->OnContactPersisted(pair.first, collideInfo);
+            }
+            while (instance.on_contact_removed_queue.size() > 0)
+            {
+                auto& pair = instance.on_contact_removed_queue.back();
+                instance.on_contact_removed_queue.pop_back();
+                pair.first->OnContactRemoved(pair.second);
+                pair.second->OnContactRemoved(pair.first);
+            }
         }
 
         void BindOnTransformUpdate(const std::shared_ptr<ICollision>& collision_comp)
@@ -505,6 +535,12 @@ namespace GiiGa
         JPH::TempAllocatorImpl* temp_allocator = nullptr;
 
         static inline std::shared_ptr<PhysicsSystem> instance_;
+
+        //todo: remove this ugly inefficient shit
+        std::mutex event_queue_mutex;
+        std::vector<std::tuple<std::pair<std::shared_ptr<ICollision>, std::shared_ptr<ICollision>>, CollideInfo>> on_contact_add_queue;
+        std::vector<std::tuple<std::pair<std::shared_ptr<ICollision>, std::shared_ptr<ICollision>>, CollideInfo>> on_contact_persisted_queue;
+        std::vector<std::pair<std::shared_ptr<ICollision>, std::shared_ptr<ICollision>>> on_contact_removed_queue;
 
     private:
         PhysicsSystem()
