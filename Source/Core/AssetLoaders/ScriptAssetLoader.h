@@ -91,12 +91,20 @@ namespace GiiGa
         {
             auto script_asset = std::dynamic_pointer_cast<ScriptAsset>(asset);
 
-            if (!script_asset)
+            if (!script_asset || !script_asset->module_)
             {
-                el::Loggers::getLogger(LogPyScript)->error("ScriptAssetLoader::Update() error"); 
+                el::Loggers::getLogger(LogPyScript)->error("ScriptAssetLoader::Update() error");
                 return;
             }
-            script_asset->module_.reload();
+            try
+            {
+                script_asset->module_.reload();
+            }
+            catch (pybind11::error_already_set& e)
+            {
+                el::Loggers::getLogger(LogPyScript)->error(e.what());
+                return;
+            }
 
             std::string name = ScriptHelpers::GetComponentSubclassNameInModule(script_asset->module_);
 
@@ -108,6 +116,7 @@ namespace GiiGa
             }
 
             script_asset->user_class_name_ = name.c_str();
+            script_asset->OnUpdate.Invoke(script_asset->GetId());
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

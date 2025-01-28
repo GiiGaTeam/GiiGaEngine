@@ -37,18 +37,22 @@ namespace GiiGa
         CollisionComponent()
             : colorShaderRes_(std::make_shared<CollisionShaderResource>())
         {
-            collider_type_ = ColliderType::Cube;
-            motion_type_ = EMotionType::Static;
+            collisionData_.collider_type_ = ColliderType::Cube;
+            collisionData_.motion_type_ = EMotionType::Static;
             ConstructFunction();
         }
 
         CollisionComponent(const Json::Value& json, bool roll_id = false) : ICollision(json, roll_id),
                                                                             colorShaderRes_(std::make_shared<CollisionShaderResource>())
         {
-            motion_type_ = static_cast<EMotionType>(json["MotionType"].asInt());
-            collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
-            layer_ = static_cast<Layer>(json["Layer"].asInt());
-            is_gravity_active_ = static_cast<Layer>(json["ActiveGravity"].asBool());
+            collisionData_.motion_type_ = static_cast<EMotionType>(json["MotionType"].asInt());
+            collisionData_.collider_type_ = static_cast<ColliderType>(json["ColliderType"].asInt());
+            collisionData_.layer_ = static_cast<Layer>(json["Layer"].asInt());
+
+            collisionData_.friction_ = !json["Friction"].empty() ? json["Friction"].asFloat() : 0.2f;
+            collisionData_.restitution_ = !json["Restitution"].empty() ? json["Restitution"].asFloat() : 0.0f;
+            collisionData_.gravityFactor_ = !json["GravityFactor"].empty() ? json["GravityFactor"].asFloat() : 1.0f;
+
             ConstructFunction();
         }
 
@@ -68,10 +72,13 @@ namespace GiiGa
         {
             Json::Value result = TransformComponent::DerivedToJson(is_prefab_root);
             result["Type"] = typeid(CollisionComponent).name();
-            result["ColliderType"] = collider_type_;
-            result["MotionType"] = static_cast<int32_t>(motion_type_);
-            result["Layer"] = layer_;
-            result["ActiveGravity"] = is_gravity_active_;
+            result["ColliderType"] = GetColliderType();
+            result["MotionType"] = static_cast<int32_t>(GetMotionType());
+            result["Layer"] = GetLayer();
+
+            result["Friction"] = collisionData_.friction_;
+            result["Restitution"] = collisionData_.restitution_;
+            result["GravityFactor"] = collisionData_.gravityFactor_;
 
             return result;
         }
@@ -86,7 +93,7 @@ namespace GiiGa
             auto rm = Engine::Instance().ResourceManager();
 
             AssetHandle mesh_asset;
-            switch (collider_type_)
+            switch (collisionData_.collider_type_)
             {
             case Cube:
                 mesh_asset = DefaultAssetsHandles::Cube;
@@ -155,7 +162,7 @@ namespace GiiGa
         void UpdateGPUData(RenderContext& context) override
         {
             if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), motion_type_ == EMotionType::Static);
+                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), collisionData_.motion_type_ == EMotionType::Static);
             perObjectData_->UpdateGPUData(context);
 
             UINT SizeInBytes = sizeof(ColorData);
@@ -171,23 +178,35 @@ namespace GiiGa
         void SetColliderType(ColliderType new_type) override
         {
             OnUpdateType.Invoke(new_type);
-            collider_type_ = new_type;
+            collisionData_.collider_type_ = new_type;
             ChooseMeshAsset();
         }
 
-        ColliderType GetColliderType() const override { return collider_type_; }
+        ColliderType GetColliderType() const override { return collisionData_.collider_type_; }
 
-        EMotionType GetMotionType() const override { return motion_type_; }
+        EMotionType GetMotionType() const override { return collisionData_.motion_type_; }
 
-        void SetMotionType(EMotionType motion_type) override { motion_type_ = motion_type; }
+        void SetMotionType(EMotionType motion_type) override
+        {
+            collisionData_.motion_type_ = motion_type;
+            UpdateData();
+        }
 
-        Layer GetLayer() const override { return layer_; }
+        Layer GetLayer() const override { return collisionData_.layer_; }
 
-        void SetLayer(Layer layer) override { layer_ = layer; }
+        void SetLayer(Layer layer) override
+        {
+            collisionData_.layer_ = layer;
+            UpdateData();
+        }
 
-        bool IsGravityActive() const override { return is_gravity_active_; }
+        CollisionData GetData() const override { return collisionData_; }
 
-        void SetGravityActive(bool gravity) override { is_gravity_active_ = gravity; }
+        void SetData(CollisionData data) override
+        {
+            collisionData_ = data;
+            UpdateData();
+        }
 
         void OnContactAdded(const std::shared_ptr<ICollision>& other_comp, const CollideInfo& collideInfo) override
         {
@@ -234,13 +253,28 @@ namespace GiiGa
                 PhysicsSystem::GetBodyInterface().AddLinearVelocity(body_id_, VecToJoltVec(velocity));
         }
 
+        void AddLinearAndAngularVelocity(const DirectX::SimpleMath::Vector3& velocity, const DirectX::SimpleMath::Vector3& angular) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().AddLinearAndAngularVelocity(body_id_, VecToJoltVec(velocity), VecToJoltVec(angular));
+        }
+
+        void SetVelocity(const DirectX::SimpleMath::Vector3& velocity) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().SetLinearVelocity(body_id_, VecToJoltVec(velocity));
+        }
+
+        void SetAngularVelocity(const DirectX::SimpleMath::Vector3& angular) override
+        {
+            if (!body_id_.IsInvalid())
+                PhysicsSystem::GetBodyInterface().SetAngularVelocity(body_id_, VecToJoltVec(angular));
+        }
+
         bool canCollideSelf_ = false;
 
     protected:
-        ColliderType collider_type_ = ColliderType::Cube;
-        EMotionType motion_type_ = EMotionType::Static;
-        Layer layer_ = Layer::NoMoving;
-        bool is_gravity_active_ = false;
+        CollisionData collisionData_;
 
         std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;
@@ -274,5 +308,17 @@ namespace GiiGa
         {
             body_id_ = PhysicsSystem::RegisterCollision(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()));
         }
+
+        void UpdateData()
+        {
+            if (!body_id_.IsInvalid())
+            {
+                PhysicsSystem::GetBodyInterface().SetFriction(body_id_, collisionData_.friction_);
+                PhysicsSystem::GetBodyInterface().SetRestitution(body_id_, collisionData_.restitution_);
+                PhysicsSystem::GetBodyInterface().SetGravityFactor(body_id_, collisionData_.gravityFactor_);
+                PhysicsSystem::GetBodyInterface().SetMotionType(body_id_, static_cast<JPH::EMotionType>(collisionData_.motion_type_), JPH::EActivation::Activate);
+                PhysicsSystem::GetBodyInterface().SetObjectLayer(body_id_, collisionData_.layer_);
+            }
+        };
     };
 }

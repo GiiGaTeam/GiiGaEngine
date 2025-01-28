@@ -32,7 +32,10 @@ namespace GiiGa
                 CheckAssetUpdateQueue();
                 Timer::UpdateTime();
                 World::Tick(static_cast<float>(Timer::GetDeltaTime()));
-                if (World::GetInstance().GetState() == WorldState::Play) PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
+                {
+                    pybind11::gil_scoped_release unlock{};
+                    if (World::GetInstance().GetState() == WorldState::Play) PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
+                }
                 render_system_->Tick();
             }
 

@@ -471,6 +471,10 @@ namespace GiiGa
         void SetParent(std::shared_ptr<GameObject> parent, bool safeWorldTransfrom = false)
         {
             TryRemoveFromLevelRoot();
+            if (!parent_.expired())
+            {
+                parent_.lock()->RemoveChild(std::dynamic_pointer_cast<GameObject>(shared_from_this()));
+            }
             const auto& kids_by_world_uuid = parent->GetKidsByWorldUuid();
             if (!kids_by_world_uuid.contains(this->uuid_))
             {
@@ -484,6 +488,7 @@ namespace GiiGa
             }
 
             GetComponent<TransformComponent>()->AttachTo(parent->GetComponent<TransformComponent>());
+            parent->GetTransformComponent().lock()->OnUpdateTransform.Invoke(parent->GetTransformComponent().lock());
         }
 
         std::shared_ptr<GameObject> Clone(
