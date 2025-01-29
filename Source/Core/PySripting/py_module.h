@@ -98,6 +98,10 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .value("KeySpace", GiiGa::KeyCode::KeySpace)
         .export_values();
 
+    pybind11::class_<GiiGa::MouseDelta>(m, "MouseDelta")
+        .def_readwrite("dx", &GiiGa::MouseDelta::dx)
+        .def_readwrite("dy", &GiiGa::MouseDelta::dy);
+
     pybind11::class_<GiiGa::Input>(m, "Input")
         .def_static("GetMouseDelta", &GiiGa::Input::GetMouseDelta)
         .def_static("IsKeyHeld", [](GiiGa::MouseButton button)
@@ -107,6 +111,18 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         .def_static("IsKeyHeld", [](GiiGa::KeyCode button)
         {
             return GiiGa::Input::IsKeyHeld(button);
+        })
+        .def_static("IsKeyDown", [](GiiGa::KeyCode button)
+        {
+            return GiiGa::Input::IsKeyDown(button);
+        })
+        .def_static("IsKeyUp", [](GiiGa::KeyCode button)
+        {
+            return GiiGa::Input::IsKeyUp(button);
+        })
+        .def_static("IsKeyPressed", [](GiiGa::KeyCode button)
+        {
+            return GiiGa::Input::IsKeyPressed(button);
         });
 
     pybind11::class_<Vector3>(m, "Vector3")
@@ -261,7 +277,8 @@ PYBIND11_EMBEDDED_MODULE(GiiGaPy, m)
         });
 
     pybind11::class_<GiiGa::CameraComponent, std::shared_ptr<GiiGa::CameraComponent>, GiiGa::Component>(m, "CameraComponent")
-        .def(pybind11::init<>());
+        .def(pybind11::init<>())
+        .def("SetFOVinDeg", &GiiGa::CameraComponent::SetFOVinDeg);
 
     pybind11::class_<GiiGa::CollideInfo>(m, "CollideInfo")
         .def(pybind11::init<>())

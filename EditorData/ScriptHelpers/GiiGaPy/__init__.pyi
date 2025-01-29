@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'CollisionData', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'Key0', 'Key1', 'Key2', 'Key3', 'Key4', 'Key5', 'Key6', 'Key7', 'Key8', 'Key9', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'PointLightComponent', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'CollisionData', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'Key0', 'Key1', 'Key2', 'Key3', 'Key4', 'Key5', 'Key6', 'Key7', 'Key8', 'Key9', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'MouseDelta', 'Moving', 'NoMoving', 'PointLightComponent', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class AssetHandle:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -18,6 +18,8 @@ class AssetHandle:
 class CameraComponent(Component):
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
+        ...
+    def SetFOVinDeg(self, arg0: float) -> None:
         ...
     def __init__(self) -> None:
         ...
@@ -188,7 +190,10 @@ class ICollision(TransformComponent):
         ...
 class Input:
     @staticmethod
-    def GetMouseDelta() -> ...:
+    def GetMouseDelta() -> MouseDelta:
+        ...
+    @staticmethod
+    def IsKeyDown(arg0: KeyCode) -> bool:
         ...
     @staticmethod
     @typing.overload
@@ -197,6 +202,12 @@ class Input:
     @staticmethod
     @typing.overload
     def IsKeyHeld(arg0: KeyCode) -> bool:
+        ...
+    @staticmethod
+    def IsKeyPressed(arg0: KeyCode) -> bool:
+        ...
+    @staticmethod
+    def IsKeyUp(arg0: KeyCode) -> bool:
         ...
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -395,6 +406,12 @@ class MouseButton:
         ...
     @property
     def value(self) -> int:
+        ...
+class MouseDelta:
+    dx: float
+    dy: float
+    @staticmethod
+    def _pybind11_conduit_v1_(*args, **kwargs):
         ...
 class PointLightComponent(Component):
     color: Vector3
