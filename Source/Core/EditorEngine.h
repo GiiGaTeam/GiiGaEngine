@@ -27,6 +27,8 @@
 #include<PrefabAssetLoader.h>
 #include<ScriptAssetLoader.h>
 
+#include "SkeletalMeshAssetLoader.h"
+
 namespace GiiGa
 {
     class EditorEngine : public Engine
@@ -104,6 +106,9 @@ namespace GiiGa
             editor_asset_database_->RegisterLoader<ImageAssetLoader>();
             editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPNTBT>>();
             editor_asset_database_->RegisterLoader<MeshAssetLoader<VertexPosition>>();
+            editor_asset_database_->RegisterLoader<SkeletalMeshAssetLoader>();
+            editor_asset_database_->RegisterLoader<SkeletonAssetLoader>();
+            editor_asset_database_->RegisterLoader<AnimationAssetLoader>();
             editor_asset_database_->RegisterLoader<MaterialLoader>();
             editor_asset_database_->RegisterLoader<LevelAssetLoader>();
             editor_asset_database_->RegisterLoader<PrefabAssetLoader>();

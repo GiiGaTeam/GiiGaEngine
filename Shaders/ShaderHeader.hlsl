@@ -25,8 +25,17 @@ struct VS_INPUT
     float2 Tex : TEXCOORD;
 };
 
-//TODO
-//????????? ?? skeletal mesh
+struct VS_BONED_INPUT
+{
+    float3 Pos : POSITION;
+    float3 Norm : NORMAL;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BINORMAL;
+    float2 Tex : TEXCOORD;
+    float3 BoneWeights : WEIGHTS;
+    uint4 BoneIndices : BONEINDICES;
+};
+
 struct PS_INPUT
 {
     float4 Pos : SV_POSITION;

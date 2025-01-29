@@ -190,6 +190,7 @@
     <None Include="Shaders\GPointLight.hlsl" />
     <None Include="Shaders\MaterialHeader.hlsl" />
     <None Include="Shaders\ShaderHeader.hlsl" />
+    <None Include="Shaders\VertexBonedShader.hlsl" />
     <None Include="Shaders\VertexFullQuadShader.hlsl" />
     <None Include="Shaders\VertexPositionShader.hlsl" />
     <None Include="Shaders\VertexPNTBTShader.hlsl" />
@@ -208,9 +209,11 @@
     <ClInclude Include="Source\Components\PointLightComponent.h" />
     <ClInclude Include="Source\Components\PyBehaviourSchemeComponent.h" />
     <ClInclude Include="Source\Components\PyBehaviourTrampoline.h" />
+    <ClInclude Include="Source\Components\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Components\SpectatorMovementComponent.h" />
     <ClInclude Include="Source\Components\StaticMeshComponent.h" />
     <ClInclude Include="Source\Components\TransformComponent.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\AnimationAssetLoader.h" />
     <ClInclude Include="Source\Core\AssetLoaders\DDSAssetLoader.h" />
     <ClInclude Include="Source\Core\AssetLoaders\ImageAssetLoader.h" />
     <ClInclude Include="Source\Core\AssetLoaders\LevelAssetLoader.h" />
@@ -218,12 +221,15 @@
     <ClInclude Include="Source\Core\AssetLoaders\MeshAssetLoader.h" />
     <ClInclude Include="Source\Core\AssetLoaders\PrefabAssetLoader.h" />
     <ClInclude Include="Source\Core\AssetLoaders\ScriptAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\SkeletalMeshAssetLoader.h" />
+    <ClInclude Include="Source\Core\AssetLoaders\SkeletonAssetLoader.h" />
     <ClInclude Include="Source\Core\Assets\AssetBase.h" />
     <ClInclude Include="Source\Core\Assets\AssetHandle.h" />
     <ClInclude Include="Source\Core\Assets\AssetLoader.h" />
     <ClInclude Include="Source\Core\Assets\AssetMeta.h" />
     <ClInclude Include="Source\Core\Assets\AssetType.h" />
     <ClInclude Include="Source\Core\Assets\BaseAssetDatabase.h" />
+    <ClInclude Include="Source\Core\Assets\ConcreteAsset\AnimationAsset.h" />
     <ClInclude Include="Source\Core\Assets\ConcreteAsset\LevelAsset.h" />
     <ClInclude Include="Source\Core\Assets\ConcreteAsset\MeshAsset.h" />
     <ClInclude Include="Source\Core\Assets\ConcreteAsset\PrefabAsset.h" />
@@ -258,6 +264,7 @@
     <ClInclude Include="Source\Core\PySripting\ScriptPropertyModifications.h" />
     <ClInclude Include="Source\Core\PySripting\ScriptSystem.h" />
     <ClInclude Include="Source\Core\Render\Align.h" />
+    <ClInclude Include="Source\Core\Render\Animation.h" />
     <ClInclude Include="Source\Core\Render\BufferView.h" />
     <ClInclude Include="Source\Core\Render\CommandQueue.h" />
     <ClInclude Include="Source\Core\Render\DescriptorHeap.h" />
@@ -303,6 +310,7 @@
     <ClInclude Include="Source\Core\Render\SceneVisibility.h" />
     <ClInclude Include="Source\Core\Render\Shader.h" />
     <ClInclude Include="Source\Core\Render\ShaderManager.h" />
+    <ClInclude Include="Source\Core\Render\Skeleton.h" />
     <ClInclude Include="Source\Core\Render\SwapChain.h" />
     <ClInclude Include="Source\Core\Render\UploadBuffer.h" />
     <ClInclude Include="Source\Core\Render\VariableSizeAllocationsManager.h" />
@@ -317,6 +325,8 @@
     <ClInclude Include="Source\Core\WindowManager.h" />
     <ClInclude Include="Source\Core\WindowSettings.h" />
     <ClInclude Include="Source\Core\World.h" />
+    <ClInclude Include="Source\ozz-animation\mesh.h" />
+    <ClInclude Include="Source\ozz-animation\PlaybackController.h" />
     <ClInclude Include="ThirdParty\FileWatch.hpp" />
     <ClInclude Include="ThirdParty\pybind11\attr.h" />
     <ClInclude Include="ThirdParty\pybind11\buffer_info.h" />
@@ -372,6 +382,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\ozz-animation\mesh.cc" />
     <ClCompile Include="Source\ozz-animation\ozz_animation.cc" />
     <ClCompile Include="Source\ozz-animation\ozz_animation_offline.cc" />
     <ClCompile Include="Source\ozz-animation\ozz_animation_tools.cc" />

@@ -54,40 +54,51 @@ namespace GiiGa
                 throw std::runtime_error("File does not exist: " + absolute_path.string());
 
             Assimp::Importer importer;
-            const aiScene* scene = importer.ReadFile(absolute_path.string(), aiProcess_Triangulate);
+            const aiScene* scene = importer.ReadFile(absolute_path.string(), aiProcess_Triangulate | aiProcess_PopulateArmatureData ); // aiProcess_PopulateArmatureData - важно!
 
             if (!scene || !scene->HasMeshes())
             {
                 throw std::runtime_error("Failed to load mesh from file: " + absolute_path.string());
             }
-
+            // If it's a skeletal mesh (somehow scene->hasSkeletons() doesn't work)
             if (scene->HasAnimations())
-            {
-                auto current_directory = std::filesystem::current_path();
-                auto fbx2ozz_directory = current_directory / R"(Tools\fbx2ozz)";
-                auto fbx2mesh_directory = current_directory / R"(Tools\fbx2mesh)";
-                auto config_file_directory = current_directory / R"(Tools\fbx_import_config.json)";
-                current_path(absolute_path.parent_path());
-                
-                auto animation_data_directory = relative_path.filename().string() + "_animation_data";
-                std::filesystem::create_directory(animation_data_directory);
-                system(std::format(R"({} --file="{}" --config_file="{}")", fbx2ozz_directory.string(), relative_path.string(), config_file_directory.string()).c_str());
-                //system(std::format(R"({} --file="{}" --mesh="{}" --skeleton="{}")", fbx2mesh_directory.string(), relative_path.string(), animation_data_directory + R"(\mesh.ozz)", "skeleton.ozz").c_str());
-                for (auto const& dir_entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
+            {                
                 {
-                    if (dir_entry.path().extension() == ".ozz" && is_regular_file(dir_entry))
+                    // Process fbx with fbx2ozz and fbx2mesh
+                    auto current_directory = std::filesystem::current_path();
+                    auto fbx2ozz_directory = current_directory / R"(Tools\fbx2ozz)";
+                    auto fbx2mesh_directory = current_directory / R"(Tools\fbx2mesh)";
+                    auto config_file_directory = current_directory / R"(Tools\fbx_import_config.json)";
+                    current_path(absolute_path.parent_path());
+                
+                    auto animation_data_directory = relative_path.filename().string() + "_animation_data";
+                    std::filesystem::create_directory(animation_data_directory);
+                    system(std::format(R"({} --file="{}" --config_file="{}")", fbx2ozz_directory.string(), relative_path.string(), config_file_directory.string()).c_str());
+                    system(std::format(R"({} --file="{}" --mesh="{}" --skeleton="skeleton.ozz")", fbx2mesh_directory.string(),
+                        std::filesystem::path(animation_data_directory) / "mesh.ozz").c_str());
+                    for (auto const& dir_entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
                     {
-                        auto new_path = animation_data_directory / dir_entry.path().filename();
-                        std::filesystem::rename(dir_entry.path(), new_path);
-                        /*copy_file(dir_entry, animation_data_directory);
-                        std::filesystem::remove(dir_entry);*/
+                        if (dir_entry.path().extension() == ".ozz" && is_regular_file(dir_entry))
+                        {
+                            /*if (dir_entry.path().filename().compare("skeleton.ozz"))
+                            {
+                                
+                            }
+                            else
+                            {
+                                
+                            }*/
+                            std::filesystem::rename(dir_entry.path(), animation_data_directory / dir_entry.path().filename());
+                        }
                     }
+                    current_path(current_directory);
+
+                    // Store some materials
+                    auto materials_map = PreprocessMaterial(scene, scene->mNumMaterials, scene->mMaterials, absolute_path);
+                    StoreMeshesInfoToJSON(std::filesystem::path(animation_data_directory) / "materials_info.json", materials_map);
                 }
-                
-                //std::filesystem::copy_file(std::filesystem::path("skeleton.ozz"), animation_data_directory);
-                //std::filesystem::remove(std::filesystem::path("skeleton.ozz"));
-                current_path(current_directory);
-                
+                Todo(); // Store Hierarchy. For now, we just assume that there is just one mesh
+                return std::unordered_map<AssetHandle, AssetMeta>();
             }
 
             auto materials_map = PreprocessMaterial(scene, scene->mNumMaterials, scene->mMaterials, absolute_path);
@@ -206,7 +217,7 @@ namespace GiiGa
                 if (mesh)
                 {
                     auto handle = AssetHandle{mesh_uuid, (int)node->mMeshes[i]};
-                    // TODO: Handle skeletal
+                    // TODO: Handle skeletal - Услышал тебя, родной
                     auto mesh_asset = std::make_shared<MeshAsset<VertexPNTBT>>(handle);
 
                     auto staticMeshComponent = gameObject->CreateComponent<StaticMeshComponent>();
@@ -317,6 +328,63 @@ namespace GiiGa
             }
 
             return materials_result;
+        }
+
+        /*void PreprocessSkeleton(const std::filesystem::path& absolute_path)
+        {
+            std::dynamic_pointer_cast<EditorAssetDatabase>(Engine::Instance().AssetDatabase())->CreateAsset(new_mat_asset, material_path);
+        }
+
+        void PreprocessAnimation(const std::filesystem::path& absolute_path)
+        {
+            
+        }*/
+
+        void StoreMeshesInfoToJSON(const std::filesystem::path& path,
+            std::unordered_map<unsigned int, std::shared_ptr<Material>> materials_map,
+            aiScene* scene)
+        {
+            std::ofstream material_file(path, std::ios::out | std::ios::trunc);
+
+            if (!material_file.is_open())
+            {
+                throw std::runtime_error("Failed to open Material file for writing: " + path.string());
+            }
+
+            Json::Value json;
+            for (const auto & [ index, material ] : materials_map)
+            {
+                Json::Value mat_json;
+                
+                /*Json::Value mesh_vert_count;
+                for (size_t i = 0; i < scene->mNumMeshes; i++)
+                {
+                    if (scene->mMeshes[i]->mMaterialIndex == index)
+                        mesh_vert_count.append(scene->mMeshes[i]->mNumVertices);
+                }
+                mat_json["associated_mesh_vertex_counts"] = mesh_vert_count;*/
+                mat_json["material_mesh_info"] = material->GetId().ToJson();
+                json.append(mat_json);
+            }
+            
+            if (json.isNull())
+            {
+                throw std::runtime_error("Failed to convert object to JSON");
+            }
+
+            Json::StreamWriterBuilder writer_builder;
+            std::string jsonString = Json::writeString(writer_builder, json);
+
+            // Writing JSON string to the file
+            material_file << jsonString;
+
+            // Check if the file stream has any errors
+            if (material_file.fail())
+            {
+                throw std::runtime_error{"Failed to write to file: " + path.string()};
+            }
+
+            material_file.close();
         }
 
         std::vector<VertexType> ProcessVertices(aiMesh* mesh)

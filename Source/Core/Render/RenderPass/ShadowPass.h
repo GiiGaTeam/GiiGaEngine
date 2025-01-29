@@ -218,6 +218,11 @@ namespace GiiGa
                                                 .SetVertexType(VertexTypes::All)
                                                 .SetFillMode(FillMode::All);
 
+        ObjectMask filter_boned_objects_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned)
+                                                 .SetBlendMode(BlendMode::Opaque | BlendMode::Masked)
+                                                 .SetShadingModel(ShadingModel::DefaultLit)
+                                                 .SetFillMode(FillMode::Solid);
+
 
         std::unordered_map<ObjectMask, PSO> mask_to_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

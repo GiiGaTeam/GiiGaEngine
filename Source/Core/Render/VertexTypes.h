@@ -98,7 +98,7 @@ namespace GiiGa
             const SimpleMath::Vector3& bitangent = {0, 0, 0},
             const SimpleMath::Vector2& texCoord = {0,0},
             const std::array<uint16_t, MaxCountOfBonesPerVertex>& boneIDs = {0, 0, 0, 0},
-            const SimpleMath::Vector4& boneWeights = {0, 0, 0, 0})
+            const std::array<float, MaxCountOfBonesPerVertex-1>& boneWeights = {0, 0, 0})
             : Position(position)
               , Normal(normal)
               , Tangent(tangent)
@@ -115,7 +115,7 @@ namespace GiiGa
         SimpleMath::Vector3 Bitangent;
         SimpleMath::Vector2 TexCoord;
         std::array<uint16_t, MaxCountOfBonesPerVertex> BoneIDs;
-        SimpleMath::Vector4 BoneWeights;
+        std::array<float, MaxCountOfBonesPerVertex-1> BoneWeights;
         
         //virtual ~VertexBoned() = default;
 

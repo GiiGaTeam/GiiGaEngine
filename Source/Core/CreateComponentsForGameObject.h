@@ -14,6 +14,8 @@
 #include<DirectionalLightComponent.h>
 #include <PointLightComponent.h>
 
+#include "SkeletalMeshComponent.h"
+
 namespace GiiGa
 {
     struct CreateComponentsForGameObject
@@ -33,6 +35,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(StaticMeshComponent).name())
                 {
                     gameObject->CreateComponent<StaticMeshComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(SkeletalMeshComponent).name())
+                {
+                    gameObject->CreateComponent<SkeletalMeshComponent>(comp_js, roll_id);
                 }
                 else if (comp_js["Type"].asString() == typeid(PyBehaviourSchemeComponent).name())
                 {
@@ -68,6 +74,10 @@ namespace GiiGa
                 else if (comp_js["Type"].asString() == typeid(StaticMeshComponent).name())
                 {
                     new_comp = gameObject->CreateComponent<StaticMeshComponent>(comp_js, roll_id);
+                }
+                else if (comp_js["Type"].asString() == typeid(SkeletalMeshComponent).name())
+                {
+                    new_comp = gameObject->CreateComponent<SkeletalMeshComponent>(comp_js, roll_id);
                 }
                 else if (comp_js["Type"].asString() == typeid(PyBehaviourSchemeComponent).name())
                 {

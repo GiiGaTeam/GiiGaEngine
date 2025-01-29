@@ -305,6 +305,17 @@ namespace GiiGa
                                                           .SetBlendMode(BlendMode::Debug)
                                                           .SetFillMode(FillMode::All);
 
+        
+        ObjectMask filter_boned_pointLight_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned)
+                                                    .SetLightType(LightType::Point)
+                                                    .SetBlendMode(BlendMode::Debug)
+                                                    .SetFillMode(FillMode::All);
+
+        ObjectMask filter_boned_directionalLight_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned)
+                                                          .SetLightType(LightType::Directional)
+                                                          .SetBlendMode(BlendMode::Debug)
+                                                          .SetFillMode(FillMode::All);
+
         std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;
         PSO unmark_pso;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;

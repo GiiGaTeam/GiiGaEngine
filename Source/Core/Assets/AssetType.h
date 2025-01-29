@@ -7,8 +7,10 @@ namespace GiiGa
     enum class AssetType
     {
         Unknown,
-        Mesh,
         SkeletalMesh,
+        Mesh,
+        Skeleton,
+        Animation,
         Texture2D,
         Level,
         Prefab,
@@ -23,6 +25,8 @@ namespace GiiGa
         {
             case AssetType::Mesh: return "Mesh";
             case AssetType::SkeletalMesh: return "SkeletalMesh";
+            case AssetType::Skeleton: return "Skeleton";
+            case AssetType::Animation: return "Animation";
             case AssetType::Texture2D: return "Texture2D";
             case AssetType::Level: return "Level";
             case AssetType::Prefab: return "Prefab";
@@ -42,7 +46,9 @@ namespace GiiGa
     {
         static const std::unordered_map<std::string, AssetType> stringToTypeMap = {
             {"Mesh", AssetType::Mesh},
-            {"SkeletalMesh", AssetType::SkeletalMesh}, 
+            {"SkeletalMesh", AssetType::SkeletalMesh},
+            {"Skeleton", AssetType::Skeleton}, 
+            {"Animation", AssetType::Animation}, 
             {"Texture2D", AssetType::Texture2D}, 
             {"Level", AssetType::Level},
             {"Prefab", AssetType::Prefab}, 

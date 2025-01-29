@@ -370,6 +370,201 @@ namespace GiiGa
             }
         }
 
+        void DrawSkeletalMeshComponent(std::shared_ptr<SkeletalMeshComponent> comp)
+        {
+            // Mesh stuff
+            auto mesh_handle = comp->GetMeshHandle();
+            std::string text_handle = mesh_handle.id.ToString() + " " + std::to_string(mesh_handle.subresource);
+
+            char meshUuidStr[512];
+            snprintf(meshUuidStr, sizeof(meshUuidStr), "%s", text_handle.c_str());
+
+            ImGui::InputText("Mesh Handle", meshUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Mesh)))
+                {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    comp->SetMeshHandle(*handle);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            // Skeleton stuff
+            auto skeleton_handle = comp->GetSkeletonHandle();
+            std::string skeleton_text_handle = skeleton_handle.id.ToString() + " " + std::to_string(skeleton_handle.subresource);
+
+            char skeletonUuidStr[512];
+            snprintf(skeletonUuidStr, sizeof(skeletonUuidStr), "%s", skeleton_text_handle.c_str());
+
+            ImGui::InputText("Skeleton Handle", skeletonUuidStr, skeleton_text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Skeleton)))
+                {
+                    AssetHandle* handle = (AssetHandle*)payload->Data;
+                    comp->SetSkeletonHandle(*handle);
+                }
+
+                ImGui::EndDragDropTarget();
+            }
+
+            auto material = comp->material_;
+
+            if (material && ImGui::CollapsingHeader("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                auto material_handle = comp->GetMaterialHandle();
+                std::string text_handle = material_handle.id.ToString() + " " + std::to_string(material_handle.subresource);
+
+                char materialUuidStr[512];
+                snprintf(materialUuidStr, sizeof(materialUuidStr), "%s", text_handle.c_str());
+                ImGui::InputText("Material Handle", materialUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Material)))
+                    {
+                        AssetHandle* handle = (AssetHandle*)payload->Data;
+                        comp->SetMaterialHandle(*handle);
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+
+                // Shading Model
+                static const char* shadingModelNames[] = {
+                    "None", "DefaultLit", "Unlit"
+                };
+                int currentShadingModel = static_cast<int>(material->GetMaterialMask().GetShadingModel());
+                if (ImGui::Combo("Shading Model", &currentShadingModel, shadingModelNames, IM_ARRAYSIZE(shadingModelNames)))
+                {
+                    material->SetShadingModel(static_cast<ShadingModel>(currentShadingModel));
+                }
+
+                // Blend Mode
+                static const char* blendModeNames[] = {
+                    "None", "Opaque", "Masked", "Translucent"
+                };
+                int currentBlendMode = static_cast<int>(material->GetMaterialMask().GetBlendMode());
+                if (ImGui::Combo("Blend Mode", &currentBlendMode, blendModeNames, IM_ARRAYSIZE(blendModeNames)))
+                {
+                    material->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
+                }
+
+                // Define required texture indices based on the blend mode and shading model
+                RequiredTexturesMask requiredTextures = material->GetRequiredTextures();
+                {
+                    TexturesOrder texture_order = TexturesOrder::BaseColor;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+                        ImGui::InputText("BaseColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        DirectX::SimpleMath::Vector3 val = material->data_.BaseColorTint_;
+                        if (ImGui::ColorEdit3("BaseColor Tint", &val.x))
+                        {
+                            material->SetBaseColorTint(val);
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("You Can't Set BaseColor");
+                    }
+                }
+
+                {
+                    TexturesOrder texture_order = TexturesOrder::EmissiveColor;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("EmissiveColor Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        DirectX::SimpleMath::Vector3 val = material->data_.EmissiveColorTint_;
+                        if (ImGui::ColorEdit3("EmissiveColor Tint", &val.x))
+                        {
+                            material->SetEmissiveTint(val);
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("You Can't Set EmissiveColor");
+                    }
+                }
+
+                {
+                    TexturesOrder texture_order = TexturesOrder::Specular;
+                    int texture_index = static_cast<int>(texture_order) - 1;
+                    if (requiredTextures[texture_index] && material->textures_[texture_index])
+                    {
+                        AssetHandle texture_handle = material->textures_[texture_index]->GetId();
+                        std::string text_handle = texture_handle.id.ToString() + " " + std::to_string(texture_handle.subresource);
+
+                        char textureUuidStr[512];
+                        snprintf(textureUuidStr, sizeof(textureUuidStr), "%s", text_handle.c_str());
+
+                        ImGui::InputText("Specular Texture Handle", textureUuidStr, text_handle.size(), ImGuiInputTextFlags_ReadOnly);
+
+                        if (ImGui::BeginDragDropTarget())
+                        {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(AssetTypeToStaticString(AssetType::Texture2D)))
+                            {
+                                AssetHandle* handle = (AssetHandle*)payload->Data;
+                                material->SetTexture(texture_order, *handle);
+                            }
+
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        float val = material->data_.SpecularScale_;
+                        if (ImGui::SliderFloat("Specular Scale", &val, 0.0, 10.0))
+                        {
+                            material->SetSpecularScale(val);
+                        }
+                    }
+                    else
+                    {
+                        //ImGui::Text("You Can't Set Metallic");
+                    }
+                }
+            }
+        }
+
         void DrawPointLightComponent(std::shared_ptr<PointLightComponent> comp)
         {
             // Edit Color
@@ -580,6 +775,15 @@ namespace GiiGa
                 {
                     ComponentContextMenu(comp);
                     DrawStaticMeshComponent(static_mesh_comp);
+                    ImGui::TreePop();
+                }
+            }
+            else if (auto skeletal_mesh_comp = std::dynamic_pointer_cast<SkeletalMeshComponent>(comp))
+            {
+                if (ImGui::TreeNodeEx("SkeletalMeshComponent", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ComponentContextMenu(comp);
+                    DrawSkeletalMeshComponent(skeletal_mesh_comp);
                     ImGui::TreePop();
                 }
             }

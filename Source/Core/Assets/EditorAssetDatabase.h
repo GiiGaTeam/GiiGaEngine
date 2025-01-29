@@ -209,15 +209,18 @@ namespace GiiGa
             }
 
             auto handles = selected_loader->Preprocess(asset_path_ / path, path);
-
-            for (auto& [handle, meta] : handles)
+            
+            if (!handles.empty())
             {
-                registry_map_.emplace(handle, std::move(meta));
-            }
+                for (auto& [handle, meta] : handles)
+                {
+                    registry_map_.emplace(handle, std::move(meta));
+                }
 
-            auto handle = handles.begin()->first;
-            handle.subresource = 0;
-            assets_to_path_.emplace(path, handle);
+                auto handle = handles.begin()->first;
+                handle.subresource = 0;
+                assets_to_path_.emplace(path, handle);
+            }
         }
 
         void RemoveAsset(const std::filesystem::path& path)

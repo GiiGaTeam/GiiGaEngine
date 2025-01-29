@@ -15,6 +15,9 @@
 #include<VertexTypes.h>
 #include<ObjectMask.h>
 
+#include "ozz-animation/mesh.h"
+#include "ozz-animation/PlaybackController.h"
+
 namespace GiiGa
 {
     template <typename VertexType>
@@ -46,6 +49,8 @@ namespace GiiGa
 
             indexView_ = indexBuffer_->EmplaceIndexBufferView(
                 D3D12_INDEX_BUFFER_VIEW{0, static_cast<UINT>(indices.size() * sizeof(Index16)), Index16::Format});
+
+            vertex_type_mask_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned);
         }
 
         void Draw(const std::shared_ptr<ID3D12GraphicsCommandList>& cmd_list)
@@ -68,6 +73,19 @@ namespace GiiGa
         {
             return vertex_type_mask_;
         }
+
+        void SetSkeltalMesh(const std::shared_ptr<ozz::sample::Mesh>& skeletal_mesh)
+        {
+            if (typeid(VertexTypes) == typeid(VertexTypes::VertexBoned))
+                skeletal_mesh_ = skeletal_mesh;
+        }
+
+        std::shared_ptr<ozz::sample::Mesh> GetSkeletalMesh()
+        {
+            if (typeid(VertexTypes) == typeid(VertexTypes::VertexBoned))
+                return skeletal_mesh_;
+            return nullptr;
+        }
     protected:
         std::shared_ptr<GPULocalResource> vertexBuffer_;
         std::shared_ptr<BufferView<Vertex>> vertexView_;
@@ -75,6 +93,7 @@ namespace GiiGa
         std::shared_ptr<GPULocalResource> indexBuffer_;
         std::shared_ptr<BufferView<Index>> indexView_;
         DirectX::BoundingBox AABB;
-        ObjectMask vertex_type_mask_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT);
+        ObjectMask vertex_type_mask_/* = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)*/;
+        std::shared_ptr<ozz::sample::Mesh> skeletal_mesh_; // For VertexBoned only!!!
     };
 }

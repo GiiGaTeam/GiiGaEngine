@@ -104,6 +104,33 @@ namespace GiiGa
                 .add_static_samplers(sampler_desc)
                 .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
 
+            mask_to_pso[filter_boned_lit_solid_]
+                .set_vs(ShaderManager::GetShaderByName(VertexBonedShader))
+                .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
+                .set_rasterizer_state(rast_desc)
+                .set_input_layout(VertexBoned::InputLayout)
+                .set_rtv_format(g_format_array, 5)
+                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
+                .set_depth_stencil_state(depth_stencil_desc)
+                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
+                {
+                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
+                })
+                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
+                {
+                    const auto& descs = resource.GetDescriptors();
+                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::BaseColor), descs[1]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Metallic), descs[2]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Specular), descs[3]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Roughness), descs[4]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Anisotropy), descs[5]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[6]);
+                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Normal), descs[7]);
+                })
+                .add_static_samplers(sampler_desc)
+                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+
             rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
             rast_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
             rast_desc.CullMode = D3D12_CULL_MODE_NONE;
@@ -179,6 +206,17 @@ namespace GiiGa
                                                    .SetFillMode(FillMode::Solid);
 
         ObjectMask filter_wire_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
+                                              .SetShadingModel(ShadingModel::DefaultLit)
+                                              .SetBlendMode(BlendMode::Opaque)
+                                              .SetFillMode(FillMode::Wire)
+                                              .SetLightType(LightType::All);
+
+        ObjectMask filter_boned_lit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned)
+                                                   .SetShadingModel(ShadingModel::DefaultLit)
+                                                   .SetBlendMode(BlendMode::Opaque)
+                                                   .SetFillMode(FillMode::Solid);
+
+        ObjectMask filter_boned_wire_ = ObjectMask().SetVertexType(VertexTypes::VertexBoned)
                                               .SetShadingModel(ShadingModel::DefaultLit)
                                               .SetBlendMode(BlendMode::Opaque)
                                               .SetFillMode(FillMode::Wire)
