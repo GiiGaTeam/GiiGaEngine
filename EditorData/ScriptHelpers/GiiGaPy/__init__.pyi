@@ -2,7 +2,7 @@ from __future__ import annotations
 from _frozen_importlib import BuiltinImporter as __loader__
 import typing
 from . import GOAP
-__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'CollisionData', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'PointLightComponent', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
+__all__ = ['AssetHandle', 'CameraComponent', 'CollideInfo', 'CollisionComponent', 'CollisionData', 'Component', 'Dynamic', 'EMotionType', 'Engine', 'GOAP', 'GameObject', 'ICollision', 'Input', 'JsonValue', 'Key0', 'Key1', 'Key2', 'Key3', 'Key4', 'Key5', 'Key6', 'Key7', 'Key8', 'Key9', 'KeyA', 'KeyCode', 'KeyD', 'KeyE', 'KeyQ', 'KeyS', 'KeySpace', 'KeyW', 'Kinematic', 'Layer', 'Left', 'Material', 'MeshAsset', 'MouseButton', 'Moving', 'NoMoving', 'PointLightComponent', 'RenderSystem', 'ResourceManager', 'Right', 'ShapeCast', 'ShapeCastResult', 'SpawnParameters', 'Static', 'StaticMeshComponent', 'Transform', 'TransformComponent', 'Trigger', 'Uuid', 'Vector3', 'Vector3FromJson', 'Vector3ToJson']
 class AssetHandle:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
@@ -236,8 +236,38 @@ class KeyCode:
     
       KeyQ
     
+      Key0
+    
+      Key1
+    
+      Key2
+    
+      Key3
+    
+      Key4
+    
+      Key5
+    
+      Key6
+    
+      Key7
+    
+      Key8
+    
+      Key9
+    
       KeySpace
     """
+    Key0: typing.ClassVar[KeyCode]  # value = <KeyCode.Key0: 27>
+    Key1: typing.ClassVar[KeyCode]  # value = <KeyCode.Key1: 28>
+    Key2: typing.ClassVar[KeyCode]  # value = <KeyCode.Key2: 29>
+    Key3: typing.ClassVar[KeyCode]  # value = <KeyCode.Key3: 30>
+    Key4: typing.ClassVar[KeyCode]  # value = <KeyCode.Key4: 31>
+    Key5: typing.ClassVar[KeyCode]  # value = <KeyCode.Key5: 32>
+    Key6: typing.ClassVar[KeyCode]  # value = <KeyCode.Key6: 33>
+    Key7: typing.ClassVar[KeyCode]  # value = <KeyCode.Key7: 34>
+    Key8: typing.ClassVar[KeyCode]  # value = <KeyCode.Key8: 35>
+    Key9: typing.ClassVar[KeyCode]  # value = <KeyCode.Key9: 36>
     KeyA: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyA: 1>
     KeyD: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyD: 4>
     KeyE: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyE: 5>
@@ -245,7 +275,7 @@ class KeyCode:
     KeyS: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyS: 19>
     KeySpace: typing.ClassVar[KeyCode]  # value = <KeyCode.KeySpace: 59>
     KeyW: typing.ClassVar[KeyCode]  # value = <KeyCode.KeyW: 23>
-    __members__: typing.ClassVar[dict[str, KeyCode]]  # value = {'KeyW': <KeyCode.KeyW: 23>, 'KeyA': <KeyCode.KeyA: 1>, 'KeyS': <KeyCode.KeyS: 19>, 'KeyD': <KeyCode.KeyD: 4>, 'KeyE': <KeyCode.KeyE: 5>, 'KeyQ': <KeyCode.KeyQ: 17>, 'KeySpace': <KeyCode.KeySpace: 59>}
+    __members__: typing.ClassVar[dict[str, KeyCode]]  # value = {'KeyW': <KeyCode.KeyW: 23>, 'KeyA': <KeyCode.KeyA: 1>, 'KeyS': <KeyCode.KeyS: 19>, 'KeyD': <KeyCode.KeyD: 4>, 'KeyE': <KeyCode.KeyE: 5>, 'KeyQ': <KeyCode.KeyQ: 17>, 'Key0': <KeyCode.Key0: 27>, 'Key1': <KeyCode.Key1: 28>, 'Key2': <KeyCode.Key2: 29>, 'Key3': <KeyCode.Key3: 30>, 'Key4': <KeyCode.Key4: 31>, 'Key5': <KeyCode.Key5: 32>, 'Key6': <KeyCode.Key6: 33>, 'Key7': <KeyCode.Key7: 34>, 'Key8': <KeyCode.Key8: 35>, 'Key9': <KeyCode.Key9: 36>, 'KeySpace': <KeyCode.KeySpace: 59>}
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
@@ -573,6 +603,16 @@ def Vector3FromJson(arg0: JsonValue) -> Vector3:
 def Vector3ToJson(arg0: Vector3) -> JsonValue:
     ...
 Dynamic: EMotionType  # value = <EMotionType.Dynamic: 2>
+Key0: KeyCode  # value = <KeyCode.Key0: 27>
+Key1: KeyCode  # value = <KeyCode.Key1: 28>
+Key2: KeyCode  # value = <KeyCode.Key2: 29>
+Key3: KeyCode  # value = <KeyCode.Key3: 30>
+Key4: KeyCode  # value = <KeyCode.Key4: 31>
+Key5: KeyCode  # value = <KeyCode.Key5: 32>
+Key6: KeyCode  # value = <KeyCode.Key6: 33>
+Key7: KeyCode  # value = <KeyCode.Key7: 34>
+Key8: KeyCode  # value = <KeyCode.Key8: 35>
+Key9: KeyCode  # value = <KeyCode.Key9: 36>
 KeyA: KeyCode  # value = <KeyCode.KeyA: 1>
 KeyD: KeyCode  # value = <KeyCode.KeyD: 4>
 KeyE: KeyCode  # value = <KeyCode.KeyE: 5>
