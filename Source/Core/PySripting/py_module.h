@@ -1,6 +1,6 @@
 #pragma once
 #include <pybind11/embed.h>
-#include <pybind11/smart_holder.h>
+#include <pybind11/detail/using_smart_holder.h>
 #include <pybind11/stl.h>
 
 #include<directxtk12/SimpleMath.h>
