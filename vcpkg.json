@@ -22,6 +22,7 @@
     "directxtk12",
     "easyloggingpp",
     "imguizmo",
+    "nvrhi",
     {
       "name": "pybind11",
       "version>=": "3.0.1"
