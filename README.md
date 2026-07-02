@@ -29,3 +29,6 @@ The engine has been used to develop some simple games:
 ![Gamestus](docs/games/Gamestus_game.gif)
 - Game by [mik5937](https://github.com/mik5937)
 ![mik5937_game](docs/games/mik5937_game.gif)
+
+## How to build
+Using vcpkg manifest. Also currently you should have python being installed with PYTHON_PATH pointed to root.
