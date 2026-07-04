@@ -1,11 +1,24 @@
 #pragma once
-#include<vector>
-#include<unordered_map>
-#include<memory>
 
-#include<ObjectMask.h>
-#include<IObjectShaderResource.h>
-#include<PerObjectData.h>
+// IRenderable.h — abstraction for anything the renderer draws.
+// NVRHI cutover: a renderable no longer draws itself (it used to call IASetVertexBuffers /
+// DrawIndexedInstanced on a D3D12 command list). With NVRHI the *pass* assembles the full
+// GraphicsState, so the renderable is a data provider: its vertex/index buffers, index
+// count/format, per-object data source, material, object mask, and AABB.
+//
+// SortData / CommonResourceGroup / DrawPacket are retained (lightly adapted) so the
+// SceneVisibility bucketing still groups renderables by material for binding-set reuse.
+
+#include <vector>
+#include <unordered_map>
+#include <memory>
+
+#include <nvrhi/nvrhi.h>
+#include <DirectXCollision.h>
+
+#include <ObjectMask.h>
+#include <IObjectShaderResource.h>
+#include <PerObjectData.h>
 
 namespace GiiGa
 {
@@ -18,12 +31,29 @@ namespace GiiGa
     class IRenderable
     {
     public:
-        virtual void Draw(RenderContext& context) =0;
-        virtual SortData GetSortData() =0;
-        virtual PerObjectData& GetPerObjectData() =0;
+        virtual ~IRenderable() = default;
+
+        // --- geometry (NVRHI buffers) ---
+        virtual nvrhi::IBuffer* GetVertexBuffer() = 0;
+        virtual nvrhi::IBuffer* GetIndexBuffer() = 0;
+        virtual uint32_t GetIndexCount() = 0;
+        virtual nvrhi::Format GetIndexFormat() = 0;
+
+        // --- per-object / material data ---
+        virtual PerObjectData& GetPerObjectData() = 0;
+        virtual std::shared_ptr<IObjectShaderResource> GetShaderResource() = 0;
+
+        // --- bucketing / culling ---
+        virtual const ObjectMask& GetObjectMask() = 0;
+        virtual const DirectX::BoundingBox& GetAABB() = 0;
+
+        SortData GetSortData()
+        {
+            return SortData{GetObjectMask(), GetShaderResource()};
+        }
     };
 
-    bool operator==(const std::weak_ptr<IRenderable>& lhs, const std::weak_ptr<IRenderable>& rhs)
+    inline bool operator==(const std::weak_ptr<IRenderable>& lhs, const std::weak_ptr<IRenderable>& rhs)
     {
         return lhs.lock() == rhs.lock();
     }
@@ -33,9 +63,8 @@ namespace GiiGa
         std::shared_ptr<IObjectShaderResource> shaderResource;
         std::vector<std::weak_ptr<IRenderable>> renderables;
 
-
-        CommonResourceGroup(std::shared_ptr<IObjectShaderResource> in_shaderResource):
-            shaderResource(in_shaderResource)
+        explicit CommonResourceGroup(std::shared_ptr<IObjectShaderResource> in_shaderResource)
+            : shaderResource(std::move(in_shaderResource))
         {
         }
     };
@@ -45,8 +74,8 @@ namespace GiiGa
         ObjectMask objects_mask;
         std::unordered_map<void*, CommonResourceGroup> common_resource_renderables;
 
-        DrawPacket(ObjectMask in_objects_mask):
-            objects_mask(in_objects_mask)
+        explicit DrawPacket(ObjectMask in_objects_mask)
+            : objects_mask(in_objects_mask)
         {
         }
     };

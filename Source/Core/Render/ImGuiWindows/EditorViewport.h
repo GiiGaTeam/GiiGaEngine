@@ -1,46 +1,52 @@
 #pragma once
+
 #include <pybind11/embed.h>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include<directxtk12/SimpleMath.h>
+#include <directxtk12/SimpleMath.h>
 #include <ImGuizmo.h>
 
-
-#include<imgui.h>
-#include<string>
-#include<memory>
+#include <imgui.h>
+#include <string>
+#include <memory>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include<d3d12.h>
+#include <d3d12.h>
 
-#include<Viewport.h>
-#include<RenderDevice.h>
-#include<GBufferPass.h>
-#include<GLightPass.h>
-#include<RenderGraph.h>
-#include"World.h"
-#include<CameraComponent.h>
-#include<GameObject.h>
-#include<SpectatorMovementComponent.h>
-#include<GBuffer.h>
-#include<EditorContext.h>
-#include<ShadowPass.h>
-#include<PostProcessPass.h>
-
-#include "DebugPass.h"
-#include "ForwardPass.h"
+#include <Viewport.h>
+#include <RenderDevice.h>
+#include <DescriptorHeap.h>
+#include <Core/Render/Nvrhi/NvrhiCommon.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
+#include <Core/Render/Nvrhi/NvrhiShader.h>
+#include <RenderPassViewData.h>
+#include <GBufferPass.h>
+#include <GLightPass.h>
+#include <ShadowPass.h>
+#include <PostProcessPass.h>
+#include <DebugPass.h>
+#include <ForwardPass.h>
+#include "World.h"
+#include <CameraComponent.h>
+#include <GameObject.h>
+#include <SpectatorMovementComponent.h>
+#include <EditorContext.h>
+#include <Engine.h>
 
 namespace GiiGa
 {
     class EditorViewport : public Viewport, public std::enable_shared_from_this<EditorViewport>
     {
     public:
-        EditorViewport(RenderDevice& device, std::shared_ptr<EditorContext> editor_ctx):
-            Viewport(device)
+        EditorViewport(RenderDevice& device, std::shared_ptr<EditorContext> editor_ctx)
+            : Viewport(device)
             , editorContext_(editor_ctx)
         {
+            if (auto rs = Engine::Instance().RenderSystem())
+                nvrhiDevice_ = rs->GetNvrhiDevice();
         }
 
         void Resize(DirectX::SimpleMath::Vector2 new_size) override
@@ -49,7 +55,8 @@ namespace GiiGa
 
             if (auto l_camera = camera_.lock())
             {
-                l_camera->GetComponent<CameraComponent>()->SetAspect(new_size.x / new_size.y);
+                if (auto cam = l_camera->GetComponent<CameraComponent>())
+                    cam->SetAspect(new_size.x / new_size.y);
             }
         }
 
@@ -57,14 +64,23 @@ namespace GiiGa
         {
             Resize(viewport_size_);
 
-            renderGraph_ = std::make_shared<RenderGraph>();
+            renderGraph_ = std::make_unique<rhi::RenderGraph>();
+            shaderCache_ = std::make_unique<rhi::ShaderCache>();
 
-            renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
-            renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
-            renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
-            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
-            renderGraph_->AddPass(std::make_shared<PostProcessPass>(context, std::bind(&EditorViewport::GetResultInfo, this), gbuffer_));
+            auto camFn = [this]() { return this->GetCameraInfo(); };
+            auto resFn = [this]() { return this->GetResultInfo(); };
+
+            renderGraph_->addPass(std::make_shared<ShadowPass>(nvrhiDevice_, *shaderCache_, camFn));
+            renderGraph_->addPass(std::make_shared<GBufferPass>(nvrhiDevice_, *shaderCache_, camFn, gbuffer_));
+            renderGraph_->addPass(std::make_shared<GLightPass>(nvrhiDevice_, *shaderCache_, camFn, gbuffer_));
+            renderGraph_->addPass(std::make_shared<ForwardPass>(nvrhiDevice_, *shaderCache_, camFn, gbuffer_));
+            renderGraph_->addPass(std::make_shared<DebugPass>(nvrhiDevice_, *shaderCache_, camFn, gbuffer_));
+            renderGraph_->addPass(std::make_shared<PostProcessPass>(nvrhiDevice_, *shaderCache_, resFn, gbuffer_));
+
+            if (nvrhiDevice_ && device_.GetDxDevice())
+            {
+                resultSrvAllocation_ = device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Allocate(1);
+            }
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
             const auto cameraComponent = camera_.lock()->CreateComponent<CameraComponent>(Perspective, 90, 16 / 9);
@@ -81,23 +97,24 @@ namespace GiiGa
 
         RenderPassViewData GetCameraInfo() override
         {
-            return RenderPassViewData{
-                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer->getDescriptor().getGPUHandle(),
-                viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
-            };
+            RenderPassViewData data;
+            if (!camera_.expired())
+            {
+                data.camera = camera_.lock()->GetComponent<CameraComponent>()->GetCamera();
+            }
+            data.viewConstants = viewConstants_;
+            data.screenDimensions = screenDimensions_;
+            return data;
         }
 
         void Execute(RenderContext& context) override
         {
-            // TODO: Check simulation mode or editor mode
-
             if (camera_.expired()) return;
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
 
             if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str(), nullptr, ImGuiWindowFlags_NoScrollWithMouse))
             {
-                //ImGui::SetScrollX(0);
                 if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
                 {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
@@ -116,7 +133,7 @@ namespace GiiGa
             auto current_size = ImGui::GetContentRegionAvail();
             if (current_size.y < 0)
             {
-                current_size.y = 2; // Или skip
+                current_size.y = 2;
                 ImGui::Text("Content height is negative!");
             }
 
@@ -127,34 +144,32 @@ namespace GiiGa
             ImGuizmo::AllowAxisFlip(false);
             ImGuizmo::SetDrawlist();
 
-            // draw here
-            D3D12_VIEWPORT viewport = {};
-            viewport.TopLeftX = 0.0f;
-            viewport.TopLeftY = 0.0f;
-            viewport.Width = current_size.x;
-            viewport.Height = current_size.y;
-            viewport.MinDepth = 0.0f;
-            viewport.MaxDepth = 1.0f;
-            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
+            // --- run the NVRHI render graph on the engine's NVRHI command list ---
+            // TODO(runtime): the NVRHI command list and the legacy RenderContext command list
+            // share one D3D12 queue; submitting the NVRHI list mid-frame here is not synchronized
+            // with the legacy ImGui command list. Consolidating onto a single command list (the
+            // rhi::RenderSystem frame loop) is the intended end state.
+            if (nvrhiDevice_ && renderGraph_)
+            {
+                nvrhi::ICommandList* cmd = Engine::Instance().RenderSystem()->GetUploadCommandList();
+                if (cmd)
+                {
+                    cmd->open();
+                    rhi::FrameContext fc{nvrhiDevice_, cmd};
+                    renderGraph_->execute(fc);
+                    cmd->close();
+                    nvrhiDevice_->executeCommandList(cmd);
+                }
+            }
 
-            D3D12_RECT scissorRect = {};
-            scissorRect.left = 0;
-            scissorRect.top = 0;
-            scissorRect.right = current_size.x;
-            scissorRect.bottom = current_size.y;
-            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
+            RefreshResultSrv_();
 
-            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            if (resultSrvResource_)
+            {
+                ImGui::Image(static_cast<ImTextureID>(resultSrvAllocation_.GetGpuHandle().ptr),
+                             ImVec2(viewport_size_.x, viewport_size_.y));
+            }
 
-            renderGraph_->Draw(context);
-            // draw here - end
-
-            rtvData_.resource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-            //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-            ImGui::Image((ImTextureID)rtvData_.SRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-
-            // Widgets on viewport
             PostViewportDrawWidgets();
 
             ImGui::End();
@@ -164,11 +179,36 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
-        std::shared_ptr<BufferView<Constant>> viewInfoConstBuffer;
-        std::shared_ptr<BufferView<Constant>> screenDimensionsConstBuffer;
         DirectX::SimpleMath::Matrix viewProjectionMatrix;
 
+        rhi::ViewConstants viewConstants_;
+        rhi::ScreenDimensions screenDimensions_;
+
         std::shared_ptr<EditorContext> editorContext_;
+        std::unique_ptr<rhi::ShaderCache> shaderCache_;
+        std::unique_ptr<rhi::RenderGraph> renderGraph_;
+
+        DescriptorHeapAllocation resultSrvAllocation_;
+        ID3D12Resource* resultSrvResource_ = nullptr;
+
+        void RefreshResultSrv_()
+        {
+            if (!nvrhiDevice_ || !rtvData_.resource) return;
+            ID3D12Resource* native = rtvData_.resource->getNativeObject(nvrhi::ObjectTypes::D3D12_Resource);
+            if (resultSrvResource_ == native) return;
+            resultSrvResource_ = native;
+            if (!resultSrvAllocation_.GetCpuHandle().ptr) return;
+
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.Texture2D.MostDetailedMip = 0;
+            srvDesc.Texture2D.MipLevels = 1;
+            srvDesc.Texture2D.PlaneSlice = 0;
+            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+            device_.GetDxDevice()->CreateShaderResourceView(native, &srvDesc, resultSrvAllocation_.GetCpuHandle());
+        }
 
         void DrawToolbar()
         {
@@ -264,10 +304,6 @@ namespace GiiGa
             auto view = cmp.GetView();
             auto proj = cmp.GetProj();
 
-            /*auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
-
-            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);*/
-
             if (auto go = editorContext_->selectedGameObject.lock())
             {
                 auto transform = go->GetTransformComponent().lock();
@@ -279,33 +315,25 @@ namespace GiiGa
             }
         }
 
-
-        void UpdateCameraInfo(RenderContext& context)
+        void UpdateCameraInfo(RenderContext& /*context*/)
         {
             auto camera_go = camera_.lock();
-            auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
+            if (!camera_go) return;
+            auto camComp = camera_go->GetComponent<CameraComponent>();
+            if (!camComp) return;
+            auto camera = camComp->GetCamera();
 
             viewProjectionMatrix = camera.GetViewProj();
 
-            RenderPassViewMatricies const_buf_data = {
-                camera.GetView().Transpose(), camera.GetProj().Transpose(),
-                camera.GetView().Invert().Transpose(), camera.GetProj().Invert().Transpose(),
-                camera_go->GetTransformComponent().lock()->GetWorldLocation()
-            };
+            viewConstants_.viewMatrix = camera.GetView().Transpose();
+            viewConstants_.projMatrix = camera.GetProj().Transpose();
+            viewConstants_.invViewMatrix = camera.GetView().Invert().Transpose();
+            viewConstants_.invProjMatrix = camera.GetProj().Invert().Transpose();
 
-            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
+            auto t = camera_go->GetTransformComponent().lock();
+            viewConstants_.camPos = t ? t->GetWorldLocation() : DirectX::SimpleMath::Vector3();
 
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
-
-            viewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
-
-            ScreenDimensions size_const_data = {viewport_size_};
-
-            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
-
-            desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(ScreenDimensions));
-
-            screenDimensionsConstBuffer = context.AllocateDynamicConstantView(ScreenDimensionsSpan, desc);
+            screenDimensions_.dimensions = viewport_size_;
         }
     };
 }

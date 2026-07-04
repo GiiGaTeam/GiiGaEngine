@@ -10,6 +10,9 @@
 #include "ICollision.h"
 #include "Physics/PhysicsSystem.h"
 
+#include <nvrhi/nvrhi.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
+
 
 namespace GiiGa
 {
@@ -18,17 +21,18 @@ namespace GiiGa
         DirectX::SimpleMath::Vector3 color = {0.5f, 0.0f, 0.5f};
     };
 
+    // NVRHI cutover: exposes the collision debug color constant buffer via IObjectShaderResource.
+    // The Debug pass binds bindings_.constantBuffer when drawing the wireframe collision mesh.
     class CollisionShaderResource : public IObjectShaderResource
     {
-    public:
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
-        {
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
-            result[0] = colorCBV_->getDescriptor().getGPUHandle();
-            return result;
-        }
+        friend class CollisionComponent;
 
-        std::shared_ptr<BufferView<Constant>> colorCBV_;
+    public:
+        const MaterialBindings& GetMaterialBindings() override { return bindings_; }
+
+    private:
+        nvrhi::BufferHandle cb_;
+        MaterialBindings bindings_;
     };
 
     class CollisionComponent : public IRenderable, public IUpdateGPUData, public ICollision
@@ -58,7 +62,8 @@ namespace GiiGa
 
         ~CollisionComponent() override
         {
-            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            if (auto rs = Engine::Instance().RenderSystem())
+                rs->UnregisterInUpdateGPUData(this);
             PhysicsSystem::UnRegisterCollision(this);
             OnUpdateTransform.Unregister(cashed_event_);
         }
@@ -66,6 +71,8 @@ namespace GiiGa
         void ConstructFunction()
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
+            if (auto dev = Engine::Instance().RenderSystem()->GetNvrhiDevice())
+                EnsureColorBuffer_(dev);
         }
 
         Json::Value DerivedToJson(bool is_prefab_root) override
@@ -104,6 +111,7 @@ namespace GiiGa
             }
             mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(mesh_asset);
             visibilityEntry_ = VisibilityEntry::Register(std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), mesh_->GetAABB());
+            RefreshCached();
         }
 
         void Init() override
@@ -116,6 +124,7 @@ namespace GiiGa
 
                 RegisterInVisibility();
             }
+            perObjectData_.SetTransform(std::dynamic_pointer_cast<TransformComponent>(shared_from_this()));
         }
 
         void SetOwnerWorldLocation(DirectX::SimpleMath::Vector3 loc) override
@@ -139,40 +148,33 @@ namespace GiiGa
         {
         }
 
-        void Draw(RenderContext& context) override
+        // --- IRenderable: debug wireframe geometry + color data provider ---
+
+        nvrhi::IBuffer* GetVertexBuffer() override { return mesh_ ? mesh_->GetVertexBuffer() : nullptr; }
+        nvrhi::IBuffer* GetIndexBuffer() override { return mesh_ ? mesh_->GetIndexBuffer() : nullptr; }
+        uint32_t GetIndexCount() override { return mesh_ ? mesh_->GetIndexCount() : 0; }
+        nvrhi::Format GetIndexFormat() override { return nvrhi::Format::R16_UINT; }
+
+        PerObjectData& GetPerObjectData() override { return perObjectData_; }
+        std::shared_ptr<IObjectShaderResource> GetShaderResource() override { return colorShaderRes_; }
+
+        const ObjectMask& GetObjectMask() override { return objectMask_; }
+        const DirectX::BoundingBox& GetAABB() override { return aabb_; }
+
+        // --- IUpdateGPUData: push color data to the NVRHI constant buffer when dirty ---
+        void UpdateGPUData(nvrhi::IDevice* device, nvrhi::ICommandList* cmd) override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
-        }
+            if (!isDirty)
+                return;
+            isDirty = false;
 
-        SortData GetSortData() override
-        {
-            return {
-                .object_mask = mesh_->GetObjectMask()
-                                    .SetFillMode(FillMode::Wire)
-                                    .SetBlendMode(BlendMode::Debug),
-                .shaderResource = colorShaderRes_
-            };
-        }
+            EnsureColorBuffer_(device);
 
-        PerObjectData& GetPerObjectData() override
-        {
-            return *perObjectData_;
-        }
-
-        void UpdateGPUData(RenderContext& context) override
-        {
-            if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), collisionData_.motion_type_ == EMotionType::Static);
-            perObjectData_->UpdateGPUData(context);
-
-            UINT SizeInBytes = sizeof(ColorData);
-
-            ColorData colorData;
-
-            const auto span = std::span{reinterpret_cast<uint8_t*>(&colorData), SizeInBytes};
-
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-            colorShaderRes_->colorCBV_ = context.AllocateDynamicConstantView(span, desc);
+            if (colorShaderRes_->cb_ && cmd)
+            {
+                ColorData colorData;
+                cmd->writeBuffer(colorShaderRes_->cb_, &colorData, sizeof(ColorData));
+            }
         }
 
         void SetColliderType(ColliderType new_type) override
@@ -276,16 +278,37 @@ namespace GiiGa
     protected:
         CollisionData collisionData_;
 
-        std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;
 
     private:
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
-        std::shared_ptr<PerObjectData> perObjectData_;
+        PerObjectData perObjectData_;
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
 
+        ObjectMask objectMask_;
+        DirectX::BoundingBox aabb_;
+        bool isDirty = true;
+
         JPH::BodyID body_id_;
+
+        void EnsureColorBuffer_(nvrhi::IDevice* device)
+        {
+            if (!colorShaderRes_->cb_ && device)
+            {
+                colorShaderRes_->cb_ = rhi::createConstantBuffer(device, sizeof(ColorData), "collision color cb");
+                colorShaderRes_->bindings_.constantBuffer = colorShaderRes_->cb_.Get();
+            }
+        }
+
+        void RefreshCached()
+        {
+            if (mesh_)
+            {
+                objectMask_ = mesh_->GetObjectMask().SetFillMode(FillMode::Wire).SetBlendMode(BlendMode::Debug);
+                aabb_ = mesh_->GetAABB();
+            }
+        }
 
         void RegisterInVisibility()
         {

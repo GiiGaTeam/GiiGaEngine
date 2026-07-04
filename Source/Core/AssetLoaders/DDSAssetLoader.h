@@ -64,9 +64,8 @@ namespace GiiGa
             auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
             future.wait();
 
-            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rs->GetRenderDevice() });
-
-            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture_ptr);
+            // Wrap the DirectXTK12-created D3D12 resource as an NVRHI texture (TextureAsset owns it).
+            return std::make_shared<TextureAsset>(handle, rs->GetNvrhiDevice(), texture);
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

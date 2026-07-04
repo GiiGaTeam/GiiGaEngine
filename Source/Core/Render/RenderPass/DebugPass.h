@@ -1,88 +1,106 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
 
+// DebugPass.h — wireframe debug pass (NVRHI).
+//
+// Bindings: b0 = per-view, b1 = per-object (volatile), b2 = per-resource color constant
+//           buffer (e.g. the CollisionShaderResource color CB). No textures.
+// Shaders: VertexPNTBTShader(VSMain) + BufferWireframeShader(PSMain).
+// Wireframe, no culling, into the GBuffer-derived light framebuffer.
 
-#include<memory>
-#include<vector>
-#include<functional>
+#include <memory>
+#include <functional>
+#include <unordered_map>
 
-#include<RenderPass.h>
-#include<PSO.h>
-#include<IRenderable.h>
-#include<SceneVisibility.h>
-#include<RenderPassViewData.h>
-#include<ShaderManager.h>
-#include<RenderContext.h>
-#include<VertexTypes.h>
-#include<CameraComponent.h>
-#include<PerObjectData.h>
-#include<IObjectShaderResource.h>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiShader.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
+#include <Core/Render/Nvrhi/NvrhiPassCommon.h>
+
+#include <RenderPassViewData.h>
+#include <SceneVisibility.h>
+#include <IRenderable.h>
+#include <ObjectMask.h>
+#include <VertexTypes.h>
 
 namespace GiiGa
 {
-    class DebugPass : public RenderPass
+    class DebugPass : public rhi::RenderPass
     {
     public:
-        static inline const int ViewDataRootIndex = 0;
-        static inline const int ModelDataRootIndex = 1;
-
-        static inline const int ConstantBufferCount = ModelDataRootIndex + 1;
-
-        DebugPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn):
-            getCamInfoDataFunction_(getCamDescFn)
+        DebugPass(nvrhi::IDevice* device, rhi::ShaderCache& shaders,
+                  std::function<RenderPassViewData()> getCamInfo,
+                  std::shared_ptr<rhi::GBuffer> gbuffer)
+            : device_(device)
+            , shaders_(shaders)
+            , getCamInfoDataFunction_(std::move(getCamInfo))
+            , gbuffer_(std::move(gbuffer))
         {
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
-            rast_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+            viewSlot_.init(device_);
+            objectSlot_.init(device_);
+            materialLayout_ = rhi::makeMaterialBindingLayout(device_, {}, false);
 
-            DXGI_FORMAT format_array[] = {GBuffer::G_FORMAT};
+            nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
+                device_, rhi::makeVertexAttributes<VertexPNTBT>(),
+                shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex));
 
-            mask_to_pso[filter_renderPass_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(BufferWireframeShader))
-                .set_rasterizer_state(rast_desc)
-                .set_rtv_format(format_array, 1)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                })
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            nvrhi::RenderState rs;
+            rs.rasterState.setFillWireframe().setCullNone();
+            rs.depthStencilState.enableDepthTest().enableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::Less);
+
+            nvrhi::IFramebuffer* initialFb = rhi::ensureLightFramebuffer(device_, *gbuffer_, lightFb_, lightFbSource_);
+
+            nvrhi::GraphicsPipelineDesc pd;
+            pd.setVertexShader(shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex))
+              .setPixelShader(shaders_.getOrCreate(device_, BufferWireframeShader, "PSMain", nvrhi::ShaderType::Pixel))
+              .setInputLayout(inputLayout)
+              .setRenderState(rs)
+              .addBindingLayout(viewSlot_.layout)
+              .addBindingLayout(objectSlot_.layout)
+              .addBindingLayout(materialLayout_);
+            pipeline_ = device_->createGraphicsPipeline(pd, initialFb);
         }
 
-        void Draw(RenderContext& context) override
+        void execute(const rhi::FrameContext& ctx) override
         {
-            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            if (!ctx.cmd || !gbuffer_ || !pipeline_) return;
 
             auto cam_info = getCamInfoDataFunction_();
+            viewSlot_.write(ctx.cmd, cam_info.viewConstants);
 
             const auto& visibles = SceneVisibility::ExtractFromFrustum(filter_renderPass_, cam_info.camera.GetViewProj());
 
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
-            context.BindDescriptorHandle(0, cam_info.viewDescriptor);
+            nvrhi::IFramebuffer* fb = rhi::ensureLightFramebuffer(device_, *gbuffer_, lightFb_, lightFbSource_);
+            auto vp = rhi::fullViewportState(gbuffer_->width(), gbuffer_->height());
 
-            for (auto& visible : visibles)
+            for (auto& [mask, packet] : visibles)
             {
-                PSO pso;
-                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
-
-                context.BindPSO(pso.GetState().get());
-                context.SetSignature(pso.GetSignature().get());
-                for (auto& common_resource_group : visible.second.common_resource_renderables)
+                for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    auto CRG = common_resource_group.second;
-                    pso.SetShaderResources(context, *CRG.shaderResource);
-                    for (auto& renderable : common_resource_group.second.renderables)
+                    nvrhi::BindingSetHandle materialSet;
+                    if (group.shaderResource)
                     {
-                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                        renderable.lock()->Draw(context);
+                        auto it = materialSetCache_.find(group.shaderResource.get());
+                        if (it != materialSetCache_.end())
+                            materialSet = it->second;
+                        else
+                        {
+                            materialSet = rhi::makeMaterialBindingSet(device_, materialLayout_,
+                                group.shaderResource->GetMaterialBindings(), nullptr, {});
+                            materialSetCache_[group.shaderResource.get()] = materialSet;
+                        }
+                    }
+
+                    nvrhi::GraphicsState state;
+                    state.setPipeline(pipeline_).setFramebuffer(fb).setViewport(vp);
+                    state.addBindingSet(viewSlot_.set);
+                    state.addBindingSet(objectSlot_.set);
+                    if (materialSet) state.addBindingSet(materialSet);
+
+                    for (auto& weak : group.renderables)
+                    {
+                        if (auto r = weak.lock())
+                            rhi::drawRenderable(ctx.cmd, state, objectSlot_, *r);
                     }
                 }
             }
@@ -95,7 +113,19 @@ namespace GiiGa
                                                     .SetFillMode(FillMode::All)
                                                     .SetLightType(LightType::NoDirectional);
 
-        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        nvrhi::IDevice* device_ = nullptr;
+        rhi::ShaderCache& shaders_;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
+        std::shared_ptr<rhi::GBuffer> gbuffer_;
+
+        rhi::ViewConstantSlot viewSlot_;
+        rhi::ObjectConstantSlot objectSlot_;
+        nvrhi::BindingLayoutHandle materialLayout_;
+        std::unordered_map<void*, nvrhi::BindingSetHandle> materialSetCache_;
+
+        nvrhi::FramebufferHandle lightFb_;
+        nvrhi::IFramebuffer* lightFbSource_ = nullptr;
+
+        nvrhi::GraphicsPipelineHandle pipeline_;
     };
 }

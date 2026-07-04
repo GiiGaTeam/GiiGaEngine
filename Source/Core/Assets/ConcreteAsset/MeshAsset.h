@@ -1,16 +1,15 @@
 #pragma once
 
+// MeshAsset.h — templated mesh turned into an engine asset.
+// NVRHI cutover: the constructor takes the nvrhi device + an open upload command list
+// (the loader opens, constructs, then closes/executes/waits).
 
 #include <DirectXCollision.h>
+#include <vector>
 
-
-
-#include<vector>;
-
-#include<AssetBase.h>
-#include<Mesh.h>
-#include<IRenderContext.h>
-#include<RenderDevice.h>
+#include <AssetBase.h>
+#include <Mesh.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
 
 namespace GiiGa
 {
@@ -18,22 +17,18 @@ namespace GiiGa
     class MeshAsset : public AssetBase, public Mesh<VertexType>
     {
     public:
-        MeshAsset(
-            AssetHandle handle,
-            IRenderContext& render_context,
-            RenderDevice& device, 
-            const std::vector<VertexType>& vertices,
-            const std::vector<Index16>& indices, 
-            DirectX::BoundingBox aabb
-        )
-            : Mesh<VertexType>(render_context, device, vertices, indices, aabb)
+        MeshAsset(AssetHandle handle,
+                  nvrhi::IDevice* device,
+                  nvrhi::ICommandList* uploadCl,
+                  const std::vector<VertexType>& vertices,
+                  const std::vector<Index16>& indices,
+                  DirectX::BoundingBox aabb)
+            : Mesh<VertexType>(device, uploadCl, vertices, indices, aabb)
             , AssetBase(handle)
         {
         }
 
-        MeshAsset(
-            AssetHandle handle
-        )
+        explicit MeshAsset(AssetHandle handle)
             : AssetBase(handle)
         {
         }
@@ -41,8 +36,9 @@ namespace GiiGa
         MeshAsset(const MeshAsset&) = delete;
         MeshAsset& operator=(const MeshAsset&) = delete;
 
-        virtual AssetType GetType() override {
+        virtual AssetType GetType() override
+        {
             return AssetType::Mesh;
         }
     };
-}  // namespace GiiGa
+}

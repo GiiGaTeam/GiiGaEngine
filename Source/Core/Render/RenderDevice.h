@@ -26,6 +26,9 @@ namespace GiiGa
         //todo: temp
         friend class RenderContext;
         friend class EditorSwapChainPass;
+        // NVRHI cutover: the editor viewport builds a viewport-result SRV in the engine's
+        // shader-visible GPU descriptor heap so it can be displayed via ImGui::Image.
+        friend class EditorViewport;
 
     private:
         RenderDevice():

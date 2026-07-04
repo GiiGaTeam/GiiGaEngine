@@ -1,7 +1,6 @@
 #pragma once
 #include <pybind11/conduit/wrap_include_python_h.h>
 
-#include <directx/d3dx12.h>
 #include <DirectXCollision.h>
 #include <unordered_map>
 #include <vector>
@@ -11,6 +10,8 @@
 #include<json/value.h>
 #include<algorithm>
 #include<optional>
+
+#include<nvrhi/nvrhi.h>
 
 #include<Engine.h>
 #include<Component.h>
@@ -25,11 +26,10 @@
 #include<PerObjectData.h>
 #include<DefaultAssetsHandles.h>
 #include<IUpdateGPUData.h>
-#include<ViewTypes.h>
-#include<BufferView.h>
-#include<GPULocalResource.h>
 #include<PrefabInstanceModifications.h>
 #include<LightComponent.h>
+#include<Core/Render/Nvrhi/NvrhiResources.h>
+#include<DXMathUtils.h>
 
 namespace GiiGa
 {
@@ -62,20 +62,18 @@ namespace GiiGa
         }
     };
 
+    // NVRHI cutover: exposes the point-light constant buffer through IObjectShaderResource.
+    // The GLight pass binds bindings_.constantBuffer (the light data) when drawing the light mesh.
     class PointLightShaderResource : public IObjectShaderResource
     {
         friend class PointLightComponent;
 
     public:
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
-        {
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
-            result[0] = PointLightCBV_->getDescriptor().getGPUHandle();
-            return result;
-        }
+        const MaterialBindings& GetMaterialBindings() override { return bindings_; }
 
     private:
-        std::shared_ptr<BufferView<Constant>> PointLightCBV_;
+        nvrhi::BufferHandle cb_;
+        MaterialBindings bindings_;
     };
 
     class PointLightComponent : public LightComponent
@@ -99,24 +97,16 @@ namespace GiiGa
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
 
-            auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
-            auto& context = Engine::Instance().RenderSystem()->GetRenderContext();
-
-            if (isStatic_)
+            if (auto dev = Engine::Instance().RenderSystem()->GetNvrhiDevice())
             {
-                UINT SizeInBytes = sizeof(PointLightData);
-
-                const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-                poinLightRes = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-                poinLightRes->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(poinLightRes->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
-                pointLightShaderRes_->PointLightCBV_ = poinLightRes->CreateConstantBufferView(desc);
+                EnsureLightBuffer_(dev);
             }
         }
 
         ~PointLightComponent() override
         {
-            Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            if (auto rs = Engine::Instance().RenderSystem())
+                rs->UnregisterInUpdateGPUData(this);
             if (auto l_owner = owner_.lock())
             {
                 if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
@@ -139,6 +129,8 @@ namespace GiiGa
 
                 RegisterInVisibility();
             }
+            perObjectData_.SetTransform(transform_.lock());
+            RefreshCached();
         }
 
         void BeginPlay() override
@@ -173,20 +165,18 @@ namespace GiiGa
             Todo();
         }
 
+        // --- IRenderable: light geometry + data provider ---
 
-        void Draw(RenderContext& context) override
-        {
-            mesh_->Draw(context.GetGraphicsCommandList());
-        }
+        nvrhi::IBuffer* GetVertexBuffer() override { return mesh_ ? mesh_->GetVertexBuffer() : nullptr; }
+        nvrhi::IBuffer* GetIndexBuffer() override { return mesh_ ? mesh_->GetIndexBuffer() : nullptr; }
+        uint32_t GetIndexCount() override { return mesh_ ? mesh_->GetIndexCount() : 0; }
+        nvrhi::Format GetIndexFormat() override { return nvrhi::Format::R16_UINT; }
 
-        SortData GetSortData() override
-        {
-            return {
-                .object_mask = mesh_->GetObjectMask()
-                                    .SetLightType(LightType::Point),
-                .shaderResource = pointLightShaderRes_
-            };
-        }
+        PerObjectData& GetPerObjectData() override { return perObjectData_; }
+        std::shared_ptr<IObjectShaderResource> GetShaderResource() override { return pointLightShaderRes_; }
+
+        const ObjectMask& GetObjectMask() override { return objectMask_; }
+        const DirectX::BoundingBox& GetAABB() override { return aabb_; }
 
         void RestoreFromLevelJson(const Json::Value&) override
         {
@@ -200,38 +190,22 @@ namespace GiiGa
             return result;
         }
 
-        void UpdateGPUData(RenderContext& context) override
+        // --- IUpdateGPUData: push light data to the NVRHI constant buffer when dirty ---
+        void UpdateGPUData(nvrhi::IDevice* device, nvrhi::ICommandList* cmd) override
         {
             if (!isDirty)
                 return;
+            isDirty = false;
 
-            if (!perObjectData_)
-                perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
-            perObjectData_->UpdateGPUData(context);
+            EnsureLightBuffer_(device);
 
-            UINT SizeInBytes = sizeof(PointLightData);
-
-            const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-
-            if (isStatic_)
-            {
-                poinLightRes->UpdateContentsImmediate(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            }
-            else
-            {
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-                pointLightShaderRes_->PointLightCBV_ = context.AllocateDynamicConstantView(span, desc);
-            }
+            if (pointLightShaderRes_->cb_ && cmd)
+                cmd->writeBuffer(pointLightShaderRes_->cb_, &data_, sizeof(PointLightData));
         }
 
         void InitShadowData(RenderDevice& device) override
         {
         };
-
-        PerObjectData& GetPerObjectData() override
-        {
-            return *perObjectData_;
-        }
 
         void SetColor(const DirectX::SimpleMath::Vector3& color)
         {
@@ -284,13 +258,30 @@ namespace GiiGa
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
-        std::shared_ptr<PerObjectData> perObjectData_;
-        std::unique_ptr<GPULocalResource> poinLightRes;
+        PerObjectData perObjectData_;
         std::shared_ptr<PointLightShaderResource> pointLightShaderRes_;
         PointLightData data_;
-
-        bool isStatic_ = false;
+        ObjectMask objectMask_;
+        DirectX::BoundingBox aabb_;
         bool isDirty = true;
+
+        void EnsureLightBuffer_(nvrhi::IDevice* device)
+        {
+            if (!pointLightShaderRes_->cb_ && device)
+            {
+                pointLightShaderRes_->cb_ = rhi::createConstantBuffer(device, sizeof(PointLightData), "point light cb");
+                pointLightShaderRes_->bindings_.constantBuffer = pointLightShaderRes_->cb_.Get();
+            }
+        }
+
+        void RefreshCached()
+        {
+            if (mesh_)
+            {
+                objectMask_ = mesh_->GetObjectMask().SetLightType(LightType::Point);
+                aabb_ = mesh_->GetAABB();
+            }
+        }
 
         void RegisterInVisibility()
         {

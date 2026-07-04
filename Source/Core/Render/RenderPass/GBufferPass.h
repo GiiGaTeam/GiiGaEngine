@@ -1,178 +1,140 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
 
+// GBufferPass.h — geometry pass of the deferred pipeline (NVRHI).
+//
+// Renders DefaultLit opaque solid geometry into the GBuffer (LightAccumulation, Diffuse,
+// Material, NormalWS) + depth, and a wireframe variant. Bindings:
+//   b0 = per-view constants, b1 = per-object constants (volatile, per draw),
+//   b2 = material constants, t0..t7 = BaseColor,Metallic,Specular,Roughness,Anisotropy,
+//        EmissiveColor,Opacity,Normal, s0 = linear-wrap sampler.
+// Shaders: VertexPNTBTShader(VSMain) + GBufferOpaqueDefaultLitPixelShader(PSMain) for lit,
+//          VertexPNTBTShader(VSMain) + GBufferWireframeShader(PSMain) for wire.
 
+#include <memory>
+#include <functional>
+#include <unordered_map>
 
-#include<memory>
-#include<vector>
-#include<functional>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiShader.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
+#include <Core/Render/Nvrhi/NvrhiPassCommon.h>
 
-#include<RenderPass.h>
-#include<PSO.h>
-#include<IRenderable.h>
-#include<SceneVisibility.h>
-#include<RenderPassViewData.h>
-#include<ShaderManager.h>
-#include<RenderContext.h>
-#include<VertexTypes.h>
-#include<CameraComponent.h>
-#include<PerObjectData.h>
-#include<IObjectShaderResource.h>
-#include<GBuffer.h>
-#include<Material.h>
+#include <RenderPassViewData.h>
+#include <SceneVisibility.h>
+#include <IRenderable.h>
+#include <ObjectMask.h>
+#include <VertexTypes.h>
 
 namespace GiiGa
 {
-    class GBufferPass : public RenderPass
+    class GBufferPass : public rhi::RenderPass
     {
     public:
-        static inline const int ViewDataRootIndex = 0;
-        static inline const int ModelDataRootIndex = 1;
-        static inline const int MaterialDataRootIndex = 2;
-
-        static inline const int ConstantBufferCount = MaterialDataRootIndex + 1;
-
-        GBufferPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn, std::shared_ptr<GBuffer> gbuffer):
-            getCamInfoDataFunction_(getCamDescFn),
-            gbuffer_(gbuffer)
+        GBufferPass(nvrhi::IDevice* device, rhi::ShaderCache& shaders,
+                    std::function<RenderPassViewData()> getCamInfo,
+                    std::shared_ptr<rhi::GBuffer> gbuffer)
+            : device_(device)
+            , shaders_(shaders)
+            , getCamInfoDataFunction_(std::move(getCamInfo))
+            , gbuffer_(std::move(gbuffer))
         {
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_BACK;
-            rast_desc.FrontCounterClockwise = TRUE;
+            viewSlot_.init(device_);
+            objectSlot_.init(device_);
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
-            };
+            nvrhi::SamplerHandle sampler = rhi::getLinearWrapSampler(device_);
+            materialLayout_ = rhi::makeMaterialBindingLayout(device_, {0, 1, 2, 3, 4, 5, 6, 7}, true);
+            sampler_ = sampler;
 
-            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT, GBuffer::G_FORMAT};
+            nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
+                device_, rhi::makeVertexAttributes<VertexPNTBT>(),
+                shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex));
 
-            D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = {
-                .DepthEnable = TRUE,
-                .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL,
-                .DepthFunc = D3D12_COMPARISON_FUNC_LESS,
-                .StencilEnable = FALSE,
-                .StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK,
-                .StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK,
-                .FrontFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS,
-                },
-                .BackFace = {
-                    .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                    .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
-                }
-            };
+            nvrhi::RenderState litState;
+            litState.rasterState.setCullBack().setFrontCounterClockwise(true);
+            litState.depthStencilState.setDepthFunc(nvrhi::ComparisonFunc::Less).enableDepthTest().enableDepthWrite();
 
-            mask_to_pso[filter_lit_solid_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(GBufferOpaqueDefaultLitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 5)
-                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                .set_depth_stencil_state(depth_stencil_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::BaseColor), descs[1]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Metallic), descs[2]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Specular), descs[3]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Roughness), descs[4]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Anisotropy), descs[5]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[6]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::Normal), descs[7]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            nvrhi::GraphicsPipelineDesc litPd;
+            litPd.setVertexShader(shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex))
+                 .setPixelShader(shaders_.getOrCreate(device_, GBufferOpaqueDefaultLitShader, "PSMain", nvrhi::ShaderType::Pixel))
+                 .setInputLayout(inputLayout)
+                 .setRenderState(litState)
+                 .addBindingLayout(viewSlot_.layout)
+                 .addBindingLayout(objectSlot_.layout)
+                 .addBindingLayout(materialLayout_);
+            litPipeline_ = device_->createGraphicsPipeline(litPd, gbuffer_ ? gbuffer_->getFramebuffer() : nullptr);
 
-            rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-            rast_desc.CullMode = D3D12_CULL_MODE_NONE;
-            rast_desc.FrontCounterClockwise = TRUE;
+            nvrhi::RenderState wireState;
+            wireState.rasterState.setFillWireframe().setCullNone().setFrontCounterClockwise(true);
+            wireState.depthStencilState.setDepthFunc(nvrhi::ComparisonFunc::Less).enableDepthTest().enableDepthWrite();
 
-            mask_to_pso[filter_wire_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(GBufferWireframeShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(g_format_array, 5)
-                .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                .set_depth_stencil_state(depth_stencil_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            nvrhi::GraphicsPipelineDesc wirePd;
+            wirePd.setVertexShader(shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex))
+                  .setPixelShader(shaders_.getOrCreate(device_, GBufferWireframeShader, "PSMain", nvrhi::ShaderType::Pixel))
+                  .setInputLayout(inputLayout)
+                  .setRenderState(wireState)
+                  .addBindingLayout(viewSlot_.layout)
+                  .addBindingLayout(objectSlot_.layout);
+            wirePipeline_ = device_->createGraphicsPipeline(wirePd, gbuffer_ ? gbuffer_->getFramebuffer() : nullptr);
         }
 
-        void Draw(RenderContext& context) override
+        void execute(const rhi::FrameContext& ctx) override
         {
+            if (!ctx.cmd || !gbuffer_ || !litPipeline_) return;
+
             auto cam_info = getCamInfoDataFunction_();
-            const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
-            const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum_culling_res);
-            const auto& vis_wire = SceneVisibility::Extract(filter_wire_, frustum_culling_res);
+            viewSlot_.write(ctx.cmd, cam_info.viewConstants);
+
+            const auto& frustum = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
+            const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum);
+            const auto& vis_wire = SceneVisibility::Extract(filter_wire_, frustum);
             std::unordered_map<ObjectMask, DrawPacket> visibles;
             SceneVisibility::Expand(vis_lit, visibles);
             SceneVisibility::Expand(vis_wire, visibles);
 
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
+            gbuffer_->clearAll(ctx.cmd);
 
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            //gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::PositionWS, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            nvrhi::IFramebuffer* fb = gbuffer_->getFramebuffer();
+            auto vp = rhi::fullViewportState(gbuffer_->width(), gbuffer_->height());
 
-            gbuffer_->BindAllAsRTV(context);
-
-            gbuffer_->ClearAll(context);
-            context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
-
-            for (auto& visible : visibles)
+            for (auto& [mask, packet] : visibles)
             {
-                PSO pso;
-                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
+                const bool isWire = filter_wire_.CoversMask(mask);
+                nvrhi::GraphicsPipelineHandle pipe = isWire ? wirePipeline_ : litPipeline_;
+                if (!pipe) continue;
 
-                context.SetSignature(pso.GetSignature().get());
-                context.BindPSO(pso.GetState().get());
-                for (auto& common_resource_group : visible.second.common_resource_renderables)
+                for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    auto CRG = common_resource_group.second;
-                    pso.SetShaderResources(context, *CRG.shaderResource);
-                    for (auto& renderable : common_resource_group.second.renderables)
+                    nvrhi::BindingSetHandle materialSet;
+                    if (!isWire && group.shaderResource)
                     {
-                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                        renderable.lock()->Draw(context);
+                        auto sresIt = materialSetCache_.find(group.shaderResource.get());
+                        if (sresIt != materialSetCache_.end())
+                            materialSet = sresIt->second;
+                        else
+                        {
+                            materialSet = rhi::makeMaterialBindingSet(device_, materialLayout_,
+                                group.shaderResource->GetMaterialBindings(), sampler_, {0, 1, 2, 3, 4, 5, 6, 7});
+                            materialSetCache_[group.shaderResource.get()] = materialSet;
+                        }
+                    }
+
+                    nvrhi::GraphicsState state;
+                    state.setPipeline(pipe).setFramebuffer(fb).setViewport(vp);
+                    state.addBindingSet(viewSlot_.set);
+                    state.addBindingSet(objectSlot_.set);
+                    if (materialSet) state.addBindingSet(materialSet);
+
+                    for (auto& weak : group.renderables)
+                    {
+                        if (auto r = weak.lock())
+                            rhi::drawRenderable(ctx.cmd, state, objectSlot_, *r);
                     }
                 }
             }
         }
 
     private:
-
         ObjectMask filter_lit_solid_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
                                                    .SetShadingModel(ShadingModel::DefaultLit)
                                                    .SetBlendMode(BlendMode::Opaque)
@@ -182,10 +144,19 @@ namespace GiiGa
                                               .SetShadingModel(ShadingModel::DefaultLit)
                                               .SetBlendMode(BlendMode::Opaque)
                                               .SetFillMode(FillMode::Wire);
-                                              //.SetLightType(LightType::All);
 
-        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        nvrhi::IDevice* device_ = nullptr;
+        rhi::ShaderCache& shaders_;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
-        std::shared_ptr<GBuffer> gbuffer_;
+        std::shared_ptr<rhi::GBuffer> gbuffer_;
+
+        rhi::ViewConstantSlot viewSlot_;
+        rhi::ObjectConstantSlot objectSlot_;
+        nvrhi::BindingLayoutHandle materialLayout_;
+        nvrhi::SamplerHandle sampler_;
+        std::unordered_map<void*, nvrhi::BindingSetHandle> materialSetCache_;
+
+        nvrhi::GraphicsPipelineHandle litPipeline_;
+        nvrhi::GraphicsPipelineHandle wirePipeline_;
     };
 }

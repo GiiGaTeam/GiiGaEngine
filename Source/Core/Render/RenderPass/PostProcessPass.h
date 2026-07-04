@@ -1,117 +1,130 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#include "GBuffer.h"
-#include "Material.h"
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
 
+// PostProcessPass.h — final post-processing pass (NVRHI).
+//
+// Draws a fullscreen quad (DefaultAssetsHandles::Quad) sampling the GBuffer LightAccumulation
+// SRV through a gamma-correction pixel shader into the viewport's result texture.
+// Bindings: t0 = LightAccumulation SRV, s0 = linear-wrap sampler. No view/object constants.
+// Shaders: VertexFullQuadShader(VSMain) + GammaCorrectionShader(PSMain). Depth disabled.
 
-#include<memory>
-#include<vector>
-#include<functional>
+#include <memory>
+#include <functional>
 
-#include<RenderPass.h>
-#include<PSO.h>
-#include<IRenderable.h>
-#include<SceneVisibility.h>
-#include<RenderPassViewData.h>
-#include<ShaderManager.h>
-#include<RenderContext.h>
-#include<VertexTypes.h>
-#include<CameraComponent.h>
-#include<PerObjectData.h>
-#include<IObjectShaderResource.h>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiShader.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
+#include <Core/Render/Nvrhi/NvrhiPassCommon.h>
+
+#include <RenderPassViewData.h>
+#include <DefaultAssetsHandles.h>
+#include <Engine.h>
+#include <ConcreteAsset/MeshAsset.h>
 
 namespace GiiGa
 {
-    class PostProcessPass : public RenderPass
+    class PostProcessPass : public rhi::RenderPass
     {
     public:
-        PostProcessPass(RenderContext& context, const std::function<RTVData()>& getResultInfoFn, const std::shared_ptr<GBuffer>& gBuffer) :
-            getResultInfoFunction_(getResultInfoFn), gBuffer_(gBuffer)
+        PostProcessPass(nvrhi::IDevice* device, rhi::ShaderCache& shaders,
+                        std::function<RTVData()> getResultInfo,
+                        std::shared_ptr<rhi::GBuffer> gbuffer)
+            : device_(device)
+            , shaders_(shaders)
+            , getResultInfoFunction_(std::move(getResultInfo))
+            , gbuffer_(std::move(gbuffer))
         {
-            D3D12_RASTERIZER_DESC rast_desc = {
-                .FillMode = D3D12_FILL_MODE_SOLID,
-                .CullMode = D3D12_CULL_MODE_FRONT,
-                .FrontCounterClockwise = TRUE,
-                .DepthBias = D3D12_DEFAULT_DEPTH_BIAS,
-                .DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                .SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
-                .DepthClipEnable = FALSE,
-                .MultisampleEnable = FALSE,
-                .AntialiasedLineEnable = FALSE,
-                .ForcedSampleCount = 0,
-                .ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
-            };
+            sampler_ = rhi::getLinearWrapSampler(device_);
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
-            };
+            nvrhi::BindingLayoutDesc bld;
+            bld.setVisibility(nvrhi::ShaderType::Pixel);
+            bld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+            bld.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+            bindingLayout_ = device_->createBindingLayout(bld);
 
-            D3D12_DEPTH_STENCIL_DESC depth_state_desc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-            depth_state_desc.DepthEnable = false;
-            depth_state_desc.StencilEnable = false;
-            
+            nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
+                device_, rhi::makeVertexAttributes<VertexPNTBT>(),
+                shaders_.getOrCreate(device_, VertexFullQuadShader, "VSMain", nvrhi::ShaderType::Vertex));
 
-            DXGI_FORMAT rtv_format_array[] = {GBuffer::G_FORMAT};
+            nvrhi::RenderState rs;
+            rs.rasterState.setCullFront().setFrontCounterClockwise(true).disableDepthClip();
+            rs.depthStencilState.disableDepthTest();
 
-            gamma_correction_pso
-                .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
-                .set_ps(ShaderManager::GetShaderByName(GammaCorrectionShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(rtv_format_array, 1)
-                .set_dsv_format(DXGI_FORMAT_UNKNOWN)
-                .set_depth_stencil_state(depth_state_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    //context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    /*const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);*/
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), 0, 1);
+            RTVData initial = getResultInfoFunction_();
+            if (initial.resource)
+            {
+                nvrhi::FramebufferDesc fbd;
+                fbd.addColorAttachment(initial.resource);
+                resultFb_ = device_->createFramebuffer(fbd);
+                resultFbSource_ = initial.resource.Get();
+            }
+
+            nvrhi::GraphicsPipelineDesc pd;
+            pd.setVertexShader(shaders_.getOrCreate(device_, VertexFullQuadShader, "VSMain", nvrhi::ShaderType::Vertex))
+              .setPixelShader(shaders_.getOrCreate(device_, GammaCorrectionShader, "PSMain", nvrhi::ShaderType::Pixel))
+              .setInputLayout(inputLayout)
+              .setRenderState(rs)
+              .addBindingLayout(bindingLayout_);
+            pipeline_ = device_->createGraphicsPipeline(pd, resultFb_.Get());
 
             auto rm = Engine::Instance().ResourceManager();
-
             mesh_ = rm->GetAsset<MeshAsset<VertexPNTBT>>(DefaultAssetsHandles::Quad);
         }
 
-        void Draw(RenderContext& context) override
+        void execute(const rhi::FrameContext& ctx) override
         {
-            auto result_info = getResultInfoFunction_();
+            if (!ctx.cmd || !gbuffer_ || !pipeline_ || !mesh_) return;
 
-            context.BindPSO(gamma_correction_pso.GetState().get());
-            context.SetSignature(gamma_correction_pso.GetSignature().get());
+            RTVData result = getResultInfoFunction_();
+            if (!result.resource) return;
 
-            gBuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            result_info.resource_->StateTransition(context, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            context.BindDescriptorHandle(0, gBuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation));
+            if (resultFbSource_ != result.resource.Get())
+            {
+                nvrhi::FramebufferDesc fbd;
+                fbd.addColorAttachment(result.resource);
+                resultFb_ = device_->createFramebuffer(fbd);
+                resultFbSource_ = result.resource.Get();
+            }
 
-            const auto rtv = result_info.RTV_->getDescriptor().GetCpuHandle();
-            const auto dsv = gBuffer_->GetDepthRTV();
-            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &rtv, false, nullptr);
-            mesh_->Draw(context.GetGraphicsCommandList());
-            //context.GetGraphicsCommandList()->IASetVertexBuffers(0, 0, nullptr);
-            //context.GetGraphicsCommandList()->DrawInstanced(6, 1, 0, 0);
+            nvrhi::BindingSetDesc bsd;
+            bsd.addItem(nvrhi::BindingSetItem::Texture_SRV(0, gbuffer_->getColor(rhi::GBuffer::Order::LightAccumulation)));
+            bsd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+            nvrhi::BindingSetHandle set = device_->createBindingSet(bsd, bindingLayout_);
+
+            nvrhi::GraphicsState state;
+            state.setPipeline(pipeline_).setFramebuffer(resultFb_.Get());
+            state.setViewport(rhi::fullViewportState(gbuffer_->width(), gbuffer_->height()));
+            state.addBindingSet(set);
+
+            nvrhi::VertexBufferBinding vbb;
+            vbb.buffer = mesh_->GetVertexBuffer();
+            vbb.slot = 0;
+            vbb.offset = 0;
+            state.addVertexBuffer(vbb);
+
+            nvrhi::IndexBufferBinding ibb;
+            ibb.buffer = mesh_->GetIndexBuffer();
+            ibb.format = mesh_->GetIndexFormat();
+            ibb.offset = 0;
+            state.setIndexBuffer(ibb);
+
+            ctx.cmd->setGraphicsState(state);
+            ctx.cmd->drawIndexed(nvrhi::DrawArguments().setVertexCount(mesh_->GetIndexCount()));
         }
 
     private:
-        PSO gamma_correction_pso;
-        std::shared_ptr<GBuffer> gBuffer_;
+        nvrhi::IDevice* device_ = nullptr;
+        rhi::ShaderCache& shaders_;
         std::function<RTVData()> getResultInfoFunction_;
+        std::shared_ptr<rhi::GBuffer> gbuffer_;
+
+        nvrhi::BindingLayoutHandle bindingLayout_;
+        nvrhi::SamplerHandle sampler_;
+
+        nvrhi::FramebufferHandle resultFb_;
+        nvrhi::ITexture* resultFbSource_ = nullptr;
 
         std::shared_ptr<MeshAsset<VertexPNTBT>> mesh_;
+        nvrhi::GraphicsPipelineHandle pipeline_;
     };
 }

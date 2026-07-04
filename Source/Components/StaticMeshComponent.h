@@ -1,41 +1,44 @@
 #pragma once
 
+// StaticMeshComponent.h — renders a static mesh + material.
+// NVRHI cutover: implements the new IRenderable as a data provider — exposes the mesh's
+// NVRHI vertex/index buffers, the material (IObjectShaderResource), the per-object transform
+// source, and the object mask / AABB. It no longer draws itself or owns a per-object constant
+// buffer; the render pass assembles GraphicsState and writes per-object constants per draw.
+
 #include <DirectXCollision.h>
 #include <unordered_map>
 #include <vector>
+#include <memory>
+#include <json/value.h>
+#include <optional>
 
-#include<memory>
-#include<json/value.h>
-#include<optional>
-
-#include<Engine.h>
-#include<Component.h>
-#include<ConcreteAsset/MeshAsset.h>
-#include<Material.h>
-#include<IRenderable.h>
-#include<SceneVisibility.h>
-#include<TransformComponent.h>
-#include<EventSystem.h>
-#include<GameObject.h>
-#include<PerObjectData.h>
-#include<DefaultAssetsHandles.h>
-#include<IUpdateGPUData.h>
-#include<PrefabInstanceModifications.h>
-#include<AssetHandle.h>
+#include <Engine.h>
+#include <Component.h>
+#include <ConcreteAsset/MeshAsset.h>
+#include <Material.h>
+#include <IRenderable.h>
+#include <SceneVisibility.h>
+#include <TransformComponent.h>
+#include <EventSystem.h>
+#include <GameObject.h>
+#include <PerObjectData.h>
+#include <DefaultAssetsHandles.h>
+#include <PrefabInstanceModifications.h>
+#include <AssetHandle.h>
 
 namespace GiiGa
 {
-    class StaticMeshComponent : public Component, public IRenderable, public IUpdateGPUData
+    class StaticMeshComponent : public Component, public IRenderable
     {
-        //todo: temp
         friend class ImGuiInspector;
         friend class ImGuiAssetEditor;
 
     public:
         StaticMeshComponent() = default;
 
-        StaticMeshComponent(Json::Value json, bool roll_id = false):
-            Component(json, roll_id)
+        StaticMeshComponent(Json::Value json, bool roll_id = false)
+            : Component(json, roll_id)
         {
             auto mesh_handle = AssetHandle::FromJson(json["Mesh"]);
             auto material_handle = AssetHandle::FromJson(json["Material"]);
@@ -43,12 +46,12 @@ namespace GiiGa
             if (mesh_handle != AssetHandle{})
             {
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(mesh_handle);
-
                 if (material_handle != AssetHandle{})
                 {
                     material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(material_handle);
                 }
             }
+            RefreshCached();
         }
 
         Json::Value DerivedToJson(bool is_prefab_root) override
@@ -60,10 +63,9 @@ namespace GiiGa
             return result;
         }
 
-        ~StaticMeshComponent()
+        ~StaticMeshComponent() override
         {
-            if (perObjectData_)
-                Engine::Instance().RenderSystem()->UnregisterInUpdateGPUData(this);
+            visibilityEntry_.reset();
             if (auto l_owner = owner_.lock())
             {
                 if (auto l_trans = std::dynamic_pointer_cast<GameObject>(l_owner)->GetTransformComponent().lock())
@@ -71,9 +73,7 @@ namespace GiiGa
             }
         }
 
-        void Tick(float dt) override
-        {
-        }
+        void Tick(float dt) override {}
 
         void Init() override
         {
@@ -81,25 +81,16 @@ namespace GiiGa
             if (mesh_)
             {
                 if (!material_)
-                {
-                    auto rm = Engine::Instance().ResourceManager();
+                    material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
 
-                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-                }
                 if (!visibilityEntry_ && should_register_)
                     RegisterInVisibility();
             }
-
-            if (!perObjectData_)
-            {
-                Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
-                perObjectData_ = std::make_shared<PerObjectData>(Engine::Instance().RenderSystem()->GetRenderContext(), transform_.lock(), isStatic_);
-            }
+            perObjectData_.SetTransform(transform_.lock());
+            RefreshCached();
         }
 
-        void BeginPlay() override
-        {
-        }
+        void BeginPlay() override {}
 
         std::shared_ptr<IComponent> Clone(std::unordered_map<Uuid, Uuid>& original_uuid_to_world_uuid,
                                           const std::optional<std::unordered_map<Uuid, Uuid>>& instance_uuid) override
@@ -108,21 +99,16 @@ namespace GiiGa
             this->CloneBase(clone, original_uuid_to_world_uuid, instance_uuid);
             clone->mesh_ = mesh_;
             clone->material_ = material_;
+            clone->RefreshCached();
             return clone;
         }
 
-        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
-        {
-        }
-
-        void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override
-        {
-        }
+        void RestoreFromOriginal(std::shared_ptr<IComponent> original, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override {}
+        void RestoreAsPrefab(const Json::Value&, const std::unordered_map<Uuid, Uuid>& prefab_uuid_to_world_uuid) override {}
 
         std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> GetPrefabInstanceModifications(std::shared_ptr<IComponent> prefab_comp) const override
         {
             std::vector<std::pair<PropertyModificationKey, PrefabPropertyValue>> result;
-
             auto prefab_mesh = std::static_pointer_cast<StaticMeshComponent>(prefab_comp);
 
             if (this->mesh_ != prefab_mesh->mesh_)
@@ -147,48 +133,42 @@ namespace GiiGa
                 auto new_mat_handle = AssetHandle::FromJson(modifications.at({this->inprefab_uuid_, "Material"}));
                 this->material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(new_mat_handle);
             }
+            RefreshCached();
         }
 
-        void Draw(RenderContext& context) override
+        void RestoreFromLevelJson(const Json::Value&) override {}
+
+        // --- IRenderable: data provider ---
+
+        nvrhi::IBuffer* GetVertexBuffer() override { return mesh_ ? mesh_->GetVertexBuffer() : nullptr; }
+        nvrhi::IBuffer* GetIndexBuffer() override { return mesh_ ? mesh_->GetIndexBuffer() : nullptr; }
+        uint32_t GetIndexCount() override { return mesh_ ? mesh_->GetIndexCount() : 0; }
+        nvrhi::Format GetIndexFormat() override { return nvrhi::Format::R16_UINT; }
+
+        PerObjectData& GetPerObjectData() override { return perObjectData_; }
+        std::shared_ptr<IObjectShaderResource> GetShaderResource() override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
+            return material_ ? material_->GetShaderResource() : nullptr;
         }
 
-        SortData GetSortData() override
-        {
-            return {.object_mask = mesh_->GetObjectMask() | material_->GetMaterialMask(), .shaderResource = material_->GetShaderResource()};
-        }
+        const ObjectMask& GetObjectMask() override { return objectMask_; }
+        const DirectX::BoundingBox& GetAABB() override { return aabb_; }
 
-        void RestoreFromLevelJson(const Json::Value&) override
-        {
-            //nothing to do
-        }
+        // --- mesh / material handles ---
 
-        AssetHandle GetMeshHandle()
-        {
-            if (mesh_)
-                return mesh_->GetId();
-            else
-                return {};
-        }
+        AssetHandle GetMeshHandle() { return mesh_ ? mesh_->GetId() : AssetHandle{}; }
 
         void SetDummyMesh(std::shared_ptr<MeshAsset<VertexPNTBT>> asset)
         {
             mesh_ = asset;
-
             if (!material_)
-            {
-                auto rm = Engine::Instance().ResourceManager();
-
-                material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-            }
-
+                material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
             should_register_ = false;
+            RefreshCached();
         }
 
         void SetMeshHandle(const AssetHandle& new_handle)
         {
-            // what a fuck is subresource?
             if (new_handle.id == Uuid::Null())
             {
                 mesh_.reset();
@@ -197,25 +177,15 @@ namespace GiiGa
             else
             {
                 mesh_ = Engine::Instance().ResourceManager()->GetAsset<MeshAsset<VertexPNTBT>>(new_handle);
-                if (perObjectData_)
+                if (!transform_.expired())
                     RegisterInVisibility();
-
                 if (!material_)
-                {
-                    auto rm = Engine::Instance().ResourceManager();
-
-                    material_ = rm->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
-                }
+                    material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(DefaultAssetsHandles::DefaultMaterial);
             }
+            RefreshCached();
         }
 
-        AssetHandle GetMaterialHandle() const
-        {
-            if (material_)
-                return material_->GetId();
-            else
-                return {};
-        }
+        AssetHandle GetMaterialHandle() const { return material_ ? material_->GetId() : AssetHandle{}; }
 
         void SetMaterialHandle(const AssetHandle& handle)
         {
@@ -223,21 +193,13 @@ namespace GiiGa
                 material_.reset();
             else
                 material_ = Engine::Instance().ResourceManager()->GetAsset<Material>(handle);
+            RefreshCached();
         }
 
         void SetMaterial(std::shared_ptr<Material> mat)
         {
             material_ = mat;
-        }
-
-        void UpdateGPUData(RenderContext& context) override
-        {
-            perObjectData_->UpdateGPUData(context);
-        }
-
-        PerObjectData& GetPerObjectData() override
-        {
-            return *perObjectData_;
+            RefreshCached();
         }
 
     private:
@@ -246,11 +208,21 @@ namespace GiiGa
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
         std::weak_ptr<TransformComponent> transform_;
-        std::shared_ptr<PerObjectData> perObjectData_;
+        PerObjectData perObjectData_;
+        ObjectMask objectMask_;
+        DirectX::BoundingBox aabb_;
         bool should_register_ = true;
-        //TODO
-        //Добавить возможность делать статик меши статическими или динамическими
-        bool isStatic_ = false;
+
+        void RefreshCached()
+        {
+            if (mesh_)
+            {
+                objectMask_ = mesh_->GetObjectMask();
+                aabb_ = mesh_->GetAABB();
+            }
+            if (material_)
+                objectMask_ = objectMask_ | material_->GetMaterialMask();
+        }
 
         void RegisterInVisibility()
         {
@@ -261,14 +233,12 @@ namespace GiiGa
                 std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Unregister(cashed_event_);
             }
             cashed_event_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent().lock()->OnUpdateTransform.Register(
-                [this](const std::shared_ptr<TransformComponent>& e)
+                [this](const std::shared_ptr<TransformComponent>&)
                 {
                     auto owner_go = std::dynamic_pointer_cast<GameObject>(owner_.lock());
                     Transform trans = owner_go->GetComponent<TransformComponent>()->GetWorldTransform();
                     DirectX::BoundingBox origaabb = mesh_->GetAABB();
-
                     origaabb.Transform(origaabb, trans.GetMatrix());
-
                     visibilityEntry_->Update(origaabb);
                 });
         }

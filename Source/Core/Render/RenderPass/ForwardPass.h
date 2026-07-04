@@ -1,146 +1,137 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#include "GBuffer.h"
-#include "Material.h"
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
 
+// ForwardPass.h — forward pass for unlit-opaque and translucent/masked geometry (NVRHI).
+//
+// Bindings: b0 = per-view, b1 = per-object (volatile), b2 = material constants,
+//           t5 = EmissiveColor, s0 = linear-wrap sampler.
+// Shaders: VertexPNTBTShader(VSMain) + OpaqueUnlitPixelShader(PSMain).
+// Two pipelines share the same shaders: opaque (no blend) and translucent (src-alpha blend).
+// Renders into the GBuffer-derived light framebuffer (LightAccumulation + depth).
 
-#include<memory>
-#include<vector>
-#include<functional>
+#include <memory>
+#include <functional>
+#include <unordered_map>
 
-#include<RenderPass.h>
-#include<PSO.h>
-#include<IRenderable.h>
-#include<SceneVisibility.h>
-#include<RenderPassViewData.h>
-#include<ShaderManager.h>
-#include<RenderContext.h>
-#include<VertexTypes.h>
-#include<CameraComponent.h>
-#include<PerObjectData.h>
-#include<IObjectShaderResource.h>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiShader.h>
+#include <Core/Render/Nvrhi/NvrhiResources.h>
+#include <Core/Render/Nvrhi/NvrhiPassCommon.h>
+
+#include <RenderPassViewData.h>
+#include <SceneVisibility.h>
+#include <IRenderable.h>
+#include <ObjectMask.h>
+#include <VertexTypes.h>
 
 namespace GiiGa
 {
-    class ForwardPass : public RenderPass
+    class ForwardPass : public rhi::RenderPass
     {
     public:
-        static inline const int ViewDataRootIndex = 0;
-        static inline const int ModelDataRootIndex = 1;
-        static inline const int MaterialDataRootIndex = 2;
-
-        static inline const int ConstantBufferCount = MaterialDataRootIndex + 1;
-
-        ForwardPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn):
-            getCamInfoDataFunction_(getCamDescFn)
+        ForwardPass(nvrhi::IDevice* device, rhi::ShaderCache& shaders,
+                    std::function<RenderPassViewData()> getCamInfo,
+                    std::shared_ptr<rhi::GBuffer> gbuffer)
+            : device_(device)
+            , shaders_(shaders)
+            , getCamInfoDataFunction_(std::move(getCamInfo))
+            , gbuffer_(std::move(gbuffer))
         {
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_BACK;
-            rast_desc.FrontCounterClockwise = true;
+            viewSlot_.init(device_);
+            objectSlot_.init(device_);
+            sampler_ = rhi::getLinearWrapSampler(device_);
+            materialLayout_ = rhi::makeMaterialBindingLayout(device_, {5}, true);
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
+            nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
+                device_, rhi::makeVertexAttributes<VertexPNTBT>(),
+                shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex));
+
+            nvrhi::ShaderHandle vs = shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex);
+            nvrhi::ShaderHandle ps = shaders_.getOrCreate(device_, OpaqueUnlitShader, "PSMain", nvrhi::ShaderType::Pixel);
+
+            nvrhi::IFramebuffer* initialFb = rhi::ensureLightFramebuffer(device_, *gbuffer_, lightFb_, lightFbSource_);
+
+            auto makePipe = [&](nvrhi::RenderState rs) {
+                nvrhi::GraphicsPipelineDesc pd;
+                pd.setVertexShader(vs).setPixelShader(ps).setInputLayout(inputLayout).setRenderState(rs);
+                pd.addBindingLayout(viewSlot_.layout)
+                  .addBindingLayout(objectSlot_.layout)
+                  .addBindingLayout(materialLayout_);
+                return device_->createGraphicsPipeline(pd, initialFb);
             };
 
-            D3D12_BLEND_DESC blend_translucent_desc = {};
-
-            D3D12_RENDER_TARGET_BLEND_DESC renderTargetDesc = {
-                .BlendEnable = TRUE,
-                .SrcBlend = D3D12_BLEND_SRC_ALPHA,
-                .DestBlend = D3D12_BLEND_INV_SRC_ALPHA,
-                .BlendOp = D3D12_BLEND_OP_ADD,
-                .SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA,
-                .DestBlendAlpha = D3D12_BLEND_ONE,
-                .BlendOpAlpha = D3D12_BLEND_OP_ADD,
-                .RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL
-            };
-
-            blend_translucent_desc.RenderTarget[0] = renderTargetDesc;
-
-            DXGI_FORMAT rtv_format_array[] = {GBuffer::G_FORMAT};
-
-            mask_to_pso[filter_unlit_solid_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(rtv_format_array, 1)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[1]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
-
-            mask_to_pso[filter_translucent_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_blend_state(blend_translucent_desc)
-                .set_rtv_format(rtv_format_array, 1)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[1]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            {
+                nvrhi::RenderState rs;
+                rs.rasterState.setCullBack().setFrontCounterClockwise(true);
+                rs.depthStencilState.enableDepthTest().enableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::Less);
+                opaquePipeline_ = makePipe(rs);
+            }
+            {
+                nvrhi::RenderState rs;
+                rs.rasterState.setCullBack().setFrontCounterClockwise(true);
+                rs.depthStencilState.enableDepthTest().disableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::Less);
+                nvrhi::BlendState::RenderTarget rt;
+                rt.enableBlend()
+                  .setSrcBlend(nvrhi::BlendFactor::SrcAlpha)
+                  .setDestBlend(nvrhi::BlendFactor::InvSrcAlpha)
+                  .setBlendOp(nvrhi::BlendOp::Add)
+                  .setSrcBlendAlpha(nvrhi::BlendFactor::InvDstAlpha)
+                  .setDestBlendAlpha(nvrhi::BlendFactor::One)
+                  .setBlendOpAlpha(nvrhi::BlendOp::Add);
+                rs.blendState.setRenderTarget(0, rt);
+                translucentPipeline_ = makePipe(rs);
+            }
         }
 
-        void Draw(RenderContext& context) override
+        void execute(const rhi::FrameContext& ctx) override
         {
+            if (!ctx.cmd || !gbuffer_) return;
+
             auto cam_info = getCamInfoDataFunction_();
+            viewSlot_.write(ctx.cmd, cam_info.viewConstants);
 
-            const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
-
-            const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum_culling_res);
-            const auto& vis_translucent = SceneVisibility::Extract(filter_translucent_, frustum_culling_res);
+            const auto& frustum = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
+            const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum);
+            const auto& vis_translucent = SceneVisibility::Extract(filter_translucent_, frustum);
             std::unordered_map<ObjectMask, DrawPacket> visibles;
             SceneVisibility::Expand(vis_unlit, visibles);
             SceneVisibility::Expand(vis_translucent, visibles);
 
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
-            context.BindDescriptorHandle(0, cam_info.viewDescriptor);
+            nvrhi::IFramebuffer* fb = rhi::ensureLightFramebuffer(device_, *gbuffer_, lightFb_, lightFbSource_);
+            auto vp = rhi::fullViewportState(gbuffer_->width(), gbuffer_->height());
 
-            //if (visibles.size() > 0) el::Loggers::getLogger(LogRendering)->debug("some rendering visibles %v", visibles.size());
-
-            for (auto& visible : visibles)
+            for (auto& [mask, packet] : visibles)
             {
-                PSO pso;
-                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
+                const bool isTranslucent = !filter_unlit_solid_.CoversMask(mask);
+                nvrhi::GraphicsPipelineHandle pipe = isTranslucent ? translucentPipeline_ : opaquePipeline_;
+                if (!pipe) continue;
 
-                context.BindPSO(pso.GetState().get());
-                context.SetSignature(pso.GetSignature().get());
-                for (auto& common_resource_group : visible.second.common_resource_renderables)
+                for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    auto CRG = common_resource_group.second;
-                    pso.SetShaderResources(context, *CRG.shaderResource);
-                    for (auto& renderable : common_resource_group.second.renderables)
+                    nvrhi::BindingSetHandle materialSet;
+                    if (group.shaderResource)
                     {
-                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                        renderable.lock()->Draw(context);
+                        auto it = materialSetCache_.find(group.shaderResource.get());
+                        if (it != materialSetCache_.end())
+                            materialSet = it->second;
+                        else
+                        {
+                            materialSet = rhi::makeMaterialBindingSet(device_, materialLayout_,
+                                group.shaderResource->GetMaterialBindings(), sampler_, {5});
+                            materialSetCache_[group.shaderResource.get()] = materialSet;
+                        }
+                    }
+
+                    nvrhi::GraphicsState state;
+                    state.setPipeline(pipe).setFramebuffer(fb).setViewport(vp);
+                    state.addBindingSet(viewSlot_.set);
+                    state.addBindingSet(objectSlot_.set);
+                    if (materialSet) state.addBindingSet(materialSet);
+
+                    for (auto& weak : group.renderables)
+                    {
+                        if (auto r = weak.lock())
+                            rhi::drawRenderable(ctx.cmd, state, objectSlot_, *r);
                     }
                 }
             }
@@ -153,11 +144,25 @@ namespace GiiGa
                                                      .SetFillMode(FillMode::Solid);
 
         ObjectMask filter_translucent_ = ObjectMask().SetVertexType(VertexTypes::VertexPNTBT)
-                                                     .SetShadingModel(ShadingModel::All)
-                                                     .SetBlendMode(BlendMode::Translucent | BlendMode::Masked)
-                                                     .SetFillMode(FillMode::All);
+                                                      .SetShadingModel(ShadingModel::All)
+                                                      .SetBlendMode(BlendMode::Translucent | BlendMode::Masked)
+                                                      .SetFillMode(FillMode::All);
 
-        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        nvrhi::IDevice* device_ = nullptr;
+        rhi::ShaderCache& shaders_;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
+        std::shared_ptr<rhi::GBuffer> gbuffer_;
+
+        rhi::ViewConstantSlot viewSlot_;
+        rhi::ObjectConstantSlot objectSlot_;
+        nvrhi::BindingLayoutHandle materialLayout_;
+        nvrhi::SamplerHandle sampler_;
+        std::unordered_map<void*, nvrhi::BindingSetHandle> materialSetCache_;
+
+        nvrhi::FramebufferHandle lightFb_;
+        nvrhi::IFramebuffer* lightFbSource_ = nullptr;
+
+        nvrhi::GraphicsPipelineHandle opaquePipeline_;
+        nvrhi::GraphicsPipelineHandle translucentPipeline_;
     };
 }

@@ -93,7 +93,7 @@ namespace GiiGa
                 throw std::runtime_error("File does not exist: " + path.string());
 
             auto rs = Engine::Instance().RenderSystem();
-            auto device = rs->GetRenderDevice().GetDxDevice();
+            auto nvrhiDevice = rs->GetNvrhiDevice();
 
             Assimp::Importer importer;
             const aiScene* scene = importer.ReadFile(path.string(),
@@ -125,7 +125,15 @@ namespace GiiGa
 
             DirectX::BoundingBox aabb = CalculateBoundingBox(vertices);
 
-            return std::make_shared<MeshAsset<VertexType>>(handle, rs->GetRenderContext(), rs->GetRenderDevice(), vertices, indices, aabb);
+            // Upload vertex/index buffers via the NVRHI upload command list.
+            auto upload = rs->GetUploadCommandList();
+            upload->open();
+            auto asset = std::make_shared<MeshAsset<VertexType>>(handle, nvrhiDevice, upload, vertices, indices, aabb);
+            upload->close();
+            nvrhiDevice->executeCommandList(upload);
+            nvrhiDevice->waitForIdle();
+
+            return asset;
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

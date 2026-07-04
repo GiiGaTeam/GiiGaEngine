@@ -65,13 +65,17 @@ namespace GiiGa::rhi
     }
 
     // Static (committed) constant buffer — update with ICommandList::writeBuffer. D3D12
-    // requires constant buffer sizes to be 256-byte aligned, which we enforce here.
+    // requires constant buffer sizes to be 256-byte aligned, which we enforce here. The
+    // buffer is created with keepInitialState=ConstantBuffer so any command list can bind it
+    // without explicit state tracking.
     inline nvrhi::BufferHandle createConstantBuffer(nvrhi::IDevice* device, uint64_t byteSize,
                                                     const char* debugName = "constant buffer")
     {
         uint64_t aligned = (byteSize + 255) & ~uint64_t(255);
         nvrhi::BufferDesc d;
-        d.setByteSize(aligned).setIsConstantBuffer(true).setDebugName(debugName);
+        d.setByteSize(aligned).setIsConstantBuffer(true)
+         .setInitialState(nvrhi::ResourceStates::ConstantBuffer).setKeepInitialState(true)
+         .setDebugName(debugName);
         return device->createBuffer(d);
     }
 

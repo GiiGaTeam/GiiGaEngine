@@ -14,6 +14,7 @@
 #include<Viewport.h>
 #include<IUpdateGPUData.h>
 #include<CameraComponent.h>
+#include <Core/Render/Nvrhi/NvrhiCommon.h>
 
 namespace GiiGa
 {
@@ -38,6 +39,15 @@ namespace GiiGa
             context_.SetFrameLatencyWaitableObject(swapChain_->GetFrameLatencyWaitableObject());
             window.OnWindowResize.Register(std::bind(&RenderSystem::ResizeSwapChain, this, std::placeholders::_1));
             //shaderManager_ = std::make_unique<ShaderManager>();
+
+            // NVRHI: wrap the existing D3D12 device + graphics queue so resource creation
+            // (textures, buffers) can move to NVRHI while the legacy frame loop is still in place.
+            nvrhi::d3d12::DeviceDesc nd;
+            nd.errorCB = &nvrhiMessages_;
+            nd.pDevice = device_.GetDxDevice().get();
+            nd.pGraphicsCommandQueue = context_.getGraphicsCommandQueue().get();
+            nvrhiDevice_ = nvrhi::d3d12::createDevice(nd);
+            uploadCmd_ = nvrhiDevice_->createCommandList();
         }
 
         virtual void SetCamera(std::shared_ptr<CameraComponent> camera) =0;
@@ -49,9 +59,11 @@ namespace GiiGa
             device_.DeleteStaleObjects();
             context_.StartFrame();
 
+            // NVRHI cutover: per-frame GPU data is pushed through the NVRHI device + command list.
+            // (Transitional — the legacy frame loop below is replaced once passes are converted.)
             for (auto it = updateGpuData_registry_.begin(); it != updateGpuData_registry_.end(); ++it)
             {
-                it.operator*()->UpdateGPUData(context_);
+                it.operator*()->UpdateGPUData(nvrhiDevice_.Get(), uploadCmd_.Get());
             }
 
             root_.Draw(context_);
@@ -63,6 +75,11 @@ namespace GiiGa
         {
             return device_;
         }
+
+        // NVRHI device wrapping the same D3D12 device — use for creating NVRHI resources.
+        nvrhi::IDevice* GetNvrhiDevice() { return nvrhiDevice_.Get(); }
+        // A command list for one-shot uploads (open/close/execute around use).
+        nvrhi::ICommandList* GetUploadCommandList() { return uploadCmd_.Get(); }
 
         RenderContext& GetRenderContext()
         {
@@ -98,6 +115,10 @@ namespace GiiGa
         std::shared_ptr<SwapChain> swapChain_;
         RenderGraph root_;
         std::unique_ptr<ShaderManager> shaderManager_;
+
+        rhi::MessageCallback nvrhiMessages_;
+        nvrhi::DeviceHandle nvrhiDevice_;
+        nvrhi::CommandListHandle uploadCmd_;
     };
 }
 

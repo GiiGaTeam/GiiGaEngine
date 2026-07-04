@@ -35,6 +35,28 @@ namespace GiiGa::rhi
         }
     }
 
+    // Maps the subset of DXGI formats used by the engine's textures to NVRHI formats.
+    // Unknown formats fall back to RGBA8_UNORM.
+    inline nvrhi::Format dxgiToNvrhi(DXGI_FORMAT f)
+    {
+        switch (f)
+        {
+        case DXGI_FORMAT_R8G8B8A8_UNORM:      return nvrhi::Format::RGBA8_UNORM;
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return nvrhi::Format::SRGBA8_UNORM;
+        case DXGI_FORMAT_B8G8R8A8_UNORM:      return nvrhi::Format::BGRA8_UNORM;
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return nvrhi::Format::SBGRA8_UNORM;
+        case DXGI_FORMAT_R8_UNORM:            return nvrhi::Format::R8_UNORM;
+        case DXGI_FORMAT_BC1_UNORM:           return nvrhi::Format::BC1_UNORM;
+        case DXGI_FORMAT_BC1_UNORM_SRGB:      return nvrhi::Format::BC1_UNORM_SRGB;
+        case DXGI_FORMAT_BC3_UNORM:           return nvrhi::Format::BC3_UNORM;
+        case DXGI_FORMAT_BC3_UNORM_SRGB:      return nvrhi::Format::BC3_UNORM_SRGB;
+        case DXGI_FORMAT_BC5_UNORM:           return nvrhi::Format::BC5_UNORM;
+        case DXGI_FORMAT_BC7_UNORM:           return nvrhi::Format::BC7_UNORM;
+        case DXGI_FORMAT_BC7_UNORM_SRGB:      return nvrhi::Format::BC7_UNORM_SRGB;
+        default:                              return nvrhi::Format::RGBA8_UNORM;
+        }
+    }
+
     // Routes NVRHI diagnostic messages to stderr (and the VS debug output window).
     // Implements nvrhi::IMessageCallback; an instance is owned by rhi::Device and
     // handed to nvrhi::d3d12::createDevice via DeviceDesc::errorCB.
