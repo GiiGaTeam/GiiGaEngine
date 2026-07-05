@@ -203,10 +203,6 @@ namespace GiiGa
                 cmd->writeBuffer(pointLightShaderRes_->cb_, &data_, sizeof(PointLightData));
         }
 
-        void InitShadowData(RenderDevice& device) override
-        {
-        };
-
         void SetColor(const DirectX::SimpleMath::Vector3& color)
         {
             data_.color = color;

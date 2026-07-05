@@ -65,6 +65,7 @@ namespace GiiGa::rhi
                 td.setWidth(width_)
                   .setHeight(height_)
                   .setFormat(kDepthFormat)
+                  .setIsRenderTarget(true)
                   .setInitialState(nvrhi::ResourceStates::DepthWrite)
                   .setDebugName("GBuffer depth");
                 depthTexture_ = device_->createTexture(td);

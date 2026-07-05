@@ -3,15 +3,17 @@
 // GLightPass.h — deferred lighting pass with a two-phase stencil-volume algorithm (NVRHI).
 //
 // Bindings: b0 = per-view, b1 = per-object (volatile), b2 = screen dimensions (volatile),
-//           b3 = per-light constants; t0 = Diffuse, t1 = Material, t2 = NormalWS, t3 = Depth,
-//           t4 = shadow (cascade depth array); s0 = linear-wrap, s1 = comparison-border.
+//           b3 = per-light constants.
+//   point (GPointLight.hlsl):        t0 Diffuse, t1 Material, t2 NormalWS; s0 linear.
+//   directional (GDirectionalLight): t0 Diffuse, t1 Material, t2 NormalWS,
+//                                    t3 CascadeShadowMaps (Texture2DArray),
+//                                    t4 cascadeData (StructuredBuffer<CascadeData>);
+//                                    s0 linear, s1 comparison.
+//
 // Per light: clear stencil to 1, run "unmark" (depth-only, DECR_SAT) for point lights, then
 // "shade" (additive blend, stencil EQUAL) into LightAccumulation.
 //   point:        VertexPNTBTShader(VSMain) + GPointLight(PSMain)
 //   directional:  VertexFullQuadShader(VSMain) + GDirectionalLight(PSMain)
-//
-// TODO(runtime): cascade shadow (t4) resources are still legacy D3D12 on DirectionalLightComponent;
-// a GBuffer depth placeholder is bound at t4 until the shadow path is converted.
 
 #include <memory>
 #include <functional>
@@ -28,6 +30,7 @@
 #include <IRenderable.h>
 #include <ObjectMask.h>
 #include <VertexTypes.h>
+#include <DirectionalLightComponent.h>
 
 namespace GiiGa
 {
@@ -48,15 +51,33 @@ namespace GiiGa
             linearSampler_ = rhi::getLinearWrapSampler(device_);
             comparisonSampler_ = rhi::getComparisonSampler(device_);
 
-            // Layout B (Pixel): b3 light CB + t0..t4 SRVs + s0,s1 samplers.
-            nvrhi::BindingLayoutDesc bld;
-            bld.setVisibility(nvrhi::ShaderType::Pixel);
-            bld.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(3));
-            for (uint32_t t = 0; t <= 4; ++t)
-                bld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(t));
-            bld.addItem(nvrhi::BindingLayoutItem::Sampler(0));
-            bld.addItem(nvrhi::BindingLayoutItem::Sampler(1));
-            lightLayout_ = device_->createBindingLayout(bld);
+            // Point-light layout (Pixel): b3 light CB + t0..t2 GBuffer SRVs + s0 sampler.
+            {
+                nvrhi::BindingLayoutDesc pld;
+                pld.setVisibility(nvrhi::ShaderType::Pixel);
+                pld.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(3));
+                pld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+                pld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1));
+                pld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+                pld.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+                pointLayout_ = device_->createBindingLayout(pld);
+            }
+
+            // Directional-light layout (Pixel): b3 light CB + t0..t2 GBuffer SRVs
+            // + t3 shadow array (Texture_SRV) + t4 cascade StructuredBuffer + s0,s1 samplers.
+            {
+                nvrhi::BindingLayoutDesc dld;
+                dld.setVisibility(nvrhi::ShaderType::Pixel);
+                dld.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(3));
+                dld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+                dld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1));
+                dld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+                dld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(3));
+                dld.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(4));
+                dld.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+                dld.addItem(nvrhi::BindingLayoutItem::Sampler(1));
+                dirLayout_ = device_->createBindingLayout(dld);
+            }
 
             nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
                 device_, rhi::makeVertexAttributes<VertexPNTBT>(),
@@ -101,13 +122,13 @@ namespace GiiGa
             shadePointPipeline_ = makeShadePipeline(
                 shaders_.getOrCreate(device_, VertexPNTBTShader, "VSMain", nvrhi::ShaderType::Vertex),
                 shaders_.getOrCreate(device_, GPointLight, "PSMain", nvrhi::ShaderType::Pixel),
-                inputLayout, nvrhi::ComparisonFunc::GreaterOrEqual, additiveBlend(), lightFb);
+                inputLayout, pointLayout_, nvrhi::ComparisonFunc::GreaterOrEqual, additiveBlend(), lightFb);
 
             // --- shade (directional): full-quad VS, depth LESS ---
             shadeDirPipeline_ = makeShadePipeline(
                 shaders_.getOrCreate(device_, VertexFullQuadShader, "VSMain", nvrhi::ShaderType::Vertex),
                 shaders_.getOrCreate(device_, GDirectionLight, "PSMain", nvrhi::ShaderType::Pixel),
-                inputLayout, nvrhi::ComparisonFunc::Less, additiveBlend(), lightFb);
+                inputLayout, dirLayout_, nvrhi::ComparisonFunc::Less, additiveBlend(), lightFb);
         }
 
         void execute(const rhi::FrameContext& ctx) override
@@ -132,23 +153,37 @@ namespace GiiGa
 
                 for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    nvrhi::BindingSetHandle lightSet;
-                    if (group.shaderResource)
-                    {
-                        auto it = lightSetCache_.find(group.shaderResource.get());
-                        if (it != lightSetCache_.end())
-                            lightSet = it->second;
-                        else
-                        {
-                            lightSet = makeLightSet(group.shaderResource->GetMaterialBindings());
-                            lightSetCache_[group.shaderResource.get()] = lightSet;
-                        }
-                    }
-
                     for (auto& weak : group.renderables)
                     {
                         auto r = weak.lock();
                         if (!r) continue;
+
+                        nvrhi::BindingSetHandle lightSet;
+                        if (isDirectional)
+                        {
+                            auto dirLight = std::dynamic_pointer_cast<DirectionalLightComponent>(r);
+                            if (!dirLight || !dirLight->getShadowTexture() || !dirLight->getCascadeBuffer())
+                                continue;
+                            auto it = dirLightSetCache_.find(dirLight.get());
+                            if (it != dirLightSetCache_.end())
+                                lightSet = it->second;
+                            else
+                            {
+                                lightSet = makeDirLightSet(*dirLight);
+                                dirLightSetCache_[dirLight.get()] = lightSet;
+                            }
+                        }
+                        else
+                        {
+                            auto it = pointLightSetCache_.find(group.shaderResource.get());
+                            if (it != pointLightSetCache_.end())
+                                lightSet = it->second;
+                            else
+                            {
+                                lightSet = makePointLightSet(group.shaderResource->GetMaterialBindings());
+                                pointLightSetCache_[group.shaderResource.get()] = lightSet;
+                            }
+                        }
 
                         ctx.cmd->clearDepthStencilTexture(gbuffer_->getDepth(), nvrhi::AllSubresources,
                                                           /*clearDepth=*/false, 0.f, /*clearStencil=*/true, 1);
@@ -193,10 +228,12 @@ namespace GiiGa
         rhi::ViewConstantSlot viewSlot_;
         rhi::ObjectConstantSlot objectSlot_;
         rhi::VolatileConstantSlot screenDimSlot_;
-        nvrhi::BindingLayoutHandle lightLayout_;
+        nvrhi::BindingLayoutHandle pointLayout_;
+        nvrhi::BindingLayoutHandle dirLayout_;
         nvrhi::SamplerHandle linearSampler_;
         nvrhi::SamplerHandle comparisonSampler_;
-        std::unordered_map<void*, nvrhi::BindingSetHandle> lightSetCache_;
+        std::unordered_map<void*, nvrhi::BindingSetHandle> pointLightSetCache_;
+        std::unordered_map<DirectionalLightComponent*, nvrhi::BindingSetHandle> dirLightSetCache_;
 
         nvrhi::FramebufferHandle lightFb_;
         nvrhi::IFramebuffer* lightFbSource_ = nullptr;
@@ -216,7 +253,7 @@ namespace GiiGa
             depthOnlyFbSource_ = gbuffer_->getFramebuffer();
         }
 
-        nvrhi::BindingSetHandle makeLightSet(const MaterialBindings& mb)
+        nvrhi::BindingSetHandle makePointLightSet(const MaterialBindings& mb)
         {
             nvrhi::BindingSetDesc sd;
             if (mb.constantBuffer)
@@ -224,17 +261,29 @@ namespace GiiGa
             sd.addItem(nvrhi::BindingSetItem::Texture_SRV(0, gbuffer_->getColor(rhi::GBuffer::Order::Diffuse)));
             sd.addItem(nvrhi::BindingSetItem::Texture_SRV(1, gbuffer_->getColor(rhi::GBuffer::Order::Material)));
             sd.addItem(nvrhi::BindingSetItem::Texture_SRV(2, gbuffer_->getColor(rhi::GBuffer::Order::NormalWS)));
-            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(3, gbuffer_->getDepth()));
-            // TODO(shadow): bind the directional cascade depth array here once DirectionalLightComponent
-            // exposes it as an NVRHI texture. Placeholder: GBuffer depth.
-            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(4, gbuffer_->getDepth()));
+            sd.addItem(nvrhi::BindingSetItem::Sampler(0, linearSampler_));
+            return device_->createBindingSet(sd, pointLayout_);
+        }
+
+        nvrhi::BindingSetHandle makeDirLightSet(DirectionalLightComponent& light)
+        {
+            const auto& mb = light.GetShaderResource()->GetMaterialBindings();
+            nvrhi::BindingSetDesc sd;
+            if (mb.constantBuffer)
+                sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(3, mb.constantBuffer));
+            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(0, gbuffer_->getColor(rhi::GBuffer::Order::Diffuse)));
+            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(1, gbuffer_->getColor(rhi::GBuffer::Order::Material)));
+            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(2, gbuffer_->getColor(rhi::GBuffer::Order::NormalWS)));
+            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(3, light.getShadowTexture()));
+            sd.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(4, light.getCascadeBuffer()));
             sd.addItem(nvrhi::BindingSetItem::Sampler(0, linearSampler_));
             sd.addItem(nvrhi::BindingSetItem::Sampler(1, comparisonSampler_));
-            return device_->createBindingSet(sd, lightLayout_);
+            return device_->createBindingSet(sd, dirLayout_);
         }
 
         nvrhi::GraphicsPipelineHandle makeShadePipeline(nvrhi::IShader* vs, nvrhi::IShader* ps,
                                                         nvrhi::IInputLayout* inputLayout,
+                                                        nvrhi::IBindingLayout* lightLayout,
                                                         nvrhi::ComparisonFunc depthFunc,
                                                         const nvrhi::BlendState::RenderTarget& blend,
                                                         nvrhi::IFramebuffer* fb)
@@ -258,7 +307,7 @@ namespace GiiGa
             pd.addBindingLayout(viewSlot_.layout)
               .addBindingLayout(objectSlot_.layout)
               .addBindingLayout(screenDimSlot_.layout)
-              .addBindingLayout(lightLayout_);
+              .addBindingLayout(lightLayout);
             return device_->createGraphicsPipeline(pd, fb);
         }
     };

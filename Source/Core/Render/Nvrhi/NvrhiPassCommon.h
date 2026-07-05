@@ -105,6 +105,7 @@ namespace GiiGa::rhi
     struct ObjectConstantSlot : VolatileConstantSlot
     {
         void init(nvrhi::IDevice* device) { VolatileConstantSlot::init(device, kObjectSlot, sizeof(ObjectConstants), "object vcb"); }
+        void init(nvrhi::IDevice* device, uint32_t slotIndex) { VolatileConstantSlot::init(device, slotIndex, sizeof(ObjectConstants), "object vcb"); }
         void write(nvrhi::ICommandList* cmd, const ObjectConstants& v) const { if (cb) cmd->writeBuffer(cb, &v, sizeof(v)); }
     };
 

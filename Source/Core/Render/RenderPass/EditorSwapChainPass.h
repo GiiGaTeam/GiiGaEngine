@@ -10,13 +10,12 @@
 #define NOMINMAX
 #endif
 #include<d3d12.h>
+#include<wrl/client.h>
 #include<vector>
 #include<memory>
 
 #include<RenderSystemSettings.h>
 #include<RenderDevice.h>
-#include<RenderPass.h>
-#include<SwapChain.h>
 #include<EditorViewport.h>
 #include<DescriptorHeap.h>
 #include<EditorContext.h>
@@ -26,31 +25,46 @@
 #include<ImGuiAssetEditor.h>
 #include<ImGuiContentBrowser.h>
 #include<SceneVisibility.h>
+#include <Core/Render/Nvrhi/NvrhiCommon.h>
+#include <Core/Render/Nvrhi/NvrhiSwapChain.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
+#include <Core/Render/Nvrhi/NvrhiRenderPass.h>
 
 namespace GiiGa
 {
-    class EditorSwapChainPass final : public RenderPass
+    // Editor root pass: owns the dockspace + all ImGui windows, executes viewports
+    // (which run the deferred render graph), then composites ImGui draw data onto
+    // the swap-chain back buffer via the imgui_impl_dx12 backend on the native D3D12
+    // command list extracted from the NVRHI command list.
+    class EditorSwapChainPass final : public rhi::RenderPass
     {
         friend class EditorRenderSystem;
 
     public:
-        EditorSwapChainPass(RenderDevice& device, std::shared_ptr<SwapChain> swapChain):
-            swapChain_(swapChain),
+        EditorSwapChainPass(RenderDevice& device, rhi::SwapChain* swapChain):
+            rhiSwapChain_(swapChain),
             editorContext_(std::make_shared<EditorContext>())
         {
-            // Setup Dear ImGui style
             ImGui::StyleColorsDark();
-            //ImGui::StyleColorsLight();
 
             GPUDescriptorHeap& descriptor_heap = device.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
             imgui_srv_desc_heap_allocation_ = descriptor_heap.Allocate(1);
 
-            // Setup Platform/Renderer backends
-            ImGui_ImplDX12_Init(device.GetDxDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
+            ID3D12Device* d3dDevice = device.GetDxDevice().get();
+
+            ImGui_ImplDX12_Init(d3dDevice, RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
                                 DXGI_FORMAT_R8G8B8A8_UNORM, descriptor_heap.GetDescriptorHeap().get(),
                                 imgui_srv_desc_heap_allocation_.GetCpuHandle(),
                                 imgui_srv_desc_heap_allocation_.GetGpuHandle());
+
+            // RTV descriptor heap for swap-chain back buffers (needed by imgui_impl_dx12).
+            uint32_t bufferCount = swapChain->getBufferCount();
+            D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
+            rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+            rtvHeapDesc.NumDescriptors = bufferCount;
+            rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap_));
+            rtvDescriptorSize_ = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
             windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
@@ -63,8 +77,9 @@ namespace GiiGa
             ImGui_ImplDX12_Shutdown();
         }
 
-        void Draw(RenderContext& context) override
+        void execute(const rhi::FrameContext& ctx) override
         {
+            // --- ImGui UI build ---
             ImGui_ImplDX12_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
@@ -77,41 +92,51 @@ namespace GiiGa
                     window->RecordImGui();
                 }
 
-                // Tick scene visibility in case it was changed in imgui
                 SceneVisibility::Tick();
-
-                //ImGui::ShowDemoWindow();
 
                 for (auto viewport : viewports_)
                 {
-                    viewport->Execute(context);
+                    viewport->Execute(ctx);
                 }
             }
             EndDockSpace_();
 
-            swapChain_->Reset(context);
-            
-            // Render Dear ImGui graphics
-            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), {.Color = {0, 0, 0, 1}});
+            // --- Composite ImGui onto the swap-chain back buffer ---
+            nvrhi::ITexture* backBuffer = rhiSwapChain_->getCurrentTexture();
+            if (!backBuffer) return;
 
-            D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_->getRTVDescriptorHandle();
+            // NVRHI clears the back buffer (Present -> RenderTarget automatically).
+            ctx.cmd->clearTextureFloat(backBuffer, nvrhi::TextureSubresourceSet(), {0, 0, 0, 1});
 
-            //todo: add OMSetRenderTargets
-            context.graphics_command_list_->OMSetRenderTargets(
-                1, &rtv, FALSE, nullptr);
+            // Extract the native D3D12 command list for ImGui rendering.
+            auto* nativeCmd = static_cast<ID3D12GraphicsCommandList*>(
+                ctx.cmd->getNativeObject(nvrhi::ObjectTypes::D3D12_GraphicsCommandList));
+            auto* d3dDevice = static_cast<ID3D12Device*>(
+                ctx.device->getNativeObject(nvrhi::ObjectTypes::D3D12_Device));
 
+            // Ensure an RTV exists for the current back buffer (re-created on resize).
+            ID3D12Resource* nativeResource = static_cast<ID3D12Resource*>(
+                backBuffer->getNativeObject(nvrhi::ObjectTypes::D3D12_Resource));
+            uint32_t idx = rhiSwapChain_->getCurrentIndex();
+            D3D12_CPU_DESCRIPTOR_HANDLE rtv = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+            rtv.ptr += static_cast<SIZE_T>(idx * rtvDescriptorSize_);
+            d3dDevice->CreateRenderTargetView(nativeResource, nullptr, rtv);
 
-            ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context.graphics_command_list_.get());
+            nativeCmd->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+            ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), nativeCmd);
 
-            swapChain_->TransitToPresent(context);
+            // NVRHI close() will transition the back buffer RenderTarget -> Present.
         }
 
     private:
-        std::shared_ptr<SwapChain> swapChain_;
+        rhi::SwapChain* rhiSwapChain_;
         std::shared_ptr<EditorContext> editorContext_;
         std::vector<std::shared_ptr<Viewport>> viewports_;
         std::vector<std::unique_ptr<IImGuiWindow>> windows_;
         DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;
+
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+        UINT rtvDescriptorSize_ = 0;
 
         void BeginDockSpace_()
         {
@@ -120,8 +145,6 @@ namespace GiiGa
             static bool opt_padding = false;
             static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-            // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-            // because it would be confusing to have two docking targets within each others.ImGuiWindowFlags_MenuBar
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
             if (opt_fullscreen)
             {
@@ -140,16 +163,9 @@ namespace GiiGa
                 dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
             }
 
-            // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-            // and handle the pass-thru hole, so we ask Begin() to not render a background.
             if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
                 window_flags |= ImGuiWindowFlags_NoBackground;
 
-            // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-            // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-            // all active windows docked into it will lose their parent and become undocked.
-            // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-            // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
             if (!opt_padding)
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
             ImGui::Begin("DockSpace Demo", &p_open, window_flags);
@@ -159,7 +175,6 @@ namespace GiiGa
             if (opt_fullscreen)
                 ImGui::PopStyleVar(2);
 
-            // Submit the DockSpace
             const ImGuiIO& io = ImGui::GetIO();
             if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
             {

@@ -60,7 +60,7 @@ namespace GiiGa
             }
         }
 
-        void Init(RenderContext& context) override
+        void Init() override
         {
             Resize(viewport_size_);
 
@@ -107,7 +107,7 @@ namespace GiiGa
             return data;
         }
 
-        void Execute(RenderContext& context) override
+        void Execute(const rhi::FrameContext& ctx) override
         {
             if (camera_.expired()) return;
 
@@ -128,7 +128,7 @@ namespace GiiGa
                 }
             }
 
-            UpdateCameraInfo(context);
+            UpdateCameraInfo();
 
             auto current_size = ImGui::GetContentRegionAvail();
             if (current_size.y < 0)
@@ -144,22 +144,10 @@ namespace GiiGa
             ImGuizmo::AllowAxisFlip(false);
             ImGuizmo::SetDrawlist();
 
-            // --- run the NVRHI render graph on the engine's NVRHI command list ---
-            // TODO(runtime): the NVRHI command list and the legacy RenderContext command list
-            // share one D3D12 queue; submitting the NVRHI list mid-frame here is not synchronized
-            // with the legacy ImGui command list. Consolidating onto a single command list (the
-            // rhi::RenderSystem frame loop) is the intended end state.
-            if (nvrhiDevice_ && renderGraph_)
+            // --- run the NVRHI render graph on the shared per-frame command list ---
+            if (renderGraph_)
             {
-                nvrhi::ICommandList* cmd = Engine::Instance().RenderSystem()->GetUploadCommandList();
-                if (cmd)
-                {
-                    cmd->open();
-                    rhi::FrameContext fc{nvrhiDevice_, cmd};
-                    renderGraph_->execute(fc);
-                    cmd->close();
-                    nvrhiDevice_->executeCommandList(cmd);
-                }
+                renderGraph_->execute(ctx);
             }
 
             RefreshResultSrv_();
@@ -315,7 +303,7 @@ namespace GiiGa
             }
         }
 
-        void UpdateCameraInfo(RenderContext& /*context*/)
+        void UpdateCameraInfo()
         {
             auto camera_go = camera_.lock();
             if (!camera_go) return;

@@ -16,11 +16,10 @@
 #include <RenderDevice.h>
 #include <RenderPassViewData.h>
 #include <Core/Render/Nvrhi/NvrhiGBuffer.h>
+#include <Core/Render/Nvrhi/NvrhiFrame.h>
 
 namespace GiiGa
 {
-    class RenderGraph;
-
     class Viewport
     {
     public:
@@ -31,7 +30,7 @@ namespace GiiGa
 
         virtual ~Viewport() = default;
 
-        virtual void Init(RenderContext& /*context*/)
+        virtual void Init()
         {
             ensureResources();
         }
@@ -40,7 +39,7 @@ namespace GiiGa
 
         virtual RTVData GetResultInfo() const { return rtvData_; };
 
-        virtual void Execute(RenderContext& context) = 0;
+        virtual void Execute(const rhi::FrameContext& ctx) = 0;
 
         virtual void Resize(DirectX::SimpleMath::Vector2 new_size)
         {

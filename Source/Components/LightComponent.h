@@ -2,21 +2,25 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <directx/d3dx12.h>
 #include <directxtk12/SimpleMath.h>
 
-#include<memory>
+#include <memory>
+#include <vector>
+
+#include <nvrhi/nvrhi.h>
 
 #include<Component.h>
-#include<Material.h>
 #include<IRenderable.h>
 #include<TransformComponent.h>
 #include<IUpdateGPUData.h>
-#include<RenderDevice.h>
-#include<GPULocalResource.h>
 
 namespace GiiGa
 {
+    // NVRHI cutover: the base no longer carries D3D12 shadow plumbing (depth-stencil resource,
+    // DSV/SRV descriptor views, viewport/scissor, manual resource transitions). Shadow maps are
+    // now NVRHI textures + framebuffers owned by the concrete light that supports them
+    // (DirectionalLightComponent). The base only retains the cascade view-projection list used
+    // by ShadowPass for frustum culling and the shared transform handle.
     class LightComponent : public Component, public IRenderable, public IUpdateGPUData
     {
     public:
@@ -27,35 +31,12 @@ namespace GiiGa
         {
         }
 
-        virtual void InitShadowData(RenderDevice& device) = 0;
+        // Create light-specific shadow resources (NVRHI). Default: no shadows. Directional lights
+        // override this to build their cascade depth array + framebuffer + cascade data buffer.
+        virtual void InitShadowData(nvrhi::IDevice* /*device*/) {}
 
-        virtual void ClearShadowDSV(RenderContext& context)
-        {
-            context.ClearDepthStencilView(shadow_DSV_->getDescriptor().GetCpuHandle(), D3D12_CLEAR_FLAG_DEPTH, DS_CLEAR_VALUE);
-        }
-
-        virtual void TransitionDepthShadowResource(RenderContext& context, D3D12_RESOURCE_STATES after) const
-        {
-            shadow_resource_->StateTransition(context, after);
-        }
-
-        virtual void BindShadowDSV(RenderContext& context) const
-        {
-            auto dsv = shadow_DSV_->getDescriptor().GetCpuHandle();
-            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr,
-                                                                 false, &dsv);
-        }
-
-        virtual D3D12_CPU_DESCRIPTOR_HANDLE GetShadowDSV() const
-        {
-            return shadow_DSV_->getDescriptor().GetCpuHandle();
-        }
-
-        virtual D3D12_GPU_DESCRIPTOR_HANDLE GetShadowSRV() const
-        {
-            return shadow_SRV_->getDescriptor().getGPUHandle();
-        }
-
+        // Per-cascade view-projection matrices (directional only) used by ShadowPass for frustum
+        // culling of shadow casters. Point lights return an empty list.
         virtual std::vector<DirectX::SimpleMath::Matrix> GetViews()
         {
             return shadow_views;
@@ -63,19 +44,6 @@ namespace GiiGa
 
     protected:
         std::weak_ptr<TransformComponent> transform_;
-
-        DirectX::SimpleMath::Vector2 TEXTURE_SIZE = DirectX::SimpleMath::Vector2(800);
-        DXGI_FORMAT DS_FORMAT_RES = DXGI_FORMAT_R32_TYPELESS;
-        DXGI_FORMAT DS_FORMAT_DSV = DXGI_FORMAT_D32_FLOAT;
-        DXGI_FORMAT DS_FORMAT_SRV = DXGI_FORMAT_R32_FLOAT;
-        D3D12_RESOURCE_DIMENSION DS_DIMENSION_RES = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-        D3D12_DSV_DIMENSION DS_DIMENSION_DSV = D3D12_DSV_DIMENSION_TEXTURE2D;
-        D3D12_SRV_DIMENSION DS_DIMENSION_SRV = D3D12_SRV_DIMENSION_TEXTURE2D;
-        D3D12_CLEAR_VALUE DS_CLEAR_VALUE = {.Format = DS_FORMAT_DSV, .DepthStencil = {.Depth = 1, .Stencil = 1}};
-
         std::vector<DirectX::SimpleMath::Matrix> shadow_views;
-        std::unique_ptr<GPULocalResource> shadow_resource_;
-        std::shared_ptr<BufferView<ShaderResource>> shadow_SRV_;
-        std::shared_ptr<BufferView<DepthStencil>> shadow_DSV_;
     };
 }

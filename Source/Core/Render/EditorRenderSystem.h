@@ -20,15 +20,15 @@ namespace GiiGa
 
         void Initialize() override
         {
-            //RenderSystem::Initialize();
-            std::shared_ptr<EditorSwapChainPass> tempEditorSCP = std::make_shared<EditorSwapChainPass>(device_, swapChain_);
+            auto tempEditorSCP = std::make_shared<EditorSwapChainPass>(device_, &rhiSwapChain());
             editorSwapChainPass_ = tempEditorSCP;
-            root_.AddPass(tempEditorSCP);
+            root_.addPass(tempEditorSCP);
 
-            editorSwapChainPass_.lock()->viewports_.push_back(std::make_shared<EditorViewport>(device_, editorSwapChainPass_.lock()->editorContext_));
+            editorSwapChainPass_.lock()->viewports_.push_back(
+                std::make_shared<EditorViewport>(device_, editorSwapChainPass_.lock()->editorContext_));
             for (auto& viewport : editorSwapChainPass_.lock()->viewports_)
             {
-                viewport->Init(context_);
+                viewport->Init();
             }
         }
 
