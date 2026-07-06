@@ -2,15 +2,19 @@
 
 // ForwardPass.h — forward pass for unlit-opaque and translucent/masked geometry (NVRHI).
 //
-// Bindings: b0 = per-view, b1 = per-object (volatile), b2 = material constants,
-//           t5 = EmissiveColor, s0 = linear-wrap sampler.
+// Bindings: b0 = per-view, b1 = per-object (volatile).
 // Shaders: VertexPNTBTShader(VSMain) + OpaqueUnlitPixelShader(PSMain).
 // Two pipelines share the same shaders: opaque (no blend) and translucent (src-alpha blend).
 // Renders into the GBuffer-derived light framebuffer (LightAccumulation + depth).
+//
+// NOTE: material binding layout (b2 CB + t5 emissive SRV + s0 sampler) is temporarily
+// disabled because NVRHI crashes (0xC0000005 in setGraphicsState) after 3 frames when
+// the pipeline has a 3rd descriptor-table binding layout alongside 2 volatile-CB layouts.
+// The shader still references t5/b2/s0 but reads zero/unbound values. This will be
+// re-enabled once the NVRHI descriptor-table issue is resolved (validation layer).
 
 #include <memory>
 #include <functional>
-#include <unordered_map>
 
 #include <Core/Render/Nvrhi/NvrhiRenderPass.h>
 #include <Core/Render/Nvrhi/NvrhiFrame.h>
@@ -39,8 +43,6 @@ namespace GiiGa
         {
             viewSlot_.init(device_);
             objectSlot_.init(device_);
-            sampler_ = rhi::getLinearWrapSampler(device_);
-            materialLayout_ = rhi::makeMaterialBindingLayout(device_, {5}, true);
 
             nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
                 device_, rhi::makeVertexAttributes<VertexPNTBT>(),
@@ -55,8 +57,7 @@ namespace GiiGa
                 nvrhi::GraphicsPipelineDesc pd;
                 pd.setVertexShader(vs).setPixelShader(ps).setInputLayout(inputLayout).setRenderState(rs);
                 pd.addBindingLayout(viewSlot_.layout)
-                  .addBindingLayout(objectSlot_.layout)
-                  .addBindingLayout(materialLayout_);
+                  .addBindingLayout(objectSlot_.layout);
                 return device_->createGraphicsPipeline(pd, initialFb);
             };
 
@@ -108,25 +109,10 @@ namespace GiiGa
 
                 for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    nvrhi::BindingSetHandle materialSet;
-                    if (group.shaderResource)
-                    {
-                        auto it = materialSetCache_.find(group.shaderResource.get());
-                        if (it != materialSetCache_.end())
-                            materialSet = it->second;
-                        else
-                        {
-                            materialSet = rhi::makeMaterialBindingSet(device_, materialLayout_,
-                                group.shaderResource->GetMaterialBindings(), sampler_, {5});
-                            materialSetCache_[group.shaderResource.get()] = materialSet;
-                        }
-                    }
-
                     nvrhi::GraphicsState state;
                     state.setPipeline(pipe).setFramebuffer(fb).setViewport(vp);
                     state.addBindingSet(viewSlot_.set);
                     state.addBindingSet(objectSlot_.set);
-                    if (materialSet) state.addBindingSet(materialSet);
 
                     for (auto& weak : group.renderables)
                     {
@@ -155,9 +141,6 @@ namespace GiiGa
 
         rhi::ViewConstantSlot viewSlot_;
         rhi::ObjectConstantSlot objectSlot_;
-        nvrhi::BindingLayoutHandle materialLayout_;
-        nvrhi::SamplerHandle sampler_;
-        std::unordered_map<void*, nvrhi::BindingSetHandle> materialSetCache_;
 
         nvrhi::FramebufferHandle lightFb_;
         nvrhi::IFramebuffer* lightFbSource_ = nullptr;

@@ -132,6 +132,7 @@ namespace GiiGa
                     }
                 }
             }
+            fprintf(stderr, "[GBUFFER] done\n");
         }
 
     private:

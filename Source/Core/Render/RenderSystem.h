@@ -75,9 +75,6 @@ namespace GiiGa
         {
             device_.DeleteStaleObjects();
 
-            // TEMP: wait for GPU idle between frames to avoid volatile CB
-            // upload buffer reuse races. Proper multi-frame buffering will
-            // replace this once NVRHI command list parameters are tuned.
             nvrhiDevice_->waitForIdle();
 
             if (HANDLE h = rhiSwapChain_->getFrameLatencyWaitableObject())
