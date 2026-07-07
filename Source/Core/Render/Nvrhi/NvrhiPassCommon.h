@@ -130,20 +130,22 @@ namespace GiiGa::rhi
 
     // Fills a binding set for `layout` from a MaterialBindings block:
     //   constantBuffer -> b(kMaterialCBSlot), textures[slot] -> t(slot), sampler -> s(0).
-    // `textureSlots` lists the SRV slots to fill; the texture is taken from
-    // mb.textures[slot] (materials guarantee required slots are non-null).
+    // All items are always present — missing material resources use the provided fallbacks
+    // (nullCb / nullTex) so the binding set count matches the layout count (NVRHI requirement).
     inline nvrhi::BindingSetHandle makeMaterialBindingSet(nvrhi::IDevice* device,
                                                           nvrhi::IBindingLayout* layout,
                                                           const MaterialBindings& mb,
                                                           nvrhi::ISampler* sampler,
-                                                          const std::vector<uint32_t>& textureSlots)
+                                                          const std::vector<uint32_t>& textureSlots,
+                                                          nvrhi::IBuffer* nullCb = nullptr,
+                                                          nvrhi::ITexture* nullTex = nullptr)
     {
         nvrhi::BindingSetDesc sd;
-        if (mb.constantBuffer)
-            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(kMaterialCBSlot, mb.constantBuffer));
+        sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(kMaterialCBSlot,
+            mb.constantBuffer ? mb.constantBuffer : nullCb));
         for (uint32_t slot : textureSlots)
-            if (mb.textures[slot])
-                sd.addItem(nvrhi::BindingSetItem::Texture_SRV(slot, mb.textures[slot]));
+            sd.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,
+                mb.textures[slot] ? mb.textures[slot] : nullTex));
         if (sampler)
             sd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler));
         return device->createBindingSet(sd, layout);

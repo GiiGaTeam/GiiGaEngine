@@ -45,6 +45,8 @@ namespace GiiGa
             nvrhi::SamplerHandle sampler = rhi::getLinearWrapSampler(device_);
             materialLayout_ = rhi::makeMaterialBindingLayout(device_, {0, 1, 2, 3, 4, 5, 6, 7}, true);
             sampler_ = sampler;
+            createNullResources();
+            nullMaterialSet_ = createNullMaterialSet();
 
             nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
                 device_, rhi::makeVertexAttributes<VertexPNTBT>(),
@@ -105,7 +107,7 @@ namespace GiiGa
 
                 for (auto& [key, group] : packet.common_resource_renderables)
                 {
-                    nvrhi::BindingSetHandle materialSet;
+                    nvrhi::BindingSetHandle materialSet = nullMaterialSet_;
                     if (!isWire && group.shaderResource)
                     {
                         auto sresIt = materialSetCache_.find(group.shaderResource.get());
@@ -114,7 +116,8 @@ namespace GiiGa
                         else
                         {
                             materialSet = rhi::makeMaterialBindingSet(device_, materialLayout_,
-                                group.shaderResource->GetMaterialBindings(), sampler_, {0, 1, 2, 3, 4, 5, 6, 7});
+                                group.shaderResource->GetMaterialBindings(), sampler_, {0, 1, 2, 3, 4, 5, 6, 7},
+                                nullCb_.Get(), nullTex_.Get());
                             materialSetCache_[group.shaderResource.get()] = materialSet;
                         }
                     }
@@ -123,7 +126,7 @@ namespace GiiGa
                     state.setPipeline(pipe).setFramebuffer(fb).setViewport(vp);
                     state.addBindingSet(viewSlot_.set);
                     state.addBindingSet(objectSlot_.set);
-                    if (materialSet) state.addBindingSet(materialSet);
+                    if (!isWire) state.addBindingSet(materialSet);
 
                     for (auto& weak : group.renderables)
                     {
@@ -132,7 +135,6 @@ namespace GiiGa
                     }
                 }
             }
-            fprintf(stderr, "[GBUFFER] done\n");
         }
 
     private:
@@ -155,9 +157,45 @@ namespace GiiGa
         rhi::ObjectConstantSlot objectSlot_;
         nvrhi::BindingLayoutHandle materialLayout_;
         nvrhi::SamplerHandle sampler_;
+        nvrhi::BindingSetHandle nullMaterialSet_;
+        nvrhi::BufferHandle nullCb_;
+        nvrhi::TextureHandle nullTex_;
         std::unordered_map<void*, nvrhi::BindingSetHandle> materialSetCache_;
 
         nvrhi::GraphicsPipelineHandle litPipeline_;
         nvrhi::GraphicsPipelineHandle wirePipeline_;
+
+        void createNullResources()
+        {
+            nvrhi::BufferDesc cbd;
+            cbd.setByteSize(256).setIsConstantBuffer(true)
+               .setInitialState(nvrhi::ResourceStates::ConstantBuffer).setKeepInitialState(true)
+               .setDebugName("gbuffer null material cb");
+            nullCb_ = device_->createBuffer(cbd);
+
+            nvrhi::TextureDesc td;
+            td.setWidth(1).setHeight(1).setFormat(nvrhi::Format::RGBA8_UNORM)
+              .setInitialState(nvrhi::ResourceStates::ShaderResource).setKeepInitialState(true)
+              .setDebugName("gbuffer null texture");
+            nullTex_ = device_->createTexture(td);
+
+            nvrhi::CommandListHandle cl = device_->createCommandList();
+            cl->open();
+            uint8_t zeros[4] = {0, 0, 0, 0};
+            cl->writeTexture(nullTex_, 0, 0, zeros, 4);
+            cl->close();
+            device_->executeCommandList(cl.Get());
+            device_->waitForIdle();
+        }
+
+        nvrhi::BindingSetHandle createNullMaterialSet()
+        {
+            nvrhi::BindingSetDesc sd;
+            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(rhi::kMaterialCBSlot, nullCb_));
+            for (uint32_t i = 0; i < 8; ++i)
+                sd.addItem(nvrhi::BindingSetItem::Texture_SRV(i, nullTex_));
+            sd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+            return device_->createBindingSet(sd, materialLayout_);
+        }
     };
 }

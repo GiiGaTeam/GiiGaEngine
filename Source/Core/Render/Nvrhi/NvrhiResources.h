@@ -81,12 +81,14 @@ namespace GiiGa::rhi
 
     // Volatile constant buffer — per-draw data uploaded with writeBuffer; sub-allocated by
     // NVRHI from the command list's upload heap. maxVersions applies on Vulkan only.
+    // NVRHI requires volatile buffers to be constant buffers.
     inline nvrhi::BufferHandle createVolatileConstantBuffer(nvrhi::IDevice* device, uint32_t byteSize,
-                                                             uint32_t maxVersions = 16,
-                                                             const char* debugName = "volatile cb")
+                                                              uint32_t maxVersions = 16,
+                                                              const char* debugName = "volatile cb")
     {
         nvrhi::BufferDesc d;
-        d.setByteSize(byteSize).setIsVolatile(true).setMaxVersions(maxVersions).setDebugName(debugName);
+        d.setByteSize(byteSize).setIsConstantBuffer(true).setIsVolatile(true)
+         .setMaxVersions(maxVersions).setDebugName(debugName);
         return device->createBuffer(d);
     }
 

@@ -16,6 +16,8 @@
 #include <Core/Render/Nvrhi/NvrhiFrame.h>
 #include <Core/Render/Nvrhi/NvrhiRenderPass.h>
 
+#include <nvrhi/validation.h>
+
 namespace GiiGa
 {
     // Unified NVRHI render system.
@@ -51,7 +53,8 @@ namespace GiiGa
             nd.errorCB = &nvrhiMessages_;
             nd.pDevice = device_.GetDxDevice().get();
             nd.pGraphicsCommandQueue = context_.getGraphicsCommandQueue().get();
-            nvrhiDevice_ = nvrhi::d3d12::createDevice(nd);
+            nvrhi::DeviceHandle raw = nvrhi::d3d12::createDevice(nd);
+            nvrhiDevice_ = raw;
 
             // NVRHI-backed swap chain (replaces the legacy SwapChain).
             rhiSwapChain_ = std::make_unique<rhi::SwapChain>(
@@ -76,6 +79,7 @@ namespace GiiGa
             device_.DeleteStaleObjects();
 
             nvrhiDevice_->waitForIdle();
+            nvrhiDevice_->runGarbageCollection();
 
             if (HANDLE h = rhiSwapChain_->getFrameLatencyWaitableObject())
                 WaitForSingleObject(h, INFINITE);
@@ -95,7 +99,6 @@ namespace GiiGa
             cmd_->close();
             nvrhiDevice_->executeCommandList(cmd_.Get());
             rhiSwapChain_->present();
-            nvrhiDevice_->runGarbageCollection();
         }
 
         RenderDevice& GetRenderDevice() { return device_; }

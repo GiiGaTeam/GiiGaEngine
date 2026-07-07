@@ -2,19 +2,23 @@
 
 // ForwardPass.h — forward pass for unlit-opaque and translucent/masked geometry (NVRHI).
 //
-// Bindings: b0 = per-view, b1 = per-object (volatile).
+// Bindings (2-layout workaround for NVRHI 3-layout crash):
+//   Layout 0: b0 = per-view (volatile)
+//   Layout 1: b1 = per-object (volatile) + b2 = material CB + t0..t7 = material textures + s0
+//
+// Merging the object VCB and material descriptor table into one binding layout avoids
+// an NVRHI D3D12 backend crash (0xC0000005 in setGraphicsState after ~3 frames) that
+// occurs when ForwardPass has 3 binding layouts. GBufferPass with 3 layouts works fine;
+// the root cause appears to be a pipeline/root-signature caching bug specific to this
+// pass's pipelines. The merged layout produces identical GPU-side behavior.
+//
 // Shaders: VertexPNTBTShader(VSMain) + OpaqueUnlitPixelShader(PSMain).
 // Two pipelines share the same shaders: opaque (no blend) and translucent (src-alpha blend).
 // Renders into the GBuffer-derived light framebuffer (LightAccumulation + depth).
-//
-// NOTE: material binding layout (b2 CB + t5 emissive SRV + s0 sampler) is temporarily
-// disabled because NVRHI crashes (0xC0000005 in setGraphicsState) after 3 frames when
-// the pipeline has a 3rd descriptor-table binding layout alongside 2 volatile-CB layouts.
-// The shader still references t5/b2/s0 but reads zero/unbound values. This will be
-// re-enabled once the NVRHI descriptor-table issue is resolved (validation layer).
 
 #include <memory>
 #include <functional>
+#include <unordered_map>
 
 #include <Core/Render/Nvrhi/NvrhiRenderPass.h>
 #include <Core/Render/Nvrhi/NvrhiFrame.h>
@@ -43,6 +47,9 @@ namespace GiiGa
         {
             viewSlot_.init(device_);
             objectSlot_.init(device_);
+            sampler_ = rhi::getLinearWrapSampler(device_);
+            mergedLayout_ = makeMergedLayout();
+            nullMergedSet_ = makeNullMergedSet();
 
             nvrhi::InputLayoutHandle inputLayout = rhi::createInputLayout(
                 device_, rhi::makeVertexAttributes<VertexPNTBT>(),
@@ -57,7 +64,7 @@ namespace GiiGa
                 nvrhi::GraphicsPipelineDesc pd;
                 pd.setVertexShader(vs).setPixelShader(ps).setInputLayout(inputLayout).setRenderState(rs);
                 pd.addBindingLayout(viewSlot_.layout)
-                  .addBindingLayout(objectSlot_.layout);
+                  .addBindingLayout(mergedLayout_);
                 return device_->createGraphicsPipeline(pd, initialFb);
             };
 
@@ -88,6 +95,8 @@ namespace GiiGa
         {
             if (!ctx.cmd || !gbuffer_) return;
 
+            // NOP — see header comment about timing-dependent crash
+
             auto cam_info = getCamInfoDataFunction_();
             viewSlot_.write(ctx.cmd, cam_info.viewConstants);
 
@@ -109,10 +118,23 @@ namespace GiiGa
 
                 for (auto& [key, group] : packet.common_resource_renderables)
                 {
+                    nvrhi::BindingSetHandle mergedSet = nullMergedSet_;
+                    if (group.shaderResource)
+                    {
+                        auto it = mergedSetCache_.find(group.shaderResource.get());
+                        if (it != mergedSetCache_.end())
+                            mergedSet = it->second;
+                        else
+                        {
+                            mergedSet = makeMergedSet(group.shaderResource->GetMaterialBindings());
+                            mergedSetCache_[group.shaderResource.get()] = mergedSet;
+                        }
+                    }
+
                     nvrhi::GraphicsState state;
                     state.setPipeline(pipe).setFramebuffer(fb).setViewport(vp);
                     state.addBindingSet(viewSlot_.set);
-                    state.addBindingSet(objectSlot_.set);
+                    state.addBindingSet(mergedSet);
 
                     for (auto& weak : group.renderables)
                     {
@@ -141,11 +163,75 @@ namespace GiiGa
 
         rhi::ViewConstantSlot viewSlot_;
         rhi::ObjectConstantSlot objectSlot_;
+        nvrhi::BindingLayoutHandle mergedLayout_;
+        nvrhi::SamplerHandle sampler_;
+        nvrhi::BindingSetHandle nullMergedSet_;
+        std::unordered_map<void*, nvrhi::BindingSetHandle> mergedSetCache_;
 
         nvrhi::FramebufferHandle lightFb_;
         nvrhi::IFramebuffer* lightFbSource_ = nullptr;
 
         nvrhi::GraphicsPipelineHandle opaquePipeline_;
         nvrhi::GraphicsPipelineHandle translucentPipeline_;
+
+        nvrhi::BufferHandle nullCb_;
+        nvrhi::TextureHandle nullTex_;
+
+        // Layout 1: VCB(b1) + CB(b2) + SRV(t0..t7) + Sampler(s0)
+        nvrhi::BindingLayoutHandle makeMergedLayout()
+        {
+            nvrhi::BindingLayoutDesc ld;
+            ld.setVisibility(nvrhi::ShaderType::All);
+            ld.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(rhi::kObjectSlot));
+            ld.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(rhi::kMaterialCBSlot));
+            for (uint32_t i = 0; i < 8; ++i)
+                ld.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i));
+            ld.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+            return device_->createBindingLayout(ld);
+        }
+
+        nvrhi::BindingSetHandle makeMergedSet(const MaterialBindings& mb)
+        {
+            nvrhi::BindingSetDesc sd;
+            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(rhi::kObjectSlot, objectSlot_.cb));
+            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(rhi::kMaterialCBSlot,
+                mb.constantBuffer ? mb.constantBuffer : nullCb_.Get()));
+            for (uint32_t i = 0; i < 8; ++i)
+                sd.addItem(nvrhi::BindingSetItem::Texture_SRV(i,
+                    mb.textures[i] ? mb.textures[i] : nullTex_.Get()));
+            sd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+            return device_->createBindingSet(sd, mergedLayout_);
+        }
+
+        nvrhi::BindingSetHandle makeNullMergedSet()
+        {
+            nvrhi::BufferDesc cbd;
+            cbd.setByteSize(256).setIsConstantBuffer(true)
+               .setInitialState(nvrhi::ResourceStates::ConstantBuffer).setKeepInitialState(true)
+               .setDebugName("forward null material cb");
+            nullCb_ = device_->createBuffer(cbd);
+
+            nvrhi::TextureDesc td;
+            td.setWidth(1).setHeight(1).setFormat(nvrhi::Format::RGBA8_UNORM)
+              .setInitialState(nvrhi::ResourceStates::ShaderResource).setKeepInitialState(true)
+              .setDebugName("forward null texture");
+            nullTex_ = device_->createTexture(td);
+
+            nvrhi::CommandListHandle cl = device_->createCommandList();
+            cl->open();
+            uint8_t zeros[4] = {0, 0, 0, 0};
+            cl->writeTexture(nullTex_, 0, 0, zeros, 4);
+            cl->close();
+            device_->executeCommandList(cl.Get());
+            device_->waitForIdle();
+
+            nvrhi::BindingSetDesc sd;
+            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(rhi::kObjectSlot, objectSlot_.cb));
+            sd.addItem(nvrhi::BindingSetItem::ConstantBuffer(rhi::kMaterialCBSlot, nullCb_));
+            for (uint32_t i = 0; i < 8; ++i)
+                sd.addItem(nvrhi::BindingSetItem::Texture_SRV(i, nullTex_));
+            sd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+            return device_->createBindingSet(sd, mergedLayout_);
+        }
     };
 }
