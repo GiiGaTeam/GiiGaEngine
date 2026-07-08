@@ -4,6 +4,7 @@
 #define NOMINMAX
 #endif
 #include<directxtk12/SimpleMath.h>
+#include<nvrhi/nvrhi.h>
 #include<array>
 
 using namespace DirectX;
@@ -13,32 +14,28 @@ namespace GiiGa
     struct Index16
     {
         uint16_t index;
-        static inline const DXGI_FORMAT Format = DXGI_FORMAT_R16_UINT;
+        static inline const nvrhi::Format Format = nvrhi::Format::R16_UINT;
     };
 
     struct VertexPosition
     {
         friend struct VertexPNTBT;
-        
+
         VertexPosition() = default;
 
-        explicit VertexPosition(const SimpleMath::Vector3& position) : Position(position) {}
+        explicit VertexPosition(const SimpleMath::Vector3& position) : Position(position)
+        {
+        }
 
         SimpleMath::Vector3 Position;
 
-        //virtual ~VertexPosition() = default;
-
-    private:
-        static inline const int InputElementCount = 1;
-
-        static inline const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount] =
+        static inline const std::array<nvrhi::VertexAttributeDesc, 1> InputLayout =
         {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        };
-    public:
-        static inline const D3D12_INPUT_LAYOUT_DESC InputLayout = {
-            InputElements,
-            InputElementCount
+            nvrhi::VertexAttributeDesc()
+            .setName("POSITION")
+            .setFormat(nvrhi::Format::RGB32_FLOAT)
+            .setOffset(0)
+            .setElementStride(sizeof(SimpleMath::Vector3)),
         };
     };
 
@@ -49,10 +46,10 @@ namespace GiiGa
         VertexPNTBT() = default;
 
         explicit VertexPNTBT(const SimpleMath::Vector3& position,
-            const SimpleMath::Vector3& normal,
-            const SimpleMath::Vector3& tangent = {0, 0, 0},
-            const SimpleMath::Vector3& bitangent = {0, 0, 0},
-            const SimpleMath::Vector2& texCoord = {0,0})
+                             const SimpleMath::Vector3& normal,
+                             const SimpleMath::Vector3& tangent = {0, 0, 0},
+                             const SimpleMath::Vector3& bitangent = {0, 0, 0},
+                             const SimpleMath::Vector2& texCoord = {0, 0})
             : Position(position)
               , Normal(normal)
               , Tangent(tangent)
@@ -67,25 +64,21 @@ namespace GiiGa
         SimpleMath::Vector3 Bitangent;
         SimpleMath::Vector2 TexCoord;
 
-        //virtual ~VertexPNTBT() = default;
+        static const std::array<nvrhi::VertexAttributeDesc, 5> InputLayout;
+    };
 
-    private:
-
-        static inline const int InputElementCount = 5;
-        static inline const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount] =
-        {
-            VertexPosition::InputElements[0],
-            {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        };
-
-    public:
-        static inline const D3D12_INPUT_LAYOUT_DESC InputLayout = {
-            InputElements,
-            InputElementCount
-        };
+    inline const std::array<nvrhi::VertexAttributeDesc, 5> VertexPNTBT::InputLayout =
+    {
+        nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexPNTBT, Position)).setElementStride(sizeof(VertexPNTBT)),
+        nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexPNTBT, Normal)).setElementStride(sizeof(VertexPNTBT)),
+        nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexPNTBT, Tangent)).setElementStride(sizeof(VertexPNTBT)),
+        nvrhi::VertexAttributeDesc().setName("BINORMAL").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexPNTBT, Bitangent)).setElementStride(sizeof(VertexPNTBT)),
+        nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT)
+                                    .setOffset(offsetof(VertexPNTBT, TexCoord)).setElementStride(sizeof(VertexPNTBT)),
     };
 
     struct VertexBoned
@@ -93,12 +86,12 @@ namespace GiiGa
         static inline constexpr uint8_t MaxCountOfBonesPerVertex = 4;
 
         explicit VertexBoned(const SimpleMath::Vector3& position,
-            const SimpleMath::Vector3& normal,
-            const SimpleMath::Vector3& tangent = {0, 0, 0},
-            const SimpleMath::Vector3& bitangent = {0, 0, 0},
-            const SimpleMath::Vector2& texCoord = {0,0},
-            const std::array<uint16_t, MaxCountOfBonesPerVertex>& boneIDs = {0, 0, 0, 0},
-            const SimpleMath::Vector4& boneWeights = {0, 0, 0, 0})
+                             const SimpleMath::Vector3& normal,
+                             const SimpleMath::Vector3& tangent = {0, 0, 0},
+                             const SimpleMath::Vector3& bitangent = {0, 0, 0},
+                             const SimpleMath::Vector2& texCoord = {0, 0},
+                             const std::array<uint16_t, MaxCountOfBonesPerVertex>& boneIDs = {0, 0, 0, 0},
+                             const SimpleMath::Vector4& boneWeights = {0, 0, 0, 0})
             : Position(position)
               , Normal(normal)
               , Tangent(tangent)
@@ -116,28 +109,25 @@ namespace GiiGa
         SimpleMath::Vector2 TexCoord;
         std::array<uint16_t, MaxCountOfBonesPerVertex> BoneIDs;
         SimpleMath::Vector4 BoneWeights;
-        
-        //virtual ~VertexBoned() = default;
 
-    private:
-        static inline const int InputElementCount = 7;
-        static inline const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount] =
-        {
-            VertexPNTBT::InputElements[0],
-            VertexPNTBT::InputElements[1],
-            VertexPNTBT::InputElements[2],
-            VertexPNTBT::InputElements[3],
-            VertexPNTBT::InputElements[4],
-            {"BLENDINDICES", 0, DXGI_FORMAT_R16G16B16A16_UINT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-             0},
-            {"BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-             0},
-        };
+        static const std::array<nvrhi::VertexAttributeDesc, 7> InputLayout;
+    };
 
-    public:
-        static inline const D3D12_INPUT_LAYOUT_DESC InputLayout = {
-            InputElements,
-            InputElementCount
-        };
+    inline const std::array<nvrhi::VertexAttributeDesc, 7> VertexBoned::InputLayout =
+    {
+        nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, Position)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, Normal)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, Tangent)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("BINORMAL").setFormat(nvrhi::Format::RGB32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, Bitangent)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, TexCoord)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("BLENDINDICES").setFormat(nvrhi::Format::RGBA16_UINT)
+                                    .setOffset(offsetof(VertexBoned, BoneIDs)).setElementStride(sizeof(VertexBoned)),
+        nvrhi::VertexAttributeDesc().setName("BLENDWEIGHT").setFormat(nvrhi::Format::RGBA32_FLOAT)
+                                    .setOffset(offsetof(VertexBoned, BoneWeights)).setElementStride(sizeof(VertexBoned)),
     };
 }

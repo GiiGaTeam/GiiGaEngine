@@ -1,11 +1,8 @@
 #pragma once
 #ifndef NOMINMAX
 #define NOMINMAX
-#include "GBuffer.h"
-#include "Material.h"
 #endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
+#include<nvrhi/nvrhi.h>
 
 
 #include<memory>
@@ -23,6 +20,8 @@
 #include<CameraComponent.h>
 #include<PerObjectData.h>
 #include<IObjectShaderResource.h>
+#include<GBuffer.h>
+#include<Material.h>
 
 namespace GiiGa
 {
@@ -32,56 +31,30 @@ namespace GiiGa
         PostProcessPass(RenderContext& context, const std::function<RTVData()>& getResultInfoFn, const std::shared_ptr<GBuffer>& gBuffer) :
             getResultInfoFunction_(getResultInfoFn), gBuffer_(gBuffer)
         {
-            D3D12_RASTERIZER_DESC rast_desc = {
-                .FillMode = D3D12_FILL_MODE_SOLID,
-                .CullMode = D3D12_CULL_MODE_FRONT,
-                .FrontCounterClockwise = TRUE,
-                .DepthBias = D3D12_DEFAULT_DEPTH_BIAS,
-                .DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                .SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
-                .DepthClipEnable = FALSE,
-                .MultisampleEnable = FALSE,
-                .AntialiasedLineEnable = FALSE,
-                .ForcedSampleCount = 0,
-                .ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
-            };
+            nvrhi::RasterState rast_state;
+            rast_state.fillMode = nvrhi::RasterFillMode::Solid;
+            rast_state.cullMode = nvrhi::RasterCullMode::Front;
+            rast_state.frontCounterClockwise = true;
+            rast_state.depthClipEnable = false;
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
-            };
+            nvrhi::SamplerDesc sampler_desc;
+            sampler_desc.minFilter = sampler_desc.magFilter = sampler_desc.mipFilter = true;
+            sampler_desc.setAllAddressModes(nvrhi::SamplerAddressMode::Wrap);
 
-            D3D12_DEPTH_STENCIL_DESC depth_state_desc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-            depth_state_desc.DepthEnable = false;
-            depth_state_desc.StencilEnable = false;
-            
-
-            DXGI_FORMAT rtv_format_array[] = {GBuffer::G_FORMAT};
+            nvrhi::DepthStencilState depth_state;
+            depth_state.depthTestEnable = false;
+            depth_state.depthWriteEnable = false;
+            depth_state.stencilEnable = false;
 
             gamma_correction_pso
                 .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
                 .set_ps(ShaderManager::GetShaderByName(GammaCorrectionShader))
-                .set_rasterizer_state(rast_desc)
+                .set_rasterizer_state(rast_state)
                 .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(rtv_format_array, 1)
-                .set_dsv_format(DXGI_FORMAT_UNKNOWN)
-                .set_depth_stencil_state(depth_state_desc)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    //context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    /*const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);*/
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), 0, 1);
+                .set_depth_stencil_state(depth_state)
+                .add_texture_srv(0) // LightAccum
+                .add_sampler(0, sampler_desc)
+                .GeneratePSO(context.GetDevice());
 
             auto rm = Engine::Instance().ResourceManager();
 
@@ -92,19 +65,15 @@ namespace GiiGa
         {
             auto result_info = getResultInfoFunction_();
 
-            context.BindPSO(gamma_correction_pso.GetState().get());
-            context.SetSignature(gamma_correction_pso.GetSignature().get());
+            nvrhi::BindingSetDesc binding_desc;
+            binding_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(0, gBuffer_->GetTexture(GBuffer::GBufferOrder::LightAccumulation)));
+            gamma_correction_pso.AppendSamplers(binding_desc);
 
-            gBuffer_->TransitionResource(context, GBuffer::GBufferOrder::LightAccumulation, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            result_info.resource_->StateTransition(context, D3D12_RESOURCE_STATE_RENDER_TARGET);
-            context.BindDescriptorHandle(0, gBuffer_->GetSRV(GBuffer::GBufferOrder::LightAccumulation));
+            context.SetFramebuffer(result_info.framebuffer);
+            context.SetPipeline(gamma_correction_pso.GetOrCreatePipeline(context.GetDevice(), result_info.framebuffer));
+            context.SetBindingSet(context.GetOrCreateBindingSet(binding_desc, gamma_correction_pso.GetBindingLayout()));
 
-            const auto rtv = result_info.RTV_->getDescriptor().GetCpuHandle();
-            const auto dsv = gBuffer_->GetDepthRTV();
-            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &rtv, false, nullptr);
-            mesh_->Draw(context.GetGraphicsCommandList());
-            //context.GetGraphicsCommandList()->IASetVertexBuffers(0, 0, nullptr);
-            //context.GetGraphicsCommandList()->DrawInstanced(6, 1, 0, 0);
+            mesh_->Draw(context);
         }
 
     private:

@@ -1,66 +1,45 @@
-﻿#pragma once
+#pragma once
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <d3d12.h>
-#include<directx/d3dx12.h>
-
-
 
 #include<memory>
 #include<vector>
 #include<queue>
+#include<mutex>
+#include<unordered_map>
+#include<algorithm>
+#include<cassert>
 
 #include<IRenderContext.h>
 #include<RenderSystemSettings.h>
 #include<RenderDevice.h>
-#include<FrameContext.h>
-#include<Window.h>
-#include<DescriptorHeap.h>
-#include<SwapChain.h>
-#include<BufferView.h>
+#include<NvrhiUtils.h>
 
 namespace GiiGa
 {
-    struct DefferedUploadEntry
-    {
-        UploadBuffer uploadBuffer;
-        UploadBuffer::Allocation allocation;
-        DefferedUploadQuery query;
-    };
-
+    // The frame-recording context: owns the graphics nvrhi command list,
+    // frame pacing (swap-chain latency waitable), a deferred-upload queue for
+    // resources created outside of a frame, a binding-set cache, and the
+    // current graphics state (pipeline/framebuffer/viewport/bindings) that
+    // drawables are issued against.
     class RenderContext : public IRenderContext
     {
         friend class EditorSwapChainPass;
 
+        struct DefferedUploadEntry
+        {
+            nvrhi::BufferHandle buffer;
+            std::vector<uint8_t> data;
+        };
+
     public:
         explicit RenderContext(RenderDevice& device):
-            device_(device),
-            graphics_command_queue_([&device]()
-            {
-                D3D12_COMMAND_QUEUE_DESC desc{};
-                desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-                desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-                desc.NodeMask = 1;
-                return device.CreateCommandQueue(desc);
-            }())
+            device_(device)
         {
-            {
-                frame_contexts_.reserve(RenderSystemSettings::NUM_FRAMES_IN_FLIGHT);
-                for (UINT i = 0; i < RenderSystemSettings::NUM_FRAMES_IN_FLIGHT; i++)
-                    frame_contexts_.emplace_back(device_);
-            }
-
-            {
-                graphics_command_list_ = device_.CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                                           frame_contexts_[0].command_allocator);
-                graphics_command_list_->Close();
-            }
-
-            fence_ = device_.CreateFence(0, D3D12_FENCE_FLAG_NONE);
-
-            fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+            command_list_ = device_.NvDevice()->createCommandList();
         }
 
         void SetFrameLatencyWaitableObject(HANDLE FrameLatencyWaitableObject)
@@ -68,175 +47,194 @@ namespace GiiGa
             frameLatencyWaitableObject_ = FrameLatencyWaitableObject;
         }
 
-        void CreateDefferedUpload(const std::span<const uint8_t>& data, DefferedUploadQuery&& query) override
+        ///////////////////////// UPLOADS /////////////////////////////////////////////////
+
+        void WriteBufferDeffered(nvrhi::BufferHandle buffer, const std::span<const uint8_t>& data) override
         {
-            DefferedUploadEntry entry
-            {
-                .uploadBuffer = UploadBuffer(device_, data.size_bytes()),
-                .query = std::move(query)
-            };
-
-            entry.allocation = entry.uploadBuffer.Allocate(data.size(), 1);
-
-            std::copy(data.begin(), data.end(), entry.allocation.CPU.begin());
-
-            defferedUploads_.push(std::move(entry));
+            std::lock_guard lock(deffered_uploads_mutex_);
+            defferedUploads_.push(DefferedUploadEntry{buffer, std::vector<uint8_t>(data.begin(), data.end())});
         }
 
-        UploadBuffer::Allocation CreateAndAllocateUploadBufferInCurrentFrame(size_t size) override
+        void WriteBufferImmediate(nvrhi::IBuffer* buffer, const std::span<const uint8_t>& data) override
         {
-            UploadBuffer& upload_buffer = current_frame->CreateUploadBuffer(device_, size);
-
-            return upload_buffer.Allocate(size, 1);
+            assert(is_recording_);
+            command_list_->writeBuffer(buffer, data.data(), data.size());
         }
 
-        std::shared_ptr<BufferView<Constant>> AllocateDynamicConstantView(std::span<uint8_t> data, D3D12_CONSTANT_BUFFER_VIEW_DESC desc)
+        nvrhi::ICommandList* CommandList() override
         {
-            if (!current_frame._Ptr) return nullptr;
-            return current_frame->AllocateDynamicConstantView(device_, data, 256, desc);
+            return command_list_;
         }
 
-        std::shared_ptr<BufferView<ShaderResource>> AllocateDynamicShaderResourceView(std::span<uint8_t> data, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, size_t alignment = 16)
+        ID3D12GraphicsCommandList* GetNativeCommandList()
         {
-            return current_frame->AllocateDynamicShaderResourceView(device_, data, alignment, desc);
+            return static_cast<ID3D12GraphicsCommandList*>(
+                command_list_->getNativeObject(nvrhi::ObjectTypes::D3D12_GraphicsCommandList).pointer);
         }
 
-        void ResourceBarrier(UINT NumBarriers, const D3D12_RESOURCE_BARRIER& pBarriers)
-        {
-            graphics_command_list_->ResourceBarrier(NumBarriers, &pBarriers);
-        }
-
-        void CopyBufferRegion(const std::shared_ptr<ID3D12Resource>& pDstBuffer, UINT64 DstOffset,
-                              const std::shared_ptr<ID3D12Resource>& pSrcBuffer, UINT64 SrcOffset, UINT64 NumBytes) override
-        {
-            graphics_command_list_->CopyBufferRegion(pDstBuffer.get(), DstOffset, pSrcBuffer.get(), SrcOffset, NumBytes);
-        }
-
-        std::shared_ptr<ID3D12CommandQueue> getGraphicsCommandQueue()
-        {
-            return graphics_command_queue_;
-        }
+        ///////////////////////// FRAME LOOP /////////////////////////////////////////////////
 
         void StartFrame()
         {
-            WaitForNextFrameResources();
+            if (frameLatencyWaitableObject_)
+                WaitForSingleObject(frameLatencyWaitableObject_, INFINITE);
 
-            current_frame->Reset(graphics_command_list_);
+            command_list_->open();
+            is_recording_ = true;
 
-            while (!defferedUploads_.empty())
             {
-                DefferedUploadEntry defferedUpload = std::move(defferedUploads_.front());
-                defferedUploads_.pop();
-
-                CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                    defferedUpload.query.destination.get(),
-                    defferedUpload.query.getStateFunction(),
-                    D3D12_RESOURCE_STATE_COPY_DEST
-                );
-
-                ResourceBarrier(1, barrier);
-
-                CopyBufferRegion(defferedUpload.query.destination, 0, defferedUpload.allocation.resource, 0, defferedUpload.allocation.CPU.size());
-
-                barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-                    defferedUpload.query.destination.get(),
-                    D3D12_RESOURCE_STATE_COPY_DEST,
-                    defferedUpload.query.stateAfter
-                );
-
-                ResourceBarrier(1, barrier);
-
-                defferedUpload.query.setStateFunction(defferedUpload.query.stateAfter);
+                std::lock_guard lock(deffered_uploads_mutex_);
+                while (!defferedUploads_.empty())
+                {
+                    DefferedUploadEntry entry = std::move(defferedUploads_.front());
+                    defferedUploads_.pop();
+                    command_list_->writeBuffer(entry.buffer, entry.data.data(), entry.data.size());
+                }
             }
-
-            ID3D12DescriptorHeap* descriptorHeap = device_.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetDescriptorHeap().
-                                                           get();
-
-            graphics_command_list_->SetDescriptorHeaps(1, &descriptorHeap);
-        }
-
-        void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE rtv, D3D12_CLEAR_VALUE clearValue)
-        {
-            graphics_command_list_->ClearRenderTargetView(rtv, clearValue.Color, 0, nullptr);
-        }
-
-        void ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE dsv, D3D12_CLEAR_FLAGS flags, D3D12_CLEAR_VALUE clearValue)
-        {
-            graphics_command_list_->ClearDepthStencilView(dsv, flags, clearValue.DepthStencil.Depth, clearValue.DepthStencil.Stencil, 0, nullptr);
         }
 
         void EndFrame()
         {
-            graphics_command_list_->Close();
-
-            graphics_command_queue_->ExecuteCommandLists(
-                1, (ID3D12CommandList* const*)&graphics_command_list_);
-
-            UINT64 fenceValue = fenceLastSignaledValue_ + 1;
-            graphics_command_queue_->Signal(fence_.get(), fenceValue);
-            fenceLastSignaledValue_ = fenceValue;
-            current_frame->FenceValue = fenceValue;
+            command_list_->close();
+            is_recording_ = false;
+            device_.NvDevice()->executeCommandList(command_list_);
+            device_.NvDevice()->runGarbageCollection();
         }
 
         void ContextIdle()
         {
-            //current_frame = frame_contexts_.begin() + ++frameIndex_ % RenderSystemSettings::NUM_FRAMES_IN_FLIGHT;
-
-            graphics_command_queue_->Signal(fence_.get(), fenceLastSignaledValue_ + 1);
-            fence_->SetEventOnCompletion(current_frame->FenceValue + 1, fenceEvent_);
-            WaitForSingleObject(fenceEvent_, INFINITE);
+            device_.NvDevice()->waitForIdle();
+            device_.NvDevice()->runGarbageCollection();
         }
 
-        void WaitForNextFrameResources()
+        ///////////////////////// GRAPHICS STATE /////////////////////////////////////////////////
+
+        void SetPipeline(nvrhi::IGraphicsPipeline* pipeline)
         {
-            UINT nextFrameIndex = frameIndex_ + 1;
-            frameIndex_ = nextFrameIndex;
+            current_pipeline_ = pipeline;
+        }
 
-            HANDLE waitableObjects[] = {frameLatencyWaitableObject_, nullptr};
-            DWORD numWaitableObjects = 1;
+        void SetFramebuffer(nvrhi::IFramebuffer* framebuffer)
+        {
+            current_framebuffer_ = framebuffer;
+        }
 
-            current_frame = frame_contexts_.begin() + nextFrameIndex % RenderSystemSettings::NUM_FRAMES_IN_FLIGHT;
-            UINT64 fenceValue = current_frame->FenceValue;
-            if (fenceValue != 0) // means no fence was signaled
+        void SetViewport(float width, float height)
+        {
+            current_viewport_ = nvrhi::Viewport(width, height);
+        }
+
+        void SetBindingSet(nvrhi::BindingSetHandle binding_set)
+        {
+            current_binding_set_ = binding_set;
+        }
+
+        nvrhi::IFramebuffer* GetFramebuffer() const { return current_framebuffer_; }
+        nvrhi::Viewport GetViewport() const { return current_viewport_; }
+
+        void DrawIndexed(nvrhi::IBuffer* vertex_buffer, nvrhi::IBuffer* index_buffer, nvrhi::Format index_format, uint32_t index_count)
+        {
+            nvrhi::GraphicsState state;
+            state.pipeline = current_pipeline_;
+            state.framebuffer = current_framebuffer_;
+            state.viewport.addViewportAndScissorRect(current_viewport_);
+            if (current_binding_set_)
+                state.bindings = {current_binding_set_};
+            state.vertexBuffers = {nvrhi::VertexBufferBinding{vertex_buffer, 0, 0}};
+            state.indexBuffer = nvrhi::IndexBufferBinding{index_buffer, index_format, 0};
+
+            command_list_->setGraphicsState(state);
+
+            nvrhi::DrawArguments args;
+            args.vertexCount = index_count;
+            args.instanceCount = 1;
+            command_list_->drawIndexed(args);
+        }
+
+        ///////////////////////// BINDING SET CACHE /////////////////////////////////////////////////
+
+        nvrhi::BindingSetHandle GetOrCreateBindingSet(nvrhi::BindingSetDesc desc, nvrhi::IBindingLayout* layout)
+        {
+            // Canonical order (matches how PSO builds its layout) so that
+            // logically-equal descs hash equally and match layout item order.
+            std::sort(desc.bindings.begin(), desc.bindings.end(),
+                      [](const nvrhi::BindingSetItem& a, const nvrhi::BindingSetItem& b)
+                      {
+                          if (a.type != b.type)
+                              return static_cast<int>(a.type) < static_cast<int>(b.type);
+                          return a.slot < b.slot;
+                      });
+
+            size_t hash = HashBindingSetDesc(desc, layout);
+
+            auto [begin, end] = binding_cache_.equal_range(hash);
+            for (auto it = begin; it != end; ++it)
             {
-                current_frame->FenceValue = 0;
-                fence_->SetEventOnCompletion(fenceValue, fenceEvent_);
-                waitableObjects[1] = fenceEvent_;
-                numWaitableObjects = 2;
+                if (BindingSetDescsEqual(it->second.first, desc) && it->second.second->getLayout() == layout)
+                    return it->second.second;
             }
 
-            WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
+            nvrhi::BindingSetHandle binding_set = device_.NvDevice()->createBindingSet(desc, layout);
+            binding_cache_.emplace(hash, std::make_pair(desc, binding_set));
+            return binding_set;
         }
 
-        void BindPSO(ID3D12PipelineState* pPipelineState)
+        void ClearBindingCache()
         {
-            graphics_command_list_->SetPipelineState(pPipelineState);
-        }
-
-        void SetSignature(ID3D12RootSignature* pRootSignature)
-        {
-            graphics_command_list_->SetGraphicsRootSignature(pRootSignature);
-        }
-
-        void BindDescriptorHandle(UINT root_index, D3D12_GPU_DESCRIPTOR_HANDLE handle)
-        {
-            graphics_command_list_->SetGraphicsRootDescriptorTable(root_index, handle);
+            binding_cache_.clear();
         }
 
         RenderDevice& GetDevice() { return device_; }
-        std::shared_ptr<ID3D12GraphicsCommandList> GetGraphicsCommandList() { return graphics_command_list_; }
 
     private:
         RenderDevice& device_;
-        std::shared_ptr<ID3D12CommandQueue> graphics_command_queue_;
-        std::shared_ptr<ID3D12GraphicsCommandList> graphics_command_list_;
-        std::vector<FrameContext> frame_contexts_;
-        decltype(frame_contexts_)::iterator current_frame;
-        std::shared_ptr<ID3D12Fence> fence_;
-        HANDLE frameLatencyWaitableObject_;
-        HANDLE fenceEvent_;
-        size_t frameIndex_ = 0;
-        UINT64 fenceLastSignaledValue_ = 0;
+        nvrhi::CommandListHandle command_list_;
+        bool is_recording_ = false;
+
+        HANDLE frameLatencyWaitableObject_ = nullptr;
+
+        std::mutex deffered_uploads_mutex_;
         std::queue<DefferedUploadEntry> defferedUploads_;
+
+        nvrhi::IGraphicsPipeline* current_pipeline_ = nullptr;
+        nvrhi::IFramebuffer* current_framebuffer_ = nullptr;
+        nvrhi::Viewport current_viewport_ = nvrhi::Viewport(300, 300);
+        nvrhi::BindingSetHandle current_binding_set_;
+
+        std::unordered_multimap<size_t, std::pair<nvrhi::BindingSetDesc, nvrhi::BindingSetHandle>> binding_cache_;
+
+        static void HashCombine(size_t& seed, size_t value)
+        {
+            seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+
+        static size_t HashBindingSetDesc(const nvrhi::BindingSetDesc& desc, nvrhi::IBindingLayout* layout)
+        {
+            size_t seed = std::hash<void*>()(layout);
+            for (const auto& item : desc.bindings)
+            {
+                HashCombine(seed, std::hash<void*>()(item.resourceHandle));
+                HashCombine(seed, std::hash<uint32_t>()(item.slot));
+                HashCombine(seed, std::hash<int>()(static_cast<int>(item.type)));
+                HashCombine(seed, std::hash<int>()(static_cast<int>(item.dimension)));
+                HashCombine(seed, std::hash<int>()(static_cast<int>(item.format)));
+            }
+            return seed;
+        }
+
+        static bool BindingSetDescsEqual(const nvrhi::BindingSetDesc& a, const nvrhi::BindingSetDesc& b)
+        {
+            if (a.bindings.size() != b.bindings.size())
+                return false;
+            for (size_t i = 0; i < a.bindings.size(); ++i)
+            {
+                const auto& x = a.bindings[i];
+                const auto& y = b.bindings[i];
+                if (x.resourceHandle != y.resourceHandle || x.slot != y.slot ||
+                    x.type != y.type || x.dimension != y.dimension || x.format != y.format)
+                    return false;
+            }
+            return true;
+        }
     };
 };

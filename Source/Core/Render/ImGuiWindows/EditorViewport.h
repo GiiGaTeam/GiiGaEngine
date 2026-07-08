@@ -10,13 +10,11 @@
 #include<imgui.h>
 #include<string>
 #include<memory>
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
+#include<nvrhi/nvrhi.h>
 
 #include<Viewport.h>
 #include<RenderDevice.h>
+#include<NvrhiUtils.h>
 #include<GBufferPass.h>
 #include<GLightPass.h>
 #include<RenderGraph.h>
@@ -43,9 +41,21 @@ namespace GiiGa
         {
         }
 
+        ~EditorViewport() override
+        {
+            if (result_srv_.IsValid())
+                device_.FreeImGuiDescriptorDeferred(result_srv_.index);
+        }
+
         void Resize(DirectX::SimpleMath::Vector2 new_size) override
         {
             Viewport::Resize(new_size);
+
+            // The result texture was recreated: give it a fresh ImGui SRV slot and
+            // release the old one once in-flight frames are done with it.
+            if (result_srv_.IsValid())
+                device_.FreeImGuiDescriptorDeferred(result_srv_.index);
+            result_srv_ = device_.CreateImGuiTextureSrv(rtvData_.texture);
 
             if (auto l_camera = camera_.lock())
             {
@@ -55,6 +65,9 @@ namespace GiiGa
 
         void Init(RenderContext& context) override
         {
+            viewInfoConstBuffer_ = CreateConstantBuffer(device_.NvDevice(), sizeof(RenderPassViewMatricies), "ViewportViewMatrices");
+            screenDimensionsConstBuffer_ = CreateConstantBuffer(device_.NvDevice(), sizeof(ScreenDimensions), "ViewportScreenDimensions");
+
             Resize(viewport_size_);
 
             renderGraph_ = std::make_shared<RenderGraph>();
@@ -62,8 +75,8 @@ namespace GiiGa
             renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
-            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<PostProcessPass>(context, std::bind(&EditorViewport::GetResultInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
@@ -82,8 +95,8 @@ namespace GiiGa
         RenderPassViewData GetCameraInfo() override
         {
             return RenderPassViewData{
-                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer->getDescriptor().getGPUHandle(),
-                viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
+                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer_,
+                viewport_size_, screenDimensionsConstBuffer_
             };
         }
 
@@ -97,7 +110,6 @@ namespace GiiGa
 
             if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str(), nullptr, ImGuiWindowFlags_NoScrollWithMouse))
             {
-                //ImGui::SetScrollX(0);
                 if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
                 {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
@@ -128,31 +140,17 @@ namespace GiiGa
             ImGuizmo::SetDrawlist();
 
             // draw here
-            D3D12_VIEWPORT viewport = {};
-            viewport.TopLeftX = 0.0f;
-            viewport.TopLeftY = 0.0f;
-            viewport.Width = current_size.x;
-            viewport.Height = current_size.y;
-            viewport.MinDepth = 0.0f;
-            viewport.MaxDepth = 1.0f;
-            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
-
-            D3D12_RECT scissorRect = {};
-            scissorRect.left = 0;
-            scissorRect.top = 0;
-            scissorRect.right = current_size.x;
-            scissorRect.bottom = current_size.y;
-            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
-
-            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            context.SetViewport(current_size.x, current_size.y);
 
             renderGraph_->Draw(context);
             // draw here - end
 
-            rtvData_.resource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            // Make sure the result texture is in a shader-readable state for the
+            // native ImGui draw that samples it at the end of the frame.
+            context.CommandList()->setTextureState(rtvData_.texture, nvrhi::AllSubresources, nvrhi::ResourceStates::ShaderResource);
+            context.CommandList()->commitBarriers();
 
-            //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-            ImGui::Image((ImTextureID)rtvData_.SRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            ImGui::Image((ImTextureID)result_srv_.gpu.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
 
             // Widgets on viewport
             PostViewportDrawWidgets();
@@ -164,9 +162,10 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
-        std::shared_ptr<BufferView<Constant>> viewInfoConstBuffer;
-        std::shared_ptr<BufferView<Constant>> screenDimensionsConstBuffer;
+        nvrhi::BufferHandle viewInfoConstBuffer_;
+        nvrhi::BufferHandle screenDimensionsConstBuffer_;
         DirectX::SimpleMath::Matrix viewProjectionMatrix;
+        ImGuiSrvHandle result_srv_;
 
         std::shared_ptr<EditorContext> editorContext_;
 
@@ -264,10 +263,6 @@ namespace GiiGa
             auto view = cmp.GetView();
             auto proj = cmp.GetProj();
 
-            /*auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
-
-            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);*/
-
             if (auto go = editorContext_->selectedGameObject.lock())
             {
                 auto transform = go->GetTransformComponent().lock();
@@ -293,19 +288,13 @@ namespace GiiGa
                 camera_go->GetTransformComponent().lock()->GetWorldLocation()
             };
 
-            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
-
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
-
-            viewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+            const auto CameraMatricesSpan = std::span{reinterpret_cast<const uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
+            context.WriteBufferImmediate(viewInfoConstBuffer_, CameraMatricesSpan);
 
             ScreenDimensions size_const_data = {viewport_size_};
 
-            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
-
-            desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(ScreenDimensions));
-
-            screenDimensionsConstBuffer = context.AllocateDynamicConstantView(ScreenDimensionsSpan, desc);
+            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<const uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
+            context.WriteBufferImmediate(screenDimensionsConstBuffer_, ScreenDimensionsSpan);
         }
     };
 }

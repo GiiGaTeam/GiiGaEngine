@@ -3,6 +3,9 @@
 #define NOMINMAX
 #endif
 #include<directxtk12/SimpleMath.h>
+#include<nvrhi/nvrhi.h>
+
+#include<memory>
 
 #include<CameraComponent.h>
 
@@ -16,7 +19,7 @@ namespace GiiGa
         DirectX::SimpleMath::Matrix invProjMatrix;
         DirectX::SimpleMath::Vector3 camPos;
     };
-    
+
     struct alignas(256) ScreenDimensions
     {
         DirectX::SimpleMath::Vector2 screenDimensions;
@@ -25,15 +28,14 @@ namespace GiiGa
     struct RenderPassViewData
     {
         Camera camera;
-        D3D12_GPU_DESCRIPTOR_HANDLE viewDescriptor;
+        nvrhi::BufferHandle viewConstantBuffer;
         ScreenDimensions screenDimensions;
-        D3D12_GPU_DESCRIPTOR_HANDLE dimensionsDescriptor;
+        nvrhi::BufferHandle dimensionsConstantBuffer;
     };
 
     struct RTVData
     {
-        std::shared_ptr<GPULocalResource> resource_;
-        std::shared_ptr<BufferView<RenderTarget>> RTV_;
-        std::shared_ptr<BufferView<ShaderResource>> SRV_;
+        nvrhi::TextureHandle texture;
+        nvrhi::FramebufferHandle framebuffer;
     };
 }

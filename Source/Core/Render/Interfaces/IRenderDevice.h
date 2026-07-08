@@ -2,10 +2,11 @@
 #include<memory>
 #include<list>
 #include<vector>
+
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include<d3d12.h>
+#include<nvrhi/nvrhi.h>
 
 #include<unique_any.h>
 
@@ -26,10 +27,7 @@ namespace GiiGa
             }
         }
 
-        virtual std::shared_ptr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_DESC desc) =0;
-        virtual UINT GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) =0;
-        virtual std::shared_ptr<ID3D12Resource> CreateCommittedResource(D3D12_HEAP_PROPERTIES pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, D3D12_RESOURCE_DESC pDesc,
-                                                                        D3D12_RESOURCE_STATES InitialResourceState, D3D12_CLEAR_VALUE* clearValue = nullptr) =0;
+        virtual nvrhi::IDevice* NvDevice() = 0;
 
         void KeepAliveForFramesInFlight(unique_any to_keep_alive)
         {
@@ -41,7 +39,6 @@ namespace GiiGa
             std::vector<unique_any> front = std::move(delete_queue.front());
             delete_queue.pop_front();
 
-            // todo: may be just clear is enough
             for (auto&& el : front)
             {
                 el.reset();

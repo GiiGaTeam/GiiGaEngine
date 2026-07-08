@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include<functional>
 #include<memory>
@@ -7,7 +7,6 @@
 #include<Window.h>
 #include<RenderDevice.h>
 #include<RenderContext.h>
-#include<DescriptorHeap.h>
 #include<RenderGraph.h>
 #include<SwapChain.h>
 #include<ShaderManager.h>
@@ -33,11 +32,11 @@ namespace GiiGa
         RenderSystem(Window& window):
             device_(),
             context_(device_),
-            swapChain_(std::make_shared<SwapChain>(device_, context_.getGraphicsCommandQueue(), window))
+            swapChain_(std::make_shared<SwapChain>(device_, window))
         {
             context_.SetFrameLatencyWaitableObject(swapChain_->GetFrameLatencyWaitableObject());
             window.OnWindowResize.Register(std::bind(&RenderSystem::ResizeSwapChain, this, std::placeholders::_1));
-            //shaderManager_ = std::make_unique<ShaderManager>();
+            ShaderManager::Initialize(device_.NvDevice());
         }
 
         virtual void SetCamera(std::shared_ptr<CameraComponent> camera) =0;
@@ -97,15 +96,5 @@ namespace GiiGa
         std::unordered_set<IUpdateGPUData*> updateGpuData_registry_;
         std::shared_ptr<SwapChain> swapChain_;
         RenderGraph root_;
-        std::unique_ptr<ShaderManager> shaderManager_;
     };
 }
-
-//template <>
-//struct std::hash<std::shared_ptr<GiiGa::IUpdateGPUData>>
-//{
-//    size_t operator()(std::shared_ptr<GiiGa::IUpdateGPUData> s_ptr) const noexcept
-//    {
-//        return std::hash<GiiGa::IUpdateGPUData*>()(s_ptr.get());
-//    }
-//};

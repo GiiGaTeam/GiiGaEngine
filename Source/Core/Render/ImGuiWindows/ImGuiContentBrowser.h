@@ -17,7 +17,7 @@
 #include<IImGuiWindow.h>
 #include<BaseAssetDatabase.h>
 #include<EditorAssetDatabase.h>
-#include<GPULocalResource.h>
+#include<NvrhiUtils.h>
 #include<RenderDevice.h>
 
 #include<AssetHandle.h>
@@ -38,7 +38,17 @@ namespace GiiGa
         Material
     };
 
-    std::unique_ptr<GPULocalResource> LoadEditorIcon(
+    // An editor icon: the loaded texture plus its SRV slot in the ImGui heap.
+    struct EditorIcon
+    {
+        std::shared_ptr<ID3D12Resource> native;
+        nvrhi::TextureHandle texture;
+        ImGuiSrvHandle srv;
+
+        ImTextureID GetImGuiId() const { return (ImTextureID)srv.gpu.ptr; }
+    };
+
+    EditorIcon LoadEditorIcon(
         RenderDevice& rd,
         DirectX::ResourceUploadBatch& batcher,
         const std::filesystem::path& path
@@ -51,8 +61,7 @@ namespace GiiGa
         std::shared_ptr<ResourceManager> rm_;
         std::filesystem::path current_path_;
 
-        std::unordered_map<AssetType, std::unique_ptr<GPULocalResource>> icons_;
-        std::unordered_map<AssetType, std::shared_ptr<BufferView<ShaderResource>>> icons_srv_;
+        std::unordered_map<AssetType, EditorIcon> icons_;
 
         float padding = 16.0f;
         float thumbnail_size = 128.0f;
@@ -79,119 +88,15 @@ namespace GiiGa
             DirectX::ResourceUploadBatch upload_batch(device.get());
             upload_batch.Begin();
 
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/folder.png");
+            icons_.emplace(AssetType::Unknown, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/folder.png"));
+            icons_.emplace(AssetType::Texture2D, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/texture.png"));
+            icons_.emplace(AssetType::Mesh, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/obj.png"));
+            icons_.emplace(AssetType::Material, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/material.png"));
+            icons_.emplace(AssetType::Level, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/level.png"));
+            icons_.emplace(AssetType::Prefab, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/prefab.png"));
+            icons_.emplace(AssetType::Behaviour, LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/py_script.png"));
 
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Unknown, std::move(icon));
-                icons_srv_.emplace(AssetType::Unknown, srv);
-            }
-
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/texture.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Texture2D, std::move(icon));
-                icons_srv_.emplace(AssetType::Texture2D, srv);
-            }
-
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/obj.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Mesh, std::move(icon));
-                icons_srv_.emplace(AssetType::Mesh, srv);
-            }
-            
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/material.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Material, std::move(icon));
-                icons_srv_.emplace(AssetType::Material, srv);
-            }
-
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/level.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Level, std::move(icon));
-                icons_srv_.emplace(AssetType::Level, srv);
-            }
-
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/prefab.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Prefab, std::move(icon));
-                icons_srv_.emplace(AssetType::Prefab, srv);
-            }
-
-            {
-                auto icon = LoadEditorIcon(rs->GetRenderDevice(), upload_batch, "EditorData/py_script.png");
-
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-                ZeroMemory(&srvDesc, sizeof(srvDesc));
-                srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                auto srv = icon->EmplaceShaderResourceBufferView(srvDesc);
-
-                icons_.emplace(AssetType::Behaviour, std::move(icon));
-                icons_srv_.emplace(AssetType::Behaviour, srv);
-            }
-
-            auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
+            auto future = upload_batch.End(rs->GetRenderDevice().GetGraphicsQueue().get());
             future.wait();
 
             drop_file_evt_ = Engine::Instance().Window()->OnDropFile.Register([this](const auto& evt) {
@@ -253,8 +158,7 @@ namespace GiiGa
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             if (current_path_ != database_->AssetPath()) 
             {
-                auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("BackBtn", icons_[AssetType::Unknown].GetImGuiId(), { thumbnail_size, thumbnail_size });
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
                     current_path_ = current_path_.parent_path();
@@ -269,8 +173,7 @@ namespace GiiGa
             {
             case CreateAssetState::Folder:
             {
-                auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                ImGui::ImageButton("BackBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("BackBtn", icons_[AssetType::Unknown].GetImGuiId(), { thumbnail_size, thumbnail_size });
 
                 char folder_name_buf[512];
                 snprintf(folder_name_buf, sizeof(folder_name_buf), "%s", "");
@@ -296,8 +199,7 @@ namespace GiiGa
 
             case CreateAssetState::Material:
             {
-                auto& icon = icons_srv_[AssetType::Material]->getDescriptor();
-                ImGui::ImageButton("MaterialBtn", (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                ImGui::ImageButton("MaterialBtn", icons_[AssetType::Material].GetImGuiId(), { thumbnail_size, thumbnail_size });
 
                 char material_name_buf[512];
                 snprintf(material_name_buf, sizeof(material_name_buf), "%s", "");
@@ -333,8 +235,7 @@ namespace GiiGa
 
                 if (entry.is_directory()) 
                 {
-                    auto& icon = icons_srv_[AssetType::Unknown]->getDescriptor();
-                    ImGui::ImageButton(filename.c_str(), (ImTextureID)icon.getGPUHandle().ptr, {thumbnail_size, thumbnail_size});
+                    ImGui::ImageButton(filename.c_str(), icons_[AssetType::Unknown].GetImGuiId(), {thumbnail_size, thumbnail_size});
 
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                     {
@@ -360,10 +261,9 @@ namespace GiiGa
                         if (meta.type != AssetType::Unknown)
                         {
                             //ImGui::PushID(static_cast<int>(std::hash(handle)));
-                            auto& icon = icons_srv_[meta.type]->getDescriptor();
                             auto id = handle.id.ToString() + std::to_string(handle.subresource);
 
-                            ImGui::ImageButton(id.c_str(), (ImTextureID)icon.getGPUHandle().ptr, { thumbnail_size, thumbnail_size });
+                            ImGui::ImageButton(id.c_str(), icons_[meta.type].GetImGuiId(), { thumbnail_size, thumbnail_size });
 
                             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                             {
@@ -419,7 +319,7 @@ namespace GiiGa
         }
     };
 
-    std::unique_ptr<GPULocalResource> LoadEditorIcon(
+    EditorIcon LoadEditorIcon(
         RenderDevice& rd,
         DirectX::ResourceUploadBatch& batcher,
         const std::filesystem::path& path
@@ -436,8 +336,10 @@ namespace GiiGa
         if (FAILED(hr))
             throw std::runtime_error("Failed to load icon: " + path.string());
 
-        auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rd });
-
-        return std::make_unique<GPULocalResource>(rd, texture_ptr);
+        EditorIcon icon;
+        icon.native = std::shared_ptr<ID3D12Resource>(texture, DXDeleter{});
+        icon.texture = WrapNativeTexture(rd.NvDevice(), icon.native.get(), path.string().c_str());
+        icon.srv = rd.CreateImGuiTextureSrv(icon.texture);
+        return icon;
     }
 }

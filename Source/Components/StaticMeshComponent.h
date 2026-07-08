@@ -151,7 +151,7 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
+            mesh_->Draw(context);
         }
 
         SortData GetSortData() override

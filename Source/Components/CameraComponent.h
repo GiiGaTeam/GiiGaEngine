@@ -24,26 +24,6 @@ namespace GiiGa
         Orthographic
     };
 
-    /*
-    class CameraShaderResource : public IObjectShaderResource
-    {
-        friend struct Camera;
-
-    public:
-        
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
-        {
-            // todo: actually we can cache this allocation by adding setters here
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result; 
-            result.reserve(1);
-            result.push_back(CameraCBV_->getDescriptor().getGPUHandle());
-            return result;
-        }
-
-    private:
-        std::shared_ptr<BufferView<Constant>> CameraCBV_;
-    };*/
-
     struct Camera
     {
         CameraType type_;

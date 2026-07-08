@@ -1,307 +1,231 @@
-﻿#pragma once
+#pragma once
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <directx/d3d12.h>
-#include<directx/d3dx12_core.h>
-
+#include<nvrhi/nvrhi.h>
 
 #include<vector>
 #include<memory>
-#include<iostream>
-#include<functional>
+#include<span>
+#include<algorithm>
 
 #include<RenderDevice.h>
+#include<RenderContext.h>
 #include<ShaderManager.h>
 #include<PerObjectData.h>
 #include<IObjectShaderResource.h>
-#include<RenderContext.h>
 
 namespace GiiGa
 {
+    // Builder for an nvrhi graphics pipeline + binding layout.
+    //
+    // The binding layout is declared explicitly (add_constant_buffer /
+    // add_texture_srv / ...) and must cover exactly the registers the shaders
+    // of this pipeline access. At draw time the pass assembles an
+    // nvrhi::BindingSetDesc: pass-level items are appended directly, object
+    // items (materials, lights) are appended through AppendShaderResources,
+    // which filters the object's canonical items against the declared layout.
     class PSO
     {
     public:
         PSO() = default;
 
-        void GeneratePSO(RenderDevice& device, int cbv_num, int srv_num = 0, int uav_num = 0)
-        {
-            // here
-            // Define descriptor ranges
-            std::vector<D3D12_DESCRIPTOR_RANGE> ranges(cbv_num + srv_num + uav_num);
-            for (int i = 0; i < cbv_num; ++i)
-            {
-                ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                ranges[i].NumDescriptors = 1;
-                ranges[i].BaseShaderRegister = i;
-                ranges[i].RegisterSpace = 0;
-                ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-            }
-            for (int i = 0; i < srv_num; ++i)
-            {
-                ranges[cbv_num + i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                ranges[cbv_num + i].NumDescriptors = 1;
-                ranges[cbv_num + i].BaseShaderRegister = i;
-                ranges[cbv_num + i].RegisterSpace = 0;
-                ranges[cbv_num + i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-            }
-            for (int i = 0; i < uav_num; ++i)
-            {
-                ranges[cbv_num + srv_num + i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                ranges[cbv_num + srv_num + i].NumDescriptors = 1;
-                ranges[cbv_num + srv_num + i].BaseShaderRegister = i;
-                ranges[cbv_num + srv_num + i].RegisterSpace = 0;
-                ranges[cbv_num + srv_num + i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-            }
+        //=============================SHADERS=============================
 
-            // Create root parameters
-            std::vector<D3D12_ROOT_PARAMETER> rootParameters(ranges.size());
-            for (size_t i = 0; i < ranges.size(); ++i)
-            {
-                rootParameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-                rootParameters[i].DescriptorTable.NumDescriptorRanges = 1;
-                rootParameters[i].DescriptorTable.pDescriptorRanges = &ranges[i];
-                rootParameters[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-            }
-
-            // Create the root signature description
-            D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-            rootSigDesc.NumParameters = static_cast<UINT>(rootParameters.size());
-            rootSigDesc.pParameters = rootParameters.data();
-            rootSigDesc.NumStaticSamplers = static_samplers_.size();
-            rootSigDesc.pStaticSamplers = static_samplers_.data();
-            rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-            // create a root signature with a single slot which points to a
-            // descriptor range consisting of a single constant buffer.
-            ID3DBlob* serializedRootSig = nullptr;
-            ID3DBlob* errorBlob = nullptr;
-            HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc,
-                                                     D3D_ROOT_SIGNATURE_VERSION_1,
-                                                     &serializedRootSig,
-                                                     &errorBlob);
-
-            if (FAILED(hr))
-            {
-                // If the shader failed to compile it should have written something to the error message.
-                if (errorBlob)
-                {
-                    char* compileErrors = (char*)(errorBlob->GetBufferPointer());
-                    std::cout << compileErrors << std::endl;
-                }
-            }
-
-
-            mRootSignature = device.CreateRootSignature(0, serializedRootSig);
-
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{
-                mRootSignature.get(), VS_, PS_, DS_, HS_, GS_, stream_output_, blend_state_, sample_mask_,
-                rasterizer_state_, depth_stencil_state_, input_layout_, strip_cut_value_, primitive_topology_type_, NumRenderTargets_, {},
-                DSVFormat_, sample_desc_, node_mask_, cashed_pso_, flags_
-            };
-
-            for (UINT i = 0; i < psoDesc.NumRenderTargets; ++i)
-            {
-                psoDesc.RTVFormats[i] = RTVFormat_[i];
-            }
-
-            state_ = device.CreateGraphicsPipelineState(psoDesc);
-        }
-
-        //=============================SETTING PSO PARAMETERS=============================
-
-        PSO& set_vs(const D3D12_SHADER_BYTECODE& vs)
+        PSO& set_vs(nvrhi::ShaderHandle vs)
         {
             VS_ = vs;
             return *this;
         }
 
-        PSO& set_ps(const D3D12_SHADER_BYTECODE& ps)
+        PSO& set_ps(nvrhi::ShaderHandle ps)
         {
             PS_ = ps;
             return *this;
         }
 
-        PSO& set_ds(const D3D12_SHADER_BYTECODE& ds)
-        {
-            DS_ = ds;
-            return *this;
-        }
-
-        PSO& set_hs(const D3D12_SHADER_BYTECODE& hs)
-        {
-            HS_ = hs;
-            return *this;
-        }
-
-        PSO& set_gs(const D3D12_SHADER_BYTECODE& gs)
+        PSO& set_gs(nvrhi::ShaderHandle gs)
         {
             GS_ = gs;
             return *this;
         }
 
-        PSO& set_stream_output(const D3D12_STREAM_OUTPUT_DESC& stream_output)
+        //=============================RENDER STATE=============================
+
+        PSO& set_rasterizer_state(const nvrhi::RasterState& rasterizer_state)
         {
-            stream_output_ = stream_output;
+            render_state_.rasterState = rasterizer_state;
             return *this;
         }
 
-        PSO& set_blend_state(const D3D12_BLEND_DESC& blend_state)
+        PSO& set_depth_stencil_state(const nvrhi::DepthStencilState& depth_stencil_state)
         {
-            blend_state_ = blend_state;
+            render_state_.depthStencilState = depth_stencil_state;
             return *this;
         }
 
-        PSO& set_sample_mask(UINT sample_mask)
+        PSO& set_blend_state(const nvrhi::BlendState& blend_state)
         {
-            sample_mask_ = sample_mask;
+            render_state_.blendState = blend_state;
             return *this;
         }
 
-        PSO& set_rasterizer_state(const D3D12_RASTERIZER_DESC& rasterizer_state)
+        PSO& set_input_layout(const std::span<const nvrhi::VertexAttributeDesc>& attributes)
         {
-            rasterizer_state_ = rasterizer_state;
+            input_attributes_.assign(attributes.begin(), attributes.end());
             return *this;
         }
 
-        PSO& set_depth_stencil_state(const D3D12_DEPTH_STENCIL_DESC& depth_stencil_state)
+        PSO& set_primitive_type(nvrhi::PrimitiveType primitive_type)
         {
-            depth_stencil_state_ = depth_stencil_state;
+            primitive_type_ = primitive_type;
             return *this;
         }
 
-        PSO& set_input_layout(const D3D12_INPUT_LAYOUT_DESC& input_layout)
+        //=============================BINDING LAYOUT=============================
+
+        PSO& add_constant_buffer(uint32_t slot)
         {
-            input_layout_ = input_layout;
+            layout_items_.push_back(nvrhi::BindingLayoutItem::ConstantBuffer(slot));
             return *this;
         }
 
-        PSO& SetBufferStripCutValue(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE StripCutValue)
+        PSO& add_texture_srv(uint32_t slot)
         {
-            strip_cut_value_ = StripCutValue;
+            layout_items_.push_back(nvrhi::BindingLayoutItem::Texture_SRV(slot));
             return *this;
         }
 
-        PSO& set_primitive_topology_type(D3D12_PRIMITIVE_TOPOLOGY_TYPE primitive_topology_type)
+        PSO& add_structured_buffer_srv(uint32_t slot)
         {
-            primitive_topology_type_ = primitive_topology_type;
+            layout_items_.push_back(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
             return *this;
         }
 
-        PSO& set_rtv_format(DXGI_FORMAT rtv_format[], size_t num_render_targets)
+        PSO& add_sampler(uint32_t slot, const nvrhi::SamplerDesc& desc)
         {
-            NumRenderTargets_ = num_render_targets;
-            for (size_t i = 0; i < num_render_targets; ++i)
+            layout_items_.push_back(nvrhi::BindingLayoutItem::Sampler(slot));
+            sampler_descs_.emplace_back(slot, desc);
+            return *this;
+        }
+
+        // Register slot the per-object WorldMatrices constant buffer binds to (b1 for
+        // most passes, b0 for the shadow pass).
+        PSO& set_per_object_slot(uint32_t slot)
+        {
+            per_object_slot_ = slot;
+            return *this;
+        }
+
+        //=============================GENERATION=============================
+
+        void GeneratePSO(RenderDevice& device)
+        {
+            // Same canonical order as RenderContext::GetOrCreateBindingSet, so
+            // binding sets line up with the layout item-by-item.
+            std::sort(layout_items_.begin(), layout_items_.end(),
+                      [](const nvrhi::BindingLayoutItem& a, const nvrhi::BindingLayoutItem& b)
+                      {
+                          if (a.type != b.type)
+                              return static_cast<int>(a.type) < static_cast<int>(b.type);
+                          return a.slot < b.slot;
+                      });
+
+            nvrhi::BindingLayoutDesc layout_desc;
+            layout_desc.visibility = nvrhi::ShaderType::All;
+            for (const auto& item : layout_items_)
+                layout_desc.addItem(item);
+
+            binding_layout_ = device.NvDevice()->createBindingLayout(layout_desc);
+
+            samplers_.clear();
+            for (const auto& [slot, desc] : sampler_descs_)
+                samplers_.emplace_back(slot, device.NvDevice()->createSampler(desc));
+
+            if (!input_attributes_.empty())
             {
-                RTVFormat_[i] = rtv_format[i];
+                input_layout_ = device.NvDevice()->createInputLayout(
+                    input_attributes_.data(), static_cast<uint32_t>(input_attributes_.size()), VS_);
             }
-            return *this;
         }
 
-        PSO& set_dsv_format(DXGI_FORMAT dsv_format)
+        // Pipelines require framebuffer info, so they are created lazily on first
+        // draw. A pipeline stays valid for any framebuffer with the same info
+        // (formats/sample count), which holds across viewport resizes.
+        nvrhi::IGraphicsPipeline* GetOrCreatePipeline(RenderDevice& device, nvrhi::IFramebuffer* framebuffer)
         {
-            DSVFormat_ = dsv_format;
-            return *this;
+            if (!pipeline_)
+            {
+                nvrhi::GraphicsPipelineDesc desc;
+                desc.primType = primitive_type_;
+                desc.inputLayout = input_layout_;
+                desc.VS = VS_;
+                desc.GS = GS_;
+                desc.PS = PS_;
+                desc.renderState = render_state_;
+                desc.bindingLayouts = {binding_layout_};
+
+                pipeline_ = device.NvDevice()->createGraphicsPipeline(desc, framebuffer);
+            }
+            return pipeline_;
         }
 
-        PSO& set_sample_desc(const DXGI_SAMPLE_DESC& sample_desc)
+        nvrhi::IBindingLayout* GetBindingLayout() const
         {
-            sample_desc_ = sample_desc;
-            return *this;
+            return binding_layout_;
         }
 
-        PSO& SetNodeMask(UINT nodeMask)
+        //=============================DRAW-TIME BINDING ASSEMBLY=============================
+
+        void AppendSamplers(nvrhi::BindingSetDesc& desc) const
         {
-            node_mask_ = nodeMask;
-            return *this;
+            for (const auto& [slot, sampler] : samplers_)
+                desc.addItem(nvrhi::BindingSetItem::Sampler(slot, sampler));
         }
 
-        PSO& SetCashedPso(const D3D12_CACHED_PIPELINE_STATE& cashedPso)
+        void AppendPerObjectData(nvrhi::BindingSetDesc& desc, PerObjectData& per_obj) const
         {
-            cashed_pso_ = cashedPso;
-            return *this;
+            desc.addItem(nvrhi::BindingSetItem::ConstantBuffer(per_object_slot_, per_obj.GetConstantBuffer()));
         }
 
-        PSO& SetFlags(D3D12_PIPELINE_STATE_FLAGS flags)
+        // Appends the object's canonical items, keeping only those whose
+        // slot+type are declared in this pipeline's layout.
+        void AppendShaderResources(nvrhi::BindingSetDesc& desc, IObjectShaderResource& resource) const
         {
-            flags_ = flags;
-            return *this;
-        }
-
-        PSO& add_static_samplers(D3D12_STATIC_SAMPLER_DESC desc)
-        {
-            static_samplers_.push_back(desc);
-            return *this;
-        }
-
-        //PSO& add_custom_samplers(std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs)
-        //{
-        //    samplers_.insert(samplers_.end(), sampler_descs.begin(), sampler_descs.end());
-        //    return *this;
-        //}
-
-        PSO& SetPerObjectDataFunction(const std::function<void(RenderContext& context, PerObjectData& per_obj)>& per_object_data_function)
-        {
-            set_per_obj_data_fn_ = per_object_data_function;
-            return *this;
-        }
-
-        PSO& SetShaderResourceFunction(std::function<void(RenderContext& context, IObjectShaderResource& resource)> shared_res_function)
-        {
-            set_obj_shared_res_fn_ = shared_res_function;
-            return *this;
-        }
-
-        void SetPerObjectData(RenderContext& context, PerObjectData& data)
-        {
-            set_per_obj_data_fn_(context, data);
-        }
-
-        void SetShaderResources(RenderContext& context, IObjectShaderResource& data)
-        {
-            set_obj_shared_res_fn_(context, data);
-        }
-
-        std::shared_ptr<ID3D12PipelineState> GetState() { return state_; }
-
-        std::shared_ptr<ID3D12RootSignature> GetSignature()
-        {
-            return mRootSignature;
+            for (auto item : resource.GetBindingItems())
+            {
+                if (LayoutContains(item.type, item.slot))
+                    desc.addItem(item);
+            }
         }
 
     private:
-        D3D12_SHADER_BYTECODE VS_ = {};
-        D3D12_SHADER_BYTECODE PS_ = {};
-        D3D12_SHADER_BYTECODE DS_ = {};
-        D3D12_SHADER_BYTECODE HS_ = {};
-        D3D12_SHADER_BYTECODE GS_ = {};
-        D3D12_STREAM_OUTPUT_DESC stream_output_ = {};
-        D3D12_BLEND_DESC blend_state_ = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        UINT sample_mask_ = UINT_MAX;
-        D3D12_RASTERIZER_DESC rasterizer_state_ = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-        D3D12_DEPTH_STENCIL_DESC depth_stencil_state_ = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-        D3D12_INPUT_LAYOUT_DESC input_layout_ = {};
-        D3D12_INDEX_BUFFER_STRIP_CUT_VALUE strip_cut_value_ = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE primitive_topology_type_ = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        UINT NumRenderTargets_ = 1;
-        DXGI_FORMAT RTVFormat_[8] = {
-            DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM
-        };
-        DXGI_FORMAT DSVFormat_ = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        DXGI_SAMPLE_DESC sample_desc_ = DXGI_SAMPLE_DESC{1, 0};
-        UINT node_mask_ = 0;
-        D3D12_CACHED_PIPELINE_STATE cashed_pso_ = {};
-        D3D12_PIPELINE_STATE_FLAGS flags_ = D3D12_PIPELINE_STATE_FLAG_NONE;
+        bool LayoutContains(nvrhi::ResourceType type, uint32_t slot) const
+        {
+            for (const auto& layout_item : layout_items_)
+            {
+                if (layout_item.type == type && layout_item.slot == slot)
+                    return true;
+            }
+            return false;
+        }
 
-        std::function<void(RenderContext& context, PerObjectData& per_obj)> set_per_obj_data_fn_;
+        nvrhi::ShaderHandle VS_;
+        nvrhi::ShaderHandle PS_;
+        nvrhi::ShaderHandle GS_;
 
-        std::function<void(RenderContext& context, IObjectShaderResource& resource)> set_obj_shared_res_fn_;
+        nvrhi::RenderState render_state_;
+        nvrhi::PrimitiveType primitive_type_ = nvrhi::PrimitiveType::TriangleList;
+        std::vector<nvrhi::VertexAttributeDesc> input_attributes_;
 
-        std::vector<D3D12_STATIC_SAMPLER_DESC> static_samplers_;
+        std::vector<nvrhi::BindingLayoutItem> layout_items_;
+        std::vector<std::pair<uint32_t, nvrhi::SamplerDesc>> sampler_descs_;
+        std::vector<std::pair<uint32_t, nvrhi::SamplerHandle>> samplers_;
+        uint32_t per_object_slot_ = 1;
 
-        std::shared_ptr<ID3D12RootSignature> mRootSignature;
-
-        std::shared_ptr<ID3D12PipelineState> state_;
+        nvrhi::InputLayoutHandle input_layout_;
+        nvrhi::BindingLayoutHandle binding_layout_;
+        nvrhi::GraphicsPipelineHandle pipeline_;
     };
 }

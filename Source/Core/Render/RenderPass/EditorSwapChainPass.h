@@ -18,7 +18,6 @@
 #include<RenderPass.h>
 #include<SwapChain.h>
 #include<EditorViewport.h>
-#include<DescriptorHeap.h>
 #include<EditorContext.h>
 #include<IImGuiWindow.h>
 #include<ImGuiSceneHierarchy.h>
@@ -35,22 +34,37 @@ namespace GiiGa
 
     public:
         EditorSwapChainPass(RenderDevice& device, std::shared_ptr<SwapChain> swapChain):
+            device_(device),
             swapChain_(swapChain),
             editorContext_(std::make_shared<EditorContext>())
         {
             // Setup Dear ImGui style
             ImGui::StyleColorsDark();
-            //ImGui::StyleColorsLight();
 
-            GPUDescriptorHeap& descriptor_heap = device.GetGPUDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            // Setup Platform/Renderer backends. SRV descriptors for ImGui (fonts,
+            // icons, viewport textures) come from the dedicated heap in RenderDevice.
+            ImGui_ImplDX12_InitInfo init_info;
+            init_info.Device = device.GetDxDevice().get();
+            init_info.CommandQueue = device.GetGraphicsQueue().get();
+            init_info.NumFramesInFlight = RenderSystemSettings::NUM_FRAMES_IN_FLIGHT;
+            init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+            init_info.UserData = &device;
+            init_info.SrvDescriptorHeap = device.GetImGuiSrvHeap();
+            init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu)
+            {
+                auto handle = static_cast<RenderDevice*>(info->UserData)->AllocateImGuiDescriptor();
+                *out_cpu = handle.cpu;
+                *out_gpu = handle.gpu;
+            };
+            init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu, D3D12_GPU_DESCRIPTOR_HANDLE gpu)
+            {
+                auto device = static_cast<RenderDevice*>(info->UserData);
+                auto heap_start = device->GetImGuiSrvHeap()->GetGPUDescriptorHandleForHeapStart();
+                auto increment = device->GetDxDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                device->FreeImGuiDescriptor(static_cast<uint32_t>((gpu.ptr - heap_start.ptr) / increment));
+            };
 
-            imgui_srv_desc_heap_allocation_ = descriptor_heap.Allocate(1);
-
-            // Setup Platform/Renderer backends
-            ImGui_ImplDX12_Init(device.GetDxDevice().get(), RenderSystemSettings::NUM_FRAMES_IN_FLIGHT,
-                                DXGI_FORMAT_R8G8B8A8_UNORM, descriptor_heap.GetDescriptorHeap().get(),
-                                imgui_srv_desc_heap_allocation_.GetCpuHandle(),
-                                imgui_srv_desc_heap_allocation_.GetGpuHandle());
+            ImGui_ImplDX12_Init(&init_info);
 
             windows_.push_back(std::make_unique<ImGuiSceneHierarchy>(editorContext_));
             windows_.push_back(std::make_unique<ImGuiInspector>(editorContext_));
@@ -80,8 +94,6 @@ namespace GiiGa
                 // Tick scene visibility in case it was changed in imgui
                 SceneVisibility::Tick();
 
-                //ImGui::ShowDemoWindow();
-
                 for (auto viewport : viewports_)
                 {
                     viewport->Execute(context);
@@ -89,29 +101,29 @@ namespace GiiGa
             }
             EndDockSpace_();
 
-            swapChain_->Reset(context);
-            
-            // Render Dear ImGui graphics
-            context.ClearRenderTargetView(swapChain_->getRTVDescriptorHandle(), {.Color = {0, 0, 0, 1}});
+            // ImGui renders through native D3D12 on the same command list, after
+            // all NVRHI work of this frame has been recorded.
+            ID3D12GraphicsCommandList* native_cmd_list = context.GetNativeCommandList();
 
-            D3D12_CPU_DESCRIPTOR_HANDLE rtv = swapChain_->getRTVDescriptorHandle();
+            swapChain_->BeginRender(native_cmd_list);
 
-            //todo: add OMSetRenderTargets
-            context.graphics_command_list_->OMSetRenderTargets(
-                1, &rtv, FALSE, nullptr);
+            ID3D12DescriptorHeap* heaps[] = {device_.GetImGuiSrvHeap()};
+            native_cmd_list->SetDescriptorHeaps(1, heaps);
 
+            ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), native_cmd_list);
 
-            ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context.graphics_command_list_.get());
+            swapChain_->EndRender(native_cmd_list);
 
-            swapChain_->TransitToPresent(context);
+            // The raw commands above invalidated NVRHI's cached command list state.
+            context.CommandList()->clearState();
         }
 
     private:
+        RenderDevice& device_;
         std::shared_ptr<SwapChain> swapChain_;
         std::shared_ptr<EditorContext> editorContext_;
         std::vector<std::shared_ptr<Viewport>> viewports_;
         std::vector<std::unique_ptr<IImGuiWindow>> windows_;
-        DescriptorHeapAllocation imgui_srv_desc_heap_allocation_;
 
         void BeginDockSpace_()
         {

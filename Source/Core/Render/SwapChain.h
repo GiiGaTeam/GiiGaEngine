@@ -13,33 +13,20 @@
 #include<DirectXUtils.h>
 #include<Window.h>
 #include<RenderDevice.h>
-#include<BufferView.h>
-#include<GPULocalResource.h>
-#include<IRenderContext.h>
 
 namespace GiiGa
 {
+    // DXGI flip-model swap chain. The back buffers are used only by the editor's
+    // final ImGui composition pass, which records native D3D12 commands, so they
+    // are kept as raw resources with a small dedicated RTV heap (no NVRHI wrapping).
     class SwapChain
     {
     public:
-        SwapChain(RenderDevice& device, const std::shared_ptr<ID3D12CommandQueue>& command_queue, const Window& window)
+        SwapChain(RenderDevice& device, const Window& window)
         {
-            CreateSwapChainObject(device, command_queue, window);
-
-            render_targets_.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
-
-            CreateRenderTarget(device);
-        }
-
-        void Reset(IRenderContext& render_context)
-        {
-            currentBackBufferIdx = swap_chain_->GetCurrentBackBufferIndex();
-            render_targets_[currentBackBufferIdx].StateTransition(render_context, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-
-        void TransitToPresent(IRenderContext& render_context)
-        {
-            render_targets_[currentBackBufferIdx].StateTransition(render_context, D3D12_RESOURCE_STATE_PRESENT);
+            CreateRtvHeap(device);
+            CreateSwapChainObject(device, window);
+            CreateRenderTargets(device);
         }
 
         void Present()
@@ -52,25 +39,75 @@ namespace GiiGa
             return waitable_object_;
         }
 
-        D3D12_CPU_DESCRIPTOR_HANDLE getRTVDescriptorHandle()
-        {
-            return render_targets_[currentBackBufferIdx].GetViewFirstRenderTarget()->getDescriptor().GetCpuHandle();
-        }
-
         void Resize(RenderDevice& device, int width, int height)
         {
-            render_targets_.clear();
-            swap_chain_->ResizeBuffers(RenderSystemSettings::NUM_BACK_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
-            CreateRenderTarget(device);
+            back_buffers_.clear();
+            swap_chain_->ResizeBuffers(RenderSystemSettings::NUM_BACK_BUFFERS, width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+                                       DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
+            CreateRenderTargets(device);
+        }
+
+        // Transitions the current back buffer to RENDER_TARGET, clears it and binds it.
+        void BeginRender(ID3D12GraphicsCommandList* cmd_list)
+        {
+            current_back_buffer_ = swap_chain_->GetCurrentBackBufferIndex();
+
+            D3D12_RESOURCE_BARRIER barrier{};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Transition.pResource = back_buffers_[current_back_buffer_].get();
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            cmd_list->ResourceBarrier(1, &barrier);
+
+            const float clear_color[4] = {0, 0, 0, 1};
+            D3D12_CPU_DESCRIPTOR_HANDLE rtv = GetRtv(current_back_buffer_);
+            cmd_list->ClearRenderTargetView(rtv, clear_color, 0, nullptr);
+            cmd_list->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+        }
+
+        // Transitions the current back buffer back to PRESENT.
+        void EndRender(ID3D12GraphicsCommandList* cmd_list)
+        {
+            D3D12_RESOURCE_BARRIER barrier{};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Transition.pResource = back_buffers_[current_back_buffer_].get();
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+            cmd_list->ResourceBarrier(1, &barrier);
         }
 
     private:
-        UINT currentBackBufferIdx = 0;
+        UINT current_back_buffer_ = 0;
         std::shared_ptr<IDXGISwapChain4> swap_chain_;
         HANDLE waitable_object_ = nullptr;
-        std::vector<GPULocalResource> render_targets_;
+        std::vector<std::shared_ptr<ID3D12Resource>> back_buffers_;
 
-        void CreateSwapChainObject(RenderDevice& device, const std::shared_ptr<ID3D12CommandQueue> command_queue, const Window& window)
+        std::shared_ptr<ID3D12DescriptorHeap> rtv_heap_;
+        UINT rtv_descriptor_size_ = 0;
+
+        D3D12_CPU_DESCRIPTOR_HANDLE GetRtv(UINT index) const
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE handle = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+            handle.ptr += static_cast<SIZE_T>(index) * rtv_descriptor_size_;
+            return handle;
+        }
+
+        void CreateRtvHeap(RenderDevice& device)
+        {
+            D3D12_DESCRIPTOR_HEAP_DESC desc{};
+            desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+            desc.NumDescriptors = RenderSystemSettings::NUM_BACK_BUFFERS;
+            desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+            ID3D12DescriptorHeap* heap = nullptr;
+            ThrowIfFailed(device.GetDxDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap)));
+            rtv_heap_ = std::shared_ptr<ID3D12DescriptorHeap>(heap, DXDeleter{});
+            rtv_descriptor_size_ = device.GetDxDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        }
+
+        void CreateSwapChainObject(RenderDevice& device, const Window& window)
         {
             DXGI_SWAP_CHAIN_DESC1 sd;
             {
@@ -94,7 +131,7 @@ namespace GiiGa
             IDXGISwapChain4* pSwapChain = nullptr;
 
             CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
-            dxgiFactory->CreateSwapChainForHwnd(command_queue.get(), window.GetHandle(), &sd,
+            dxgiFactory->CreateSwapChainForHwnd(device.GetGraphicsQueue().get(), window.GetHandle(), &sd,
                                                 nullptr, nullptr,
                                                 &swapChain1);
             swapChain1->QueryInterface(IID_PPV_ARGS(&pSwapChain));
@@ -108,15 +145,15 @@ namespace GiiGa
             waitable_object_ = swap_chain_->GetFrameLatencyWaitableObject();
         }
 
-        void CreateRenderTarget(RenderDevice& device)
+        void CreateRenderTargets(RenderDevice& device)
         {
+            back_buffers_.reserve(RenderSystemSettings::NUM_BACK_BUFFERS);
             for (UINT i = 0; i < RenderSystemSettings::NUM_BACK_BUFFERS; i++)
             {
                 ID3D12Resource* pBackBuffer = nullptr;
                 swap_chain_->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-                auto res = std::shared_ptr<ID3D12Resource>(pBackBuffer, DXDeleter{}); //DXDelayedDeleter{device}
-                render_targets_.emplace_back(device, res);
-                (--render_targets_.end())->EmplaceRenderTargetView(nullptr);
+                back_buffers_.emplace_back(pBackBuffer, DXDeleter{});
+                device.GetDxDevice()->CreateRenderTargetView(pBackBuffer, nullptr, GetRtv(i));
             }
         }
     };

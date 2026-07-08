@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include<unordered_map>
 
@@ -15,17 +15,16 @@ namespace GiiGa
         virtual void Draw(RenderContext& context) =0;
 
     protected:
-        static bool GetPsoFromMapByMask(const std::unordered_map<ObjectMask, PSO>& mask_map, const ObjectMask& objectMask, PSO& res_pso)
+        static PSO* GetPsoFromMapByMask(std::unordered_map<ObjectMask, PSO>& mask_map, const ObjectMask& objectMask)
         {
-            for (const auto& [mask, pso] : mask_map)
+            for (auto& [mask, pso] : mask_map)
             {
                 if (mask.CoversMask(objectMask))
                 {
-                    res_pso = pso;
-                    return true;
+                    return &pso;
                 }
             }
-            return false;
+            return nullptr;
         }
     };
 }

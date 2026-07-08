@@ -184,6 +184,20 @@
 	{
 		"id" : 
 		{
+			"id" : "67753712-1154-4412-b49d-6b35ccc78b1e",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "PyBeh1",
+			"path" : "Scripts\\PyBeh1.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
 			"id" : "00000000-0000-0000-0000-00000000000c",
 			"subresource" : 0
 		},
@@ -254,6 +268,20 @@
 	{
 		"id" : 
 		{
+			"id" : "410b1ab7-07f5-42a2-90e0-a89ac94b5a81",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "CreatePyCompRuntime",
+			"path" : "Scripts\\CreatePyCompRuntime.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
 			"id" : "1721d2ba-bb33-4593-afec-81edc3700fb0",
 			"subresource" : 0
 		},
@@ -277,6 +305,132 @@
 			"name" : "grass",
 			"path" : "GrassPlane\\grass.jpg",
 			"type" : "Texture2D"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "adeabece-558f-421b-81ce-ba7bd215b747",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "Agent",
+			"path" : "Scripts\\Agent.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "16afe90a-6316-4ee5-9612-25e4ff4bde7e",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "BlackBoard",
+			"path" : "Scripts\\BlackBoard.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "c962fcb8-d16f-42f5-b83b-f4bca344f42f",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "GOAPBrain",
+			"path" : "Scripts\\GOAPBrain.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "f5e7750d-c5b0-4683-b1d1-ff097dae9699",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "CreateStaticMeshCompRuntime",
+			"path" : "Scripts\\CreateStaticMeshCompRuntime.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "dde997f6-b08a-4528-ae70-cf65330393c5",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "Predicates",
+			"path" : "Scripts\\Predicates.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "05c30d3e-922b-4acc-841c-46897de0c33d",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "Projectile",
+			"path" : "Scripts\\Projectile.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "9a77f16b-7d7f-4998-a1b0-8a93fad6d531",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "PyAction",
+			"path" : "Scripts\\PyAction.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "e20979ed-a780-40a3-836b-12d5b9374d81",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "PyBeh2",
+			"path" : "Scripts\\PyBeh2.py",
+			"type" : "Behaviour"
+		}
+	},
+	{
+		"id" : 
+		{
+			"id" : "61998c5d-8f09-4062-a83f-af5a01adda5c",
+			"subresource" : 0
+		},
+		"meta" : 
+		{
+			"loader_id" : "b2227623-70bb-4b66-bab0-1d92d292a75c",
+			"name" : "textGOAPdemo",
+			"path" : "Scripts\\textGOAPdemo.py",
+			"type" : "Behaviour"
 		}
 	}
 ]

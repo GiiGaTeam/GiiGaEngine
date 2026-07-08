@@ -60,10 +60,10 @@ namespace GiiGa
             if (FAILED(hr))
                 throw std::runtime_error("Failed to load PNG/JPEG texture: " + path.string());
 
-            auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
+            auto future = upload_batch.End(rs->GetRenderDevice().GetGraphicsQueue().get());
             future.wait();
 
-            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rs->GetRenderDevice() });
+            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDeleter{});
 
             return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture_ptr);
         }
