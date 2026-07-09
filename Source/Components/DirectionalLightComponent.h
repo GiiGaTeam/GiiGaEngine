@@ -1,12 +1,13 @@
 #pragma once
 
-#include <directx/d3dx12.h>
 #include <DirectXCollision.h>
 #include <directxtk12/SimpleMath.h>
 
 #include<memory>
+#include<array>
 #include<json/value.h>
 
+#include<nvrhi/nvrhi.h>
 
 #include<Engine.h>
 #include<Component.h>
@@ -21,9 +22,6 @@
 #include<PerObjectData.h>
 #include<DefaultAssetsHandles.h>
 #include<IUpdateGPUData.h>
-#include<ViewTypes.h>
-#include<BufferView.h>
-#include<GPULocalResource.h>
 #include<LightComponent.h>
 #include<PrefabInstanceModifications.h>
 #include<CameraComponent.h>
@@ -61,20 +59,21 @@ namespace GiiGa
         }
     };
 
+    // Contributes the directional-light constant buffer at register b3. The cascade shadow
+    // map (t3) and cascade data buffer (t4) are bound by the lighting pass directly from
+    // the component.
     class DirectionLightShaderResource : public IObjectShaderResource
     {
         friend class DirectionalLightComponent;
 
     public:
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
+        void AddBindings(nvrhi::BindingSetDesc& set) override
         {
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
-            result[0] = directionLightCBV_->getDescriptor().getGPUHandle();
-            return result;
+            set.addItem(nvrhi::BindingSetItem::ConstantBuffer(3, directionLightCB_));
         }
 
     private:
-        std::shared_ptr<BufferView<Constant>> directionLightCBV_;
+        nvrhi::BufferHandle directionLightCB_;
     };
 
     class DirectionalLightComponent : public LightComponent
@@ -108,28 +107,26 @@ namespace GiiGa
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
 
             auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
-            auto& context = Engine::Instance().RenderSystem()->GetRenderContext();
 
             data_.cascadeCount = NUM_CASCADE;
-            if (isStatic_)
-            {
-                UINT SizeInBytes = sizeof(DirectionLightData);
 
-                const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-                directionLightRes_ = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-                directionLightRes_->UpdateContentsDeffered(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(directionLightRes_->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
-                directionLightShaderRes_->directionLightCBV_ = directionLightRes_->CreateConstantBufferView(desc);
-            }
+            directionLightShaderRes_->directionLightCB_ = device.Device()->createBuffer(
+                nvrhi::BufferDesc()
+                .setByteSize(sizeof(DirectionLightData))
+                .setIsConstantBuffer(true)
+                .setIsVolatile(true)
+                .setMaxVersions(16)
+                .setDebugName("DirectionLightCB"));
+
+            cascadeBuffer_ = device.Device()->createBuffer(
+                nvrhi::BufferDesc()
+                .setByteSize(sizeof(CascadeData) * NUM_CASCADE)
+                .setStructStride(sizeof(CascadeData))
+                .setInitialState(nvrhi::ResourceStates::ShaderResource)
+                .setKeepInitialState(true)
+                .setDebugName("CascadeData"));
 
             TEXTURE_SIZE = Vector2(2048);
-            DS_FORMAT_RES = DXGI_FORMAT_R32_TYPELESS;
-            DS_FORMAT_DSV = DXGI_FORMAT_D32_FLOAT;
-            DS_FORMAT_SRV = DXGI_FORMAT_R32_FLOAT;
-            DS_DIMENSION_RES = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-            DS_DIMENSION_DSV = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-            DS_DIMENSION_SRV = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-            DS_CLEAR_VALUE = {.Format = DS_FORMAT_DSV, .DepthStencil = {.Depth = 1, .Stencil = 1}};
             shadow_views.reserve(NUM_CASCADE);
         }
 
@@ -177,9 +174,11 @@ namespace GiiGa
         {
         }
 
-        void Draw(RenderContext& context) override
+        void Draw(RenderContext& context, nvrhi::GraphicsState& state) override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
+            mesh_->Bind(state);
+            context.GetCommandList()->setGraphicsState(state);
+            context.GetCommandList()->drawIndexed(nvrhi::DrawArguments().setVertexCount(mesh_->GetIndexCount()));
         }
 
         SortData GetSortData() override
@@ -225,48 +224,24 @@ namespace GiiGa
 
         void UpdateGPUData(RenderContext& context) override
         {
-            if (!isDirty)
-                return;
-
             if (!perObjectData_)
                 perObjectData_ = std::make_shared<PerObjectData>(context, transform_.lock(), isStatic_);
             perObjectData_->UpdateGPUData(context);
-
-            UINT SizeInBytes = sizeof(DirectionLightData);
 
             if (transform_.expired()) return;
 
             Transform trans = transform_.lock()->GetWorldTransform();
             data_.dirWS = trans.GetForward();
 
-            const auto span = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-
-            if (isStatic_)
-            {
-                directionLightRes_->UpdateContentsImmediate(context, span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            }
-            else
-            {
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-                directionLightShaderRes_->directionLightCBV_ = context.AllocateDynamicConstantView(span, desc);
-            }
+            context.GetCommandList()->writeBuffer(directionLightShaderRes_->directionLightCB_, &data_, sizeof(DirectionLightData));
         }
 
+        // Recomputes the cascade views from the current camera and uploads them to the
+        // cascade structured buffer (read by the shadow GS at t0 and the lighting PS at t4).
         void UpdateCascadeGPUData(RenderContext& context, Camera& camera)
         {
             UpdateCascadeViewsByCameraData(camera);
-            const auto SizeInBytes = sizeof(CascadeData) * NUM_CASCADE;
-            const auto span_shadow = std::span{reinterpret_cast<uint8_t*>(&cascadeData_), SizeInBytes};
-            D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
-            desc.Format = DXGI_FORMAT_UNKNOWN;
-            desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-            desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            desc.Buffer.FirstElement = 0;
-            desc.Buffer.NumElements = NUM_CASCADE; // Количество элементов в буфере
-            desc.Buffer.StructureByteStride = sizeof(CascadeData);
-            desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-            shadowShaderRes_ = context.AllocateDynamicShaderResourceView(span_shadow, desc, 1);
+            context.GetCommandList()->writeBuffer(cascadeBuffer_, cascadeData_.data(), sizeof(CascadeData) * NUM_CASCADE);
         }
 
         PerObjectData& GetPerObjectData() override
@@ -288,75 +263,31 @@ namespace GiiGa
 
         DirectionLightData GetData() const { return data_; }
 
-
         void InitShadowData(RenderDevice& device) override
         {
-            {
-                D3D12_RESOURCE_DESC rtvDesc = {};
-                rtvDesc.Format = DS_FORMAT_RES; // Use a format without stencil
-                rtvDesc.Dimension = DS_DIMENSION_RES;
-                rtvDesc.Alignment = 0;
-                rtvDesc.Width = static_cast<UINT>(TEXTURE_SIZE.x);
-                rtvDesc.Height = static_cast<UINT>(TEXTURE_SIZE.y);
-                rtvDesc.DepthOrArraySize = NUM_CASCADE;
-                rtvDesc.MipLevels = 1;
-                rtvDesc.SampleDesc.Count = 1; // No multisampling
-                rtvDesc.SampleDesc.Quality = 0;
-                rtvDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-                rtvDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+            nvrhi::TextureDesc td;
+            td.width = static_cast<uint32_t>(TEXTURE_SIZE.x);
+            td.height = static_cast<uint32_t>(TEXTURE_SIZE.y);
+            td.arraySize = NUM_CASCADE;
+            td.dimension = nvrhi::TextureDimension::Texture2DArray;
+            td.format = nvrhi::Format::D32;
+            td.isRenderTarget = true;
+            td.isShaderResource = true;
+            td.initialState = nvrhi::ResourceStates::ShaderResource;
+            td.keepInitialState = true;
+            td.setClearValue(nvrhi::Color(1.0f, 0.0f, 0.0f, 0.0f));
+            td.debugName = "CascadeShadowMap";
 
-                D3D12_CLEAR_VALUE clear_value = DS_CLEAR_VALUE;
-                shadow_resource_ = std::make_unique<GPULocalResource>(device, rtvDesc, D3D12_RESOURCE_STATE_COMMON, &clear_value);
-            }
+            shadow_texture_ = device.Device()->createTexture(td);
 
-            {
-                D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-                dsv_desc.Format = DS_FORMAT_DSV; // Use a format without stencil
-                dsv_desc.ViewDimension = DS_DIMENSION_DSV;
-                dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
-                dsv_desc.Texture2DArray.MipSlice = 0; // Use the first mip level
-                dsv_desc.Texture2DArray.FirstArraySlice = 0;
-                dsv_desc.Texture2DArray.ArraySize = NUM_CASCADE;
-
-                shadow_DSV_ = shadow_resource_->EmplaceDepthStencilView(dsv_desc);
-            }
-
-            {
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.Format = DS_FORMAT_SRV; // Specify the format of the SRV
-                srvDesc.ViewDimension = DS_DIMENSION_SRV;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Texture2DArray.MostDetailedMip = 0;        // Use the most detailed mip level
-                srvDesc.Texture2DArray.MipLevels = 1;              // Use one mip level
-                srvDesc.Texture2DArray.PlaneSlice = 0;             // Only relevant for certain texture formats, usually set to 0
-                srvDesc.Texture2DArray.ResourceMinLODClamp = 0.0f; // Resource minimum level-of-detail clamp
-                srvDesc.Texture2DArray.FirstArraySlice = 0;
-                srvDesc.Texture2DArray.ArraySize = NUM_CASCADE;
-
-                // Create the Shader Resource View
-                shadow_SRV_ = shadow_resource_->EmplaceShaderResourceBufferView(srvDesc);
-            }
-            {
-                viewport.TopLeftX = 0.0f;
-                viewport.TopLeftY = 0.0f;
-                viewport.Width = TEXTURE_SIZE.x;
-                viewport.Height = TEXTURE_SIZE.y;
-                viewport.MinDepth = 0.0f;
-                viewport.MaxDepth = 1.0f;
-
-                scissorRect = {0, 0, static_cast<LONG>(TEXTURE_SIZE.x), static_cast<LONG>(TEXTURE_SIZE.y)};
-            }
+            shadow_framebuffer_ = device.Device()->createFramebuffer(
+                nvrhi::FramebufferDesc().setDepthAttachment(
+                    shadow_texture_, nvrhi::TextureSubresourceSet(0, 1, 0, NUM_CASCADE)));
         }
 
-        const D3D12_VIEWPORT* GetShadowViewport() const
-        {
-            return &viewport;
-        }
-
-        const D3D12_RECT* GetShadowScissorRect() const
-        {
-            return &scissorRect;
-        }
+        nvrhi::IBuffer* GetLightCB() const { return directionLightShaderRes_->directionLightCB_; }
+        nvrhi::IBuffer* GetCascadeBuffer() const { return cascadeBuffer_; }
+        DirectX::SimpleMath::Vector2 GetShadowTextureSize() const { return TEXTURE_SIZE; }
 
         void UpdateCascadeViewsByCameraData(const Camera& camera)
         {
@@ -389,16 +320,6 @@ namespace GiiGa
                 shadow_views.push_back(cascade.View.Transpose() * cascade.Proj.Transpose());
             }
             return shadow_views;
-        }
-
-        D3D12_GPU_DESCRIPTOR_HANDLE GetCascadeDataSRV() const
-        {
-            return shadowShaderRes_->getDescriptor().getGPUHandle();
-        }
-
-        D3D12_GPU_DESCRIPTOR_HANDLE GetLightDataSRV() const
-        {
-            return directionLightShaderRes_->directionLightCBV_->getDescriptor().getGPUHandle();
         }
 
     protected:
@@ -436,12 +357,8 @@ namespace GiiGa
         std::unique_ptr<VisibilityEntry> visibilityEntry_;
         EventHandle<std::shared_ptr<TransformComponent>> cashed_event_ = EventHandle<std::shared_ptr<TransformComponent>>::Null();
         std::shared_ptr<PerObjectData> perObjectData_;
-        std::unique_ptr<GPULocalResource> directionLightRes_;
         std::shared_ptr<DirectionLightShaderResource> directionLightShaderRes_;
-        std::shared_ptr<BufferView<ShaderResource>> shadowShaderRes_;
-
-        D3D12_VIEWPORT viewport;
-        D3D12_RECT scissorRect;
+        nvrhi::BufferHandle cascadeBuffer_;
 
         DirectionLightData data_;
         std::array<CascadeData, NUM_CASCADE> cascadeData_;

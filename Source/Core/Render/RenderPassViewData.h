@@ -4,7 +4,10 @@
 #endif
 #include<directxtk12/SimpleMath.h>
 
+#include<nvrhi/nvrhi.h>
+
 #include<CameraComponent.h>
+#include<RenderTypes.h>
 
 namespace GiiGa
 {
@@ -16,24 +19,27 @@ namespace GiiGa
         DirectX::SimpleMath::Matrix invProjMatrix;
         DirectX::SimpleMath::Vector3 camPos;
     };
-    
+
     struct alignas(256) ScreenDimensions
     {
         DirectX::SimpleMath::Vector2 screenDimensions;
     };
 
+    // Per-camera view info: the camera plus the NVRHI constant buffers holding the
+    // view matrices (b0) and screen dimensions, filled each frame by the viewport.
     struct RenderPassViewData
     {
         Camera camera;
-        D3D12_GPU_DESCRIPTOR_HANDLE viewDescriptor;
+        nvrhi::IBuffer* viewCB = nullptr;         // register b0
         ScreenDimensions screenDimensions;
-        D3D12_GPU_DESCRIPTOR_HANDLE dimensionsDescriptor;
+        nvrhi::IBuffer* dimensionsCB = nullptr;
     };
 
+    // The colour result of a viewport's render graph: a texture (+ framebuffer to render
+    // into). Its SRV (for ImGui::Image display) is obtained on demand from the texture.
     struct RTVData
     {
-        std::shared_ptr<GPULocalResource> resource_;
-        std::shared_ptr<BufferView<RenderTarget>> RTV_;
-        std::shared_ptr<BufferView<ShaderResource>> SRV_;
+        nvrhi::TextureHandle resource_;
+        nvrhi::FramebufferHandle framebuffer_;
     };
 }

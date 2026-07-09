@@ -1,13 +1,15 @@
 #pragma once
 
-
 #include<memory>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include<directxtk12/SimpleMath.h>
 
+#include<nvrhi/nvrhi.h>
+
 #include<RenderDevice.h>
+#include<RenderContext.h>
 #include<RenderPassViewData.h>
 #include<GBuffer.h>
 
@@ -33,16 +35,14 @@ namespace GiiGa
 
         virtual RenderPassViewData GetCameraInfo() =0;
 
-        virtual RTVData GetResultInfo() const { return rtvData_; };
+        virtual RTVData GetResultInfo() const { return rtvData_; }
 
         virtual void Execute(RenderContext& context) =0;
 
         virtual void Resize(DirectX::SimpleMath::Vector2 new_size)
         {
             viewport_size_ = new_size;
-
             gbuffer_->Resize(new_size);
-
             CreateRenderTargetResult();
         }
 
@@ -50,48 +50,21 @@ namespace GiiGa
 
         virtual void CreateRenderTargetResult()
         {
-            {
-                D3D12_RESOURCE_DESC rtvDesc = {};
-                rtvDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                rtvDesc.Alignment = 0;
-                rtvDesc.Width = static_cast<UINT>(viewport_size_.x);  // Set the width of the render target
-                rtvDesc.Height = static_cast<UINT>(viewport_size_.y); // Set the height of the render target
-                rtvDesc.DepthOrArraySize = 1;
-                rtvDesc.MipLevels = 1;
-                rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // Use a common format for render targets
-                rtvDesc.SampleDesc.Count = 1;                    // No multisampling
-                rtvDesc.SampleDesc.Quality = 0;
-                rtvDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-                rtvDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+            nvrhi::TextureDesc td;
+            td.width = static_cast<uint32_t>(viewport_size_.x);
+            td.height = static_cast<uint32_t>(viewport_size_.y);
+            td.format = nvrhi::Format::RGBA32_FLOAT;
+            td.dimension = nvrhi::TextureDimension::Texture2D;
+            td.isRenderTarget = true;
+            td.isShaderResource = true;
+            td.setClearValue(nvrhi::Color(0.0f, 0.0f, 0.0f, 1.0f));
+            td.initialState = nvrhi::ResourceStates::ShaderResource;
+            td.keepInitialState = true;
+            td.debugName = "ViewportResult";
 
-                D3D12_CLEAR_VALUE clear_value = {.Format = DXGI_FORMAT_R32G32B32A32_FLOAT, .Color = {0.0f, 0.0f, 0.0f, 1.0f}};
-
-                rtvData_.resource_ = std::make_shared<GPULocalResource>(device_, rtvDesc, D3D12_RESOURCE_STATE_COMMON, &clear_value);
-            }
-
-            {
-                D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-                rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // Specify the format of the render target
-                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-                rtvDesc.Texture2D.MipSlice = 0;   // Use the first mip level
-                rtvDesc.Texture2D.PlaneSlice = 0; // Only relevant for certain texture formats, usually set to 0
-
-                rtvData_.RTV_ = rtvData_.resource_->EmplaceRenderTargetView(&rtvDesc);
-            }
-
-            {
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // Specify the format of the SRV_
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Texture2D.MostDetailedMip = 0;        // Use the most detailed mip level
-                srvDesc.Texture2D.MipLevels = 1;              // Use one mip level
-                srvDesc.Texture2D.PlaneSlice = 0;             // Only relevant for certain texture formats, usually set to 0
-                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f; // Resource minimum level-of-detail clamp
-
-                // Create the Shader Resource View
-                rtvData_.SRV_ = rtvData_.resource_->EmplaceShaderResourceBufferView(srvDesc);
-            }
+            rtvData_.resource_ = device_.Device()->createTexture(td);
+            rtvData_.framebuffer_ = device_.Device()->createFramebuffer(
+                nvrhi::FramebufferDesc().addColorAttachment(rtvData_.resource_));
         }
 
     protected:

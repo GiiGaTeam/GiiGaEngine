@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include<unordered_map>
 
 #include<SceneVisibility.h>
-#include<PSO.h>
+#include<Pipeline.h>
 
 namespace GiiGa
 {
@@ -15,13 +15,15 @@ namespace GiiGa
         virtual void Draw(RenderContext& context) =0;
 
     protected:
-        static bool GetPsoFromMapByMask(const std::unordered_map<ObjectMask, PSO>& mask_map, const ObjectMask& objectMask, PSO& res_pso)
+        // Selects the pipeline whose mask covers the given object mask.
+        static bool GetPipelineFromMapByMask(const std::unordered_map<ObjectMask, MaskPipeline>& mask_map,
+                                             const ObjectMask& objectMask, MaskPipeline& res)
         {
-            for (const auto& [mask, pso] : mask_map)
+            for (const auto& [mask, pipeline] : mask_map)
             {
                 if (mask.CoversMask(objectMask))
                 {
-                    res_pso = pso;
+                    res = pipeline;
                     return true;
                 }
             }

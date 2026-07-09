@@ -1,26 +1,24 @@
-﻿#pragma once
+#pragma once
 #include <stdexcept>
 #include <json/json.h>
 #include <json/value.h>
 
-#include <directx/d3dx12_core.h>
 #include <directxtk12/SimpleMath.h>
-
 #include <DirectXMath.h>
-
 
 #include<memory>
 #include<array>
 #include<exception>
 #include<filesystem>
 
-#include<GPULocalResource.h>
+#include<nvrhi/nvrhi.h>
+
 #include<RenderDevice.h>
+#include<RenderContext.h>
 #include<AssetBase.h>
 #include<ConcreteAsset/TextureAsset.h>
 #include<ObjectMask.h>
 #include<Misc.h>
-#include<RenderContext.h>
 #include<IObjectShaderResource.h>
 #include<Engine.h>
 #include<DefaultAssetsHandles.h>
@@ -57,12 +55,6 @@ namespace GiiGa
         Normal = 1 << 7,
     };
 
-    //template <typename Enum>
-    //constexpr auto toUnderlying(Enum e) noexcept
-    //{
-    //    return static_cast<std::underlying_type_t<Enum>>(e);
-    //}
-
     constexpr TexturesIndex operator|(TexturesIndex lhs, TexturesIndex rhs)
     {
         return static_cast<TexturesIndex>(toUnderlying(lhs) | toUnderlying(rhs));
@@ -72,28 +64,24 @@ namespace GiiGa
 
     using RequiredTexturesMask = std::bitset<MaxTextureCount>;
 
+    // Per-material bindings: constant buffer at b2 + 8 textures at t0..t7.
+    // All 8 texture slots are always populated (with engine defaults) so the binding set
+    // always satisfies the pipeline's binding layout.
     class MaterialShaderResource : public IObjectShaderResource
     {
         friend class Material;
 
     public:
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
+        void AddBindings(nvrhi::BindingSetDesc& set) override
         {
-            // todo: actually we can cache this allocation by adding setters here
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result;
-            result.reserve(1 + MaxTextureCount);
-            result.push_back(MaterialCBV_->getDescriptor().getGPUHandle());
-            for (auto texture_srv : texture_srvs_)
-            {
-                if (texture_srv)
-                    result.push_back(texture_srv->getDescriptor().getGPUHandle());
-            }
-            return result;
+            set.addItem(nvrhi::BindingSetItem::ConstantBuffer(2, MaterialCB_));
+            for (uint32_t i = 0; i < MaxTextureCount; ++i)
+                set.addItem(nvrhi::BindingSetItem::Texture_SRV(i, textures_[i]));
         }
 
     private:
-        std::array<std::shared_ptr<BufferView<ShaderResource>>, MaxTextureCount> texture_srvs_;
-        std::shared_ptr<BufferView<Constant>> MaterialCBV_;
+        std::array<nvrhi::ITexture*, MaxTextureCount> textures_{};
+        nvrhi::IBuffer* MaterialCB_ = nullptr;
     };
 
     class Material : public AssetBase, public IUpdateGPUData, public std::enable_shared_from_this<Material>
@@ -118,16 +106,13 @@ namespace GiiGa
             Json::Value ToJson()
             {
                 Json::Value result;
-
                 result["BaseColorTint_"] = Vector3ToJson(BaseColorTint_);
                 result["EmissiveColorTint_"] = Vector3ToJson(EmissiveColorTint_);
-
                 result["MetallicScale_"] = MetallicScale_;
                 result["SpecularScale_"] = MetallicScale_;
                 result["RoughnessScale_"] = MetallicScale_;
                 result["AnisotropyScale_"] = MetallicScale_;
                 result["OpacityScale_"] = MetallicScale_;
-
                 return result;
             }
 
@@ -152,7 +137,8 @@ namespace GiiGa
 
         ~Material() override
         {
-            if (auto rs = Engine::Instance().RenderSystem()) {
+            if (auto rs = Engine::Instance().RenderSystem())
+            {
                 rs->UnregisterInUpdateGPUData(this);
             }
         }
@@ -167,6 +153,7 @@ namespace GiiGa
             materialMask_.SetBlendMode(BlendMode::Opaque);
             materialMask_.SetShadingModel(ShadingModel::DefaultLit);
 
+            CreateAndUploadCB();
             CheckAndLoadRequirededTextures_();
         }
 
@@ -176,44 +163,19 @@ namespace GiiGa
             AssetBase(handle),
             data_(data),
             shaderResource_(std::make_shared<MaterialShaderResource>()),
-            textures_(textures)
+            textures_(textures),
+            component_mappings_(component_mappings)
         {
             Engine::Instance().RenderSystem()->RegisterInUpdateGPUData(this);
 
             for (int i = 0; i < textures_.size(); ++i)
-            {
                 if (textures_[i])
-                {
-                    auto resourceDesc = textures_[i]->GetResource()->GetDesc();
-
-                    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                    srvDesc.Format = resourceDesc.Format;
-                    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                    srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-                    srvDesc.Texture2D.MostDetailedMip = 0;
-                    srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-                    srvDesc.Shader4ComponentMapping = component_mappings[i];
-
-                    shaderResource_->texture_srvs_[i] = textures_[i]->EmplaceShaderResourceBufferView(srvDesc);
-                }
-            }
+                    shaderResource_->textures_[i] = textures_[i]->GetTexture();
 
             SetBlendMode(blendMode);
             SetShadingModel(shadingModel);
 
-            auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
-            auto& Context = Engine::Instance().RenderSystem()->GetRenderContext();
-
-            if (isStatic_)
-            {
-                UINT SizeInBytes = sizeof(MaterialData);
-
-                const auto MaterialSpan = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-                MaterialCB_ = std::make_unique<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-                MaterialCB_->UpdateContentsDeffered(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(MaterialCB_->GetResource()->GetGPUVirtualAddress(), SizeInBytes);
-                shaderResource_->MaterialCBV_ = MaterialCB_->CreateConstantBufferView(desc);
-            }
+            CreateAndUploadCB();
         }
 
         std::string name;
@@ -236,12 +198,12 @@ namespace GiiGa
                 if (textures_[i])
                 {
                     texture_js["AssetHandle"] = textures_[i]->GetId().ToJson();
-                    texture_js["Mapping"] = shaderResource_->texture_srvs_[i]->getCreationDescriptor().Shader4ComponentMapping;
+                    texture_js["Mapping"] = component_mappings_[i];
                 }
                 else
                 {
                     texture_js["AssetHandle"] = AssetHandle{}.ToJson();
-                    texture_js["Mapping"] = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                    texture_js["Mapping"] = static_cast<int>(D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
                 }
                 result["Textures"].append(texture_js);
             }
@@ -256,28 +218,19 @@ namespace GiiGa
             std::ofstream material_file(path, std::ios::out | std::ios::trunc);
 
             if (!material_file.is_open())
-            {
                 throw std::runtime_error("Failed to open Material file for writing: " + path.string());
-            }
 
-            // Ensure ToJson() works correctly
             Json::Value json = ToJson();
             if (json.isNull())
-            {
                 throw std::runtime_error("Failed to convert object to JSON");
-            }
 
             Json::StreamWriterBuilder writer_builder;
             std::string jsonString = Json::writeString(writer_builder, json);
 
-            // Writing JSON string to the file
             material_file << jsonString;
 
-            // Check if the file stream has any errors
             if (material_file.fail())
-            {
                 throw std::runtime_error{"Failed to write to file: " + path.string()};
-            }
 
             material_file.close();
         }
@@ -285,8 +238,6 @@ namespace GiiGa
         std::shared_ptr<Material> CreateDynamicMaterailInstance(std::shared_ptr<Material> original)
         {
             Todo();
-            //auto result = std::make_shared<Material>();
-            //result->isStatic_ = false;
             return nullptr;
         }
 
@@ -297,27 +248,11 @@ namespace GiiGa
 
             isDirty = false;
 
-            UINT SizeInBytes = sizeof(Material::MaterialData);
-
-            const auto MaterialSpan = std::span{reinterpret_cast<uint8_t*>(&data_), SizeInBytes};
-
-            if (isStatic_)
-            {
-                if (MaterialCB_)
-                    MaterialCB_->UpdateContentsImmediate(Context, MaterialSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            }
-            else
-            {
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-
-                shaderResource_->MaterialCBV_ = Context.AllocateDynamicConstantView(MaterialSpan, desc);
-            }
+            if (MaterialCB_)
+                Context.GetCommandList()->writeBuffer(MaterialCB_, &data_, sizeof(MaterialData));
         }
 
-        ObjectMask GetMaterialMask() const
-        {
-            return materialMask_;
-        }
+        ObjectMask GetMaterialMask() const { return materialMask_; }
 
         void SetBlendMode(const BlendMode& new_blend_mode)
         {
@@ -331,10 +266,7 @@ namespace GiiGa
             CheckAndLoadRequirededTextures_();
         }
 
-        std::shared_ptr<IObjectShaderResource> GetShaderResource()
-        {
-            return shaderResource_;
-        }
+        std::shared_ptr<IObjectShaderResource> GetShaderResource() { return shaderResource_; }
 
         //=============================SETTING MATERIAL TEXTURES & PARAMETERS=============================
 
@@ -346,87 +278,25 @@ namespace GiiGa
                 return;
 
             textures_[texture_index] = texture_asset;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = Channel;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[static_cast<int>(texture_order) - 1]->EmplaceShaderResourceBufferView(srvDesc);
+            component_mappings_[texture_index] = Channel;
+            shaderResource_->textures_[texture_index] = texture_asset->GetTexture();
         }
 
         void SetTexture(TexturesOrder texture_order, AssetHandle texture_uuid, ComponentMapping Channel = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING)
         {
-            auto texture_index = static_cast<int>(texture_order) - 1;
-            auto req_tex = GetRequiredTextures();
-            if (!req_tex[texture_index])
-                return;
-
             auto texture_asset = Engine::Instance().ResourceManager()->GetAsset<TextureAsset>(texture_uuid);
-
-            textures_[texture_index] = texture_asset;
-
-            auto resourceDesc = textures_[texture_index]->GetResource()->GetDesc();
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = resourceDesc.Format;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-            srvDesc.Shader4ComponentMapping = Channel;
-
-            shaderResource_->texture_srvs_[texture_index] = textures_[static_cast<int>(texture_order) - 1]->EmplaceShaderResourceBufferView(srvDesc);
+            SetTexture(texture_order, texture_asset, Channel);
         }
 
         //=============================SETTING MATERIAL PARAMETERS=============================
 
-        void SetBaseColorTint(DirectX::SimpleMath::Vector3 BaseColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
-        {
-            data_.BaseColorTint_ = BaseColorTint;
-            isDirty = true;
-        }
-
-        void SetMetallicScale(float MetallicScale = 1.0f)
-        {
-            data_.MetallicScale_ = MetallicScale;
-            isDirty = true;
-        }
-
-        void SetSpecularScale(float SpecularScale = 1.0f)
-        {
-            data_.SpecularScale_ = SpecularScale;
-            isDirty = true;
-        }
-
-        void SetRoughnessScale(float RoughnessScale = 1.0f)
-        {
-            data_.RoughnessScale_ = RoughnessScale;
-            isDirty = true;
-        }
-
-        void SetAnisotropyScale(float AnisotropyScale = 1.0f)
-        {
-            data_.AnisotropyScale_ = AnisotropyScale;
-            isDirty = true;
-        }
-
-        void SetEmissiveTint(DirectX::SimpleMath::Vector3 EmissiveColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f))
-        {
-            data_.EmissiveColorTint_ = EmissiveColorTint;
-            isDirty = true;
-        }
-
-        void SetOpacityScale(float OpacityScale = 1.0f)
-        {
-            data_.OpacityScale_ = OpacityScale;
-            isDirty = true;
-        }
+        void SetBaseColorTint(DirectX::SimpleMath::Vector3 BaseColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f)) { data_.BaseColorTint_ = BaseColorTint; isDirty = true; }
+        void SetMetallicScale(float MetallicScale = 1.0f) { data_.MetallicScale_ = MetallicScale; isDirty = true; }
+        void SetSpecularScale(float SpecularScale = 1.0f) { data_.SpecularScale_ = SpecularScale; isDirty = true; }
+        void SetRoughnessScale(float RoughnessScale = 1.0f) { data_.RoughnessScale_ = RoughnessScale; isDirty = true; }
+        void SetAnisotropyScale(float AnisotropyScale = 1.0f) { data_.AnisotropyScale_ = AnisotropyScale; isDirty = true; }
+        void SetEmissiveTint(DirectX::SimpleMath::Vector3 EmissiveColorTint = DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f)) { data_.EmissiveColorTint_ = EmissiveColorTint; isDirty = true; }
+        void SetOpacityScale(float OpacityScale = 1.0f) { data_.OpacityScale_ = OpacityScale; isDirty = true; }
 
     private:
         ObjectMask materialMask_ = ObjectMask().SetFillMode(FillMode::Solid);
@@ -438,84 +308,67 @@ namespace GiiGa
         std::shared_ptr<MaterialShaderResource> shaderResource_;
 
         std::array<std::shared_ptr<TextureAsset>, MaxTextureCount> textures_;
-        std::shared_ptr<GPULocalResource> MaterialCB_;
+        std::array<ComponentMapping, MaxTextureCount> component_mappings_{};
+        nvrhi::BufferHandle MaterialCB_;
+
+        void CreateAndUploadCB()
+        {
+            auto& device = Engine::Instance().RenderSystem()->GetRenderDevice();
+
+            MaterialCB_ = device.Device()->createBuffer(
+                nvrhi::BufferDesc().setByteSize(sizeof(MaterialData)).setIsConstantBuffer(true)
+                                   .setInitialState(nvrhi::ResourceStates::ConstantBuffer).setKeepInitialState(true)
+                                   .setDebugName("MaterialCB"));
+
+            shaderResource_->MaterialCB_ = MaterialCB_;
+
+            nvrhi::CommandListHandle upload = device.Device()->createCommandList();
+            upload->open();
+            upload->writeBuffer(MaterialCB_, &data_, sizeof(MaterialData));
+            upload->close();
+            nvrhi::ICommandList* list = upload;
+            device.Device()->executeCommandLists(&list, 1);
+        }
+
+        // Loads a default texture into a slot bypassing the required-texture gate, so every
+        // t0..t7 slot is always populated (needed for a valid NVRHI binding set).
+        void LoadDefaultInto_(TexturesOrder order, const AssetHandle& handle)
+        {
+            auto texture_index = static_cast<int>(order) - 1;
+            if (shaderResource_->textures_[texture_index])
+                return;
+            auto texture_asset = Engine::Instance().ResourceManager()->GetAsset<TextureAsset>(handle);
+            textures_[texture_index] = texture_asset;
+            component_mappings_[texture_index] = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            shaderResource_->textures_[texture_index] = texture_asset->GetTexture();
+        }
 
         void CheckAndLoadRequirededTextures_()
         {
-            // Define required texture indices based on the blend mode and shading model
-            RequiredTexturesMask requiredTextures = GetRequiredTextures();
-
-            auto rm = Engine::Instance().ResourceManager();
-
-            // Safety check: Ensure required textures are present
-            for (size_t i = 1; i <= MaxTextureCount; ++i)
-            {
-                if (requiredTextures[i - 1] && !textures_[i - 1])
-                {
-                    TexturesOrder inorder = static_cast<TexturesOrder>(i);
-                    switch (inorder)
-                    {
-                    case TexturesOrder::BaseColor:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::BaseColor));
-                        break;
-                    case TexturesOrder::Metallic:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Metallic), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
-                        break;
-                    case TexturesOrder::Specular:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Specular), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
-                        break;
-                    case TexturesOrder::Roughness:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Roughness), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
-                        break;
-                    case TexturesOrder::Anisotropy:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Anisotropy), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
-                        break;
-                    case TexturesOrder::EmissiveColor:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::EmissiveColor));
-                        break;
-                    case TexturesOrder::Opacity:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Opacity), D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
-                        break;
-                    case TexturesOrder::Normal:
-                        SetTexture(inorder, rm->GetAsset<TextureAsset>(DefaultAssetsHandles::Normal));
-                        break;
-                    }
-                }
-            }
-
-            // unload non req textures
-            // todo: redone
-            //for (size_t i = 0; i < MaxTextureCount; ++i)
-            //{
-            //    if (!requiredTextures[i] && textures_[i])
-            //    {
-            //        textures_[i].reset();
-            //        shaderResource_->texture_srvs_[i].reset();
-            //    }
-            //}
+            // Always ensure all 8 slots have a texture bound (engine defaults for slots the
+            // active shading/blend model does not strictly require).
+            LoadDefaultInto_(TexturesOrder::BaseColor, DefaultAssetsHandles::BaseColor);
+            LoadDefaultInto_(TexturesOrder::Metallic, DefaultAssetsHandles::Metallic);
+            LoadDefaultInto_(TexturesOrder::Specular, DefaultAssetsHandles::Specular);
+            LoadDefaultInto_(TexturesOrder::Roughness, DefaultAssetsHandles::Roughness);
+            LoadDefaultInto_(TexturesOrder::Anisotropy, DefaultAssetsHandles::Anisotropy);
+            LoadDefaultInto_(TexturesOrder::EmissiveColor, DefaultAssetsHandles::EmissiveColor);
+            LoadDefaultInto_(TexturesOrder::Opacity, DefaultAssetsHandles::Opacity);
+            LoadDefaultInto_(TexturesOrder::Normal, DefaultAssetsHandles::Normal);
         }
 
         RequiredTexturesMask GetRequiredTextures() const
         {
             static const std::unordered_map<ShadingModel, RequiredTexturesMask> ShadingModelRequiredTextures =
             {
-                {
-                    ShadingModel::None, {}
-                },
+                {ShadingModel::None, {}},
                 {
                     ShadingModel::DefaultLit, RequiredTexturesMask(toUnderlying(
-                        TexturesIndex::BaseColor
-                        | TexturesIndex::Metallic
-                        | TexturesIndex::Specular
-                        | TexturesIndex::Roughness
-                        | TexturesIndex::Anisotropy
-                        | TexturesIndex::EmissiveColor
+                        TexturesIndex::BaseColor | TexturesIndex::Metallic | TexturesIndex::Specular
+                        | TexturesIndex::Roughness | TexturesIndex::Anisotropy | TexturesIndex::EmissiveColor
                         | TexturesIndex::Normal))
                 },
-                {
-                    ShadingModel::Unlit, RequiredTexturesMask(toUnderlying(
-                        TexturesIndex::EmissiveColor))
-                }
+                {ShadingModel::Unlit, RequiredTexturesMask(toUnderlying(TexturesIndex::EmissiveColor))}
             };
 
             static const std::unordered_map<BlendMode, RequiredTexturesMask> BlendModeRequiredTextures =

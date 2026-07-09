@@ -1,17 +1,17 @@
 #pragma once
 
-
 #include<span>
 #include<vector>
+#include<string>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include<directx/d3dx12.h>
 #include<directxtk12/SimpleMath.h>
 
+#include<nvrhi/nvrhi.h>
+
 #include<RenderDevice.h>
-#include<IRenderContext.h>
-#include<GPULocalResource.h>
+#include<RenderContext.h>
 #include<VertexTypes.h>
 
 using namespace DirectX;
@@ -32,42 +32,46 @@ namespace GiiGa
     public:
         using VertexType = VertexBoned;
 
-        SkeletalMesh(IRenderContext& render_context, RenderDevice& device,
+        SkeletalMesh(RenderContext& render_context,
                      const std::vector<VertexType>& vertices,
-                     const std::vector<Index16>& indices):
-            vertexBuffer_(std::make_shared<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(VertexType), D3D12_RESOURCE_FLAG_NONE))),
-            indexBuffer_(std::make_shared<GPULocalResource>(device, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(Index16), D3D12_RESOURCE_FLAG_NONE)))
+                     const std::vector<Index16>& indices)
         {
-            const auto vertices_span = std::span{reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size() * sizeof(VertexType)};
-            vertexBuffer_->UpdateContentsDeffered(render_context, vertices_span, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+            auto* device = render_context.GetDevice().Device();
 
-            vertexView_ = vertexBuffer_->EmplaceVetexBufferView(
-                D3D12_VERTEX_BUFFER_VIEW{0, static_cast<UINT>(vertices.size() * sizeof(VertexType)), sizeof(VertexType)});
-            
-            auto indices_span = std::span{reinterpret_cast<const uint8_t*>(indices.data()), indices.size() * sizeof(Index16)};
-            indexCount = static_cast<UINT>(indices.size());
-            indexBuffer_->UpdateContentsDeffered(render_context, indices_span, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+            const size_t vbBytes = vertices.size() * sizeof(VertexType);
+            const size_t ibBytes = indices.size() * sizeof(Index16);
+            indexCount_ = static_cast<uint32_t>(indices.size());
 
-            indexView_ = indexBuffer_->EmplaceIndexBufferView(
-                D3D12_INDEX_BUFFER_VIEW{0, static_cast<UINT>(indices.size() * sizeof(Index16)), Index16::Format});
+            vertexBuffer_ = device->createBuffer(
+                nvrhi::BufferDesc().setByteSize(vbBytes).setIsVertexBuffer(true)
+                                   .setInitialState(nvrhi::ResourceStates::VertexBuffer).setKeepInitialState(true)
+                                   .setDebugName("SkeletalVB"));
+
+            indexBuffer_ = device->createBuffer(
+                nvrhi::BufferDesc().setByteSize(ibBytes).setIsIndexBuffer(true)
+                                   .setInitialState(nvrhi::ResourceStates::IndexBuffer).setKeepInitialState(true)
+                                   .setDebugName("SkeletalIB"));
+
+            nvrhi::CommandListHandle upload = device->createCommandList();
+            upload->open();
+            upload->writeBuffer(vertexBuffer_, vertices.data(), vbBytes);
+            upload->writeBuffer(indexBuffer_, indices.data(), ibBytes);
+            upload->close();
+            nvrhi::ICommandList* list = upload;
+            device->executeCommandLists(&list, 1);
         }
 
-        void Draw(const std::shared_ptr<ID3D12GraphicsCommandList>& cmd_list)
+        void Bind(nvrhi::GraphicsState& state) const
         {
-            auto vertextDesc = vertexView_->getDescriptor();
-            cmd_list->IASetVertexBuffers(0, 1, &vertextDesc);
-
-            auto indexDesc = indexView_->getDescriptor();
-            cmd_list->IASetIndexBuffer(&indexDesc);
-
-            cmd_list->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+            state.addVertexBuffer(nvrhi::VertexBufferBinding{vertexBuffer_, 0, 0});
+            state.setIndexBuffer(nvrhi::IndexBufferBinding{indexBuffer_, Index16::NvFormat, 0});
         }
+
+        uint32_t GetIndexCount() const { return indexCount_; }
 
     private:
-        std::shared_ptr<GPULocalResource> vertexBuffer_;
-        std::shared_ptr<BufferView<Vertex>> vertexView_;
-        UINT indexCount;
-        std::shared_ptr<GPULocalResource> indexBuffer_;
-        std::shared_ptr<BufferView<Index>> indexView_;
+        nvrhi::BufferHandle vertexBuffer_;
+        nvrhi::BufferHandle indexBuffer_;
+        uint32_t indexCount_ = 0;
     };
 }

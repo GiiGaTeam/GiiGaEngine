@@ -93,7 +93,6 @@ namespace GiiGa
                 throw std::runtime_error("File does not exist: " + path.string());
 
             auto rs = Engine::Instance().RenderSystem();
-            auto device = rs->GetRenderDevice().GetDxDevice();
 
             Assimp::Importer importer;
             const aiScene* scene = importer.ReadFile(path.string(),
@@ -125,7 +124,7 @@ namespace GiiGa
 
             DirectX::BoundingBox aabb = CalculateBoundingBox(vertices);
 
-            return std::make_shared<MeshAsset<VertexType>>(handle, rs->GetRenderContext(), rs->GetRenderDevice(), vertices, indices, aabb);
+            return std::make_shared<MeshAsset<VertexType>>(handle, rs->GetRenderContext(), vertices, indices, aabb);
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

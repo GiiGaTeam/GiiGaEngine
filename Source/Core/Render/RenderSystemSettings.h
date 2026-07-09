@@ -1,37 +1,21 @@
-﻿#pragma once
+#pragma once
 
-
-#include<cstdint>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <cstdint>
+#include <dxgiformat.h>
 
 namespace GiiGa
 {
     struct RenderSystemSettings
     {
-        // default value 3, can be changed 
+        // default value 3, can be changed
         // on engine startup and settings parse
-        static inline UINT8 NUM_FRAMES_IN_FLIGHT = 4;
-        static inline UINT8 NUM_BACK_BUFFERS = 3;
-        static inline UINT32 NUM_CBV_SRV_UAVs = 1 << 16;
+        static inline uint8_t NUM_FRAMES_IN_FLIGHT = 4;
+        static inline uint8_t NUM_BACK_BUFFERS = 3;
 
-        static inline uint32_t CPUDescriptorHeapAllocationSize[4]
-        {
-            8192, // D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-            2048, // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
-            1024, // D3D12_DESCRIPTOR_HEAP_TYPE_RTV
-            1024 // D3D12_DESCRIPTOR_HEAP_TYPE_DSV
-        };
-
-        static inline uint32_t GPUDescriptorHeapSize[2]
-        {
-            16384, // D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-            1024 // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
-        };
-
-        static inline uint32_t GPUDescriptorHeapDynamicSize[2]
-        {
-            8192, // D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-            1024 // D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER
-        };
+        // Swap-chain back-buffer format (kept identical to the pre-NVRHI renderer).
+        static inline DXGI_FORMAT BACK_BUFFER_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
     };
-    
 }

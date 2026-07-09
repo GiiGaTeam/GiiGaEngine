@@ -1,25 +1,32 @@
 #pragma once
 
+#include<nvrhi/nvrhi.h>
 
 #include<AssetBase.h>
-#include<GPULocalResource.h>
 
 namespace GiiGa
 {
-    class TextureAsset : public AssetBase, public GPULocalResource
+    // GPU-resident texture asset. Holds an NVRHI texture (created by the DDS/Image loaders).
+    class TextureAsset : public AssetBase
     {
     public:
-        TextureAsset(AssetHandle handle, RenderDevice& device, std::shared_ptr<ID3D12Resource> resource)
-            : GPULocalResource(device, resource)
-            , AssetBase(handle)
+        TextureAsset(AssetHandle handle, nvrhi::TextureHandle texture)
+            : AssetBase(handle)
+            , texture_(texture)
         {
         }
 
         TextureAsset(const TextureAsset&) = delete;
         TextureAsset& operator=(const TextureAsset&) = delete;
 
-        virtual AssetType GetType() override {
+        nvrhi::ITexture* GetTexture() const { return texture_; }
+
+        virtual AssetType GetType() override
+        {
             return AssetType::Texture2D;
         }
+
+    private:
+        nvrhi::TextureHandle texture_;
     };
 }  // namespace GiiGa

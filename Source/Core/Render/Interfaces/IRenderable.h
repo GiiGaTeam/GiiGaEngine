@@ -3,6 +3,8 @@
 #include<unordered_map>
 #include<memory>
 
+#include<nvrhi/nvrhi.h>
+
 #include<ObjectMask.h>
 #include<IObjectShaderResource.h>
 #include<PerObjectData.h>
@@ -18,12 +20,15 @@ namespace GiiGa
     class IRenderable
     {
     public:
-        virtual void Draw(RenderContext& context) =0;
-        virtual SortData GetSortData() =0;
-        virtual PerObjectData& GetPerObjectData() =0;
+        // The pass assembles `state` (pipeline, framebuffer, viewport, binding set with view/
+        // object/material bindings); the renderable contributes its mesh vertex/index buffers
+        // and issues the draw.
+        virtual void Draw(RenderContext& context, nvrhi::GraphicsState& state) = 0;
+        virtual SortData GetSortData() = 0;
+        virtual PerObjectData& GetPerObjectData() = 0;
     };
 
-    bool operator==(const std::weak_ptr<IRenderable>& lhs, const std::weak_ptr<IRenderable>& rhs)
+    inline bool operator==(const std::weak_ptr<IRenderable>& lhs, const std::weak_ptr<IRenderable>& rhs)
     {
         return lhs.lock() == rhs.lock();
     }
@@ -32,7 +37,6 @@ namespace GiiGa
     {
         std::shared_ptr<IObjectShaderResource> shaderResource;
         std::vector<std::weak_ptr<IRenderable>> renderables;
-
 
         CommonResourceGroup(std::shared_ptr<IObjectShaderResource> in_shaderResource):
             shaderResource(in_shaderResource)

@@ -1,17 +1,15 @@
-﻿#pragma once
-
+#pragma once
 
 #include<memory>
-#include<span>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include<directx/d3dx12.h>
 #include<directxtk12/SimpleMath.h>
+#include<DirectXMath.h>
+
+#include<nvrhi/nvrhi.h>
 
 #include<TransformComponent.h>
-#include<BufferView.h>
-#include<GPULocalResource.h>
 #include<RenderDevice.h>
 #include<RenderContext.h>
 
@@ -23,59 +21,45 @@ namespace GiiGa
         DirectX::XMMATRIX WorldInverse;
     };
 
+    // Per-object constant buffer (world + inverse-world), bound at register b1.
+    // Backed by an NVRHI volatile constant buffer, re-written every frame from the
+    // per-frame UpdateGPUData pass while the command list is open.
     class PerObjectData
     {
     public:
         PerObjectData() = default;
 
         PerObjectData(RenderContext& Context,
-                      std::shared_ptr<TransformComponent> Transform, bool IsStatic) :
+                      std::shared_ptr<TransformComponent> Transform, bool IsStatic):
             IsStatic_(IsStatic),
             Transform_(Transform)
         {
-            UINT SizeInBytes = sizeof(WorldMatrices);
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-
-            WorldMatrices WorldMatrices;
-            WorldMatrices.World = Transform_.lock()->GetWorldMatrix().Transpose();
-            WorldMatrices.WorldInverse = Transform_.lock()->GetInverseWorldMatrix().Transpose();
-            const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
-
-            ConstantBuffer_ = std::make_unique<GPULocalResource>(Context.GetDevice(), CD3DX12_RESOURCE_DESC::Buffer(SizeInBytes, D3D12_RESOURCE_FLAG_NONE));
-            ConstantBuffer_->UpdateContentsDeffered(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            ConstantBufferView_ = ConstantBuffer_->CreateConstantBufferView(desc);
+            cb_ = Context.GetDevice().Device()->createBuffer(
+                nvrhi::BufferDesc()
+                .setByteSize(sizeof(WorldMatrices))
+                .setIsConstantBuffer(true)
+                .setIsVolatile(true)
+                .setMaxVersions(64)
+                .setDebugName("PerObjectCB"));
         }
 
         void UpdateGPUData(RenderContext& Context)
         {
-            UINT SizeInBytes = sizeof(WorldMatrices);
+            auto tf = Transform_.lock();
+            if (!tf || !cb_) return;
 
-            WorldMatrices WorldMatrices;
-            WorldMatrices.World = Transform_.lock()->GetWorldMatrix().Transpose();
-            WorldMatrices.WorldInverse = Transform_.lock()->GetInverseWorldMatrix().Transpose();
-            const auto WorldMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&WorldMatrices), SizeInBytes};
+            WorldMatrices wm;
+            wm.World = tf->GetWorldMatrix().Transpose();
+            wm.WorldInverse = tf->GetInverseWorldMatrix().Transpose();
 
-            if (IsStatic_)
-            {
-                ConstantBuffer_->UpdateContentsImmediate(Context, WorldMatricesSpan, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            }
-            else
-            {
-                D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-
-                ConstantBufferView_ = Context.AllocateDynamicConstantView(WorldMatricesSpan, desc);
-            }
+            Context.GetCommandList()->writeBuffer(cb_, &wm, sizeof(wm));
         }
 
-        D3D12_GPU_DESCRIPTOR_HANDLE GetDescriptor() const
-        {
-            return ConstantBufferView_->getDescriptor().getGPUHandle();
-        }
+        nvrhi::IBuffer* GetBuffer() const { return cb_; }
 
     private:
-        bool IsStatic_;
-        std::shared_ptr<GPULocalResource> ConstantBuffer_;
+        bool IsStatic_ = true;
         std::weak_ptr<TransformComponent> Transform_;
-        std::shared_ptr<BufferView<Constant>> ConstantBufferView_;
+        nvrhi::BufferHandle cb_;
     };
 }

@@ -149,7 +149,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;python312_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;nvrhi.lib;nvrhi_d3d12.lib;python312_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -173,7 +173,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;python312.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;nvrhi.lib;nvrhi_d3d12.lib;python312.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -267,15 +267,9 @@
     <ClInclude Include="Source\Core\PySripting\ScriptHelpers.h" />
     <ClInclude Include="Source\Core\PySripting\ScriptPropertyModifications.h" />
     <ClInclude Include="Source\Core\PySripting\ScriptSystem.h" />
-    <ClInclude Include="Source\Core\Render\Align.h" />
-    <ClInclude Include="Source\Core\Render\BufferView.h" />
-    <ClInclude Include="Source\Core\Render\CommandQueue.h" />
-    <ClInclude Include="Source\Core\Render\DescriptorHeap.h" />
     <ClInclude Include="Source\Core\Render\DirectXUtils.h" />
     <ClInclude Include="Source\Core\Render\EditorRenderSystem.h" />
-    <ClInclude Include="Source\Core\Render\FrameContext.h" />
     <ClInclude Include="Source\Core\Render\GBuffer.h" />
-    <ClInclude Include="Source\Core\Render\GPULocalResource.h" />
     <ClInclude Include="Source\Core\Render\IDrawable.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorContext.h" />
     <ClInclude Include="Source\Core\Render\ImGuiWindows\EditorViewport.h" />
@@ -294,7 +288,7 @@
     <ClInclude Include="Source\Core\Render\Mesh.h" />
     <ClInclude Include="Source\Core\Render\ObjectMask.h" />
     <ClInclude Include="Source\Core\Render\PerObjectData.h" />
-    <ClInclude Include="Source\Core\Render\PSO.h" />
+    <ClInclude Include="Source\Core\Render\Pipeline.h" />
     <ClInclude Include="Source\Core\Render\RenderContext.h" />
     <ClInclude Include="Source\Core\Render\RenderData.h" />
     <ClInclude Include="Source\Core\Render\RenderDevice.h" />
@@ -311,15 +305,11 @@
     <ClInclude Include="Source\Core\Render\RenderSystem.h" />
     <ClInclude Include="Source\Core\Render\RenderSystemSettings.h" />
     <ClInclude Include="Source\Core\Render\SceneVisibility.h" />
-    <ClInclude Include="Source\Core\Render\Shader.h" />
     <ClInclude Include="Source\Core\Render\ShaderManager.h" />
     <ClInclude Include="Source\Core\Render\SkeletalMesh.h" />
     <ClInclude Include="Source\Core\Render\SwapChain.h" />
-    <ClInclude Include="Source\Core\Render\UploadBuffer.h" />
-    <ClInclude Include="Source\Core\Render\VariableSizeAllocationsManager.h" />
     <ClInclude Include="Source\Core\Render\VertexTypes.h" />
     <ClInclude Include="Source\Core\Render\Viewport.h" />
-    <ClInclude Include="Source\Core\Render\ViewTypes.h" />
     <ClInclude Include="Source\Core\Timer.h" />
     <ClInclude Include="Source\Core\unique_any.h" />
     <ClInclude Include="Source\Core\Uuid.h" />

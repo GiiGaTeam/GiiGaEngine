@@ -149,9 +149,11 @@ namespace GiiGa
             }
         }
 
-        void Draw(RenderContext& context) override
+        void Draw(RenderContext& context, nvrhi::GraphicsState& state) override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
+            mesh_->Bind(state);
+            context.GetCommandList()->setGraphicsState(state);
+            context.GetCommandList()->drawIndexed(nvrhi::DrawArguments().setVertexCount(mesh_->GetIndexCount()));
         }
 
         SortData GetSortData() override

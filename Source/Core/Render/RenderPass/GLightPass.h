@@ -1,17 +1,13 @@
-﻿#pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
-
+#pragma once
 
 #include<memory>
-#include<vector>
 #include<functional>
+#include<unordered_map>
+
+#include<nvrhi/nvrhi.h>
 
 #include<RenderPass.h>
-#include<PSO.h>
+#include<Pipeline.h>
 #include<IRenderable.h>
 #include<SceneVisibility.h>
 #include<RenderPassViewData.h>
@@ -22,273 +18,202 @@
 #include<PerObjectData.h>
 #include<IObjectShaderResource.h>
 #include<GBuffer.h>
+#include<DirectionalLightComponent.h>
 
 namespace GiiGa
 {
+    // Deferred lighting via stencil light-volumes. For point lights a two-phase algorithm runs:
+    // an "unmark" pass decrements the stencil where the volume back-faces fail the (reversed)
+    // depth test, then an additive "shade" pass lights only the marked pixels. Directional lights
+    // shade a full-screen quad and sample the cascade shadow map.
     class GLightPass : public RenderPass
     {
-        static inline int ViewDataRootIndex = 0;
-        static inline int ModelDataRootIndex = 1;
-        static inline int ScreenDimensionsRootIndex = 2;
-        static inline int LightDataRootIndex = 3;
-
-        static inline int ConstantBufferCount = LightDataRootIndex + 1;
-        static inline int SRVCount = 5;
-
     public:
         GLightPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn, std::shared_ptr<GBuffer> gbuffer):
             getCamInfoDataFunction_(getCamDescFn),
             gbuffer_(gbuffer)
         {
-            DXGI_FORMAT g_format_array[] = {GBuffer::G_FORMAT};
+            auto& device = context.GetDevice();
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX,
-                .ShaderRegister = 0
-            };
+            sampler_ = device.Device()->createSampler(
+                nvrhi::SamplerDesc().setAllFilters(true).setAllAddressModes(nvrhi::SamplerAddressMode::Wrap));
 
-            auto compression_sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX,
-                .ShaderRegister = 1
-            };
+            comparison_sampler_ = device.Device()->createSampler(
+                nvrhi::SamplerDesc().setAllFilters(true).setAllAddressModes(nvrhi::SamplerAddressMode::Border)
+                                    .setReductionType(nvrhi::SamplerReductionType::Comparison));
 
-            //unmark PSOs
+            // Binding layouts ---------------------------------------------------
+            // Unmark: only the view (b0) and per-object (b1) CBs (VertexPNTBT VS, no PS).
             {
-                D3D12_RASTERIZER_DESC unmark_rs = CD3DX12_RASTERIZER_DESC(
-                    D3D12_FILL_MODE_SOLID,
-                    D3D12_CULL_MODE_BACK,
-                    TRUE,
-                    D3D12_DEFAULT_DEPTH_BIAS,
-                    D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                    D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
-                    TRUE,
-                    FALSE,
-                    FALSE,
-                    0,
-                    D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF
-                );
-
-                D3D12_DEPTH_STENCIL_DESC unmark_ds
-                {
-                    .DepthEnable = TRUE,
-                    .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
-                    .DepthFunc = D3D12_COMPARISON_FUNC_GREATER,
-                    .StencilEnable = TRUE,
-                    .StencilReadMask = 0xff,
-                    .StencilWriteMask = 0xff,
-                    .FrontFace = {
-                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilPassOp = D3D12_STENCIL_OP_DECR_SAT,
-                        .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
-                    },
-                    .BackFace = {
-                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilPassOp = D3D12_STENCIL_OP_DECR_SAT,
-                        .StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS
-                    }
-                };
-
-                unmark_pso
-                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                    .set_input_layout(VertexPNTBT::InputLayout)
-                    .set_rtv_format(g_format_array, 1)
-                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                    .set_depth_stencil_state(unmark_ds)
-                    .set_rasterizer_state(unmark_rs)
-                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                    {
-                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                    })
-                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                    {
-                    })
-                    .add_static_samplers(sampler_desc)
-                    .add_static_samplers(compression_sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
+                nvrhi::BindingLayoutDesc l;
+                l.setVisibility(nvrhi::ShaderType::All);
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(0));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(1));
+                unmark_layout_ = device.Device()->createBindingLayout(l);
+            }
+            // Point shade: b0..b3 + Diffuse/Material/Normal (t0..t2) + sampler s0.
+            {
+                nvrhi::BindingLayoutDesc l;
+                l.setVisibility(nvrhi::ShaderType::All);
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(0));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(1));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(2));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(3));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+                l.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+                point_layout_ = device.Device()->createBindingLayout(l);
+            }
+            // Directional shade: point layout + cascade shadow map (t3), cascade data (t4),
+            // comparison sampler (s1).
+            {
+                nvrhi::BindingLayoutDesc l;
+                l.setVisibility(nvrhi::ShaderType::All);
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(0));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(1));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(2));
+                l.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(3));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+                l.addItem(nvrhi::BindingLayoutItem::Texture_SRV(3));
+                l.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(4));
+                l.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+                l.addItem(nvrhi::BindingLayoutItem::Sampler(1));
+                dir_layout_ = device.Device()->createBindingLayout(l);
             }
 
-            // shade PSOs
+            using SOD = nvrhi::DepthStencilState::StencilOpDesc;
+
+            // Unmark: reversed depth test, decrement stencil on pass, no colour/depth writes.
             {
-                D3D12_RASTERIZER_DESC shade_rs = {
-                    .FillMode = D3D12_FILL_MODE_SOLID,
-                    .CullMode = D3D12_CULL_MODE_FRONT,
-                    .FrontCounterClockwise = TRUE,
-                    .DepthBias = D3D12_DEFAULT_DEPTH_BIAS,
-                    .DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                    .SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
-                    .DepthClipEnable = FALSE,
-                    .MultisampleEnable = FALSE,
-                    .AntialiasedLineEnable = FALSE,
-                    .ForcedSampleCount = 0,
-                    .ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
-                };
+                nvrhi::DepthStencilState ds;
+                ds.enableDepthTest().disableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::Greater)
+                  .enableStencil().setStencilReadMask(0xff).setStencilWriteMask(0xff)
+                  .setFrontFaceStencil(SOD().setPassOp(nvrhi::StencilOp::DecrementAndClamp).setStencilFunc(nvrhi::ComparisonFunc::Always))
+                  .setBackFaceStencil(SOD().setPassOp(nvrhi::StencilOp::DecrementAndClamp).setStencilFunc(nvrhi::ComparisonFunc::Always));
 
-                D3D12_DEPTH_STENCIL_DESC shade_ds = {
-                    .DepthEnable = TRUE,
-                    .DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
-                    .DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL,
-                    .StencilEnable = TRUE,
-                    .StencilReadMask = 0xff,
-                    .StencilWriteMask = 0xff,
-                    .FrontFace = D3D12_DEPTH_STENCILOP_DESC{
-                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilFunc = D3D12_COMPARISON_FUNC_EQUAL
-                    },
-                    .BackFace = {
-                        .StencilFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilDepthFailOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilPassOp = D3D12_STENCIL_OP_KEEP,
-                        .StencilFunc = D3D12_COMPARISON_FUNC_EQUAL
-                    },
-                };
+                Pipeline p;
+                p.VS(ShaderManager::GetShaderByName(device, VertexPNTBTShader))
+                 .InputLayout(VertexPNTBT::CreateInputLayout(device, ShaderManager::GetShaderByName(device, VertexPNTBTShader)))
+                 .Raster(DefaultRasterState().setCullBack().setFrontCounterClockwise(true))
+                 .Depth(ds)
+                 .AddBindingLayout(unmark_layout_);
+                unmark_pipeline_ = p.Build(device, gbuffer_->GetDepthOnlyFramebuffer());
+            }
 
-                D3D12_DEPTH_STENCIL_DESC shade_dir_ds = shade_ds;
-                shade_dir_ds.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+            nvrhi::BlendState addBlend;
+            addBlend.targets[0].enableBlend()
+                    .setSrcBlend(nvrhi::BlendFactor::One).setDestBlend(nvrhi::BlendFactor::One).setBlendOp(nvrhi::BlendOp::Add)
+                    .setSrcBlendAlpha(nvrhi::BlendFactor::One).setDestBlendAlpha(nvrhi::BlendFactor::Zero).setBlendOpAlpha(nvrhi::BlendOp::Add);
 
-                D3D12_BLEND_DESC blendDesc = {};
-                blendDesc.AlphaToCoverageEnable = FALSE;
-                blendDesc.IndependentBlendEnable = FALSE;
+            SOD stencilEqual = SOD().setStencilFunc(nvrhi::ComparisonFunc::Equal);
 
-                D3D12_RENDER_TARGET_BLEND_DESC renderTargetDesc = {
-                    .BlendEnable = TRUE,
-                    .SrcBlend = D3D12_BLEND_ONE,
-                    .DestBlend = D3D12_BLEND_ONE,
-                    .BlendOp = D3D12_BLEND_OP_ADD,
-                    .SrcBlendAlpha = D3D12_BLEND_ONE,
-                    .DestBlendAlpha = D3D12_BLEND_ZERO,
-                    .BlendOpAlpha = D3D12_BLEND_OP_ADD,
-                    .RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL
-                };
+            // Point shade: front-face cull, reversed depth compare, stencil==1, additive.
+            {
+                nvrhi::DepthStencilState ds;
+                ds.enableDepthTest().disableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::GreaterOrEqual)
+                  .enableStencil().setStencilReadMask(0xff).setStencilWriteMask(0xff).setStencilRefValue(1)
+                  .setFrontFaceStencil(stencilEqual).setBackFaceStencil(stencilEqual);
 
-                blendDesc.RenderTarget[0] = renderTargetDesc;
+                auto vs = ShaderManager::GetShaderByName(device, VertexPNTBTShader);
+                Pipeline p;
+                p.VS(vs).PS(ShaderManager::GetShaderByName(device, GPointLight))
+                 .InputLayout(VertexPNTBT::CreateInputLayout(device, vs))
+                 .Raster(DefaultRasterState().setCullFront().setFrontCounterClockwise(true).setDepthClipEnable(false))
+                 .Depth(ds).Blend(addBlend)
+                 .AddBindingLayout(point_layout_);
+                point_shade_ = MaskPipeline{p.Build(device, gbuffer_->GetLightFramebuffer()), point_layout_};
+            }
 
+            // Directional shade: full-screen quad, standard depth compare, stencil==1, additive.
+            {
+                nvrhi::DepthStencilState ds;
+                ds.enableDepthTest().disableDepthWrite().setDepthFunc(nvrhi::ComparisonFunc::Less)
+                  .enableStencil().setStencilReadMask(0xff).setStencilWriteMask(0xff).setStencilRefValue(1)
+                  .setFrontFaceStencil(stencilEqual).setBackFaceStencil(stencilEqual);
 
-                shade_mask_to_pso[filter_pointLight_]
-                    .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                    .set_ps(ShaderManager::GetShaderByName(GPointLight))
-                    .set_rasterizer_state(shade_rs)
-                    .set_input_layout(VertexPNTBT::InputLayout)
-                    .set_rtv_format(g_format_array, 1)
-                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                    .set_depth_stencil_state(shade_ds)
-                    .set_blend_state(blendDesc)
-                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                    {
-                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                    })
-                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                    {
-                        const auto& descs = resource.GetDescriptors();
-                        context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
-                    })
-                    .add_static_samplers(sampler_desc)
-                    .add_static_samplers(compression_sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
-
-                shade_mask_to_pso[filter_directionalLight_]
-
-                    .set_vs(ShaderManager::GetShaderByName(VertexFullQuadShader))
-                    .set_ps(ShaderManager::GetShaderByName(GDirectionLight))
-                    .set_rasterizer_state(shade_rs)
-                    .set_input_layout(VertexPNTBT::InputLayout)
-                    .set_rtv_format(g_format_array, 1)
-                    .set_dsv_format(GBuffer::DS_FORMAT_DSV)
-                    .set_depth_stencil_state(shade_dir_ds)
-                    .set_blend_state(blendDesc)
-                    .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                    {
-                        context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                    })
-                    .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                    {
-                        const auto& descs = resource.GetDescriptors();
-                        context.BindDescriptorHandle(LightDataRootIndex, descs[0]);
-                    })
-                    .add_static_samplers(sampler_desc)
-                    .add_static_samplers(compression_sampler_desc)
-                    .GeneratePSO(context.GetDevice(), ConstantBufferCount, SRVCount);
+                auto vs = ShaderManager::GetShaderByName(device, VertexFullQuadShader);
+                Pipeline p;
+                p.VS(vs).PS(ShaderManager::GetShaderByName(device, GDirectionLight))
+                 .InputLayout(VertexPNTBT::CreateInputLayout(device, vs))
+                 .Raster(DefaultRasterState().setCullFront().setFrontCounterClockwise(true).setDepthClipEnable(false))
+                 .Depth(ds).Blend(addBlend)
+                 .AddBindingLayout(dir_layout_);
+                dir_shade_ = MaskPipeline{p.Build(device, gbuffer_->GetLightFramebuffer()), dir_layout_};
             }
         }
 
         void Draw(RenderContext& context) override
         {
             auto cam_info = getCamInfoDataFunction_();
+            auto& device = context.GetDevice();
 
             auto visibles = SceneVisibility::ExtractFromFrustum(filter_pointLight_, cam_info.camera.GetViewProj());
-
-            // Frustum culling should not work for directional lighting.
+            // Frustum culling should not apply to directional lighting.
             SceneVisibility::ExpandByFilterFromAll(filter_directionalLight_, visibles);
 
-            context.SetSignature(shade_mask_to_pso.begin()->second.GetSignature().get());
-            context.BindDescriptorHandle(ViewDataRootIndex, cam_info.viewDescriptor);
-            context.BindDescriptorHandle(ScreenDimensionsRootIndex, cam_info.dimensionsDescriptor);
-
-            auto accum = gbuffer_->GetRTV(GBuffer::GBufferOrder::LightAccumulation);
-            auto depth = gbuffer_->GetDepthRTV();
-
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Diffuse, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::Material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            gbuffer_->TransitionResource(context, GBuffer::GBufferOrder::NormalWS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-            context.BindDescriptorHandle(ConstantBufferCount + 0, gbuffer_->GetSRV(GBuffer::GBufferOrder::Diffuse));
-            context.BindDescriptorHandle(ConstantBufferCount + 1, gbuffer_->GetSRV(GBuffer::GBufferOrder::Material));
-            context.BindDescriptorHandle(ConstantBufferCount + 2, gbuffer_->GetSRV(GBuffer::GBufferOrder::NormalWS));
-            context.BindDescriptorHandle(ConstantBufferCount + 3, gbuffer_->GetDepthSRV());
+            nvrhi::ViewportState vp;
+            vp.addViewportAndScissorRect(nvrhi::Viewport(cam_info.screenDimensions.screenDimensions.x,
+                                                         cam_info.screenDimensions.screenDimensions.y));
 
             for (auto& visible : visibles)
             {
-                PSO shade_pso;
-                if (!GetPsoFromMapByMask(shade_mask_to_pso, visible.first, shade_pso)) continue;
+                const bool isDir = filter_directionalLight_.CoversMask(visible.first);
+                const MaskPipeline& shade = isDir ? dir_shade_ : point_shade_;
 
-                for (auto& common_resource_group : visible.second.common_resource_renderables)
+                for (auto& [key, group] : visible.second.common_resource_renderables)
                 {
-                    shade_pso.SetShaderResources(context, *common_resource_group.second.shaderResource);
-
-                    for (auto& renderable : common_resource_group.second.renderables)
+                    for (auto& weak : group.renderables)
                     {
+                        auto renderable = weak.lock();
+                        if (!renderable) continue;
+
                         gbuffer_->ClearStencil(context, 1);
 
-                        if (!filter_directionalLight_.CoversMask(renderable.lock()->GetSortData().object_mask))
+                        // Unmark (point lights only).
+                        if (!isDir)
                         {
-                            // unmar
-                            context.BindPSO(unmark_pso.GetState().get());
-                            unmark_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                            context.GetGraphicsCommandList()->OMSetRenderTargets(0, nullptr,
-                                                                                 false, &depth);
-                            renderable.lock()->Draw(context);
-                        }
-                        else if (auto dir_light = std::dynamic_pointer_cast<DirectionalLightComponent>(renderable.lock()))
-                        {
-                            dir_light->TransitionDepthShadowResource(context, D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-                            context.BindDescriptorHandle(ConstantBufferCount + 3, dir_light->GetShadowSRV()); // в теории работает для любого света, но пока по***
-                            context.BindDescriptorHandle(ConstantBufferCount + 4, dir_light->GetCascadeDataSRV());
+                            nvrhi::BindingSetDesc ub;
+                            ub.addItem(nvrhi::BindingSetItem::ConstantBuffer(0, cam_info.viewCB));
+                            ub.addItem(nvrhi::BindingSetItem::ConstantBuffer(1, renderable->GetPerObjectData().GetBuffer()));
+                            nvrhi::BindingSetHandle uset = device.Device()->createBindingSet(ub, unmark_layout_);
+
+                            nvrhi::GraphicsState ustate;
+                            ustate.setPipeline(unmark_pipeline_).setFramebuffer(gbuffer_->GetDepthOnlyFramebuffer()).setViewport(vp);
+                            ustate.addBindingSet(uset);
+                            renderable->Draw(context, ustate);
                         }
 
+                        // Shade.
+                        nvrhi::BindingSetDesc bsd;
+                        bsd.addItem(nvrhi::BindingSetItem::ConstantBuffer(0, cam_info.viewCB));
+                        bsd.addItem(nvrhi::BindingSetItem::ConstantBuffer(1, renderable->GetPerObjectData().GetBuffer()));
+                        bsd.addItem(nvrhi::BindingSetItem::ConstantBuffer(2, cam_info.dimensionsCB));
+                        group.shaderResource->AddBindings(bsd); // light data at b3
+                        bsd.addItem(nvrhi::BindingSetItem::Texture_SRV(0, gbuffer_->GetColorTexture(GBuffer::GBufferOrder::Diffuse)));
+                        bsd.addItem(nvrhi::BindingSetItem::Texture_SRV(1, gbuffer_->GetColorTexture(GBuffer::GBufferOrder::Material)));
+                        bsd.addItem(nvrhi::BindingSetItem::Texture_SRV(2, gbuffer_->GetColorTexture(GBuffer::GBufferOrder::NormalWS)));
+                        bsd.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+
+                        nvrhi::BindingLayoutHandle layout = point_layout_;
+                        if (isDir)
                         {
-                            // shade
-                            context.BindPSO(shade_pso.GetState().get());
-                            shade_pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                            context.GetGraphicsCommandList()->OMSetRenderTargets(1, &accum,
-                                                                                 false, &depth);
-                            context.GetGraphicsCommandList()->OMSetStencilRef(1);
-                            renderable.lock()->Draw(context);
+                            auto dir = std::dynamic_pointer_cast<DirectionalLightComponent>(renderable);
+                            if (!dir) continue;
+                            bsd.addItem(nvrhi::BindingSetItem::Texture_SRV(3, dir->GetShadowTexture()));
+                            bsd.addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(4, dir->GetCascadeBuffer()));
+                            bsd.addItem(nvrhi::BindingSetItem::Sampler(1, comparison_sampler_));
+                            layout = dir_layout_;
                         }
+
+                        nvrhi::BindingSetHandle set = device.Device()->createBindingSet(bsd, layout);
+
+                        nvrhi::GraphicsState state;
+                        state.setPipeline(shade.pipeline).setFramebuffer(gbuffer_->GetLightFramebuffer()).setViewport(vp);
+                        state.addBindingSet(set);
+                        renderable->Draw(context, state);
                     }
                 }
             }
@@ -303,8 +228,15 @@ namespace GiiGa
                                                           .SetLightType(LightType::Directional)
                                                           .SetBlendMode(BlendMode::Debug);
 
-        std::unordered_map<ObjectMask, PSO> shade_mask_to_pso;
-        PSO unmark_pso;
+        nvrhi::BindingLayoutHandle unmark_layout_;
+        nvrhi::BindingLayoutHandle point_layout_;
+        nvrhi::BindingLayoutHandle dir_layout_;
+        nvrhi::GraphicsPipelineHandle unmark_pipeline_;
+        MaskPipeline point_shade_;
+        MaskPipeline dir_shade_;
+        nvrhi::SamplerHandle sampler_;
+        nvrhi::SamplerHandle comparison_sampler_;
+
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
         std::shared_ptr<GBuffer> gbuffer_;
     };

@@ -1,19 +1,13 @@
 #pragma once
-#ifndef NOMINMAX
-#define NOMINMAX
-#include "GBuffer.h"
-#include "Material.h"
-#endif
-#include<d3d12.h>
-#include<directx/d3dx12_core.h>
-
 
 #include<memory>
-#include<vector>
 #include<functional>
+#include<unordered_map>
+
+#include<nvrhi/nvrhi.h>
 
 #include<RenderPass.h>
-#include<PSO.h>
+#include<Pipeline.h>
 #include<IRenderable.h>
 #include<SceneVisibility.h>
 #include<RenderPassViewData.h>
@@ -23,124 +17,118 @@
 #include<CameraComponent.h>
 #include<PerObjectData.h>
 #include<IObjectShaderResource.h>
+#include<GBuffer.h>
+#include<Material.h>
 
 namespace GiiGa
 {
+    // Forward pass for unlit-opaque and translucent/masked geometry, accumulating into
+    // LightAccumulation. Uses the full material binding layout (b0/b1/b2 + t0..t7 + s0) since
+    // the OpaqueUnlit shader includes MaterialHeader.
     class ForwardPass : public RenderPass
     {
     public:
-        static inline const int ViewDataRootIndex = 0;
-        static inline const int ModelDataRootIndex = 1;
-        static inline const int MaterialDataRootIndex = 2;
-
-        static inline const int ConstantBufferCount = MaterialDataRootIndex + 1;
-
-        ForwardPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn):
-            getCamInfoDataFunction_(getCamDescFn)
+        ForwardPass(RenderContext& context, const std::function<RenderPassViewData()>& getCamDescFn, std::shared_ptr<GBuffer> gbuffer):
+            getCamInfoDataFunction_(getCamDescFn),
+            gbuffer_(gbuffer)
         {
-            D3D12_RASTERIZER_DESC rast_desc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            rast_desc.CullMode = D3D12_CULL_MODE_BACK;
-            rast_desc.FrontCounterClockwise = true;
+            auto& device = context.GetDevice();
 
-            auto sampler_desc = D3D12_STATIC_SAMPLER_DESC{
-                .Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR,
-                .AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-                .ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER,
-                .MinLOD = 0,
-                .MaxLOD = D3D12_FLOAT32_MAX
-            };
+            nvrhi::BindingLayoutDesc layoutDesc;
+            layoutDesc.setVisibility(nvrhi::ShaderType::All);
+            layoutDesc.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(0));
+            layoutDesc.addItem(nvrhi::BindingLayoutItem::VolatileConstantBuffer(1));
+            layoutDesc.addItem(nvrhi::BindingLayoutItem::ConstantBuffer(2));
+            for (uint32_t t = 0; t < MaxTextureCount; ++t)
+                layoutDesc.addItem(nvrhi::BindingLayoutItem::Texture_SRV(t));
+            bindingLayout_ = device.Device()->createBindingLayout(layoutDesc);
 
-            D3D12_BLEND_DESC blend_translucent_desc = {};
+            // Static samplers live in a separate binding set built once (see GBufferPass) to avoid
+            // exhausting the 2048-entry shader-visible sampler heap with per-draw allocations.
+            nvrhi::BindingLayoutDesc samplerLayoutDesc;
+            samplerLayoutDesc.setVisibility(nvrhi::ShaderType::All);
+            samplerLayoutDesc.addItem(nvrhi::BindingLayoutItem::Sampler(0));
+            samplerLayout_ = device.Device()->createBindingLayout(samplerLayoutDesc);
 
-            D3D12_RENDER_TARGET_BLEND_DESC renderTargetDesc = {
-                .BlendEnable = TRUE,
-                .SrcBlend = D3D12_BLEND_SRC_ALPHA,
-                .DestBlend = D3D12_BLEND_INV_SRC_ALPHA,
-                .BlendOp = D3D12_BLEND_OP_ADD,
-                .SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA,
-                .DestBlendAlpha = D3D12_BLEND_ONE,
-                .BlendOpAlpha = D3D12_BLEND_OP_ADD,
-                .RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL
-            };
+            sampler_ = device.Device()->createSampler(
+                nvrhi::SamplerDesc().setAllFilters(true).setAllAddressModes(nvrhi::SamplerAddressMode::Wrap));
 
-            blend_translucent_desc.RenderTarget[0] = renderTargetDesc;
+            nvrhi::BindingSetDesc samplerSetDesc;
+            samplerSetDesc.addItem(nvrhi::BindingSetItem::Sampler(0, sampler_));
+            samplerSet_ = device.Device()->createBindingSet(samplerSetDesc, samplerLayout_);
 
-            DXGI_FORMAT rtv_format_array[] = {GBuffer::G_FORMAT};
+            auto vs = ShaderManager::GetShaderByName(device, VertexPNTBTShader);
+            auto ps = ShaderManager::GetShaderByName(device, OpaqueUnlitShader);
+            auto inputLayout = VertexPNTBT::CreateInputLayout(device, vs);
 
-            mask_to_pso[filter_unlit_solid_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .set_rtv_format(rtv_format_array, 1)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[1]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            // Unlit solid (no blend)
+            {
+                Pipeline p;
+                p.VS(vs).PS(ps).InputLayout(inputLayout)
+                 .Raster(DefaultRasterState().setCullBack().setFrontCounterClockwise(true))
+                 .Depth(DefaultDepthState())
+                 .AddBindingLayout(bindingLayout_)
+                 .AddBindingLayout(samplerLayout_);
+                mask_to_pipeline_[filter_unlit_solid_] = MaskPipeline{p.Build(device, gbuffer_->GetLightFramebuffer()), bindingLayout_};
+            }
 
-            mask_to_pso[filter_translucent_]
-                .set_vs(ShaderManager::GetShaderByName(VertexPNTBTShader))
-                .set_ps(ShaderManager::GetShaderByName(OpaqueUnlitShader))
-                .set_rasterizer_state(rast_desc)
-                .set_blend_state(blend_translucent_desc)
-                .set_rtv_format(rtv_format_array, 1)
-                .set_input_layout(VertexPNTBT::InputLayout)
-                .SetPerObjectDataFunction([](RenderContext& context, PerObjectData& per_obj)
-                {
-                    context.BindDescriptorHandle(ModelDataRootIndex, per_obj.GetDescriptor());
-                })
-                .SetShaderResourceFunction([](RenderContext& context, IObjectShaderResource& resource)
-                {
-                    const auto& descs = resource.GetDescriptors();
-                    context.BindDescriptorHandle(MaterialDataRootIndex, descs[0]);
-                    context.BindDescriptorHandle(MaterialDataRootIndex + static_cast<int>(TexturesOrder::EmissiveColor), descs[1]);
-                })
-                .add_static_samplers(sampler_desc)
-                .GeneratePSO(context.GetDevice(), ConstantBufferCount, MaxTextureCount);
+            // Translucent (alpha blend)
+            {
+                nvrhi::BlendState blend;
+                blend.targets[0].setBlendEnable(true)
+                     .setSrcBlend(nvrhi::BlendFactor::SrcAlpha).setDestBlend(nvrhi::BlendFactor::OneMinusSrcAlpha).setBlendOp(nvrhi::BlendOp::Add)
+                     .setSrcBlendAlpha(nvrhi::BlendFactor::OneMinusDstAlpha).setDestBlendAlpha(nvrhi::BlendFactor::One).setBlendOpAlpha(nvrhi::BlendOp::Add);
+
+                Pipeline p;
+                p.VS(vs).PS(ps).InputLayout(inputLayout)
+                 .Raster(DefaultRasterState().setCullBack().setFrontCounterClockwise(true))
+                 .Depth(DefaultDepthState())
+                 .Blend(blend)
+                 .AddBindingLayout(bindingLayout_)
+                 .AddBindingLayout(samplerLayout_);
+                mask_to_pipeline_[filter_translucent_] = MaskPipeline{p.Build(device, gbuffer_->GetLightFramebuffer()), bindingLayout_};
+            }
         }
 
         void Draw(RenderContext& context) override
         {
             auto cam_info = getCamInfoDataFunction_();
+            auto& device = context.GetDevice();
 
             const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
-
             const auto& vis_unlit = SceneVisibility::Extract(filter_unlit_solid_, frustum_culling_res);
             const auto& vis_translucent = SceneVisibility::Extract(filter_translucent_, frustum_culling_res);
             std::unordered_map<ObjectMask, DrawPacket> visibles;
             SceneVisibility::Expand(vis_unlit, visibles);
             SceneVisibility::Expand(vis_translucent, visibles);
 
-            context.SetSignature(mask_to_pso.begin()->second.GetSignature().get());
-            context.BindDescriptorHandle(0, cam_info.viewDescriptor);
-
-            //if (visibles.size() > 0) el::Loggers::getLogger(LogRendering)->debug("some rendering visibles %v", visibles.size());
+            nvrhi::ViewportState vp;
+            vp.addViewportAndScissorRect(nvrhi::Viewport(cam_info.screenDimensions.screenDimensions.x,
+                                                         cam_info.screenDimensions.screenDimensions.y));
 
             for (auto& visible : visibles)
             {
-                PSO pso;
-                if (!GetPsoFromMapByMask(mask_to_pso, visible.first, pso)) continue;
+                MaskPipeline mp;
+                if (!GetPipelineFromMapByMask(mask_to_pipeline_, visible.first, mp)) continue;
 
-                context.BindPSO(pso.GetState().get());
-                context.SetSignature(pso.GetSignature().get());
-                for (auto& common_resource_group : visible.second.common_resource_renderables)
+                for (auto& [key, group] : visible.second.common_resource_renderables)
                 {
-                    auto CRG = common_resource_group.second;
-                    pso.SetShaderResources(context, *CRG.shaderResource);
-                    for (auto& renderable : common_resource_group.second.renderables)
+                    for (auto& weak : group.renderables)
                     {
-                        pso.SetPerObjectData(context, renderable.lock()->GetPerObjectData());
-                        renderable.lock()->Draw(context);
+                        auto renderable = weak.lock();
+                        if (!renderable) continue;
+
+                        nvrhi::BindingSetDesc bsd;
+                        bsd.addItem(nvrhi::BindingSetItem::ConstantBuffer(0, cam_info.viewCB));
+                        bsd.addItem(nvrhi::BindingSetItem::ConstantBuffer(1, renderable->GetPerObjectData().GetBuffer()));
+                        group.shaderResource->AddBindings(bsd);
+                        nvrhi::BindingSetHandle set = device.Device()->createBindingSet(bsd, bindingLayout_);
+
+                        nvrhi::GraphicsState state;
+                        state.setPipeline(mp.pipeline).setFramebuffer(gbuffer_->GetLightFramebuffer()).setViewport(vp);
+                        state.addBindingSet(set).addBindingSet(samplerSet_);
+
+                        renderable->Draw(context, state);
                     }
                 }
             }
@@ -157,7 +145,12 @@ namespace GiiGa
                                                      .SetBlendMode(BlendMode::Translucent | BlendMode::Masked)
                                                      .SetFillMode(FillMode::All);
 
-        std::unordered_map<ObjectMask, PSO> mask_to_pso;
+        std::unordered_map<ObjectMask, MaskPipeline> mask_to_pipeline_;
+        nvrhi::BindingLayoutHandle bindingLayout_;
+        nvrhi::BindingLayoutHandle samplerLayout_;
+        nvrhi::SamplerHandle sampler_;
+        nvrhi::BindingSetHandle samplerSet_;
         std::function<RenderPassViewData()> getCamInfoDataFunction_;
+        std::shared_ptr<GBuffer> gbuffer_;
     };
 }

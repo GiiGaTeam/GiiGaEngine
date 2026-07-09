@@ -6,17 +6,15 @@
 #include<directxtk12/SimpleMath.h>
 #include <ImGuizmo.h>
 
-
 #include<imgui.h>
 #include<string>
 #include<memory>
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include<d3d12.h>
+
+#include<nvrhi/nvrhi.h>
 
 #include<Viewport.h>
 #include<RenderDevice.h>
+#include<RenderContext.h>
 #include<GBufferPass.h>
 #include<GLightPass.h>
 #include<RenderGraph.h>
@@ -57,13 +55,20 @@ namespace GiiGa
         {
             Resize(viewport_size_);
 
+            viewInfoCB_ = device_.Device()->createBuffer(
+                nvrhi::BufferDesc().setByteSize(sizeof(RenderPassViewMatricies)).setIsConstantBuffer(true)
+                                   .setIsVolatile(true).setMaxVersions(8).setDebugName("ViewCB"));
+            screenDimCB_ = device_.Device()->createBuffer(
+                nvrhi::BufferDesc().setByteSize(sizeof(ScreenDimensions)).setIsConstantBuffer(true)
+                                   .setIsVolatile(true).setMaxVersions(8).setDebugName("ScreenDimCB"));
+
             renderGraph_ = std::make_shared<RenderGraph>();
 
             renderGraph_->AddPass(std::make_shared<ShadowPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
             renderGraph_->AddPass(std::make_shared<GBufferPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<GLightPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
-            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
-            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this)));
+            renderGraph_->AddPass(std::make_shared<ForwardPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
+            renderGraph_->AddPass(std::make_shared<DebugPass>(context, std::bind(&EditorViewport::GetCameraInfo, this), gbuffer_));
             renderGraph_->AddPass(std::make_shared<PostProcessPass>(context, std::bind(&EditorViewport::GetResultInfo, this), gbuffer_));
 
             camera_ = GameObject::CreateEmptyGameObject({.name = "Viewport Camera"});
@@ -82,22 +87,19 @@ namespace GiiGa
         RenderPassViewData GetCameraInfo() override
         {
             return RenderPassViewData{
-                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoConstBuffer->getDescriptor().getGPUHandle(),
-                viewport_size_, screenDimensionsConstBuffer->getDescriptor().getGPUHandle()
+                camera_.lock()->GetComponent<CameraComponent>()->GetCamera(), viewInfoCB_,
+                ScreenDimensions{viewport_size_}, screenDimCB_
             };
         }
 
         void Execute(RenderContext& context) override
         {
-            // TODO: Check simulation mode or editor mode
-
             if (camera_.expired()) return;
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
 
             if (ImGui::Begin(("Viewport" + std::to_string(viewport_index)).c_str(), nullptr, ImGuiWindowFlags_NoScrollWithMouse))
             {
-                //ImGui::SetScrollX(0);
                 if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
                 {
                     if (const auto movement = camera_.lock()->GetComponent<SpectatorMovementComponent>())
@@ -116,7 +118,7 @@ namespace GiiGa
             auto current_size = ImGui::GetContentRegionAvail();
             if (current_size.y < 0)
             {
-                current_size.y = 2; // Или skip
+                current_size.y = 2;
                 ImGui::Text("Content height is negative!");
             }
 
@@ -127,34 +129,19 @@ namespace GiiGa
             ImGuizmo::AllowAxisFlip(false);
             ImGuizmo::SetDrawlist();
 
-            // draw here
-            D3D12_VIEWPORT viewport = {};
-            viewport.TopLeftX = 0.0f;
-            viewport.TopLeftY = 0.0f;
-            viewport.Width = current_size.x;
-            viewport.Height = current_size.y;
-            viewport.MinDepth = 0.0f;
-            viewport.MaxDepth = 1.0f;
-            context.GetGraphicsCommandList()->RSSetViewports(1, &viewport);
-
-            D3D12_RECT scissorRect = {};
-            scissorRect.left = 0;
-            scissorRect.top = 0;
-            scissorRect.right = current_size.x;
-            scissorRect.bottom = current_size.y;
-            context.GetGraphicsCommandList()->RSSetScissorRects(1, &scissorRect);
-
-            context.GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+            // draw here (viewport/scissor are now set per-draw by each pass via GraphicsState)
             renderGraph_->Draw(context);
             // draw here - end
 
-            rtvData_.resource_->StateTransition(context, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            // The lit result was rendered as a render target; transition it so imgui can sample it.
+            context.GetCommandList()->setTextureState(rtvData_.resource_, nvrhi::AllSubresources, nvrhi::ResourceStates::ShaderResource);
+            context.GetCommandList()->commitBarriers();
 
-            //ImGui::Image((ImTextureID)RTHandle.ptr, ImVec2(viewport_size_.x, viewport_size_.y));
-            ImGui::Image((ImTextureID)rtvData_.SRV_->getDescriptor().getGPUHandle().ptr, ImVec2(viewport_size_.x, viewport_size_.y));
+            nvrhi::Object srvGpu = rtvData_.resource_->getNativeView(
+                nvrhi::ObjectTypes::D3D12_ShaderResourceViewGpuDescripror, nvrhi::Format::UNKNOWN,
+                nvrhi::AllSubresources, nvrhi::TextureDimension::Texture2D);
+            ImGui::Image((ImTextureID)srvGpu.integer, ImVec2(viewport_size_.x, viewport_size_.y));
 
-            // Widgets on viewport
             PostViewportDrawWidgets();
 
             ImGui::End();
@@ -164,8 +151,8 @@ namespace GiiGa
     private:
         int viewport_index = 0;
         std::weak_ptr<GameObject> camera_;
-        std::shared_ptr<BufferView<Constant>> viewInfoConstBuffer;
-        std::shared_ptr<BufferView<Constant>> screenDimensionsConstBuffer;
+        nvrhi::BufferHandle viewInfoCB_;
+        nvrhi::BufferHandle screenDimCB_;
         DirectX::SimpleMath::Matrix viewProjectionMatrix;
 
         std::shared_ptr<EditorContext> editorContext_;
@@ -190,45 +177,26 @@ namespace GiiGa
             bool scale = editorContext_->currentOperation_ & ImGuizmo::OPERATION::SCALEU;
 
             if (ImGui::Checkbox("Translate", &translate))
-            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(translate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::TRANSLATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::TRANSLATE);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Hotkey: W");
-            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Hotkey: W");
             ImGui::SameLine();
 
             if (ImGui::Checkbox("Rotate", &rotate))
-            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(rotate ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::ROTATE : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::ROTATE);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Hotkey: E");
-            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Hotkey: E");
             ImGui::SameLine();
 
             if (ImGui::Checkbox("Scale", &scale))
-            {
                 editorContext_->currentOperation_ = static_cast<ImGuizmo::OPERATION>(scale ? editorContext_->currentOperation_ | ImGuizmo::OPERATION::SCALEU : editorContext_->currentOperation_ & ~ImGuizmo::OPERATION::SCALEU);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Hotkey: S");
-            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Hotkey: S");
             ImGui::SameLine();
 
             if (ImGui::RadioButton("World", editorContext_->currentMode_ == ImGuizmo::MODE::WORLD))
-            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::WORLD;
-            }
             ImGui::SameLine();
 
             if (ImGui::RadioButton("Local", editorContext_->currentMode_ == ImGuizmo::MODE::LOCAL))
-            {
                 editorContext_->currentMode_ = ImGuizmo::MODE::LOCAL;
-            }
 
             ImGui::SameLine();
             WorldState current_state = World::GetInstance().GetState();
@@ -236,13 +204,9 @@ namespace GiiGa
             if (ImGui::Checkbox("Play", &isPlay))
             {
                 if (current_state == WorldState::Play)
-                {
                     World::GetInstance().SetState(WorldState::Edit);
-                }
                 else if (current_state == WorldState::Edit)
-                {
                     World::GetInstance().SetState(WorldState::Play);
-                }
             }
 
             ImGui::EndChild();
@@ -264,10 +228,6 @@ namespace GiiGa
             auto view = cmp.GetView();
             auto proj = cmp.GetProj();
 
-            /*auto grid_transform = DirectX::SimpleMath::Matrix::Identity;
-
-            ImGuizmo::DrawGrid((float*)view.m, (float*)proj.m, (float*)grid_transform.m, 100.0f);*/
-
             if (auto go = editorContext_->selectedGameObject.lock())
             {
                 auto transform = go->GetTransformComponent().lock();
@@ -278,7 +238,6 @@ namespace GiiGa
                 }
             }
         }
-
 
         void UpdateCameraInfo(RenderContext& context)
         {
@@ -293,19 +252,10 @@ namespace GiiGa
                 camera_go->GetTransformComponent().lock()->GetWorldLocation()
             };
 
-            const auto CameraMatricesSpan = std::span{reinterpret_cast<uint8_t*>(&const_buf_data), sizeof(RenderPassViewMatricies)};
-
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(RenderPassViewMatricies));
-
-            viewInfoConstBuffer = context.AllocateDynamicConstantView(CameraMatricesSpan, desc);
+            context.GetCommandList()->writeBuffer(viewInfoCB_, &const_buf_data, sizeof(RenderPassViewMatricies));
 
             ScreenDimensions size_const_data = {viewport_size_};
-
-            const auto ScreenDimensionsSpan = std::span{reinterpret_cast<uint8_t*>(&size_const_data), sizeof(ScreenDimensions)};
-
-            desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, sizeof(ScreenDimensions));
-
-            screenDimensionsConstBuffer = context.AllocateDynamicConstantView(ScreenDimensionsSpan, desc);
+            context.GetCommandList()->writeBuffer(screenDimCB_, &size_const_data, sizeof(ScreenDimensions));
         }
     };
 }

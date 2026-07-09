@@ -1,8 +1,5 @@
 #pragma once
 
-#include<d3d12.h>
-#include<directxtk12/DDSTextureLoader.h>
-#include<directxtk12/ResourceUploadBatch.h>
 #include<stdexcept>
 #include<filesystem>
 #include<memory>
@@ -10,8 +7,8 @@
 #include<AssetLoader.h>
 #include<AssetType.h>
 #include<ConcreteAsset/TextureAsset.h>
+#include<TextureLoadUtils.h>
 #include<Engine.h>
-#include<DirectXUtils.h>
 
 namespace GiiGa
 {
@@ -44,29 +41,10 @@ namespace GiiGa
                 throw std::runtime_error("File does not exist: " + path.string());
 
             auto rs = Engine::Instance().RenderSystem();
-            auto device = rs->GetRenderDevice().GetDxDevice();
 
-            DirectX::ResourceUploadBatch upload_batch(device.get());
-            upload_batch.Begin();
+            nvrhi::TextureHandle texture = LoadTextureFileToNvrhi(rs->GetRenderDevice(), path, /*dds*/ true);
 
-            ID3D12Resource* texture = nullptr;
-
-            HRESULT hr = DirectX::CreateDDSTextureFromFile(
-                device.get(),
-                upload_batch,
-                path.c_str(),
-                &texture
-            );
-
-            if (FAILED(hr))
-                throw std::runtime_error("Failed to load DDS texture: " + path.string());
-
-            auto future = upload_batch.End(rs->GetRenderContext().getGraphicsCommandQueue().get());
-            future.wait();
-
-            auto texture_ptr = std::shared_ptr<ID3D12Resource>(texture, DXDelayedDeleter{ rs->GetRenderDevice() });
-
-            return std::make_shared<TextureAsset>(handle, rs->GetRenderDevice(), texture_ptr);
+            return std::make_shared<TextureAsset>(handle, texture);
         }
 
         void Save(std::shared_ptr<AssetBase> asset, const std::filesystem::path& path) override

@@ -18,17 +18,14 @@ namespace GiiGa
         DirectX::SimpleMath::Vector3 color = {0.5f, 0.0f, 0.5f};
     };
 
+    // The debug wireframe pass does not sample per-object material resources, so this
+    // contributes no bindings.
     class CollisionShaderResource : public IObjectShaderResource
     {
     public:
-        std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> GetDescriptors() override
+        void AddBindings(nvrhi::BindingSetDesc& set) override
         {
-            std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> result(1);
-            result[0] = colorCBV_->getDescriptor().getGPUHandle();
-            return result;
         }
-
-        std::shared_ptr<BufferView<Constant>> colorCBV_;
     };
 
     class CollisionComponent : public IRenderable, public IUpdateGPUData, public ICollision
@@ -139,9 +136,11 @@ namespace GiiGa
         {
         }
 
-        void Draw(RenderContext& context) override
+        void Draw(RenderContext& context, nvrhi::GraphicsState& state) override
         {
-            mesh_->Draw(context.GetGraphicsCommandList());
+            mesh_->Bind(state);
+            context.GetCommandList()->setGraphicsState(state);
+            context.GetCommandList()->drawIndexed(nvrhi::DrawArguments().setVertexCount(mesh_->GetIndexCount()));
         }
 
         SortData GetSortData() override
@@ -164,15 +163,6 @@ namespace GiiGa
             if (!perObjectData_)
                 perObjectData_ = std::make_shared<PerObjectData>(context, std::dynamic_pointer_cast<CollisionComponent>(shared_from_this()), collisionData_.motion_type_ == EMotionType::Static);
             perObjectData_->UpdateGPUData(context);
-
-            UINT SizeInBytes = sizeof(ColorData);
-
-            ColorData colorData;
-
-            const auto span = std::span{reinterpret_cast<uint8_t*>(&colorData), SizeInBytes};
-
-            D3D12_CONSTANT_BUFFER_VIEW_DESC desc = D3D12_CONSTANT_BUFFER_VIEW_DESC(0, SizeInBytes);
-            colorShaderRes_->colorCBV_ = context.AllocateDynamicConstantView(span, desc);
         }
 
         void SetColliderType(ColliderType new_type) override
@@ -276,7 +266,6 @@ namespace GiiGa
     protected:
         CollisionData collisionData_;
 
-        std::unique_ptr<GPULocalResource> colorRes_;
         std::shared_ptr<CollisionShaderResource> colorShaderRes_;
 
     private:

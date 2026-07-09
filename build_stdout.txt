@@ -1,0 +1,172 @@
+
+  main.cpp
+D:\repos\GiiGaEngine\Source\Core\Component.h(4,9): warning C4067: unexpected tokens following preprocessor directive - expected a newline [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Component.h(5,9): warning C4067: unexpected tokens following preprocessor directive - expected a newline [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Components\ConsoleComponent.h(23,45): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Input.h(85,26): warning C4244: 'initializing': conversion from 'const int32_t' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Input.h(86,26): warning C4244: 'initializing': conversion from 'const int32_t' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Input.h(98,44): warning C4244: 'initializing': conversion from 'const int32_t' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Input.h(98,49): warning C4244: 'initializing': conversion from 'const int32_t' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\PySripting\ScriptSystem.h(21,22): warning C4101: 'conf': unreferenced local variable [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Assets\ConcreteAsset\MeshAsset.h(8,9): warning C4067: unexpected tokens following preprocessor directive - expected a newline [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Physics\PhysicsSystem.h(38,9): warning C4005: 'JPH_FLOATING_POINT_EXCEPTIONS_ENABLED': macro redefinition [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      D:\repos\GiiGaEngine\Source\Core\Physics\PhysicsSystem.h(38,9):
+      'JPH_FLOATING_POINT_EXCEPTIONS_ENABLED' previously declared on the command line
+  
+D:\repos\GiiGaEngine\Source\Core\Physics\PhysicsSystem.h(39,9): warning C4005: 'JPH_OBJECT_STREAM': macro redefinition [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      D:\repos\GiiGaEngine\Source\Core\Physics\PhysicsSystem.h(39,9):
+      'JPH_OBJECT_STREAM' previously declared on the command line
+  
+D:\repos\GiiGaEngine\ThirdParty\FileWatch.hpp(246,9): warning C4068: unknown pragma 'mark' [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Components\SpectatorMovementComponent.h(86,52): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\EditorViewport.h(108,67): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\EditorViewport.h(109,67): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\EditorViewport.h(110,121): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\EditorViewport.h(110,114): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\ImGuiInspector.h(658,27): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\ImGuiInspector.h(667,29): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MaterialLoader.h(101,31): warning C4018: '<': signed/unsigned mismatch [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(111,35): warning C4018: '<=': signed/unsigned mismatch [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(111,35):
+      the template instantiation context (the oldest one first) is
+          D:\repos\GiiGaEngine\Source\Core\EditorEngine.h(99,37):
+          while compiling class template member function 'void GiiGa::BaseAssetDatabase::RegisterLoader(void)'
+          D:\repos\GiiGaEngine\Source\Core\Assets\BaseAssetDatabase.h(95,19):
+          while evaluating concept 'IsAssetLoader<GiiGa::MeshAssetLoader<GiiGa::VertexPosition> >'
+          D:\repos\GiiGaEngine\Source\Core\Assets\BaseAssetDatabase.h(22,34):
+          see reference to variable template 'const bool is_base_of_v<GiiGa::AssetLoader,GiiGa::MeshAssetLoader<GiiGa::VertexPosition> >' being compiled
+          D:\repos\GiiGaEngine\Source\Core\Assets\BaseAssetDatabase.h(22,34):
+          see reference to class template instantiation 'GiiGa::MeshAssetLoader<GiiGa::VertexPosition>' being compiled
+          D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(90,36):
+          while compiling class template member function 'std::shared_ptr<GiiGa::AssetBase> GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::Load(GiiGa::AssetHandle,const std::filesystem::path &)'
+  
+D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(227,31): warning C4018: '<': signed/unsigned mismatch [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(227,31):
+      the template instantiation context (the oldest one first) is
+          D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(213,69):
+          while compiling class template member function 'std::unordered_map<unsigned int,std::shared_ptr<_Ty>,std::hash<el::base::type::EnumType>,std::equal_to<unsigned int>,std::allocator<std::pair<const unsigned int,std::shared_ptr<_Ty>>>> GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::PreprocessMaterial(const aiScene *,unsigned int,aiMaterial **,std::filesystem::path)'
+          with
+          [
+              _Ty=GiiGa::Material
+          ]
+              D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(64,32):
+              see the first reference to 'GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::PreprocessMaterial' in 'GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::Preprocess'
+  
+D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(173,31): warning C4018: '<': signed/unsigned mismatch [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(173,31):
+      the template instantiation context (the oldest one first) is
+          D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(155,37):
+          while compiling class template member function 'std::shared_ptr<GiiGa::GameObject> GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::CreateGameObjectHierarchy(aiNode *,const aiScene *,const GiiGa::Uuid &,const std::filesystem::path &,std::unordered_map<GiiGa::AssetHandle,GiiGa::AssetMeta,std::hash<GiiGa::AssetHandle>,std::equal_to<GiiGa::AssetHandle>,std::allocator<std::pair<const GiiGa::AssetHandle,GiiGa::AssetMeta>>> &,const std::unordered_map<unsigned int,std::shared_ptr<_Ty>,std::hash<el::base::type::EnumType>,std::equal_to<unsigned int>,std::allocator<std::pair<const unsigned int,std::shared_ptr<_Ty>>>>)'
+          with
+          [
+              _Ty=GiiGa::Material
+          ]
+              D:\repos\GiiGaEngine\Source\Core\AssetLoaders\MeshAssetLoader.h(69,21):
+              see the first reference to 'GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::CreateGameObjectHierarchy' in 'GiiGa::MeshAssetLoader<GiiGa::VertexPosition>::Preprocess'
+  
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85): warning C4244: 'argument': conversion from 'const _Ty' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85): warning C4244:         with [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85): warning C4244:         [ [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85): warning C4244:             _Ty=int [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85): warning C4244:         ] [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(462,85):
+      the template instantiation context (the oldest one first) is
+          D:\repos\GiiGaEngine\Source\Core\Render\ImGuiWindows\EditorViewport.h(75,58):
+          see reference to function template instantiation 'std::shared_ptr<GiiGa::CameraComponent> GiiGa::GameObject::CreateComponent<GiiGa::CameraComponent,GiiGa::CameraType,int,int>(const GiiGa::CameraType &,const int &,const int &)' being compiled
+          D:\repos\GiiGaEngine\Source\Core\GameObject.h(438,51):
+          see reference to function template instantiation 'std::shared_ptr<GiiGa::CameraComponent> std::make_shared<GiiGa::CameraComponent,const GiiGa::CameraType&,const int&,const int&>(const GiiGa::CameraType &,const int &,const int &)' being compiled
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(2913,46):
+          see reference to function template instantiation 'std::_Ref_count_obj2<GiiGa::CameraComponent>::_Ref_count_obj2<const GiiGa::CameraType&,const _Ty&,const _Ty&>(const GiiGa::CameraType &,const _Ty &,const _Ty &)' being compiled
+          with
+          [
+              _Ty=int
+          ]
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(2100,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,const GiiGa::CameraType&,const int&,const int&>(_Ty &,const GiiGa::CameraType &,const int &,const int &) noexcept(false)' being compiled
+          with
+          [
+              _Ty=GiiGa::CameraComponent
+          ]
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(472,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,const GiiGa::CameraType&,const int&,const int&>(_Ty *const ,const GiiGa::CameraType &,const int &,const int &) noexcept(<expr>)' being compiled
+          with
+          [
+              _Ty=GiiGa::CameraComponent
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(476,82): warning C4244: 'argument': conversion from 'const _Ty' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(476,82): warning C4244:         with [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(476,82): warning C4244:         [ [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(476,82): warning C4244:             _Ty=int [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(476,82): warning C4244:         ] [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90): warning C4244: 'argument': conversion from 'const _Ty' to 'float', possible loss of data [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90): warning C4244:         with [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90): warning C4244:         [ [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90): warning C4244:             _Ty=int [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90): warning C4244:         ] [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+  (compiling source file 'Source/main.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(463,90):
+      the template instantiation context (the oldest one first) is
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\memory(2100,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,const GiiGa::CameraType&,const int&,const int&>(_Ty &,const GiiGa::CameraType &,const int &,const int &) noexcept(false)' being compiled
+          with
+          [
+              _Ty=GiiGa::CameraComponent
+          ]
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\xutility(472,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,const GiiGa::CameraType&,const int&,const int&>(_Ty *const ,const GiiGa::CameraType &,const int &,const int &) noexcept(false)' being compiled
+          with
+          [
+              _Ty=GiiGa::CameraComponent
+          ]
+  
+D:\repos\GiiGaEngine\Source\Core\PySripting\ScriptHelpers.h(40,1): warning C4715: 'GiiGa::ScriptHelpers::EncodeToJSONValue': not all control paths return a value [D:\repos\GiiGaEngine\GiiGaEngine.vcxproj]
+     Creating library D:\repos\GiiGaEngine\x64\Debug\GiiGaEngine.lib and object D:\repos\GiiGaEngine\x64\Debug\GiiGaEngine.exp
+  GiiGaEngine.vcxproj -> D:\repos\GiiGaEngine\x64\Debug\GiiGaEngine.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+EXIT=0

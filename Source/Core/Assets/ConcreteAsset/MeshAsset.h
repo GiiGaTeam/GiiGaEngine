@@ -9,8 +9,7 @@
 
 #include<AssetBase.h>
 #include<Mesh.h>
-#include<IRenderContext.h>
-#include<RenderDevice.h>
+#include<RenderContext.h>
 
 namespace GiiGa
 {
@@ -20,13 +19,12 @@ namespace GiiGa
     public:
         MeshAsset(
             AssetHandle handle,
-            IRenderContext& render_context,
-            RenderDevice& device, 
+            RenderContext& render_context,
             const std::vector<VertexType>& vertices,
-            const std::vector<Index16>& indices, 
+            const std::vector<Index16>& indices,
             DirectX::BoundingBox aabb
         )
-            : Mesh<VertexType>(render_context, device, vertices, indices, aabb)
+            : Mesh<VertexType>(render_context, vertices, indices, aabb)
             , AssetBase(handle)
         {
         }
