@@ -10,6 +10,8 @@
 #include<vector>
 #include<iostream>
 #include<stdexcept>
+#include<tracy/tracy/Tracy.hpp>
+#include<tracy/tracy/TracyD3D12.hpp>
 
 #include<IRenderDevice.h>
 #include<DirectXUtils.h>
@@ -65,12 +67,18 @@ namespace GiiGa
 #endif
             }
 
+            // Tracy GPU profiling context for the graphics queue.
+            tracy_gpu_ctx_ = TracyD3D12Context(device_.get(), graphics_queue_.get());
+
             CreateImGuiSrvHeap();
         }
 
     public:
         ~RenderDevice() override
         {
+            if (tracy_gpu_ctx_)
+                TracyD3D12Destroy(tracy_gpu_ctx_);
+
             for (auto&& vec : delete_queue)
             {
                 vec.clear();
@@ -90,6 +98,11 @@ namespace GiiGa
         std::shared_ptr<ID3D12CommandQueue> GetGraphicsQueue()
         {
             return graphics_queue_;
+        }
+
+        tracy::D3D12QueueCtx* GetTracyGpuContext()
+        {
+            return tracy_gpu_ctx_;
         }
 
         ///////////////////////// IMGUI SRV HEAP /////////////////////////////////////////////////
@@ -151,6 +164,7 @@ namespace GiiGa
         // displayed with ImGui::Image. The returned gpu handle is the ImTextureID.
         ImGuiSrvHandle CreateImGuiTextureSrv(nvrhi::ITexture* texture)
         {
+            ZoneScoped;
             ImGuiSrvHandle handle = AllocateImGuiDescriptor();
 
             auto native_resource = static_cast<ID3D12Resource*>(texture->getNativeObject(nvrhi::ObjectTypes::D3D12_Resource).pointer);
@@ -172,6 +186,7 @@ namespace GiiGa
         std::shared_ptr<ID3D12Device> device_;
         std::shared_ptr<ID3D12CommandQueue> graphics_queue_;
         nvrhi::DeviceHandle nvrhi_device_;
+        tracy::D3D12QueueCtx* tracy_gpu_ctx_ = nullptr;
 
         std::shared_ptr<ID3D12DescriptorHeap> imgui_srv_heap_;
         D3D12_CPU_DESCRIPTOR_HANDLE imgui_heap_cpu_start_{};

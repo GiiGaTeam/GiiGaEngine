@@ -11,6 +11,7 @@
 #include<string>
 #include<memory>
 #include<nvrhi/nvrhi.h>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Viewport.h>
 #include<RenderDevice.h>
@@ -65,6 +66,7 @@ namespace GiiGa
 
         void Init(RenderContext& context) override
         {
+            ZoneScoped;
             viewInfoConstBuffer_ = CreateConstantBuffer(device_.NvDevice(), sizeof(RenderPassViewMatricies), "ViewportViewMatrices");
             screenDimensionsConstBuffer_ = CreateConstantBuffer(device_.NvDevice(), sizeof(ScreenDimensions), "ViewportScreenDimensions");
 
@@ -102,6 +104,7 @@ namespace GiiGa
 
         void Execute(RenderContext& context) override
         {
+            ZoneScoped;
             // TODO: Check simulation mode or editor mode
 
             if (camera_.expired()) return;
@@ -277,6 +280,7 @@ namespace GiiGa
 
         void UpdateCameraInfo(RenderContext& context)
         {
+            ZoneScoped;
             auto camera_go = camera_.lock();
             auto camera = camera_go->GetComponent<CameraComponent>()->GetCamera();
 

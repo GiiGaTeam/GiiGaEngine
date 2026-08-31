@@ -17,6 +17,8 @@
 #include "easylogging++.h"
 INITIALIZE_EASYLOGGINGPP
 
+#include<tracy/tracy/Tracy.hpp>
+
 #include<World.h>
 #include<EditorEngine.h>
 #include<WindowManager.h>

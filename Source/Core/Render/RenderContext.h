@@ -12,6 +12,8 @@
 #include<unordered_map>
 #include<algorithm>
 #include<cassert>
+#include<tracy/tracy/Tracy.hpp>
+#include<tracy/tracy/TracyD3D12.hpp>
 
 #include<IRenderContext.h>
 #include<RenderSystemSettings.h>
@@ -76,11 +78,17 @@ namespace GiiGa
 
         void StartFrame()
         {
+            ZoneScoped;
             if (frameLatencyWaitableObject_)
+            {
+                ZoneScopedN("frameLatencyWaitableObject");
                 WaitForSingleObject(frameLatencyWaitableObject_, INFINITE);
+            }
 
             command_list_->open();
             is_recording_ = true;
+
+            TracyD3D12NewFrame(device_.GetTracyGpuContext());
 
             {
                 std::lock_guard lock(deffered_uploads_mutex_);
@@ -95,10 +103,12 @@ namespace GiiGa
 
         void EndFrame()
         {
+            ZoneScoped;
             command_list_->close();
             is_recording_ = false;
             device_.NvDevice()->executeCommandList(command_list_);
             device_.NvDevice()->runGarbageCollection();
+            TracyD3D12Collect(device_.GetTracyGpuContext());
         }
 
         void ContextIdle()
@@ -134,6 +144,7 @@ namespace GiiGa
 
         void DrawIndexed(nvrhi::IBuffer* vertex_buffer, nvrhi::IBuffer* index_buffer, nvrhi::Format index_format, uint32_t index_count)
         {
+            ZoneScoped;
             nvrhi::GraphicsState state;
             state.pipeline = current_pipeline_;
             state.framebuffer = current_framebuffer_;
@@ -155,6 +166,7 @@ namespace GiiGa
 
         nvrhi::BindingSetHandle GetOrCreateBindingSet(nvrhi::BindingSetDesc desc, nvrhi::IBindingLayout* layout)
         {
+            ZoneScoped;
             // Canonical order (matches how PSO builds its layout) so that
             // logically-equal descs hash equally and match layout item order.
             std::sort(desc.bindings.begin(), desc.bindings.end(),

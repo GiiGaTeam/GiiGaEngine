@@ -6,6 +6,7 @@
 #include<json/value.h>
 #include<memory>
 #include<optional>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Component.h>
 #include<TransformComponent.h>
@@ -201,6 +202,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            ZoneScoped;
             if (ownerGO_.expired() || ownerGO_.lock()->GetTransformComponent().expired()) return;
 
             const auto transform = ownerGO_.lock()->GetTransformComponent().lock().get();

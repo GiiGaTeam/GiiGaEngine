@@ -8,6 +8,7 @@
 
 #include <Jolt/Jolt.h>
 #include "easylogging++.h"
+#include<tracy/tracy/Tracy.hpp>
 
 // Jolt includes
 #include <Jolt/RegisterTypes.h>
@@ -274,6 +275,7 @@ namespace GiiGa
 
         void Initialize()
         {
+            ZoneScoped;
             JPH::RegisterDefaultAllocator();
             temp_allocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 
@@ -291,6 +293,7 @@ namespace GiiGa
 
         static void Simulate(float dt)
         {
+            ZoneScoped;
             auto& body_interface = GetInstance().physics_system.GetBodyInterface();
 
             JPH::JobSystemThreadPool job_system(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);

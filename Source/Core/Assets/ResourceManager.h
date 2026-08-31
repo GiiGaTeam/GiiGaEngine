@@ -2,6 +2,7 @@
 #include<unordered_map>
 #include<functional>
 #include<memory>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<AssetHandle.h>
 #include<AssetType.h>
@@ -24,6 +25,7 @@ namespace GiiGa
     public:
         template <typename T>
         std::shared_ptr<T> GetAsset(AssetHandle handle) {
+            ZoneScoped;
             auto found_asset = FindAsset<T>(handle);
 
             if (found_asset)
@@ -55,6 +57,7 @@ namespace GiiGa
         //todo: actually if in game assets are not mutable, we don't need it in game, so...
         void UpdateAsset(const AssetHandle& handle)
         {
+            ZoneScoped;
             if (loaded_assets_.contains(handle))
             {
                 auto asset_meta_opt = database_->GetAssetMeta(handle, true);
@@ -88,6 +91,7 @@ namespace GiiGa
 
         template <typename T>
         std::shared_ptr<T> LoadAsset(AssetHandle handle) {
+            ZoneScoped;
             auto asset_meta_opt = database_->GetAssetMeta(handle, true);
             if (!asset_meta_opt)
             {

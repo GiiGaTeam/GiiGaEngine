@@ -4,6 +4,7 @@
 #include<memory>
 #include<filesystem>
 #include<json/json.h>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<AssetLoader.h>
 #include<AssetMeta.h>
@@ -40,6 +41,7 @@ namespace GiiGa
 
         std::shared_ptr<AssetBase> Load(::GiiGa::AssetHandle handle, const ::std::filesystem::path& path) override
         {
+            ZoneScoped;
             if (!std::filesystem::exists(path))
             {
                 throw std::runtime_error("Level file not found in: " + path.string());

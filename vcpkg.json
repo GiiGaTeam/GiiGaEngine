@@ -31,13 +31,17 @@
     {
       "name": "joltphysics",
       "version>=": "5.2.0#1"
-      
-    }
+    },
+    "tracy"
   ],
   "overrides": [
     {
       "name": "imguizmo",
       "version": "2024-05-29#1"
+    },
+    {
+      "name": "tracy",
+      "version": "0.13.1#1"
     }
   ]
 }

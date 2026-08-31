@@ -1,5 +1,6 @@
 #pragma once
 #include<chrono>
+#include<tracy/tracy/Tracy.hpp>
 
 using duration = std::chrono::duration<double>;
 using sys_clock = std::chrono::system_clock;
@@ -18,6 +19,7 @@ namespace GiiGa
 
         static void UpdateTime()
         {
+            ZoneScoped;
             auto cur_time = std::chrono::time_point_cast<duration>(sys_clock::now());
             delta_time_ = scale_ * (cur_time - prev_frame_time_point_);
             prev_frame_time_point_ = cur_time;

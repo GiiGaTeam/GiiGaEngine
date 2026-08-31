@@ -9,6 +9,7 @@
 #include<memory>
 #include<vector>
 #include<directxtk12/SimpleMath.h>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Uuid.h>
 #include<AssetLoader.h>
@@ -50,6 +51,7 @@ namespace GiiGa
 
         virtual std::unordered_map<AssetHandle, AssetMeta> Preprocess(const std::filesystem::path& absolute_path, const std::filesystem::path& relative_path)
         {
+            ZoneScoped;
             if (!std::filesystem::exists(absolute_path))
                 throw std::runtime_error("File does not exist: " + absolute_path.string());
 
@@ -89,6 +91,7 @@ namespace GiiGa
 
         std::shared_ptr<AssetBase> Load(AssetHandle handle, const std::filesystem::path& path) override
         {
+            ZoneScoped;
             if (!std::filesystem::exists(path))
                 throw std::runtime_error("File does not exist: " + path.string());
 

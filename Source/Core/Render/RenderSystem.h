@@ -3,6 +3,7 @@
 #include<functional>
 #include<memory>
 #include<unordered_set>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Window.h>
 #include<RenderDevice.h>
@@ -45,6 +46,7 @@ namespace GiiGa
 
         virtual void Tick()
         {
+            ZoneScoped;
             device_.DeleteStaleObjects();
             context_.StartFrame();
 

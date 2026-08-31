@@ -59,6 +59,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            ZoneScoped;
             try
             {
                 PYBIND11_OVERRIDE_PURE(

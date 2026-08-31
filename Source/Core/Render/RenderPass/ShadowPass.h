@@ -10,6 +10,8 @@
 #include<memory>
 #include<vector>
 #include<functional>
+#include<tracy/tracy/Tracy.hpp>
+#include<TracyGpu.h>
 
 #include<RenderPass.h>
 #include<Viewport.h>
@@ -60,6 +62,8 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            ZoneScoped;
+            GIIGA_GPU_ZONE(context, "Shadow");
             auto cam_info = getCamInfoDataFunction_();
 
             std::unordered_map<ObjectMask, DrawPacket> lights;

@@ -72,6 +72,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            ZoneScoped;
             if (!active_) return;
             TryDoLocationMove(dt);
             TryDoRotationMove(dt);

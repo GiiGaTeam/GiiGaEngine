@@ -8,6 +8,7 @@
 #include<unordered_set>
 #include<optional>
 #include<variant>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<IGameObject.h>
 #include<IComponent.h>
@@ -425,6 +426,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            ZoneScoped;
             for (int i = 0; i < components_.size(); ++i)
                 components_[i]->Tick(dt);
 

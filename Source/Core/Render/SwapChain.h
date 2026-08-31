@@ -31,7 +31,7 @@ namespace GiiGa
 
         void Present()
         {
-            swap_chain_->Present(1, 0);
+            swap_chain_->Present(0, DXGI_PRESENT_ALLOW_TEARING);
         }
 
         HANDLE GetFrameLatencyWaitableObject()
@@ -116,7 +116,7 @@ namespace GiiGa
                 sd.Width = 0;
                 sd.Height = 0;
                 sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                sd.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+                sd.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
                 sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
                 sd.SampleDesc.Count = 1;
                 sd.SampleDesc.Quality = 0;

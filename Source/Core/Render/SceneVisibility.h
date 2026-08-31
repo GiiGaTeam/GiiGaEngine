@@ -7,8 +7,7 @@
 #include <directxtk12/SimpleMath.h>
 #include<Octree/octree.h>
 #include<DirectXCollision.h>
-
-
+#include<tracy/tracy/Tracy.hpp>
 
 #include<memory>
 #include<vector>
@@ -86,6 +85,7 @@ namespace GiiGa
 
         static std::vector<std::weak_ptr<IRenderable>> FrustumCulling(DirectX::SimpleMath::Matrix viewproj)
         {
+            ZoneScoped;
             // Extract frustum planes from the view-projection matrix.
             auto dxplanes = ExtractFrustumPlanesPointInside(viewproj);
             auto otplanes = std::vector<OrthoTree::Plane3D>(6);
@@ -122,6 +122,7 @@ namespace GiiGa
         // Extract visible objects matching a filter and organize them into draw packets.
         static std::unordered_map<ObjectMask, DrawPacket> Extract(ObjectMask render_filter_type, const std::vector<std::weak_ptr<IRenderable>>& renderables)
         {
+            ZoneScoped;
             // Map to store draw packets grouped by object mask.
             std::unordered_map<ObjectMask, DrawPacket> mask_to_draw_packets;
 
@@ -259,6 +260,7 @@ namespace GiiGa
 
         static void Tick()
         {
+            ZoneScoped;
             GetInstance()->quadtree = OrthoTree::OctreeBoxMap
             {
                 GetInstance()->visibility_to_geometry_,

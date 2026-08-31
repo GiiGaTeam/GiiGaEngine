@@ -7,6 +7,7 @@
 #include<memory>
 #include<json/value.h>
 #include<optional>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Engine.h>
 #include<Component.h>
@@ -77,6 +78,7 @@ namespace GiiGa
 
         void Init() override
         {
+            ZoneScoped;
             transform_ = std::dynamic_pointer_cast<GameObject>(owner_.lock())->GetTransformComponent();
             if (mesh_)
             {
@@ -151,6 +153,7 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            ZoneScoped;
             mesh_->Draw(context);
         }
 
@@ -232,6 +235,7 @@ namespace GiiGa
 
         void UpdateGPUData(RenderContext& context) override
         {
+            ZoneScoped;
             perObjectData_->UpdateGPUData(context);
         }
 

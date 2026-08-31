@@ -5,6 +5,7 @@
 #include<directxtk12/SimpleMath.h>
 #include<memory>
 #include<optional>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<DXMathUtils.h>
 #include<Component.h>
@@ -299,6 +300,7 @@ namespace GiiGa
 
         void Tick(float dt) override
         {
+            ZoneScoped;
             if (is_dirty_) UpdateTransformMatrices();
         }
 
@@ -495,6 +497,7 @@ namespace GiiGa
     private:
         void UpdateTransformMatrices()
         {
+            ZoneScoped;
             const auto pref_local_matrix = local_matrix_;
             local_matrix_ = transform_.GetMatrix();
             if (!is_dirty_)

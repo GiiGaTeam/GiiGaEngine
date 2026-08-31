@@ -3,6 +3,8 @@
 
 #include <pybind11/conduit/wrap_include_python_h.h>
 #include<memory>
+#include<tracy/tracy/Tracy.hpp>
+
 #include<ResourceManager.h>
 #include<BaseAssetDatabase.h>
 #include<Input.h>
@@ -32,6 +34,7 @@ namespace GiiGa
 
         virtual void Initialize(std::shared_ptr<Project> proj)
         {
+            ZoneScoped;
             instance_ = this;
             project_ = proj;
             resource_manager_ = std::make_shared<GiiGa::ResourceManager>();
@@ -48,6 +51,7 @@ namespace GiiGa
 
         virtual void DeInitialize()
         {
+            ZoneScoped;
             window_.reset();
             resource_manager_.reset();
             project_.reset();

@@ -8,6 +8,8 @@
 #include<memory>
 #include<vector>
 #include<functional>
+#include<tracy/tracy/Tracy.hpp>
+#include<TracyGpu.h>
 
 #include<RenderPass.h>
 #include<PSO.h>
@@ -63,6 +65,8 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            ZoneScoped;
+            GIIGA_GPU_ZONE(context, "PostProcess");
             auto result_info = getResultInfoFunction_();
 
             nvrhi::BindingSetDesc binding_desc;

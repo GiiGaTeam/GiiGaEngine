@@ -1,6 +1,8 @@
 #pragma once
 
 #include<memory>
+#include<tracy/tracy/Tracy.hpp>
+
 #include<Engine.h>
 #include<Timer.h>
 #include<EditorRenderSystem.h>
@@ -37,6 +39,7 @@ namespace GiiGa
                     if (World::GetInstance().GetState() == WorldState::Play) PhysicsSystem::Simulate(static_cast<float>(Timer::GetDeltaTime()));
                 }
                 render_system_->Tick();
+                FrameMark;
             }
 
             DeInitialize();
@@ -57,6 +60,7 @@ namespace GiiGa
 
         void Initialize(std::shared_ptr<Project> proj) override
         {
+            ZoneScoped;
             Engine::Initialize(proj);
             World::Initialize();
             PhysicsSystem::GetInstance().Initialize();
@@ -81,6 +85,7 @@ namespace GiiGa
 
         void DeInitialize() override
         {
+            ZoneScoped;
             editor_asset_database_->Shutdown();
             editor_asset_database_->SaveRegistry();
 
@@ -110,6 +115,7 @@ namespace GiiGa
 
         void CheckAssetUpdateQueue()
         {
+            ZoneScoped;
             auto update_pair = EditorDatabase()->GetUpdateQueue();
             std::lock_guard lock{*update_pair.first};
             while (!update_pair.second->empty())

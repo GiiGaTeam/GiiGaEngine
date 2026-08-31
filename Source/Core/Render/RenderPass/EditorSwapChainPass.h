@@ -12,6 +12,8 @@
 #include<d3d12.h>
 #include<vector>
 #include<memory>
+#include<tracy/tracy/Tracy.hpp>
+#include<TracyGpu.h>
 
 #include<RenderSystemSettings.h>
 #include<RenderDevice.h>
@@ -79,6 +81,8 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            ZoneScoped;
+            GIIGA_GPU_ZONE(context, "EditorSwapChain");
             ImGui_ImplDX12_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
@@ -86,9 +90,12 @@ namespace GiiGa
 
             BeginDockSpace_();
             {
-                for (auto&& window : windows_)
                 {
-                    window->RecordImGui();
+                    ZoneScopedN("RecordImGui");
+                    for (auto&& window : windows_)
+                    {
+                        window->RecordImGui();
+                    }
                 }
 
                 // Tick scene visibility in case it was changed in imgui

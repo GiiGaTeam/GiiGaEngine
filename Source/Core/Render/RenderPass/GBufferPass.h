@@ -8,6 +8,8 @@
 #include<memory>
 #include<vector>
 #include<functional>
+#include<tracy/tracy/Tracy.hpp>
+#include<TracyGpu.h>
 
 #include<RenderPass.h>
 #include<PSO.h>
@@ -85,6 +87,8 @@ namespace GiiGa
 
         void Draw(RenderContext& context) override
         {
+            ZoneScoped;
+            GIIGA_GPU_ZONE(context, "GBuffer");
             auto cam_info = getCamInfoDataFunction_();
             const auto& frustum_culling_res = SceneVisibility::FrustumCulling(cam_info.camera.GetViewProj());
             const auto& vis_lit = SceneVisibility::Extract(filter_lit_solid_, frustum_culling_res);

@@ -7,6 +7,7 @@
 #include<vector>
 #include<memory>
 #include<json/json.h>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<Level.h>
 #include<GameObject.h>
@@ -36,6 +37,7 @@ namespace GiiGa
 
         static void Initialize()
         {
+            ZoneScoped;
             Json::Value level_settings;
             level_settings["Name"] = "PersistentLevel";
             auto p_level = std::make_shared<Level>(level_settings);
@@ -44,12 +46,14 @@ namespace GiiGa
 
         static void DeInitialize()
         {
+            ZoneScoped;
             GetInstance().levels_.clear();
             instance_.reset();
         }
 
         static void Tick(float dt)
         {
+            ZoneScoped;
             auto& instance = GetInstance();
             while (!instance.comp_init_queue_.empty())
             {
@@ -96,6 +100,7 @@ namespace GiiGa
 
         static void AddLevelFromUuid(const Uuid& uuid, bool setIsActive = true)
         {
+            ZoneScoped;
             el::Loggers::getLogger(LogWorld)->info("Loading level with uuid: %v", uuid.ToString());
             AddLevel(Engine::Instance().ResourceManager()->GetAsset<LevelAsset>({uuid, 0}), setIsActive);
         }
@@ -108,6 +113,7 @@ namespace GiiGa
 
         static void AddLevel(std::shared_ptr<LevelAsset> asset, bool setIsActive = true)
         {
+            ZoneScoped;
             auto level = Level::LevelFromLevelAsset(asset);
             level->SetIsActive(setIsActive);
             GetInstance().levels_.push_back(level);
@@ -120,6 +126,7 @@ namespace GiiGa
 
         void SetState(WorldState state)
         {
+            ZoneScoped;
             if (state_ == state)
                 return;
 
@@ -149,6 +156,7 @@ namespace GiiGa
 
         void OnEditToPlayStateChange_()
         {
+            ZoneScoped;
             if (levels_.size() >= 2)
             {
                 auto database = Engine::Instance().ResourceManager()->Database();
@@ -163,6 +171,7 @@ namespace GiiGa
 
         void OnPlayToEditStateChange_()
         {
+            ZoneScoped;
             if (levels_.size() >= 2)
             {
                 GiiGa::PhysicsSystem::EndPlay();

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include<vector>
 #include<memory>
+#include<tracy/tracy/Tracy.hpp>
 
 #include<RenderPass.h>
 #include<Viewport.h>
@@ -16,6 +17,7 @@ namespace GiiGa
 
         virtual void Draw(RenderContext& context)
         {
+            ZoneScoped;
             for (auto&& pass : passes_)
             {
                 pass->Draw(context);
