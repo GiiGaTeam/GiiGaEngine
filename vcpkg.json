@@ -26,7 +26,6 @@
     {
       "name": "pybind11",
       "version>=": "3.0.1"
-
     },
     {
       "name": "joltphysics",
@@ -38,10 +37,6 @@
     {
       "name": "imguizmo",
       "version": "2024-05-29#1"
-    },
-    {
-      "name": "tracy",
-      "version": "0.13.1#1"
     }
   ]
 }
